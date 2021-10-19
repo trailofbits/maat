@@ -1,0 +1,39 @@
+// Based on Angr's pypcode
+
+#ifndef MAAT_SLEIGH_H
+#define MAAT_SLEIGH_H
+
+
+#include <string>
+#include <map>
+#include "ir.hpp"
+
+namespace maat
+{
+    
+    class TranslationContext;
+
+    std::shared_ptr<TranslationContext> new_sleigh_ctx(
+        const std::string arch,
+        const std::string& slafile,
+        const std::string& pspecfile
+    );
+
+    std::shared_ptr<maat::ir::Block> sleigh_translate(
+        std::shared_ptr<TranslationContext> ctx,
+        const unsigned char *bytes,
+        unsigned int num_bytes,
+        uintptr_t address,
+        unsigned int max_instructions,
+        bool bb_terminating
+    );
+    
+    const std::string& sleigh_get_asm(
+        std::shared_ptr<TranslationContext> ctx,
+        uintptr_t address,
+        const unsigned char* bytes
+    );
+
+}
+
+#endif

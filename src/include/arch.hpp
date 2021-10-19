@@ -1,0 +1,352 @@
+#ifndef MAAT_ARCH_H
+#define MAAT_ARCH_H
+
+#include <cstdint>
+#include <string>
+#include <capstone/capstone.h>
+#include "types.hpp"
+#include <vector>
+#include <unordered_map>
+
+namespace maat
+{
+
+/** \defgroup arch Arch 
+ * \brief Module regrouping classes and enums used to represent various
+ * computer architectures. 
+ * 
+ * An architecture is represented by a class deriving from the *Arch* 
+ * generic class. Each architecture has its own namespace which regroups
+ * the specialised Arch class (X86::ArchX86, X64::ArchX64, ...) and static
+ * variables for each available CPU register (X86::EAX, X64::RAX, ...)
+ * */
+
+/** \addtogroup arch
+ * \{ */
+
+/// Generic representation of a CPU register in Maat's engine
+typedef uint16_t reg_t;
+
+/// CPU modes
+enum class CPUMode
+{
+    X86, ///< Intel X86
+    X64, ///< Intel X86_64
+    A32, ///< ARM 32-bits
+    T32, ///< ARM Thumb
+    A64, ///< ARM 64-bits
+    NONE
+};
+
+
+/** \brief Base class representing an architecture.
+ * 
+ * It holds information such as
+ * the size of the registers, the number of registers, and available CPU modes for 
+ * architectures that can have several modes (like ARMv7)
+*/
+class Arch
+{
+public:
+    /// Architectures supported by Maat's engine 
+    enum class Type
+    {
+        X86, ///< Intel X86
+        X64, // TODO ///< Intel X86_64
+        ARM32, // TODO ///< armv7 (32 bits)
+        ARM64, // TODO ///< armv8 (64 bits)
+        NONE
+    };
+
+private: 
+    const int _bits; ///< Size of the architecture in bits
+public:
+    const Arch::Type type; ///< Architecture identifier
+    const int nb_regs; ///< Number of registers in this architecture
+    std::vector<CPUMode> available_modes; ///< CPU modes available for the architecture
+public:
+    /** Constructor */
+    Arch(Arch::Type type, int bits, int nb_regs): type(type), _bits(bits), nb_regs(nb_regs){};
+    virtual const std::string& reg_name(reg_t num) const = 0; ///< Get name of register 'num'
+    virtual reg_t reg_num(const std::string& name) const = 0; ///< Get num of register named 'name'
+    virtual size_t reg_size(reg_t reg) const = 0; ///< Get size in bits of register 'reg'
+    virtual reg_t sp() const = 0; ///< Stack pointer for this architecture
+    virtual reg_t pc() const = 0; ///< Program counter for this architecture
+    virtual reg_t tsc() const = 0; ///< Timestamp/Clock counter for this architecture
+public:
+    int bits() const; ///< Return the size of the architecture in bits
+    int octets() const; ///< Return the size of the architecture in bytes/octets
+};
+
+// A dummy implementation of an architecture, used for tests
+class ArchNone: public Arch
+{
+private:
+    std::string __dummy_reg_name = "reg";
+public:
+    ArchNone(): Arch(Arch::Type::NONE, 32, 20)
+    {
+        available_modes = {CPUMode::NONE};
+    };
+    const std::string& reg_name(reg_t num) const {return __dummy_reg_name;};
+    reg_t reg_num(const std::string& name) const {return 0;};
+    size_t reg_size(reg_t reg_num) const {return 32;};
+    reg_t sp() const {return 19;};
+    reg_t pc() const {return 18;};
+    reg_t tsc() const {return 17;};
+};
+
+/* ==================================================
+ *                      Arch X86
+ * ================================================= */
+
+/// Namespace for X86-32 specific definitions and classes
+namespace X86
+{
+    /* Registers */
+    static constexpr reg_t EAX = 0; ///< General purpose register
+    static constexpr reg_t EBX = 1; ///< General purpose register
+    static constexpr reg_t ECX = 2; ///< General purpose register
+    static constexpr reg_t EDX = 3; ///< General purpose register
+    static constexpr reg_t EDI = 4; ///< General purpose register
+    static constexpr reg_t ESI = 5; ///< General purpose register
+    static constexpr reg_t EBP = 6; ///< Stack base
+    static constexpr reg_t ESP = 7; ///< Stack pointer
+    static constexpr reg_t EIP = 8; ///< Program counter
+    /* Segment Registers */
+    static constexpr reg_t CS = 9; ///< Segment register
+    static constexpr reg_t DS = 10; ///< Segment register
+    static constexpr reg_t ES = 11; ///< Segment register
+    static constexpr reg_t FS = 12; ///< Segment register
+    static constexpr reg_t GS = 13; ///< Segment register
+    static constexpr reg_t SS = 14; ///< Segment register
+    /* Flag Registers */
+    static constexpr reg_t CF = 15; ///< Carry flag
+    static constexpr reg_t PF = 16; ///< Parity flag
+    static constexpr reg_t AF = 17; ///< Auxiliary carry flag
+    static constexpr reg_t ZF = 18; ///< Zero flag
+    static constexpr reg_t SF = 19; ///< Sign flag
+    static constexpr reg_t TF = 20; ///< Trap flag
+    static constexpr reg_t IF = 21; ///< Interrupt enable flag
+    static constexpr reg_t DF = 22; ///< Direction flag
+    static constexpr reg_t OF = 23; ///< Overflow flag
+    static constexpr reg_t IOPL = 24; ///< I/O Priviledge level
+    static constexpr reg_t NT = 25; ///< Nested task flag
+    static constexpr reg_t RF = 26; ///< Resume flag
+    static constexpr reg_t VM = 27; ///< Virtual 8086 mode flag
+    static constexpr reg_t AC = 28; ///< Alignment check flag (486+)
+    static constexpr reg_t VIF = 29; ///< Virutal interrupt flag
+    static constexpr reg_t VIP = 30; ///< Virtual interrupt pending flag
+    static constexpr reg_t ID = 31; ///< ID Flag
+    static constexpr reg_t TSC = 32; ///< TImeSTamp counter
+    /* MMX registers */
+    static constexpr reg_t MM0 = 33; ///< MMX register
+    static constexpr reg_t MM1 = 34; ///< MMX register
+    static constexpr reg_t MM2 = 35; ///< MMX register
+    static constexpr reg_t MM3 = 36; ///< MMX register
+    static constexpr reg_t MM4 = 37; ///< MMX register
+    static constexpr reg_t MM5 = 38; ///< MMX register
+    static constexpr reg_t MM6 = 39; ///< MMX register
+    static constexpr reg_t MM7 = 40; ///< MMX register
+    /* ZMM, YMM, XMM registers */
+    static constexpr reg_t ZMM0 = 41; ///< AVX register
+    static constexpr reg_t ZMM1 = 42; ///< AVX register
+    static constexpr reg_t ZMM2 = 43; ///< AVX register
+    static constexpr reg_t ZMM3 = 44; ///< AVX register
+    static constexpr reg_t ZMM4 = 45; ///< AVX register
+    static constexpr reg_t ZMM5 = 46; ///< AVX register
+    static constexpr reg_t ZMM6 = 47; ///< AVX register
+    static constexpr reg_t ZMM7 = 48; ///< AVX register
+    /* Control registers */
+    static constexpr reg_t XCR0 = 49; ///< Extended control register
+    /* FPU registers */
+    static constexpr reg_t FPUCW = 50; ///< FPU control word (16 bits)
+    static constexpr reg_t C0 = 51; ///< FPU flag
+    static constexpr reg_t C1 = 52; ///< FPU flag
+    static constexpr reg_t C2 = 53; ///< FPU flag
+    static constexpr reg_t C3 = 54; ///< FPU flag
+    static constexpr reg_t NB_REGS = 55;
+
+    /** \addtogroup arch
+     * \{ */
+    /// Intel X86-32 architecture
+    class ArchX86: public Arch
+    {
+    public:
+        ArchX86();
+        const std::string& reg_name(reg_t num) const;
+        reg_t reg_num(const std::string& name) const;
+        size_t reg_size(reg_t reg_num) const;
+        reg_t sp() const ;
+        reg_t pc() const ;
+        reg_t tsc() const ;
+    };
+    /** \} */ // Arch doxygen group
+
+} // namespace x86
+
+
+/// Namespace for X86-64 specific definitions and classes
+namespace X64
+{
+    /* Registers */
+    static constexpr reg_t RAX = 0; ///< General purpose register
+    static constexpr reg_t RBX = 1; ///< General purpose register
+    static constexpr reg_t RCX = 2; ///< General purpose register
+    static constexpr reg_t RDX = 3; ///< General purpose register
+    static constexpr reg_t RDI = 4; ///< General purpose register
+    static constexpr reg_t RSI = 5; ///< General purpose register
+    static constexpr reg_t RBP = 6; ///< Stack base
+    static constexpr reg_t RSP = 7; ///< Stack pointer
+    static constexpr reg_t RIP = 8; ///< Program counter
+    static constexpr reg_t R8 = 9; ///< General purpose register
+    static constexpr reg_t R9 = 10; ///< General purpose register
+    static constexpr reg_t R10 = 11; ///< General purpose register
+    static constexpr reg_t R11 = 12; ///< General purpose register
+    static constexpr reg_t R12 = 13; ///< General purpose register
+    static constexpr reg_t R13 = 14; ///< General purpose register
+    static constexpr reg_t R14 = 15; ///< General purpose register
+    static constexpr reg_t R15 = 16; ///< General purpose register
+    /* Segment Registers */
+    static constexpr reg_t CS = 17; ///< Segment register
+    static constexpr reg_t DS = 18; ///< Segment register
+    static constexpr reg_t ES = 19; ///< Segment register
+    static constexpr reg_t FS = 20; ///< Segment register
+    static constexpr reg_t GS = 21; ///< Segment register
+    static constexpr reg_t SS = 22; ///< Segment register
+    /* Flag Registers */
+    static constexpr reg_t CF = 23; ///< Carry flag
+    static constexpr reg_t PF = 24; ///< Parity flag
+    static constexpr reg_t AF = 25; ///< Auxiliary carry flag
+    static constexpr reg_t ZF = 26; ///< Zero flag
+    static constexpr reg_t SF = 27; ///< Sign flag
+    static constexpr reg_t TF = 28; ///< Trap flag
+    static constexpr reg_t IF = 29; ///< Interrupt enable flag
+    static constexpr reg_t DF = 30; ///< Direction flag
+    static constexpr reg_t OF = 31; ///< Overflow flag
+    static constexpr reg_t IOPL = 32; ///< I/O Priviledge level
+    static constexpr reg_t NT = 33; ///< Nested task flag
+    static constexpr reg_t RF = 34; ///< Resume flag
+    static constexpr reg_t VM = 35; ///< Virtual 8086 mode flag
+    static constexpr reg_t AC = 36; ///< Alignment check flag (486+)
+    static constexpr reg_t VIF = 37; ///< Virutal interrupt flag
+    static constexpr reg_t VIP = 38; ///< Virtual interrupt pending flag
+    static constexpr reg_t ID = 39; ///< ID Flag
+    static constexpr reg_t TSC = 40; ///< Timestamp counter
+    /* MMX registers */
+    static constexpr reg_t MM0 = 41; ///< MMX register
+    static constexpr reg_t MM1 = 42; ///< MMX register
+    static constexpr reg_t MM2 = 43; ///< MMX register
+    static constexpr reg_t MM3 = 44; ///< MMX register
+    static constexpr reg_t MM4 = 45; ///< MMX register
+    static constexpr reg_t MM5 = 46; ///< MMX register
+    static constexpr reg_t MM6 = 47; ///< MMX register
+    static constexpr reg_t MM7 = 48; ///< MMX register
+    /* ZMM, YMM, XMM registers */
+    static constexpr reg_t ZMM0 = 49; ///< AVX register
+    static constexpr reg_t ZMM1 = 50; ///< AVX register
+    static constexpr reg_t ZMM2 = 51; ///< AVX register
+    static constexpr reg_t ZMM3 = 52; ///< AVX register
+    static constexpr reg_t ZMM4 = 53; ///< AVX register
+    static constexpr reg_t ZMM5 = 54; ///< AVX register
+    static constexpr reg_t ZMM6 = 55; ///< AVX register
+    static constexpr reg_t ZMM7 = 56; ///< AVX register
+    /* Control registers */
+    static constexpr reg_t XCR0 = 57;
+    /* FPU registers */
+    static constexpr reg_t FPUCW = 58; ///< FPU control word (16 bits)
+    static constexpr reg_t C0 = 59; ///< FPU flag
+    static constexpr reg_t C1 = 60; ///< FPU flag
+    static constexpr reg_t C2 = 61; ///< FPU flag
+    static constexpr reg_t C3 = 62; ///< FPU flag
+    static constexpr reg_t NB_REGS = 63;
+
+    /** \addtogroup arch
+     * \{ */
+
+    /// Intel X86-64 architecture
+    class ArchX64: public Arch
+    {
+    public:
+        ArchX64();
+        const std::string& reg_name(reg_t num) const ;
+        reg_t reg_num(const std::string& name) const ;
+        size_t reg_size(reg_t reg_num) const ;
+        reg_t sp() const ;
+        reg_t pc() const ;
+        reg_t tsc() const ;
+    };
+
+    /** \} */ // Arch doxygen group
+} // namespace X64
+
+
+// TODO add to doxygen when ready
+// Namespace for ARMv8 (64-bits) specific definitions and classes
+namespace ARM64
+{
+    static constexpr reg_t R0 = 0;
+    static constexpr reg_t R1 = 1;
+    static constexpr reg_t R2 = 2;
+    static constexpr reg_t R3 = 3;
+    static constexpr reg_t R4 = 4;
+    static constexpr reg_t R5 = 5;
+    static constexpr reg_t R6 = 6;
+    static constexpr reg_t R7 = 7;
+    static constexpr reg_t R8 = 8;
+    static constexpr reg_t R9 = 9;
+    static constexpr reg_t R10 = 10;
+    static constexpr reg_t R11 = 11;
+    static constexpr reg_t R12 = 12;
+    static constexpr reg_t R13 = 13;
+    static constexpr reg_t R14 = 14;
+    static constexpr reg_t R15 = 15;
+    static constexpr reg_t R16 = 16;
+    static constexpr reg_t R17 = 17;
+    static constexpr reg_t R18 = 18;
+    static constexpr reg_t R19 = 19;
+    static constexpr reg_t R20 = 20;
+    static constexpr reg_t R21 = 21;
+    static constexpr reg_t R22 = 22;
+    static constexpr reg_t R23 = 23;
+    static constexpr reg_t R24 = 24;
+    static constexpr reg_t R25 = 25;
+    static constexpr reg_t R26 = 26;
+    static constexpr reg_t R27 = 27;
+    static constexpr reg_t R28 = 28;
+    static constexpr reg_t R29 = 29;
+    static constexpr reg_t R30 = 30;
+    static constexpr reg_t LR = 30; // Same as R30
+    static constexpr reg_t R31 = 31;
+    static constexpr reg_t PC = 32;
+    static constexpr reg_t SP = 33;
+    static constexpr reg_t ZR = 34;
+    static constexpr reg_t ZF = 35;
+    static constexpr reg_t NF = 36;
+    static constexpr reg_t CF = 37;
+    static constexpr reg_t VF = 38;
+    static constexpr reg_t CNTPCT_EL0 = 39; // Physical cycle counter
+    static constexpr reg_t NB_REGS = 40;
+
+     /** \addtogroup arch
+     * \{ */
+    class ArchARM64: public Arch
+    {
+    public:
+        ArchARM64();
+        const std::string& reg_name(reg_t num) const;
+        reg_t reg_num(const std::string& name) const;
+        size_t reg_size(reg_t reg_num) const;
+        reg_t sp() const;
+        reg_t pc() const;
+        reg_t tsc() const;
+    };
+    /** \} */ // Arch doxygen group
+
+} // namespace ARM64
+
+/** \} */ // Arch doxygen group
+
+} // namespace maat
+
+#endif
