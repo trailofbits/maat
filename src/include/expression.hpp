@@ -216,6 +216,7 @@ public:
         Taint _t = Taint::NOT_COMPUTED, 
         ucst_t _taint_mask=maat::default_expr_taint_mask
     );
+    virtual ~ExprObject() = default;
 protected:
     /// Return the concrete value of the expression evaluated in the context 'ctx'
     virtual const maat::Number& concretize(const VarContext* ctx = nullptr){throw runtime_exception("No implementation");};
@@ -328,6 +329,7 @@ public:
     ExprCst(size_t size, const std::string& value, int base=16);
     /// Constructor for constants directly from number
     ExprCst(const Number& value);
+    virtual ~ExprCst() = default;
     cst_t cst();
     virtual hash_t hash();
     virtual void print(std::ostream& out);
@@ -350,6 +352,7 @@ protected:
 public:
     /// Constructor
     ExprVar(size_t size, std::string name, Taint tainted=Taint::NOT_TAINTED);
+    virtual ~ExprVar() = default;
     /// Get the variable name
     const std::string& name();
     virtual hash_t hash();
@@ -377,6 +380,7 @@ protected:
 public:
     ExprMem(size_t size, Expr addr, unsigned int access_count=0, Expr base=nullptr);
     ExprMem(size_t size, Expr addr, unsigned int access_count, Expr base, ValueSet& vs);
+    virtual ~ExprMem() = default;
     virtual hash_t hash();
     virtual void print(std::ostream& out);
     virtual bool is_tainted(ucst_t taint_mask=maat::default_expr_taint_mask);
@@ -397,7 +401,8 @@ protected:
 
 public:
     /// Constructor
-    ExprUnop(Op op, Expr arg);    
+    ExprUnop(Op op, Expr arg);
+    virtual ~ExprUnop() = default;
     Op op(); ///< Return the operation of the expression
 
     virtual hash_t hash();
@@ -419,6 +424,7 @@ protected:
 public:
     /// Constructor
     ExprBinop(Op op, Expr left, Expr right);
+    virtual ~ExprBinop() = default;
     Op op(); ///< Return the operation of the expression
 
     virtual hash_t hash();
@@ -439,6 +445,7 @@ protected:
 public:
     /// Constructor
     ExprExtract(Expr arg, Expr higher, Expr lower);
+    virtual ~ExprExtract() = default;
     virtual hash_t hash();
     virtual void print(std::ostream& out);
     virtual bool is_tainted(ucst_t taint_mask=maat::default_expr_taint_mask);
@@ -455,6 +462,7 @@ protected:
 public:
     /// Constructor
     ExprConcat(Expr upper, Expr lower);
+    virtual ~ExprConcat() = default;
     virtual hash_t hash();
     virtual void print(std::ostream& out);
     virtual bool is_tainted(ucst_t taint_mask=maat::default_expr_taint_mask);
@@ -473,6 +481,7 @@ protected:
 public:
     /// Constructor
     ExprITE(Expr cond1, ITECond cond_op, Expr cond2, Expr if_true, Expr if_false);
+    virtual ~ExprITE() = default;
     ITECond cond_op(); ///< Condition comparison operator (==, !=, <, <=, ...)
     Expr cond_left(); ///< Left member of condition
     Expr cond_right(); ///< Right member of condition
@@ -624,11 +633,11 @@ public:
      * - Variables present in this context but not in 'other' are kept as they are 
      * */
     void update_from(VarContext& other);
-    void print(std::ostream& os); ///< Print the context to a stream
+    void print(std::ostream& os) const; ///< Print the context to a stream
 };
 
 /** Print the context to a stream */
-std::ostream& operator<<(std::ostream& os, VarContext& c);
+std::ostream& operator<<(std::ostream& os, const VarContext& c);
 
 /** \} */
 

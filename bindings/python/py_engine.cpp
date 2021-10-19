@@ -14,11 +14,9 @@ static void MaatEngine_dealloc(PyObject* self)
     Py_DECREF(as_engine_object(self).vars);    
     Py_DECREF(as_engine_object(self).bp);    
     Py_DECREF(as_engine_object(self).path);
-
-    /* TODO
-    stats aussi
     Py_DECREF(as_engine_object(self).env);
-    */
+
+    /* TODO deref stats, logger */
     Py_TYPE(self)->tp_free((PyObject *)self);
 };
 
@@ -191,7 +189,6 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
 };
 
 
-// TODO add load() method (take it from py_Loader)
 static PyMethodDef MaatEngine_methods[] = {
     {"run", (PyCFunction)MaatEngine_run, METH_VARARGS, "Continue to run code from current location"},
     {"run_from", (PyCFunction)MaatEngine_run_from, METH_VARARGS, "Run code from a given address"},
@@ -291,7 +288,7 @@ PyObject* maat_MaatEngine(PyObject* self, PyObject* args){
             object->bp = PyBPManager_FromBPManagerAndArch(&(object->engine->bp_manager), true, &(*object->engine->arch));
             object->info = PyInfo_FromInfoAndArch(&(object->engine->info), true, &(*object->engine->arch));
             object->path = PyPath_FromPath(&(object->engine->path), true);
-            // TODO object->env = PyEnvManager_FromEnvManager(object->engine->env, true);
+            object->env = PyEnv_FromEnvEmulator(object->engine->env.get(), true);
             // TODO object->stats = PyStats_FromMaatEngineStats(&(object->engine->stats), true);
             // TODO: object->log ....
             object->settings = PySettings_FromSettings(&(object->engine->settings), true);

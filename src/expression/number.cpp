@@ -105,7 +105,7 @@ void Number::set(cst_t val)
     cst_ = val;
     if (is_mpz())
     {
-        mpz_ = mpz_class(val);
+        mpz_ = mpz_class((unsigned long int)val);
         adjust_mpz();
     }
 }
@@ -143,7 +143,7 @@ ucst_t Number::get_ucst() const
 /// Set the number to multiprecision value 'val'
 void Number::set_mpz(cst_t val)
 {
-    mpz_ = mpz_class(val);
+    mpz_ = mpz_class((unsigned long int)val);
 }
 
 void Number::set_mpz(const std::string& val, int base)
@@ -466,7 +466,7 @@ void Number::set_concat(const Number& n1, const Number& n2)
         if (n1.is_mpz())
             mpz_ = n1.mpz_;
         else
-            mpz_ = mpz_class(n1.cst_);
+            mpz_ = mpz_class((unsigned long int)n1.cst_);
         mpz_mul_2exp(mpz_.get_mpz_t(), mpz_.get_mpz_t(), n2.size); // shift left
         // Set lower
         if (n2.is_mpz())
@@ -521,7 +521,7 @@ void Number::set_zext(int ext_size, const Number& n)
         if (n.is_mpz())
             mpz_ = n.mpz_;
         else
-            mpz_ = n.get_ucst();
+            mpz_ = (unsigned long int)n.get_ucst();
         // Extend higher bits to zero
         for (unsigned int i = n.size; i < ext_size; i++)
         {
@@ -548,7 +548,7 @@ void Number::set_sext(int ext_size, const Number& n)
         if (n.is_mpz())
             mpz_ = n.mpz_;
         else
-            mpz_ = n.get_ucst();
+            mpz_ = (unsigned long int)n.get_ucst();
         // Extend higher bits
         bool hsb_set = mpz_tstbit(mpz_.get_mpz_t(), n.size-1);
         for (unsigned int i = n.size; i < ext_size; i++)
@@ -598,7 +598,7 @@ void Number::set_overwrite(const Number& n1, const Number& n2, int lb)
     {
         // Make copies in case n1 or n2 is a reference to 'this'
         mpz_class tmp = n1.mpz_;
-        mpz_class tmp2 = n2.is_mpz() ? n2.mpz_ : n2.get_ucst();
+        mpz_class tmp2 = n2.is_mpz() ? n2.mpz_ : (unsigned long int)n2.get_ucst();
         for (int i = 0; i < n2.size; i++)
         {
             if (mpz_tstbit(tmp2.get_mpz_t(), i) == 1)

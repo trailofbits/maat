@@ -46,7 +46,7 @@ public:
     ) = 0;
 
     /** \brief Get assembly string of instruction at address 'addr' */
-    virtual const std::string& get_inst_asm(uintptr_t addr, code_t inst) = 0;
+    virtual const std::string& get_inst_asm(addr_t addr, code_t inst) = 0;
 
     /* \brief Dynamically disassemble instructions at a given address.
      * **WARNING**: this method has very poor performance! */

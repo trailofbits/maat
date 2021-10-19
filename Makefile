@@ -3,17 +3,16 @@ CXX = g++
 
 PY3CONFIG := python3-config
 
-OUTDIR = ./bin
+OUTDIR = ./build
 LIB_FILE = libmaat.so
 BINDINGS_FILE = maat.so
 
 ## Basic default flags 
 CFLAGS ?=
 CXXFLAGS ?=
-CXXFLAGS ?=
 LDFLAGS ?=
 LDLIBS ?=
-LDLIBS += -lcapstone -lgmp
+LDLIBS +=  -lgmp
 
 ## Flags for LIEF backend
 LIEF ?= 1
@@ -40,7 +39,7 @@ ifeq ($(BINDINGS), 1)
 	BINDINGS_SRCS = $(wildcard $(BINDINGS_DIR)/*.cpp)
 	BINDINGS_OBJS = $(BINDINGS_SRCS:.cpp=.o)
 	BINDINGS_RULE = bindings
-	LDLIBS += `$(PY3CONFIG) --libs`
+	LDLIBS += `$(PY3CONFIG) --libs` `$(PY3CONFIG) --ldflags`
 
 else
 	BINDINGS_RULE = 
@@ -59,6 +58,7 @@ endif
 
 ## Final C++ flags
 CXXFLAGS += -std=c++17 -fPIC -I src/include -I src/third-party/murmur3 -I src/third-party/sleigh/native/sleigh -I src/third-party/sleigh/native/ -Wno-write-strings -Wno-sign-compare -Wno-reorder
+CXXFLAGS += -Wno-register -Wno-error# to avoid errors with clang and ISO C++17
 
 # Source files
 SRCDIR=./src
@@ -133,7 +133,11 @@ SLEIGH_BIN:=$(OUTDIR)/sleigh
 INCLUDEDIR = ./src/include
 
 # Compile lib and tests 
-all: sleigh_bin slafiles lib unit-tests adv-tests $(BINDINGS_RULE)
+all: build_dir sleigh_bin slafiles lib unit-tests adv-tests $(BINDINGS_RULE)
+
+# Create build output dir if it doesn't exist
+build_dir: $(SLEIGH_BIN_OBJS) $(TESTOBJS) $(ADVTESTOBJS) $(OBJS) $(BINDINGS_OBJS)
+	@mkdir -p $(OUTDIR)
 
 # sleigh binary
 sleigh_bin: $(SLEIGH_BIN_OBJS)
@@ -182,12 +186,12 @@ endif
 MAAT_DATA_OUTDIR = /usr/local/etc/maat
 
 # Check if lib and binding files exist
-ifneq (,$(wildcard ./bin/libmaat.so))
+ifneq (,$(wildcard $(OUTDIR)/libmaat.so))
     INSTALL_LIB_RULE=install_lib
 else
 	INSTALL_LIB_RULE=
 endif
-ifneq (,$(wildcard ./bin/maat.so)) 
+ifneq (,$(wildcard $(OUTDIR)/maat.so)) 
     INSTALL_BINDINGS_RULE=install_bindings
     PYTHONDIR=$(shell python3 -m site --user-site)/
 else
@@ -199,21 +203,23 @@ install: $(INSTALL_LIB_RULE) $(INSTALL_BINDINGS_RULE) install_data
 	@echo "Maat was successfully installed."
 
 install_lib:
-	install -d $(DESTDIR)$(PREFIX)/lib/
-	install -D $(OUTDIR)/libmaat.so $(DESTDIR)$(PREFIX)/lib/
-	install -d $(DESTDIR)$(PREFIX)/include/
-	install -D $(INCLUDEDIR)/maat.hpp $(DESTDIR)$(PREFIX)/include/
+	install -d $(DESTDIR)$(PREFIX)/lib/	
+	install -c $(OUTDIR)/libmaat.so $(DESTDIR)$(PREFIX)/lib/
+# install -D $(OUTDIR)/libmaat.so $(DESTDIR)$(PREFIX)/lib/
+# install -d $(DESTDIR)$(PREFIX)/include/
+# install -D $(INCLUDEDIR)/maat.hpp $(DESTDIR)$(PREFIX)/include/
 
 install_bindings:
 	install -d $(PYTHONDIR)
-	install -D $(OUTDIR)/maat.so $(PYTHONDIR)
+	install -c $(OUTDIR)/maat.so $(PYTHONDIR)/
+# install -D $(OUTDIR)/maat.so $(PYTHONDIR)
 
 install_data:
 	install -d $(MAAT_DATA_OUTDIR)
 	install -d $(MAAT_DATA_OUTDIR)/processors
 	cp $(SLAFILES) $(MAAT_DATA_OUTDIR)/processors/
 	for f in $(PROC_SPECFILES); do \
-		cp $$f /tmp/ ; \
+		cp $$f $(MAAT_DATA_OUTDIR)/processors/ ; \
 	done
 
 # make test command

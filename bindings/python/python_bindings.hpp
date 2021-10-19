@@ -199,6 +199,16 @@ PyObject* PyProcessInfo_FromProcessInfo(ProcessInfo* info, bool is_ref);
 
 // ================== Env ======================
 void init_env(PyObject* module);
+typedef struct{
+    PyObject_HEAD
+    maat::env::EnvEmulator* env;
+    bool is_ref;
+    /* Wrappers to members */
+    PyObject* fs;
+} Env_Object;
+PyObject* get_Env_Type();
+PyObject* PyEnv_FromEnvEmulator(env::EnvEmulator* env, bool is_ref);
+#define as_env_object(x)  (*((Env_Object*)x))
 
 } // namespace py
 } // namespace maat

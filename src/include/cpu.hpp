@@ -33,13 +33,14 @@ public:
      * a concrete value, or no value at all */
     class Param
     {
+    public:
         enum class Type
         {
             NONE,
             ABSTRACT,
             CONCRETE
         };
-    public:
+    
         Expr expr;
         Number number;
         ProcessedInst::Param::Type type;

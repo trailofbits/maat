@@ -2106,7 +2106,7 @@ std::ostream& operator<<(std::ostream& os, MemEngine& mem)
 
 void MemEngine::record_mem_write(addr_t addr, int nb_bytes)
 {
-    int bytes_to_write;
+    size_t bytes_to_write;
  
     /* If snapshots enabled record the write */
     if (_snapshots->active())

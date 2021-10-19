@@ -9,6 +9,18 @@ namespace maat
 namespace loader
 {
 
+std::string get_symbol_name(LIEF::ELF::Symbol& symbol)
+{
+    try
+    {
+        return symbol.demangled_name();
+    }
+    catch(const LIEF::not_supported& e)
+    {
+        return symbol.name();
+    }
+}
+
 void LoaderLIEF::load_elf(
     MaatEngine* engine,
     const std::string& binary,
@@ -526,7 +538,7 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
         uint64_t reloc_addr = reloc.address() + base_address;
         uint64_t reloc_new_value;
         uint64_t simu_data_symbol_addr = 0; // Address where we load imported data if any
-        std::string symbol_name = reloc.symbol().demangled_name();
+        std::string symbol_name = get_symbol_name(reloc.symbol());
 
         std::cout << "DEBUG   " << *engine->symbols << std::endl;
 
@@ -701,11 +713,10 @@ void LoaderLIEF::add_elf_symbols(MaatEngine* engine, uint64_t base)
         // Add internal function symbols
         if( symbol.type() == LIEF::ELF::ELF_SYMBOL_TYPES::STT_FUNC && symbol.value() != 0)
         {
-            std::string name = symbol.demangled_name();
             engine->symbols->add_symbol(Symbol(
                 Symbol::FunctionStatus::LOADED,
                 base + symbol.value(), // addr
-                name
+                get_symbol_name(symbol)
             ));
         }
         // TODO data symbols

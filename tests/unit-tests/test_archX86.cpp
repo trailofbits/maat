@@ -8941,13 +8941,12 @@ namespace test
             unsigned int nb = 0;
             string code;
 
-            
             code = string("\xf3\xa4", 2); // rep movsb
             sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1000+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             
             sym.mem->write_buffer(0x2000, (uint8_t*)"ABCDEFGH", 8);
-            
+
             sym.mem->write_buffer(0x3000, (uint8_t*)"\x00\x00\x00\x00\x00\x00\x00\x00", 8);
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x2000));
             sym.cpu.ctx().set(X86::EDI, exprcst(32, 0x3000));
@@ -8959,7 +8958,7 @@ namespace test
             nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x2004, "ArchX86: failed to disassembly and/or execute REP MOVSB");
             nb += _assert(  sym.mem->read(0x3000, 8)->as_uint() == 0x0000000044434241, "ArchX86: failed to disassembly and/or execute REP MOVSB");
 
-            sym.mem->write_buffer(0x3000, (uint8_t*)string("\x00\x00\x00\x00").c_str(), 4);
+            sym.mem->write_buffer(0x3000, (uint8_t*)"\x00\x00\x00\x00", 4);
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x2000));
             sym.cpu.ctx().set(X86::EDI, exprcst(32, 0x3000));
             sym.cpu.ctx().set(X86::ECX, exprcst(32, 0));

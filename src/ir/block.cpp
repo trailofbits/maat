@@ -289,7 +289,7 @@ std::vector<std::shared_ptr<Block>> BlockMap::get_blocks_containing(uint64_t add
         if (it->second->end_addr() >= addr)
             res.push_back(it->second);
     }
-    return std::move(res);
+    return res;
 }
 
 std::vector<std::shared_ptr<Block>> BlockMap::get_blocks_containing(uint64_t start_addr, uint64_t end_addr)
@@ -309,7 +309,7 @@ std::vector<std::shared_ptr<Block>> BlockMap::get_blocks_containing(uint64_t sta
         if (it->second->end_addr() >= start_addr)
             res.push_back(it->second);
     }
-    return std::move(res);
+    return res;
 }
 
 std::optional<BlockMap::InstLocation> BlockMap::get_inst_at(uint64_t addr)

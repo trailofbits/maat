@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <string>
-#include <capstone/capstone.h>
 #include "types.hpp"
 #include <vector>
 #include <unordered_map>

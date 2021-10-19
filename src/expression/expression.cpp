@@ -623,13 +623,14 @@ const Number& ExprUnop::concretize(const VarContext* ctx)
         return _concrete;
     else
     {
+        const Number& n = (ctx != nullptr)? args[0]->as_number(*ctx) : args[0]->as_number();
         switch(_op)
         {
             case Op::NEG:
-                _concrete.set_neg(args[0]->as_number(*ctx));
+                _concrete.set_neg(n);
                 break;
             case Op::NOT:
-                _concrete.set_not(args[0]->as_number(*ctx));
+                _concrete.set_not(n);
                 break;
             default:
                 throw runtime_exception("Missing case in ExprUnop::concretize()");
@@ -844,22 +845,22 @@ const maat::Number& ExprBinop::concretize(const VarContext* ctx)
         return _concrete;
     else
     {
-        // TODO get references n1, n2 to the numbers to avoid repeating long expressions
-        // its fucking ugly
+        const Number& n1 = (ctx != nullptr)? args[0]->as_number(*ctx) : args[0]->as_number();
+        const Number& n2 = (ctx != nullptr)? args[1]->as_number(*ctx) : args[1]->as_number();
         switch(_op)
         {
-            case Op::ADD:   _concrete.set_add(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::MUL:   _concrete.set_mul(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::SDIV:  _concrete.set_sdiv(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::XOR:   _concrete.set_xor(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::OR:    _concrete.set_or(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::SHL:   _concrete.set_shl(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::SHR:   _concrete.set_shr(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::SAR:   _concrete.set_sar(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::DIV:   _concrete.set_div(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::MOD:   _concrete.set_rem(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::SMOD:  _concrete.set_srem(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
-            case Op::AND:   _concrete.set_and(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); break;
+            case Op::ADD:   _concrete.set_add(n1, n2); break;
+            case Op::MUL:   _concrete.set_mul(n1, n2); break;
+            case Op::SDIV:  _concrete.set_sdiv(n1, n2); break;
+            case Op::XOR:   _concrete.set_xor(n1, n2); break;
+            case Op::OR:    _concrete.set_or(n1, n2); break;
+            case Op::SHL:   _concrete.set_shl(n1, n2); break;
+            case Op::SHR:   _concrete.set_shr(n1, n2); break;
+            case Op::SAR:   _concrete.set_sar(n1, n2); break;
+            case Op::DIV:   _concrete.set_div(n1, n2); break;
+            case Op::MOD:   _concrete.set_rem(n1, n2); break;
+            case Op::SMOD:  _concrete.set_srem(n1, n2); break;
+            case Op::AND:   _concrete.set_and(n1, n2); break;
             /* TODO, keep or remove that ??
             case Op::MULH:
             {
@@ -1036,25 +1037,20 @@ const maat::Number& ExprExtract::concretize(const VarContext* ctx)
 {
     ucst_t high, low;
     ucst_t mask;
+    
     if( ctx != nullptr && _concrete_ctx_id == ctx->id )
         return _concrete;
+    
+    high = (ctx != nullptr) ? args[1]->as_uint(*ctx) : args[1]->as_uint();
+    low = (ctx != nullptr) ? args[2]->as_uint(*ctx) : args[2]->as_uint();
+    if (ctx != nullptr)
+    {
+        _concrete.set_extract(args[0]->as_number(*ctx), high, low);
+        _concrete_ctx_id = ctx->id;
+    }
     else
     {
-        high = args[1]->as_uint(*ctx);
-        low = args[2]->as_uint(*ctx);
-        _concrete.set_extract(args[0]->as_number(*ctx), high, low);
-        /* TODO 
-        if (size <= 64)
-        {
-            
-        }
-        else
-        {
-            
-        }
-        */
-        if( ctx != nullptr )
-            _concrete_ctx_id = ctx->id;
+        _concrete.set_extract(args[0]->as_number(), high, low);
     }
     return _concrete;
 }
@@ -1132,16 +1128,18 @@ const maat::Number& ExprConcat::concretize(const VarContext* ctx)
 {
     cst_t upper, lower; 
     if( ctx != nullptr && _concrete_ctx_id == ctx->id )
-    {
         return _concrete;
+
+    if (ctx != nullptr)
+    {
+        _concrete.set_concat(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); 
+        _concrete_ctx_id = ctx->id;
     }
     else
     {
-        _concrete.set_concat(args[0]->as_number(*ctx), args[1]->as_number(*ctx)); 
+        _concrete.set_concat(args[0]->as_number(), args[1]->as_number());
     }
 
-    if( ctx != nullptr )
-        _concrete_ctx_id = ctx->id; 
     return _concrete;
 }
 
@@ -1276,10 +1274,9 @@ const maat::Number& ExprITE::concretize(const VarContext* ctx)
     else
     {
         if( ite_evaluate(cond_left(), _cond_op, cond_right(), ctx))
-            _concrete = if_true()->as_number(*ctx);
+            _concrete = (ctx!=nullptr)? if_true()->as_number(*ctx) : if_true()->as_number();
         else
-            _concrete = if_false()->as_number(*ctx);
-
+            _concrete = (ctx!=nullptr)? if_false()->as_number(*ctx) : if_false()->as_number();
         if( ctx != nullptr )
             _concrete_ctx_id = ctx->id;
     }
@@ -2025,7 +2022,7 @@ void VarContext::update_from(VarContext& other)
     id = ++(VarContext::_id_cnt);
 }
 
-void VarContext::print(std::ostream& os )
+void VarContext::print(std::ostream& os ) const
 {
     os << "\n";
     for( auto var : varmap )
@@ -2042,7 +2039,7 @@ void VarContext::print(std::ostream& os )
     }
 }
 
-std::ostream& operator<<(std::ostream& os, VarContext& c)
+std::ostream& operator<<(std::ostream& os, const VarContext& c)
 {
     c.print(os);
     return os;
