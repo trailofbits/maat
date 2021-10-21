@@ -464,7 +464,7 @@ public:
 
     const std::string getRegisterName(AddrSpace* as, uintb off, int4 size)
     {
-        return std::move(m_sleigh->getRegisterName(as, off, size));
+        return m_sleigh->getRegisterName(as, off, size);
     }
 };
 
@@ -977,6 +977,8 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
         if (reg_name == "C1") return maat::ir::Reg(maat::X86::C1, 8);
         if (reg_name == "C2") return maat::ir::Reg(maat::X86::C2, 8);
         if (reg_name == "C3") return maat::ir::Reg(maat::X86::C3, 8);
+
+        if (reg_name == "CR0") return maat::ir::Reg(maat::X86::CR0, 32);
 
         throw maat::runtime_exception(maat::Fmt()
                 << "X86: Register translation from SLEIGH to MAAT missing for register "
@@ -1494,6 +1496,8 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
         if (reg_name == "C1") return maat::ir::Reg(maat::X64::C1, 8);
         if (reg_name == "C2") return maat::ir::Reg(maat::X64::C2, 8);
         if (reg_name == "C3") return maat::ir::Reg(maat::X64::C3, 8);
+
+        if (reg_name == "CR0") return maat::ir::Reg(maat::X64::CR0, 64);
 
         throw maat::runtime_exception(maat::Fmt()
                 << "X64: Register translation from SLEIGH to MAAT missing for register "

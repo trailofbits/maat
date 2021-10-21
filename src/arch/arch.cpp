@@ -73,7 +73,7 @@ namespace X86
     const std::string C1_str = "c1";
     const std::string C2_str = "c2";
     const std::string C3_str = "c3";
-
+    const std::string CR0_str = "cr0";
     
     ArchX86::ArchX86(): Arch(Arch::Type::X86, 32, X86::NB_REGS)
     {
@@ -139,6 +139,7 @@ namespace X86
             case C1: return C1_str;
             case C2: return C2_str;
             case C3: return C3_str;
+            case CR0: return CR0_str;
             default:
                 throw runtime_exception(Fmt()
                     << "ArchX86::reg_name() got unknown reg num: "
@@ -206,6 +207,7 @@ namespace X86
         else if( name == C1_str) return C1;
         else if( name == C2_str) return C2;
         else if( name == C3_str) return C3;
+        else if( name == CR0_str) return CR0;
         else 
             throw runtime_exception(Fmt ()
                     << "ArchX86::reg_num() got unknown reg name: " << name
@@ -255,6 +257,8 @@ namespace X86
             case C2:
             case C3:
                 return 8; // In sleigh/pcode, boolean flags are represented as bytes
+            case CR0:
+                return 32;
             case TSC:
             case MM0:
             case MM1:
@@ -368,6 +372,7 @@ namespace X64
     const std::string C1_str = "c1";
     const std::string C2_str = "c2";
     const std::string C3_str = "c3";
+    const std::string CR0_str = "cr0";
 
     
     ArchX64::ArchX64(): Arch(Arch::Type::X64, 64, X64::NB_REGS)
@@ -442,6 +447,7 @@ namespace X64
             case C1: return C1_str;
             case C2: return C2_str;
             case C3: return C3_str;
+            case CR0: return CR0_str;
             default:
                 throw runtime_exception(
                     Fmt() << "ArchX64::reg_name() got unknown reg num: "
@@ -516,6 +522,7 @@ namespace X64
         else if( name == C1_str) return C1;
         else if( name == C2_str) return C2;
         else if( name == C3_str) return C3;
+        else if( name == CR0_str) return CR0;
         else 
             throw runtime_exception(Fmt ()
                     << "ArchX64::reg_num() got unknown reg name: " << name
@@ -573,6 +580,8 @@ namespace X64
             case C2:
             case C3:
                 return 8; // In sleigh/pcode, boolean flags are represented as bytes
+            case CR0:
+                return 64;
             case TSC:
             case MM0:
             case MM1:

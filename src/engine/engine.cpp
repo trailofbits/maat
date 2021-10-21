@@ -110,6 +110,13 @@ info::Stop MaatEngine::run(int max_inst)
             next_block = true;
             continue;
         }
+        else if (symbols->is_missing_function(to_execute))
+        {
+            log.error("Branch to missing function: ", symbols->name(to_execute));
+            info.stop = info::Stop::MISSING_FUNCTION;
+            info.addr = to_execute;
+            return info.stop;
+        }
 
         // Initialize the IR state to execute IR code
         // Find the IR instruction to execute, it can be either 
@@ -573,9 +580,9 @@ Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
 
 bool MaatEngine::process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    // Don't resolve addresses for branch operators, they are targets, not
+    // Don't resolve addresses for BRANCH/CBRANCH operators, they are targets, not
     // real input parameters
-    if (ir::is_branch_op(inst.op))
+    if (inst.op == ir::Op::BRANCH or inst.op == ir::Op::CBRANCH)
         return true;
 
     if (

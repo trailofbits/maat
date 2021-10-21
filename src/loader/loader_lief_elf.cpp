@@ -540,8 +540,6 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
         uint64_t simu_data_symbol_addr = 0; // Address where we load imported data if any
         std::string symbol_name = get_symbol_name(reloc.symbol());
 
-        std::cout << "DEBUG   " << *engine->symbols << std::endl;
-
         // Check if the symbol is imported
         if (reloc.symbol().is_imported())
         {
@@ -554,13 +552,14 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
                 {
                     const Symbol& sym = engine->symbols->get_by_name(symbol_name);
                     S = sym.addr; // Update symbol address for relocation
-                    std::cout << "DEBUG was loaded ! " << std::endl;
                 }
                 catch (const symbol_exception& e)
                 {
-                    std::cout << "DEBUG  is missing :( " << std::endl;
+                    engine->log.warning("Missing function: ", symbol_name);
                     // Add missing import
                     S = emu + unsupported_idx++;
+                    std::cout << "DEBUG, addr of symbol is " << std::hex << S << std::endl;
+                    std::cout << "DEBUG, reloc addr " << std::hex << reloc_addr << std::endl;
                     engine->symbols->add_symbol(Symbol(
                         Symbol::FunctionStatus::MISSING,
                         S,
@@ -571,136 +570,114 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
             // TODO check and import if data
         }
 
-        // FIXME: LIEF has some intenum duplicates here so we comment some of them
-        // in the switch statement, that's rater ugly, an if-then-else would
-        // be cleaner and ensure no silent bugs will appear in the future if
-        // enums for i386 and x86_64 suddenly don't match anymore
-        switch (reloc.type())
+
+        if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_32
+            or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_64)
         {
-            case (uint32_t)LIEF::ELF::RELOC_i386::R_386_32:
-            //case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_64:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes)->as_uint();
-                reloc_new_value +=  S + A;
-                engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
-                break;
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes)->as_uint();
+            reloc_new_value +=  S + A;
+            engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_32
+            or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_32S)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint(); 
+            reloc_new_value += S + A;
+            engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC64)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 8)->as_uint();
+            reloc_new_value +=  S + A - P;
+            engine->mem->write(reloc_addr, reloc_new_value, 8, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_PC32
+                or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC32)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint();
+            reloc_new_value +=  S + A - P;
+            engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC16)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 2)->as_uint();
+            reloc_new_value +=  S + A - P;
+            engine->mem->write(reloc_addr, reloc_new_value, 2, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC8)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 1)->as_uint();
+            reloc_new_value +=  S + A - P;
+            engine->mem->write(reloc_addr, reloc_new_value, 1, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_GLOB_DAT
+                or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_GLOB_DAT)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes)->as_uint();
+            reloc_new_value +=  S;
+            engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
+            std::cout << "debug DID GLOB DATA RELOC at " << reloc_addr << std::endl;
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_RELATIVE
+                or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_RELATIVE)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes)->as_uint();
+            reloc_new_value +=  B + A;
+            engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
+        }
+        else if(reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_JUMP_SLOT
+                or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_JUMP_SLOT)
+        {
+            reloc_new_value =  S;
+            engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_COPY
+                or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_COPY)
+        {
+            if( simu_data_symbol_addr != 0 ){
+                engine->mem->write_buffer(P, engine->mem->raw_mem_at(simu_data_symbol_addr), reloc.symbol().size(), true ); // Ignore memory flags
             }
-            
-            case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_32:
-            case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_32S:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint(); 
-                reloc_new_value += S + A;
-                engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC64:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 8)->as_uint();
-                reloc_new_value +=  S + A - P;
-                engine->mem->write(reloc_addr, reloc_new_value, 8, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_i386::R_386_PC32:
-            // case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC32:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint();
-                reloc_new_value +=  S + A - P;
-                engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC16:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 2)->as_uint();
-                reloc_new_value +=  S + A - P;
-                engine->mem->write(reloc_addr, reloc_new_value, 2, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC8:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 1)->as_uint();
-                reloc_new_value +=  S + A - P;
-                engine->mem->write(reloc_addr, reloc_new_value, 1, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_i386::R_386_GLOB_DAT:
-            // case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_GLOB_DAT:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes)->as_uint();
-                reloc_new_value +=  S;
-                engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_i386::R_386_RELATIVE:
-            // case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_RELATIVE:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes)->as_uint();
-                reloc_new_value +=  B + A;
-                engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_i386::R_386_JUMP_SLOT:
-            // case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_JUMP_SLOT:
-            {
-                reloc_new_value =  S;
-                engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_i386::R_386_COPY:
-            // case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_COPY:
-            {
-                if( simu_data_symbol_addr != 0 ){
-                    engine->mem->write_buffer(P, engine->mem->raw_mem_at(simu_data_symbol_addr), reloc.symbol().size(), true ); // Ignore memory flags
-                }
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_i386::R_386_IRELATIVE:
-            case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_IRELATIVE:
-            {
-                //reloc_new_value = _call_ifunc_resolver(sym, (uint32_t)engine->mem->read(reloc_addr, 4)->concretize() + B + A);
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint();
-                reloc_new_value +=  B + A;
-                engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_16:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 2)->as_uint();
-                reloc_new_value +=  S + A;
-                engine->mem->write(reloc_addr, reloc_new_value, 2, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_8:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 1)->as_uint();
-                reloc_new_value +=  S + A;
-                engine->mem->write(reloc_addr, reloc_new_value, 1, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_SIZE32:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint();
-                reloc_new_value +=  symbol_size + A;
-                engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
-                break;
-            }
-            case (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_SIZE64:
-            {
-                reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 8)->as_uint();
-                reloc_new_value +=  symbol_size + A;
-                engine->mem->write(reloc_addr, reloc_new_value, 8, true); // Ignore memory flags
-                break;
-            }
-            default:
-            {
-                engine->log.warning(
-                    "LoaderLIEF: unsupported X86 relocation type: ",
-                    reloc.type(),
-                    " for symbol ",
-                    reloc.symbol().name()
-                );
-                break;
-            }
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_IRELATIVE
+                or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_IRELATIVE)
+        {
+            //reloc_new_value = _call_ifunc_resolver(sym, (uint32_t)engine->mem->read(reloc_addr, 4)->concretize() + B + A);
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint();
+            reloc_new_value +=  B + A;
+            engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_16)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 2)->as_uint();
+            reloc_new_value +=  S + A;
+            engine->mem->write(reloc_addr, reloc_new_value, 2, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_8)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 1)->as_uint();
+            reloc_new_value +=  S + A;
+            engine->mem->write(reloc_addr, reloc_new_value, 1, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_SIZE32)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint();
+            reloc_new_value +=  symbol_size + A;
+            engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
+        }
+        else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_SIZE64)
+        {
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 8)->as_uint();
+            reloc_new_value +=  symbol_size + A;
+            engine->mem->write(reloc_addr, reloc_new_value, 8, true); // Ignore memory flags
+        }
+        else
+        {
+            engine->log.warning(
+                "LoaderLIEF: unsupported X86 relocation type: ",
+                reloc.type(),
+                " for symbol ",
+                symbol_name
+            );
         }
     }
 }

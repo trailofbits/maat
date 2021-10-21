@@ -158,13 +158,14 @@ namespace X86
     static constexpr reg_t ZMM7 = 48; ///< AVX register
     /* Control registers */
     static constexpr reg_t XCR0 = 49; ///< Extended control register
+    static constexpr reg_t CR0 = 50; ///< Control register
     /* FPU registers */
-    static constexpr reg_t FPUCW = 50; ///< FPU control word (16 bits)
-    static constexpr reg_t C0 = 51; ///< FPU flag
-    static constexpr reg_t C1 = 52; ///< FPU flag
-    static constexpr reg_t C2 = 53; ///< FPU flag
-    static constexpr reg_t C3 = 54; ///< FPU flag
-    static constexpr reg_t NB_REGS = 55;
+    static constexpr reg_t FPUCW = 51; ///< FPU control word (16 bits)
+    static constexpr reg_t C0 = 52; ///< FPU flag
+    static constexpr reg_t C1 = 53; ///< FPU flag
+    static constexpr reg_t C2 = 54; ///< FPU flag
+    static constexpr reg_t C3 = 55; ///< FPU flag
+    static constexpr reg_t NB_REGS = 56;
 
     /** \addtogroup arch
      * \{ */
@@ -252,13 +253,14 @@ namespace X64
     static constexpr reg_t ZMM7 = 56; ///< AVX register
     /* Control registers */
     static constexpr reg_t XCR0 = 57;
+    static constexpr reg_t CR0 = 58;
     /* FPU registers */
-    static constexpr reg_t FPUCW = 58; ///< FPU control word (16 bits)
     static constexpr reg_t C0 = 59; ///< FPU flag
     static constexpr reg_t C1 = 60; ///< FPU flag
     static constexpr reg_t C2 = 61; ///< FPU flag
     static constexpr reg_t C3 = 62; ///< FPU flag
-    static constexpr reg_t NB_REGS = 63;
+    static constexpr reg_t FPUCW = 63; ///< FPU control word (16 bits)
+    static constexpr reg_t NB_REGS = 64;
 
     /** \addtogroup arch
      * \{ */

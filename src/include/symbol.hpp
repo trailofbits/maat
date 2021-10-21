@@ -90,6 +90,8 @@ public:
 public:
     bool has_symbol(addr_t addr); ///< Return true if address *addr* has a symbol
     bool is_callback_emulated_function(addr_t addr); ///< Return true if address *addr* is actually a callback-emulated function
+    /// Return true if *addr* corresponds to a function that was not loaded and can't be emulated
+    bool is_missing_function(addr_t addr);
     const std::string& name(addr_t addr); ///< Get symbol name for address *addr*
     addr_t addr(const std::string& name); ///< Get address for symbol *name*
     const Symbol& get_by_name(const std::string& name); ///< Get symbol *name*

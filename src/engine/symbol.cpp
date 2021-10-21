@@ -70,6 +70,15 @@ bool SymbolManager::is_callback_emulated_function(addr_t addr)
         return sym->second.func_status == Symbol::FunctionStatus::EMULATED_CALLBACK;
 }
 
+bool SymbolManager::is_missing_function(addr_t addr)
+{
+    const auto& sym = symbols_by_addr.find(addr);
+    if (sym == symbols_by_addr.end())
+        return false;
+    else
+        return sym->second.func_status == Symbol::FunctionStatus::MISSING;
+}
+
 const std::string _empty_symbol_str;
 const std::string& SymbolManager::name(addr_t addr)
 {

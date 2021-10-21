@@ -1707,7 +1707,7 @@ void MemEngine::write_buffer(addr_t addr, uint8_t* src, int nb_bytes, bool ignor
     /* If addr isn't in any segment, throw exception */
     throw mem_exception(Fmt()
         << "Trying to write at address 0x" << std::hex << addr
-        << std::dec << " not mapped int memory"
+        << std::dec << " not mapped in memory"
         >> Fmt::to_str
     );
 }
