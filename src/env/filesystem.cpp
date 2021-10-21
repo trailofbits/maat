@@ -30,6 +30,11 @@ unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t&
     {
         throw env_exception("Trying to write to deleted file");
     }
+
+    if (is_symlink())
+    {
+        throw env_exception("Can not write to symbolic link file");
+    }
     
     for (const auto& e : buffer)
     {
@@ -59,6 +64,16 @@ unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t&
 
 unsigned int PhysicalFile::write_buffer(uint8_t* buffer, addr_t& offset, int nb_bytes)
 {
+    if (deleted)
+    {
+        throw env_exception("Trying to write to deleted file");
+    }
+
+    if (is_symlink())
+    {
+        throw env_exception("Can not write to symbolic link file");
+    }
+    
     if (nb_bytes == 0)
         return 0;
 
@@ -99,6 +114,11 @@ unsigned int PhysicalFile::read_buffer(
     if (deleted)
     {
         throw env_exception("Trying to read from deleted file");
+    }
+
+    if (is_symlink())
+    {
+        throw env_exception("Can not read from symbolic link file");
     }
 
     _adjust_read_offset(read_ptr);

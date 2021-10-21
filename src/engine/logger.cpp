@@ -8,7 +8,7 @@ std::string log_def = "\033[0m";
 std::string log_red = "\033[1;31m";
 std::string log_green = "\033[1;32m";
 std::string log_yellow = "\033[1;33m";
-std::string log_orange = "\033[48;2;255;165;0m";
+std::string log_orange = "\033[38;2;255;165;0m";
 
 std::string debug_str = "Debug";
 std::string info_str = "Info";

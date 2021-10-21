@@ -165,6 +165,9 @@ private:
     char orphan_file_wildcard;
     Directory root;
     Directory orphan_files; // Stdin, stdout, stderr, network streams, ...
+    // TODO: returning references to FAs in this list is 
+    // probably not safe if the list is modified before they
+    // are used....
     std::list<FileAccessor> fa_list;
     std::vector<filehandle_t> reserved_handles;
 private:
@@ -179,7 +182,7 @@ public:
     /** \brief Get a file in the file system
      * @param path Absolute path of the file
      * @param follow_symlink If set to 'true', resolve potential symbolic links to get the actual file */ 
-    physical_file_t get_file(const std::string& path, bool follow_symlink=false);
+    physical_file_t get_file(const std::string& path, bool follow_symlink=true);
     /** \brief Create a file specified by its absolute path. 
      * Returns 'true' on success and 'false' on failure.
      * @param path Absolute path of the file

@@ -199,6 +199,34 @@ PyObject* PyProcessInfo_FromProcessInfo(ProcessInfo* info, bool is_ref);
 
 // ================== Env ======================
 void init_env(PyObject* module);
+
+typedef struct{
+    PyObject_HEAD
+    env::PhysicalFile* file;
+    bool is_ref;
+} File_Object;
+PyObject* get_File_Type();
+PyObject* PyFile_FromPhysicalFile(env::PhysicalFile* file, bool is_ref);
+#define as_file_object(x)  (*((File_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    maat::env::FileAccessor* fa;
+    bool is_ref;
+} FileAccessor_Object;
+PyObject* get_FileAccessor_Type();
+PyObject* PyFileAccessor_FromFileAccessor(env::FileAccessor* fa, bool is_ref);
+#define as_fileaccessor_object(x)  (*((FileAccessor_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    maat::env::FileSystem* fs;
+    bool is_ref;
+} FileSystem_Object;
+PyObject* get_FileSystem_Type();
+PyObject* PyFileSystem_FromFileSystem(env::FileSystem* fs, bool is_ref);
+#define as_fs_object(x)  (*((FileSystem_Object*)x))
+
 typedef struct{
     PyObject_HEAD
     maat::env::EnvEmulator* env;

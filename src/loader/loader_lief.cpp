@@ -122,6 +122,7 @@ void LoaderLIEF::get_arch_special_registers(
             bp = X64::RBP;
             gs = X64::GS;
             fs = X64::FS;
+            break;
         default:
             throw loader_exception(
                 Fmt() << "LoaderLIEF::get_arch_special_registers(): Unsupported architecture!"

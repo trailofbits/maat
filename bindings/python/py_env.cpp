@@ -6,7 +6,10 @@ namespace py{
 // ============== EnvEmulator =================
 static void Env_dealloc(PyObject* self)
 {
-    delete ((Env_Object*)self)->env;  ((Env_Object*)self)->env = nullptr;
+    if (! as_env_object(self).is_ref)
+        delete ((Env_Object*)self)->env;
+    ((Env_Object*)self)->env = nullptr;
+
     Py_DECREF(as_env_object(self).fs);
     Py_TYPE(self)->tp_free((PyObject *)self);
 };
@@ -71,7 +74,7 @@ PyObject* PyEnv_FromEnvEmulator(maat::env::EnvEmulator* env, bool is_ref)
         object->env = env;
         object->is_ref = is_ref;
         // Init member wrappers
-        // TODO object->fs = PyFileSystem_FromFileSystem(&(object->env->fs), true);
+        object->fs = PyFileSystem_FromFileSystem(&(object->env->fs), true);
     }
     return (PyObject*)object;
 }
