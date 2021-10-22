@@ -5,7 +5,7 @@
 #include <optional>
 #include <functional>
 #include "expression.hpp"
-
+#include "callother.hpp"
 
 namespace maat
 {
@@ -110,7 +110,7 @@ bool is_branch_op(const ir::Op& op);
 std::ostream& operator<<(std::ostream& os, const ir::Op& op);
 
 /* Values for syscalls */
-/* TODO: put this in Arch module 
+/* TODO: put this in Arch module / OR: this will likely disappear in favor to callother
 #define SYSCALL_X86_INT80 1
 #define SYSCALL_X86_SYSENTER 2 
 #define SYSCALL_X64_SYSCALL 3 */
@@ -232,6 +232,7 @@ public:
     Op op; ///< Operation
     Param out; ///< Output parameter
     Param in[3]; ///< Input parameters 
+    callother::Id callother_id; ///< Callother Id if CALLOTHER operation
 public:
     /// Empty constructor
     Inst();

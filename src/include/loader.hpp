@@ -107,6 +107,7 @@ class LoaderLIEF : public Loader
 private:
     std::unique_ptr<LIEF::ELF::Binary> _elf;
     std::string binary_name;
+    std::optional<addr_t> interpreter_entry;
 public:
     virtual void load(
         MaatEngine*engine,
@@ -128,7 +129,8 @@ private:
         MaatEngine*engine,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs,
-        std::list<std::string>& loaded_libs
+        std::list<std::string>& loaded_libs,
+        LoaderLIEF& top_loader
     );
     addr_t alloc_segment(
         MaatEngine*engine,
@@ -148,13 +150,15 @@ private:
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs
     );
-    void load_elf_library(
+    // Return the base address for the loaded lib
+    addr_t load_elf_library(
         MaatEngine*engine,
         loader::Format type,
         const std::string& libpath,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs,
-        std::list<std::string>& loaded_libs
+        std::list<std::string>& loaded_libs,
+        LoaderLIEF& top_loader
     );
     std::vector<std::pair<uint64_t, uint64_t>> generate_aux_vector(
         MaatEngine*engine,

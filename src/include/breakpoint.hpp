@@ -179,6 +179,10 @@ public:
     BPCallback();
     /// Create a callback calling a native function
     BPCallback(native_cb_t cb);
+    BPCallback(const BPCallback& other);
+    BPCallback& operator=(const BPCallback& other);
+    BPCallback(BPCallback&& other);
+    BPCallback& operator=(BPCallback&& other);
     /// Destructor
     ~BPCallback();
 public:
@@ -213,6 +217,7 @@ protected:
     int _id;
 public:
     BPBase(int id, bp::Event event, const std::string& name="");
+    virtual ~BPBase() = default;
 public:
     /// Return the breakpoint id
     int id();
@@ -264,6 +269,7 @@ public:
      * @param name Unique name of the breakpoint
      * @param reg Register to monitor */
     BPReg(int id, bp::Event event, const std::string& name, reg_t reg);
+    virtual ~BPReg() = default;
 public:
     virtual bool check(maat::MaatEngine& engine, const ir::Inst& inst, const ir::ProcessedInst& pinst);
     virtual void print(std::ostream& os, const maat::Arch& arch);
@@ -289,6 +295,7 @@ public:
      * @param addr_min Lower bound of the range of addresses to monitor (included)
      * @param addr_max Lower bound of the range of addresses to monitor (included) */
     BPMem(int id, bp::Event event, const std::string& name, addr_t addr_min, addr_t addr_max);
+    virtual ~BPMem() = default;
 public:
     virtual bool check(maat::MaatEngine& engine, const ir::Inst& inst, const ir::ProcessedInst& pinst);
     virtual void print(std::ostream& os, const maat::Arch& arch);
@@ -304,6 +311,7 @@ public:
      * @param event Trigger the breakpoint when this memory event occurs
      * @param name Unique name of the breakpoint */
     BPSimple(int id, bp::Event event, const std::string& name);
+    virtual ~BPSimple() = default;
 public:
     virtual bool check(maat::MaatEngine& engine, const ir::Inst& inst, const ir::ProcessedInst& pinst);
     virtual void print(std::ostream& os, const maat::Arch& arch);
@@ -321,6 +329,7 @@ public:
      * @param addr The breakpoint is triggered when this address is executed
      */
     BPAddr(int id, const std::string& name, addr_t addr);
+    virtual ~BPAddr() = default;
 public:
     virtual bool check(maat::MaatEngine& engine, const ir::Inst& inst);
     virtual bool check(maat::MaatEngine& engine, const ir::Inst& inst, const ir::ProcessedInst& pinst);

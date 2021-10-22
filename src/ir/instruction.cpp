@@ -225,7 +225,8 @@ Inst::Inst():
     op(maat::ir::Op::NONE),
     out(Param::None()),
     in{Param::None(), Param::None(), Param::None()},
-    size(0)
+    size(0),
+    callother_id(callother::Id::UNSUPPORTED)
 {}
 
 Inst::Inst(   uint64_t _addr,
@@ -235,7 +236,8 @@ Inst::Inst(   uint64_t _addr,
         const std::optional<Param>& _in1,
         const std::optional<Param>& _in2,
         size_t _size
-):  addr(_addr), op(_op), size(_size)
+):  addr(_addr), op(_op), size(_size),
+    callother_id(callother::Id::UNSUPPORTED)
 {
     out = _out ? _out.value() : Param::None();
     in[0] = _in0 ? _in0.value() : Param::None();
@@ -245,7 +247,8 @@ Inst::Inst(   uint64_t _addr,
 
 inline bool Inst::_reads_type(Param::Type t, uint64_t v) const
 {
-    if( ir::is_assignment_op(op))
+    // TODO: not sure that CALLOTHER belongs here...
+    if( ir::is_assignment_op(op) or op == ir::Op::CALLOTHER)
     {
         return      (in[0]._val == v and in[0].type == t)
                 or  (in[1]._val == v and in[1].type == t);
@@ -272,7 +275,11 @@ inline bool Inst::_reads_type(Param::Type t, uint64_t v) const
 
 inline bool Inst::_writes_type(Param::Type type, uint64_t v) const
 {
-    if (ir::is_assignment_op(op) or op == ir::Op::LOAD)
+    if (
+        ir::is_assignment_op(op)
+        or op == ir::Op::LOAD
+        or op == ir::Op::CALLOTHER
+    )
     {
         return out._val == v and out.type == type;
     }
@@ -313,7 +320,8 @@ bool Inst::writes_tmp(tmp_t tmp) const
 
 void Inst::_get_read_types(Param::Type type, Inst::param_list_t& res) const
 {
-    if( ir::is_assignment_op(op))
+    // TODO: not sure that CALLOTHER belongs here
+    if( ir::is_assignment_op(op) or op == ir::Op::CALLOTHER)
     {
         if(in[0].type == type)
             res.push_back(std::cref(in[0]));
@@ -347,7 +355,11 @@ void Inst::_get_read_types(Param::Type type, Inst::param_list_t& res) const
 
 void Inst::_get_written_types(Param::Type type, Inst::param_list_t& res) const
 {
-    if (ir::is_assignment_op(op) or op == ir::Op::LOAD)
+    if (
+        ir::is_assignment_op(op)
+        or op == ir::Op::LOAD
+        or op == ir::Op::CALLOTHER
+    )
     {
         if(out.type == type)
             res.push_back(std::cref(out));

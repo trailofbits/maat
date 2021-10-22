@@ -761,6 +761,7 @@ private:
             case ir::Op::RETURN:
             case ir::Op::CALL:
             case ir::Op::CALLIND:
+            case ir::Op::CALLOTHER:
                 tmp_res = nullptr;
                 break;
             default:
@@ -1105,6 +1106,7 @@ private:
             case ir::Op::RETURN:
             case ir::Op::CALL:
             case ir::Op::CALLIND:
+            case ir::Op::CALLOTHER:
                 break;
             default:
                 throw runtime_exception( Fmt() <<
@@ -1193,7 +1195,11 @@ public:
     {
         // Apply semantics only if destination is a register or a temporary
         if (
-            (ir::is_assignment_op(inst.op) or inst.op == ir::Op::LOAD)
+            (
+                ir::is_assignment_op(inst.op)
+                or inst.op == ir::Op::LOAD
+                or inst.op == ir::Op::CALLOTHER
+            )
             and (not inst.out.is_addr())
         )
         {

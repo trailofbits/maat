@@ -75,6 +75,7 @@ std::shared_ptr<ir::Block> LifterX86::lift_block(
     }
     catch(std::exception& e)
     {
+        // TODO: log error properly (need ref to Logger)
         std::cout << "FATAL: Error in sleigh translate(): " << e.what() << std::endl;
         return nullptr;
     }

@@ -46,6 +46,7 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
     ir_blocks = std::make_shared<ir::BlockMap>();
     process = std::make_shared<ProcessInfo>();
     simplifier = NewDefaultExprSimplifier();
+    callother_handlers = callother::default_handler_map();
     // Initialize all registers to their proper bit-size with value 0
     for (reg_t reg = 0; reg < arch->nb_regs; reg++)
         cpu.ctx().set(reg, Number(arch->reg_size(reg), 0));
@@ -169,11 +170,6 @@ info::Stop MaatEngine::run(int max_inst)
             // Get IR instruction to execute
             const ir::Inst& inst = block->instructions()[ir_inst_id];
 
-            // TODO: add settings.log_ir option
-            // if settings.log_ir:
-            //      log.debug("Run IR: ", inst);
-            // std::cout << "DEBUG " << inst << std::endl;
-
             // Actions to do everytime we change ASM instruction
             if (current_inst_addr != inst.addr)
             {
@@ -229,10 +225,15 @@ info::Stop MaatEngine::run(int max_inst)
                 }
             }
 
+            // TODO: add settings.log_ir option
+            // if settings.log_ir:
+            //      log.debug("Run IR: ", inst);
+            // std::cout << "DEBUG " << inst << std::endl;
+
             // Pre-process IR instruction
             ir::ProcessedInst& pinst = cpu.pre_process_inst(inst);
 
-            // TODO, check for process load/store/branch return value
+            // TODO, check for process load/store/branch/callother return value
             // and call a function for clean-up and exit on error...
 
             // Process Addr parameters and load them from memory
@@ -240,6 +241,12 @@ info::Stop MaatEngine::run(int max_inst)
 
             // Post-process IR instruction once Addr params are resolved
             pinst = cpu.post_process_inst(inst, pinst);
+
+            // Handle CALLOTHER operation
+            if (inst.op == ir::Op::CALLOTHER)
+            {
+                process_callother(inst, pinst);
+            }
 
             // If LOAD, do the load (!= process_addr_params)
             if (inst.op == ir::Op::LOAD)
@@ -580,9 +587,9 @@ Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
 
 bool MaatEngine::process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    // Don't resolve addresses for BRANCH/CBRANCH operators, they are targets, not
+    // Don't resolve addresses for BRANCH/CBRANCH/CALL operators, they are targets, not
     // real input parameters
-    if (inst.op == ir::Op::BRANCH or inst.op == ir::Op::CBRANCH)
+    if (inst.op == ir::Op::BRANCH or inst.op == ir::Op::CBRANCH or inst.op == ir::Op::CALL)
         return true;
 
     if (
@@ -728,6 +735,32 @@ bool MaatEngine::process_store(
         ir_blocks->remove_blocks_containing(concrete_addr, end_addr);
     }
 
+    return true;
+}
+
+bool MaatEngine::process_callother(const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    if (inst.op != ir::Op::CALLOTHER)
+    {
+        log.error("MaatEngine::process_callother(): called with wrong ir operation (not CALLOTHER)");
+        return false;
+    }
+    if (not callother_handlers.has_handler(inst.callother_id))
+    {
+        log.error("Instruction at 0x", std::hex, inst.addr, 
+            " can not be emulated (missing CALLOTHER handler)");
+        return false;
+    }
+    callother::handler_t handler = callother_handlers.get_handler(inst.callother_id);
+    try
+    {
+        handler(*this, inst, pinst);
+    }
+    catch(const std::exception& e)
+    {
+        log.error("Exception in CALLOTHER handler: ", e.what());
+        return false;
+    }
     return true;
 }
 

@@ -12,6 +12,7 @@
 #include "ir.hpp"
 #include "exception.hpp"
 #include "arch.hpp"
+#include "callother.hpp"
 
 #include <optional>
 
@@ -240,7 +241,6 @@ public:
 
     void dump(const Address &addr, const string &mnem, const string &body)
     {
-        // std::cout << "DEBUG, " << mnem << " " << body << std::endl;
         cache[addr.getOffset()] = mnem + " " + body;
     }
 
@@ -257,9 +257,17 @@ public:
             return cache[addr];
     }
 
+    const std::string get_mnemonic(uintptr_t addr)
+    {
+        if (not contains(addr))
+            return missing_str;
+        std::string res = get_asm(addr);
+        return res.substr(0, res.find(" "));
+    }
+
     void clear(uintptr_t addr_min, uintptr_t addr_max)
     {
-        throw runtime_exception("AssemblyEmitCache()::clear() not implemented!");
+        throw runtime_exception("AssemblyEmitCacher::clear() not implemented!");
     }
 };
 
@@ -369,7 +377,7 @@ public:
         tmp_cache.clear();
 
         vector<PcodeEmitCacher>    m_pcodes;
-        AssemblyEmitCacher err_cacher;
+        AssemblyEmitCacher tmp_cacher;
 
         // Reset state
         // TODO - is this useful ? will this hinder performance ?
@@ -397,17 +405,32 @@ public:
                 // Increment offset to point to next instruction
                 offset += ilen;
 
-                for (auto inst : m_pcodes.back().m_insts)
+                for (auto& inst : m_pcodes.back().m_insts)
                 {
-                    // Check for CALLOTHER (unsupported operation for lifting...)
+                    // Check for CALLOTHER, we need dedicated handlers to support them
                     if (inst.op == maat::ir::Op::CALLOTHER)
                     {
-                        m_sleigh->printAssembly(err_cacher, addr);
-                        throw maat::lifter_exception(
-                            maat::Fmt() << ": Can not lift instruction at 0x"
-                            << std::hex << (address+offset) << ": " << err_cacher.get_asm(address+offset)
-                            >> maat::Fmt::to_str
+                        // Get inst name
+                        addr_t tmp_addr = address + offset -ilen;
+                        m_sleigh->printAssembly(
+                            tmp_cacher,
+                            Address(m_sleigh->getDefaultCodeSpace(), tmp_addr)
                         );
+                        std::string mnem = tmp_cacher.get_mnemonic(tmp_addr);
+                        // Get callother id in maat
+                        callother::Id id = callother::mnemonic_to_id(mnem);
+                        // Set the callother_id in inst
+                        inst.callother_id = id;
+
+                        if (id == callother::Id::UNSUPPORTED)
+                        {
+                            throw maat::lifter_exception(
+                                maat::Fmt() << ": Can not lift instruction at 0x"
+                                << std::hex << tmp_addr << ": " << tmp_cacher.get_asm(tmp_addr)
+                                << " (unsupported callother occurence)"
+                                >> maat::Fmt::to_str
+                            );
+                        }
                     }
 
                     // Check for branch instruction (basic block terminates)
@@ -551,7 +574,8 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
         if (reg_name == "DS") return maat::ir::Reg(maat::X86::DS, 31, 0);
         if (reg_name == "ES") return maat::ir::Reg(maat::X86::ES, 31, 0);
         if (reg_name == "GS") return maat::ir::Reg(maat::X86::GS, 31, 0);
-        if (reg_name == "FS") return maat::ir::Reg(maat::X86::FS, 31, 0);
+        if (reg_name == "FS" or reg_name == "FS_OFFSET")
+            return maat::ir::Reg(maat::X86::FS, 31, 0);
         if (reg_name == "SS") return maat::ir::Reg(maat::X86::SS, 31, 0);
 
         if (reg_name == "PF") return maat::ir::Reg(maat::X86::PF, 8);
@@ -1059,12 +1083,13 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
         if (reg_name == "R15B") return maat::ir::Reg(maat::X64::R15, 7, 0);
         if (reg_name == "R15D") return maat::ir::Reg(maat::X64::R15, 31, 0);
         if (reg_name == "R15W") return maat::ir::Reg(maat::X64::R15, 15, 0);
-        if (reg_name == "CS") return maat::ir::Reg(maat::X64::CS, 31, 0);
-        if (reg_name == "DS") return maat::ir::Reg(maat::X64::DS, 31, 0);
-        if (reg_name == "ES") return maat::ir::Reg(maat::X64::ES, 31, 0);
-        if (reg_name == "GS") return maat::ir::Reg(maat::X64::GS, 31, 0);
-        if (reg_name == "FS") return maat::ir::Reg(maat::X64::FS, 31, 0);
-        if (reg_name == "SS") return maat::ir::Reg(maat::X64::SS, 31, 0);
+        if (reg_name == "CS") return maat::ir::Reg(maat::X64::CS, 63, 0);
+        if (reg_name == "DS") return maat::ir::Reg(maat::X64::DS, 63, 0);
+        if (reg_name == "ES") return maat::ir::Reg(maat::X64::ES, 63, 0);
+        if (reg_name == "GS") return maat::ir::Reg(maat::X64::GS, 63, 0);
+        if (reg_name == "FS" or reg_name == "FS_OFFSET")
+            return maat::ir::Reg(maat::X64::FS, 63, 0);
+        if (reg_name == "SS") return maat::ir::Reg(maat::X64::SS, 63, 0);
 
         if (reg_name == "PF") return maat::ir::Reg(maat::X64::PF, 8);
         if (reg_name == "AF") return maat::ir::Reg(maat::X64::AF, 8);

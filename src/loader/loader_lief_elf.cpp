@@ -97,7 +97,7 @@ void LoaderLIEF::load_elf(
     load_emulated_libs(engine);
 
     // Load all shared libraries
-    load_elf_dependencies(engine, libdirs, ignore_libs, loaded_libs);
+    load_elf_dependencies(engine, libdirs, ignore_libs, loaded_libs, *this);
 
     // Perform relocations
     perform_elf_relocations(engine, base);
@@ -186,7 +186,10 @@ void LoaderLIEF::load_elf(
     engine->cpu.ctx().set(reg_sp, tmp_sp);
     
     // Point PC to entrypoint
-    engine->cpu.ctx().set(reg_pc, _elf->entrypoint() + base);
+    std::cout << "DEBUG finish, inter entry ? " << interpreter_entry.value() << std::endl;
+    addr_t real_entry = interpreter_entry.has_value() ?
+        interpreter_entry.value() : _elf->entrypoint() + base;
+    engine->cpu.ctx().set(reg_pc, real_entry);
 
 }
 
@@ -234,11 +237,22 @@ void LoaderLIEF::map_elf_segments(MaatEngine* engine, addr_t base_address)
     }
 }
 
+// Remove prefixes like /lib64/... on interpreter name
+std::string _clean_interpreter_name(const std::string& name)
+{
+    size_t idx = name.find_last_of("/");
+    if (idx != std::string::npos)
+        return name.substr(idx+1);
+    else
+        return name;
+}
+
 void LoaderLIEF::load_elf_dependencies(
     MaatEngine* engine,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs,
-    std::list<std::string>& loaded_libs
+    std::list<std::string>& loaded_libs,
+    LoaderLIEF& top_loader
 )
 {
     LoaderLIEF lib_loader;
@@ -301,28 +315,31 @@ void LoaderLIEF::load_elf_dependencies(
         }
 
         // Load the library !
+        addr_t lib_base = 0;
         try
         {
             switch (_elf->type())
             {
                 case LIEF::ELF::ELF_CLASS::ELFCLASS64: 
-                    lib_loader.load_elf_library(
+                    lib_base = lib_loader.load_elf_library(
                         engine,
                         Format::ELF64, 
                         lib_path, 
                         libdirs, 
                         ignore_libs, 
-                        loaded_libs
+                        loaded_libs,
+                        top_loader
                     );
                     break;
                 case LIEF::ELF::ELF_CLASS::ELFCLASS32:
-                    lib_loader.load_elf_library(
+                    lib_base = lib_loader.load_elf_library(
                         engine,
                         Format::ELF32,
                         lib_path,
                         libdirs,
                         ignore_libs,
-                        loaded_libs
+                        loaded_libs,
+                        top_loader
                     ); 
                     break;
                 default: throw loader_exception("LoaderLIEF::load_elf_dependencies(): Unsupported ELFCLASS!");
@@ -336,16 +353,28 @@ void LoaderLIEF::load_elf_dependencies(
                 >> Fmt::to_str
             );
         }
+        // If this was the interpreter, record its entry point
+        std::cout << "DEBUG loaded dep: " << lib_name << std::endl;
+        std::cout << "debug interp " << _clean_interpreter_name(_elf->interpreter());
+        if (
+            top_loader._elf->has_interpreter() and
+            _clean_interpreter_name(top_loader._elf->interpreter()) == lib_name
+        )
+        {
+            top_loader.interpreter_entry = 
+                (addr_t)lib_loader._elf->entrypoint() + lib_base;
+        }
     }
 }
 
-void LoaderLIEF::load_elf_library(
+addr_t LoaderLIEF::load_elf_library(
     MaatEngine* engine,
     loader::Format type,
     const std::string& lib,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs,
-    std::list<std::string>& loaded_libs
+    std::list<std::string>& loaded_libs,
+    LoaderLIEF& top_loader
 )
 {
     // Parse binary with LIEF
@@ -370,10 +399,12 @@ void LoaderLIEF::load_elf_library(
     add_elf_symbols(engine, base_address);
 
     // Load dependent libraries (recursively)
-    load_elf_dependencies(engine, libdirs, ignore_libs, loaded_libs);
+    load_elf_dependencies(engine, libdirs, ignore_libs, loaded_libs, top_loader);
 
     // Perform relocations
     perform_elf_relocations(engine, base_address);
+
+    return base_address;
 }
 
 std::vector<std::pair<uint64_t, uint64_t>> LoaderLIEF::generate_aux_vector(
@@ -528,26 +559,37 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
     );
     addr_t unsupported_idx = 0;
 
+    uint64_t B, A, P, S, reloc_addr, reloc_new_value, simu_data_symbol_addr, symbol_size;
+    std::string symbol_name = "";
     for (LIEF::ELF::Relocation& reloc : _elf->relocations())
     {
-        uint64_t B = base_address;
-        int64_t A = reloc.is_rela() ? reloc.addend() : 0;
-        uint64_t S = reloc.symbol().value() + base_address; // Value of the symbol (its virtual address) (+ base_address)
-        uint64_t P = reloc.address() + base_address; // Address of the relocation (virtual address) (+base_address)
-        uint64_t symbol_size = reloc.symbol().size();
-        uint64_t reloc_addr = reloc.address() + base_address;
-        uint64_t reloc_new_value;
-        uint64_t simu_data_symbol_addr = 0; // Address where we load imported data if any
-        std::string symbol_name = get_symbol_name(reloc.symbol());
+        B = base_address;
+        A = reloc.is_rela() ? reloc.addend() : 0;
+        P = reloc.address() + base_address; // Address of the relocation (virtual address) (+base_address)
+        reloc_addr = reloc.address() + base_address;
+        reloc_new_value;
+        simu_data_symbol_addr = 0; // Address where we load imported data if any
+
+        if (reloc.has_symbol())
+        {
+            symbol_name = get_symbol_name(reloc.symbol());
+            S = reloc.symbol().value() + base_address; // Value of the symbol (its virtual address) (+ base_address)
+            symbol_size = reloc.symbol().size();
+        }
+        else
+        {
+            symbol_name = "";
+            S = 0;
+            symbol_size = 0;
+        }
 
         // Check if the symbol is imported
-        if (reloc.symbol().is_imported())
+        if (reloc.has_symbol() and reloc.symbol().is_imported())
         {
-            std::cout << "DEBUG imported function " << symbol_name << std::endl;
+            // std::cout << "DEBUG imported function " << symbol_name << std::endl;
             // Check if function
             if (reloc.symbol().is_function())
             {
-                std::cout << "DEBUG  IS FUNCTION YES " << std::endl;
                 try
                 {
                     const Symbol& sym = engine->symbols->get_by_name(symbol_name);
@@ -616,7 +658,6 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
             reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes)->as_uint();
             reloc_new_value +=  S;
             engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
-            std::cout << "debug DID GLOB DATA RELOC at " << reloc_addr << std::endl;
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_RELATIVE
                 or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_RELATIVE)
@@ -628,6 +669,7 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
         else if(reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_JUMP_SLOT
                 or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_JUMP_SLOT)
         {
+            std::cout << "DEBUG, jump slot S = 0x" << std::hex << S << std::endl;
             reloc_new_value =  S;
             engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
         }
@@ -675,8 +717,9 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
             engine->log.warning(
                 "LoaderLIEF: unsupported X86 relocation type: ",
                 reloc.type(),
-                " for symbol ",
-                symbol_name
+                " for symbol '",
+                symbol_name,
+                "'"
             );
         }
     }

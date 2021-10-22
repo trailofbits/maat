@@ -67,7 +67,11 @@ bool is_instant_bp(bp::Event event)
 BPCallback::BPCallback():
     type(BPCallback::Type::NONE),
     native_cb(nullptr)
-{}
+{
+#ifdef PYTHON_BINDINGS
+    python_cb = nullptr;
+#endif
+}
 
 BPCallback::BPCallback(native_cb_t cb):
     type(BPCallback::Type::NATIVE),
@@ -87,6 +91,38 @@ BPCallback::BPCallback(python_cb_t cb):
     Py_XINCREF(python_cb); // Increment python ref count for callback 
 }
 #endif
+
+BPCallback::BPCallback(const BPCallback& other)
+{
+    *this = other;
+}
+
+BPCallback::BPCallback(BPCallback&& other)
+{
+    *this = other;
+}
+
+BPCallback& BPCallback::operator=(const BPCallback& other)
+{
+    type = other.type;
+    native_cb = other.native_cb;
+#ifdef PYTHON_BINDINGS
+    python_cb = other.python_cb;
+    Py_XINCREF(python_cb);
+#endif
+    return *this;
+}
+
+BPCallback& BPCallback::operator=(BPCallback&& other)
+{
+    type = other.type;
+    native_cb = other.native_cb;
+#ifdef PYTHON_BINDINGS
+    python_cb = other.python_cb;
+    Py_XINCREF(python_cb);
+#endif
+    return *this;
+}
 
 BPCallback::~BPCallback()
 {

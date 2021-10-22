@@ -1,4 +1,4 @@
-This code is mainly taken from the "pypcode" projetct hosted at:
+This code is inspired from the "pypcode" project hosted at:
 https://github.com/angr/pypcode. Below is the licence under whose terms
 it has been released:
 

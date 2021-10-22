@@ -24,6 +24,7 @@
 #include "symbol.hpp"
 #include "logger.hpp"
 #include "process.hpp"
+#include "callother.hpp"
 
 namespace maat
 {
@@ -60,6 +61,7 @@ private:
     std::unordered_map<CPUMode, std::shared_ptr<Lifter>> lifters;
     std::shared_ptr<SnapshotManager<Snapshot>> snapshots;
     std::unique_ptr<ExprSimplifier> simplifier;
+    callother::HandlerMap callother_handlers;
 public:
     std::shared_ptr<ir::BlockMap> ir_blocks;
     std::shared_ptr<Arch> arch;
@@ -192,6 +194,7 @@ private:
      * 
      * This method returns 'true' on success and 'false' if an error occured */ 
     bool process_load(const ir::Inst& inst, ir::ProcessedInst& pinst);
+    
     /** \brief Perform STORE operation. If 'current_block' was lifted from a memory
      * address that is overwritten by the operation, 'automodifying_block' is
      * set to 'true' and 'current_block' is removed from the pool of lifted blocks.
@@ -203,6 +206,18 @@ private:
         std::shared_ptr<ir::Block> current_block,
         bool& automodifying_block
     );
+    
+    /** \brief Perform CALLOTHER operation. CALLOTHER are used when sleigh
+     * can not express an instruction semantics using the available pcode operations.
+     * We need to define special handlers for them that will perform the operation.
+     * This method calls the appropriate CALLOTHER handler for 'inst' to emulate the
+     * instruction. 
+     * 
+     * If 'inst' has an output parameter, the result to be assigned is stored in pinst.res,
+     * and must then be committed by a call to cpu.apply_semantics().
+     *
+     * This method returns 'true' on success and 'false' if an error occured */
+    bool process_callother(const ir::Inst& inst, ir::ProcessedInst& pinst);
 
     /** \brief Process pending breakpoints that are in a triggered state.
      * Returns 'true' if the engine should resume execution, 'false' if
