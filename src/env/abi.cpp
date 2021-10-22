@@ -251,6 +251,71 @@ Expr X86_LINUX_SYSENTER::get_arg(MaatEngine& engine, int n, size_t arg_size) con
     return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
 }
 
+// ========== ABI X64 SYSTEM V ============
+X64_SYSTEM_V::X64_SYSTEM_V(): ABI(Type::X64_SYSTEM_V)
+{}
+
+const ABI& X64_SYSTEM_V::instance()
+{
+    static X64_SYSTEM_V abi;
+    return abi;
+}
+
+void X64_SYSTEM_V::get_args(
+    MaatEngine& engine,
+    const args_spec_t& args_spec,
+    std::vector<Expr>& args
+) const
+{
+    int i = 0;
+    for (auto arg : args_spec)
+        args.push_back(get_arg(engine, i++, arg));
+}
+
+Expr X64_SYSTEM_V::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+{
+    std::vector<reg_t> arg_regs{X64::RDI, X64::RSI, X64::RDX, X64::RCX, X64::R8, X64::R9};
+    Expr res = nullptr;
+    arg_size = ABI::real_arg_size(engine, arg_size);
+    if (n < 6)
+    {
+        res = engine.cpu.ctx().get(arg_regs[n]);
+    }
+    else
+    {
+        addr_t stack = engine.cpu.ctx().get(X64::RSP)->as_uint() + 8;
+        res = engine.mem->read(stack+(8*(n-arg_regs.size())), arg_size);
+    }
+    // TODO(boyan): this assumes little endian if we read arguments
+    // from the stack
+    return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+}
+
+void X64_SYSTEM_V::prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const
+{
+    // Push the return address, simply
+    engine.cpu.ctx().set(X64::RSP, engine.cpu.ctx().get(X64::RSP) - 8);
+    engine.mem->write(engine.cpu.ctx().get(X64::RSP), ret_addr, 8);
+}
+
+void X64_SYSTEM_V::set_ret_value(
+    MaatEngine& engine,
+    const FunctionCallback::return_t& ret_val
+) const
+{
+    // Return value in EAX
+    std::visit(maat::util::overloaded{
+        [](std::monostate arg){return;}, // no return value
+        [&engine](auto arg){engine.cpu.ctx().set(X64::RAX, arg);}
+    }, ret_val);
+}
+
+void X64_SYSTEM_V::ret(MaatEngine& engine) const
+{
+    // Caller clean-up, we just simulate a 'ret' instruction
+    engine.cpu.ctx().set(X64::RIP, engine.mem->read((engine.cpu.ctx().get(X64::RSP)), 8));
+    engine.cpu.ctx().set(X64::RSP, engine.cpu.ctx().get(X64::RSP) + 8);
+}
 
 } // namespace abi
 } // namespace env

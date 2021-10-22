@@ -5,13 +5,17 @@ namespace maat
 namespace env
 {
 
-// TODO remove those and do this is constructor of specialized child class LinuxEmulator, JavaEmulator, ...
 const abi::ABI& _get_default_abi(Arch::Type arch, OS os)
 {
     if (arch == Arch::Type::X86)
     {
         if (os == OS::LINUX)
             return abi::X86_CDECL::instance();
+    }
+    else if (arch == Arch::Type::X64)
+    {
+        if (os == OS::LINUX)
+            return abi::X64_SYSTEM_V::instance();
     }
     return abi::ABI_NONE::instance();
 }
@@ -79,6 +83,9 @@ LinuxEmulator::LinuxEmulator(Arch::Type arch): EnvEmulator(arch, OS::LINUX)
     {
         case Arch::Type::X86:
             _libraries.push_back(env::emulated::linux_x86_libc());
+            break;
+        case Arch::Type::X64:
+            _libraries.push_back(env::emulated::linux_x64_libc());
             break;
         case Arch::Type::NONE:
         default:

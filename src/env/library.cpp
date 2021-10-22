@@ -1,4 +1,5 @@
 #include "env/library.hpp"
+#include "engine.hpp"
 
 namespace maat
 {
@@ -40,8 +41,7 @@ Action FunctionCallback::_execute_native(MaatEngine& engine, const abi::ABI& abi
     }
     catch(const std::exception& e)
     {
-        // TODO print error message
-        std::cout << "DEBUG, error executing emulation callbacl " << e.what() << std::endl;
+        engine.log.error("Error executing emulation callback: ", e.what());
         return Action::ERROR;
     }
 }
