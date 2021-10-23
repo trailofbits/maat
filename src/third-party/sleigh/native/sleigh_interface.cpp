@@ -418,7 +418,7 @@ public:
                         );
                         std::string mnem = tmp_cacher.get_mnemonic(tmp_addr);
                         // Get callother id in maat
-                        callother::Id id = callother::mnemonic_to_id(mnem);
+                        callother::Id id = callother::mnemonic_to_id(mnem, arch);
                         // Set the callother_id in inst
                         inst.callother_id = id;
 

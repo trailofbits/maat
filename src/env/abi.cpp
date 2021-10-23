@@ -317,6 +317,60 @@ void X64_SYSTEM_V::ret(MaatEngine& engine) const
     engine.cpu.ctx().set(X64::RSP, engine.cpu.ctx().get(X64::RSP) + 8);
 }
 
+// ========== ABI X64 SYSCALL LINUX ============
+X64_LINUX_SYSCALL::X64_LINUX_SYSCALL(): ABI(Type::X64_LINUX_SYSCALL)
+{}
+
+const ABI& X64_LINUX_SYSCALL::instance()
+{
+    static X64_LINUX_SYSCALL abi;
+    return abi;
+}
+
+void X64_LINUX_SYSCALL::get_args(
+    MaatEngine& engine,
+    const args_spec_t& args_spec,
+    std::vector<Expr>& args
+) const
+{
+    int i = 0;
+    for (auto arg : args_spec)
+        args.push_back(get_arg(engine, i++, arg));
+}
+
+Expr X64_LINUX_SYSCALL::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+{
+    std::vector<reg_t> arg_regs{X64::RDI, X64::RSI, X64::RDX, X64::R10, X64::R8, X64::R9};
+    Expr res = nullptr;
+    arg_size = ABI::real_arg_size(engine, arg_size);
+    if (n >= arg_regs.size())
+    {
+        throw env_exception("get_arg(): Linux X64 syscall ABI supports only up to 6 arguments");
+    }
+    else
+    {
+        res = engine.cpu.ctx().get(arg_regs[n]);
+    }
+    return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+}
+
+void X64_LINUX_SYSCALL::set_ret_value(
+    MaatEngine& engine,
+    const FunctionCallback::return_t& ret_val
+) const
+{
+    // Return value in RAX
+    std::visit(maat::util::overloaded{
+        [](std::monostate arg){return;}, // no return value
+        [&engine](auto arg){engine.cpu.ctx().set(X64::RAX, arg);}
+    }, ret_val);
+}
+
+void X64_LINUX_SYSCALL::ret(MaatEngine& engine) const
+{
+    // Do nothing
+}
+
 } // namespace abi
 } // namespace env
 } // namespace maat

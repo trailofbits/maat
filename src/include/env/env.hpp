@@ -4,6 +4,7 @@
 #include "env/library.hpp"
 #include "env/filesystem.hpp"
 #include "env/os.hpp"
+#include "env/syscall.hpp"
 #include "arch.hpp"
 #include "snapshot.hpp"
 #include "process.hpp"
@@ -33,6 +34,7 @@ public:
     const abi::ABI& syscall_abi; ///< Default ABI for system calls
 protected:
     std::vector<Library> _libraries;
+    syscall_func_map_t _syscall_func_map; // <sysnum:handler>
 public:
     FileSystem fs;
 public:
@@ -48,6 +50,7 @@ public:
     /// Return a list of all emulated libraries
     const std::vector<Library>& libraries() const;
 public:
+    const Function& get_syscall_func_by_num(int num) const;
 // Virtual functions
 public:
     /// Add a running process to the environment

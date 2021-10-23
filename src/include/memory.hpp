@@ -396,6 +396,7 @@ public:
 public:
     std::list<std::shared_ptr<MemSegment>>& segments();
     std::shared_ptr<MemSegment> get_segment_containing(addr_t addr);
+    std::shared_ptr<MemSegment> get_segment_by_name(const std::string& name);
     /// Return free if no memory is allocated between 'start' and 'end'
     bool is_free(addr_t start, addr_t end);
 

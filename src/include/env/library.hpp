@@ -234,7 +234,7 @@ public:
     virtual Expr get_arg(MaatEngine& engine, int n, size_t arg_size) const;
 };
 
-/// X64 SYSTEM V
+/// X64 SYSTEM V ABI
 class X64_SYSTEM_V : public ABI
 {
 protected:
@@ -259,6 +259,32 @@ public:
     /// Set the return address prior to call a function
     virtual void prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const;
     /// Return from a function
+    virtual void ret(MaatEngine& engine) const;
+};
+
+/// X64 Linux SYSCALL ABI
+class X64_LINUX_SYSCALL : public ABI
+{
+protected:
+    X64_LINUX_SYSCALL();
+public:
+    /// ABI instance (singleton pattern)
+    static const ABI& instance();
+public:
+    /// Get function arguments
+    virtual void get_args(
+        MaatEngine& engine,
+        const args_spec_t& args_spec,
+        std::vector<Expr>& args
+    ) const;
+    /// Get function argument number 'n' (starting at 0)
+    virtual Expr get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    /// Set a function's return value before it returns
+    virtual void set_ret_value(
+        MaatEngine& engine,
+        const FunctionCallback::return_t& ret_val
+    ) const;
+    /// Return from the syscall
     virtual void ret(MaatEngine& engine) const;
 };
 

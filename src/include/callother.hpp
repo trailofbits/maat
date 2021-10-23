@@ -26,12 +26,13 @@ typedef std::add_pointer<void(MaatEngine&, const ir::Inst&, ir::ProcessedInst&)>
 enum class Id
 {
     X86_RDTSC, ///< Load the timestamp counter in a register/temporary
+    X64_SYSCALL, ///< System call on X64
     UNSUPPORTED
 };
 
 /** \brief Return the Id corresponding to the occurence of CALLOTHER in
   * assembly instruction 'mnemonic' */
-Id mnemonic_to_id(const std::string& mnemonic);
+Id mnemonic_to_id(const std::string& mnemonic, const std::string& arch);
 
 /// A mapping between CALLOTHER occurences and their handler
 class HandlerMap

@@ -1213,6 +1213,21 @@ std::list<std::shared_ptr<MemSegment>>& MemEngine::segments()
     return _segments;
 }
 
+std::shared_ptr<MemSegment> MemEngine::get_segment_by_name(
+    const std::string& name
+)
+{
+    auto it = std::find_if(
+        _segments.begin(),
+        _segments.end(),
+        [&name](auto seg){return seg->name == name;}
+    );
+    if (it != _segments.end())
+        return *it;
+    else
+        return nullptr;
+}
+
 bool MemEngine::is_free(addr_t start, addr_t end)
 {
     for( auto& segment : _segments )

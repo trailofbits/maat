@@ -22,6 +22,11 @@ const abi::ABI& _get_default_abi(Arch::Type arch, OS os)
 
 const abi::ABI& _get_syscall_abi(Arch::Type arch, OS os)
 {
+    if (arch == Arch::Type::X64)
+    {
+        if (os == OS::LINUX)
+            return abi::X64_LINUX_SYSCALL::instance();
+    }
     return abi::ABI_NONE::instance();
 }
 
@@ -70,6 +75,18 @@ const Library& EnvEmulator::get_library_by_num(int num) const
     return _libraries.at(num);
 }
 
+const Function& EnvEmulator::get_syscall_func_by_num(int num) const
+{
+    auto it = _syscall_func_map.find(num);
+    if (it == _syscall_func_map.end())
+        throw env_exception(
+            Fmt() << "EnvEmulator: syscall '" << num
+            << "' not supported for emulation" 
+            >> Fmt::to_str
+        );
+    return it->second;
+}
+
 void EnvEmulator::add_running_process(const ProcessInfo& pinfo, uint8_t* binary_content, size_t binary_size)
 {
     throw env_exception("add_running_process() not supported for generic EnvEmulator");
@@ -83,9 +100,11 @@ LinuxEmulator::LinuxEmulator(Arch::Type arch): EnvEmulator(arch, OS::LINUX)
     {
         case Arch::Type::X86:
             _libraries.push_back(env::emulated::linux_x86_libc());
+            _syscall_func_map = env::emulated::linux_x86_syscall_map();
             break;
         case Arch::Type::X64:
             _libraries.push_back(env::emulated::linux_x64_libc());
+            _syscall_func_map = env::emulated::linux_x64_syscall_map();
             break;
         case Arch::Type::NONE:
         default:

@@ -1198,7 +1198,10 @@ public:
             (
                 ir::is_assignment_op(inst.op)
                 or inst.op == ir::Op::LOAD
-                or inst.op == ir::Op::CALLOTHER
+                or (
+                    inst.op == ir::Op::CALLOTHER
+                    and not inst.out.is_none()
+                )
             )
             and (not inst.out.is_addr())
         )

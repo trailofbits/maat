@@ -228,7 +228,7 @@ info::Stop MaatEngine::run(int max_inst)
             // TODO: add settings.log_ir option
             // if settings.log_ir:
             //      log.debug("Run IR: ", inst);
-            // std::cout << "DEBUG " << inst << std::endl;
+            std::cout << "DEBUG " << inst << std::endl;
 
             // Pre-process IR instruction
             ir::ProcessedInst& pinst = cpu.pre_process_inst(inst);

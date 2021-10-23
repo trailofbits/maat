@@ -71,6 +71,7 @@ SRCS+=$(wildcard $(SRCDIR)/solver/*.cpp)
 SRCS+=$(wildcard $(SRCDIR)/loader/*.cpp)
 SRCS+=$(wildcard $(SRCDIR)/env/*.cpp)
 SRCS+=$(wildcard $(SRCDIR)/env/emulated_libs/*.cpp)
+SRCS+=$(wildcard $(SRCDIR)/env/emulated_syscalls/*.cpp)
 SRCS+=$(wildcard $(SRCDIR)/utils/*.cpp)
 SRCS+= $(SRCDIR)/third-party/sleigh/native/sleigh_interface.cpp
 OBJS=$(SRCS:.cpp=.o)
