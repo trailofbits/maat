@@ -55,6 +55,14 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
 #endif
 }
 
+#define ASSERT_SUCCESS(statement) \
+if (statement != true)\
+{               \
+    log.error("Unexpected error when processing IR instruction, aborting..."); \
+    info.stop = info::Stop::FATAL; \
+    return info.stop; \
+}
+
 info::Stop MaatEngine::run(int max_inst)
 {
     bool next_block = true;
@@ -233,11 +241,8 @@ info::Stop MaatEngine::run(int max_inst)
             // Pre-process IR instruction
             ir::ProcessedInst& pinst = cpu.pre_process_inst(inst);
 
-            // TODO, check for process load/store/branch/callother return value
-            // and call a function for clean-up and exit on error...
-
             // Process Addr parameters and load them from memory
-            process_addr_params(inst, pinst);
+            ASSERT_SUCCESS(process_addr_params(inst, pinst))
 
             // Post-process IR instruction once Addr params are resolved
             pinst = cpu.post_process_inst(inst, pinst);
@@ -245,13 +250,13 @@ info::Stop MaatEngine::run(int max_inst)
             // Handle CALLOTHER operation
             if (inst.op == ir::Op::CALLOTHER)
             {
-                process_callother(inst, pinst);
+                ASSERT_SUCCESS(process_callother(inst, pinst))
             }
 
             // If LOAD, do the load (!= process_addr_params)
             if (inst.op == ir::Op::LOAD)
             {
-                process_load(inst, pinst);
+                ASSERT_SUCCESS(process_load(inst, pinst))
             }
 
             // We test & process INSTANT breakpoints before branch instructions are processed.
@@ -303,7 +308,9 @@ info::Stop MaatEngine::run(int max_inst)
                 or (inst.out.is_addr() and ir::is_assignment_op(inst.op))
             )
             {
-                process_store(inst, pinst, block, automodifying_block);
+                ASSERT_SUCCESS(
+                    process_store(inst, pinst, block, automodifying_block)
+                )
             }
 
             // Apply semantics to the IR CPU

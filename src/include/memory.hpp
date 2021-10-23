@@ -537,6 +537,13 @@ public:
     void _clear_pending_x_mem_overwrites();
 };
 
+/** \brief This helper function returns the
+ * start address of a segment of size 0x1000 with RW
+ * permission named "Reserved". This segment is used
+ * internally to emulate some instructions/syscalls.
+ * If the segment doesn't yet exist it is created */
+addr_t reserved_memory(MemEngine& mem);
+
 /** \} */ // Memory doxygen group
 
 } // namespace maat

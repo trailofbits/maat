@@ -26,6 +26,7 @@ typedef std::add_pointer<void(MaatEngine&, const ir::Inst&, ir::ProcessedInst&)>
 enum class Id
 {
     X86_RDTSC, ///< Load the timestamp counter in a register/temporary
+    X86_CPUID, ///< CPUID on X86/X64
     X64_SYSCALL, ///< System call on X64
     UNSUPPORTED
 };

@@ -81,7 +81,7 @@ std::shared_ptr<ir::Block> LifterX86::lift_block(
     }
 
     // DEBUG, print block
-    // std::cout << "DEBUG LIFTER \n" << *block << std::endl;
+    std::cout << "DEBUG LIFTER \n" << *block << std::endl;
 
     return block;
 }

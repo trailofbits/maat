@@ -32,7 +32,7 @@ void LoaderLIEF::load_elf(
     const std::list<std::string>& ignore_libs
 )
 {
-    addr_t stack_base, stack_size, heap_base, heap_size, kernel_stack_size, kernel_stack_base;
+    addr_t stack_base, stack_size, heap_base, heap_size;
     addr_t gs, fs;
     std::list<std::string> loaded_libs;
     reg_t reg_sp = -1;
@@ -59,11 +59,6 @@ void LoaderLIEF::load_elf(
     stack_base = alloc_segment(engine, 0x2000000, stack_size, maat::mem_flag_rw, "Stack");
     engine->cpu.ctx().set(reg_sp, stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
     engine->cpu.ctx().set(reg_bp, stack_base+stack_size-0x400); 
-
-    // Setup kernel stack
-    kernel_stack_size = 0x000c000;
-    kernel_stack_base = alloc_segment(engine, 0x4000, kernel_stack_size, maat::mem_flag_rw, "Kernel Stack", true);
-    // TODO engine->env->kernel_stack = kernel_stack_base + kernel_stack_size;
 
     // Setup heap
     heap_size = 0x06000000;

@@ -2143,25 +2143,19 @@ void MemEngine::record_mem_write(addr_t addr, int nb_bytes)
     }
 }
 
-/* TODO
-std::string MemEngine::read_instr(addr_t addr, unsigned int nb_instr, CPUMode mode){
-    std::stringstream ss;
-    std::string res;
-    if( _sym == nullptr ){
-        return "";
-    }
-    try{
-        vector<pair<addr_t, string>> disassembly = _sym->read_instr(addr, nb_instr, mode);
-        for( auto& item: disassembly ){
-            ss.str(""); ss.clear();
-            ss << "0x" << std::hex << item.first << '\t' << item.second << std::endl;
-            res += ss.str();
-        }
-        return res;
-    }catch(generic_exception e){
-        throw mem_exception(e.what());
-    }
-} */
+addr_t reserved_memory(MemEngine& mem)
+{
+    auto seg = mem.get_segment_by_name("Reserved");
+    if (seg != nullptr)
+        return seg->start;
+    else
+        return mem.allocate_segment(
+            0xee0000, 0x1000, 0x1000,
+            maat::mem_flag_rwx,
+            "Reserved",
+            true // is special segment 
+        );
+}
 
 
 } // namespace maat
