@@ -90,19 +90,22 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
     int bin_type;
     unsigned long long base = 0;
     PyObject* py_cmdline_args = nullptr, *arg = nullptr;
+    PyObject *py_envp = nullptr;
     PyObject* py_libs = nullptr, *lib = nullptr;
     PyObject* py_ignore_libs = nullptr;
     std::vector<loader::CmdlineArg> cmdline_args;
     std::list<std::string> lib_paths, ignore_libs;
+    loader::environ_t envp;
     char *virtual_path = "";
     Py_ssize_t i;
 
-    char* keywd[] = {"", "", "base", "args", "libdirs", "ignore_libs", "virtual_path", NULL};
+    // TODO ADD envp argument as option
+    char* keywd[] = {"", "", "base", "args", "envp", "libdirs", "ignore_libs", "virtual_path", NULL};
 
     if( !PyArg_ParseTupleAndKeywords(
             args, keywords, "si|KOOOs", keywd,
             &name, &bin_type, &base, 
-            &py_cmdline_args,
+            &py_cmdline_args, &py_envp,
             &py_libs, &py_ignore_libs,
             &virtual_path
         )
@@ -148,14 +151,14 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
             lib_paths.push_back(std::string(PyUnicode_AsUTF8(lib)));
         }
     }
-    
+
     // Build ignore_libs list
     if (py_ignore_libs != nullptr)
     {
         // Check if it's a list
         if( !PyList_Check(py_ignore_libs) )
         {
-            return PyErr_Format(PyExc_TypeError, "Loader::load(): 'ignore_libs' parameter must be a list");
+            return PyErr_Format(PyExc_TypeError, "'ignore_libs' parameter must be a list");
         }
         for( i = 0; i < PyList_Size(py_ignore_libs); i++)
         {
@@ -168,6 +171,33 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
         }
     }
 
+    // Build envp map
+    if (py_envp != nullptr)
+    {
+        // Check if it's a dict
+        if( !PyDict_Check(py_envp) )
+        {
+            return PyErr_Format(PyExc_TypeError, "'envp' parameter must be a dict");
+        }
+        PyObject *key, *value;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(py_envp, &pos, &key, &value))
+        {
+            if (not PyUnicode_Check(key))
+            {
+                return PyErr_Format(PyExc_TypeError, "'envp' keys must be str");
+            }
+            if (not PyUnicode_Check(value))
+            {
+                return PyErr_Format(PyExc_TypeError, "'envp' values must be str");
+            }
+            const char *key_str, *value_str;
+            key_str = PyUnicode_AsUTF8(key);
+            value_str = PyUnicode_AsUTF8(value);
+            envp[std::string(key_str)] = std::string(value_str);
+        }
+    }
+
     try
     {
         as_engine_object(self).engine->load(
@@ -175,6 +205,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
             (loader::Format)bin_type,
             (addr_t)base,
             cmdline_args,
+            envp,
             std::string(virtual_path),
             lib_paths,
             ignore_libs

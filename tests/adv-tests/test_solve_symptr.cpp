@@ -44,6 +44,7 @@ namespace solve_symbolic_ptr{
                 loader::Format::ELF32,
                 0,
                 {},
+                {},
                 "",
                 {},
                 {}
@@ -89,7 +90,7 @@ namespace solve_symbolic_ptr{
                 "tests/ressources/symbolic_ptr_binaries/sym_write_1",
                 loader::Format::ELF32,
                 0, 
-                args,
+                args, {},
                 "", {}, {}
             );
 
@@ -146,7 +147,7 @@ namespace solve_symbolic_ptr{
                 "tests/ressources/symbolic_ptr_binaries/sym_write_2",
                 loader::Format::ELF32,
                 0,
-                args,
+                args, {},
                 "",
                 {},
                 {}
@@ -200,7 +201,7 @@ namespace solve_symbolic_ptr{
             engine.load(
                 "tests/ressources/symbolic_ptr_binaries/sym_read_1",
                 loader::Format::ELF32,
-                0, {}, "", {}, {}
+                0, {}, {}, "", {}, {}
             );
             
             // Set EIP at beginning of func
@@ -244,7 +245,7 @@ namespace solve_symbolic_ptr{
                 "tests/ressources/symbolic_ptr_binaries/sym_read_1",
                 loader::Format::ELF32,
                 0,
-                args, "", {}, {}
+                args, {}, "", {}, {}
             );
 
             // Breakpoint at the end of func
@@ -293,7 +294,7 @@ namespace solve_symbolic_ptr{
             engine.load(
                 "tests/ressources/symbolic_ptr_binaries/sym_rw_1",
                 loader::Format::ELF32,
-                0, {}, "", {}, {}
+                0, {}, {}, "", {}, {}
             );
 
             // Set EIP at beginning of func

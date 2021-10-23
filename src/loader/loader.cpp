@@ -72,6 +72,7 @@ void Loader::load(
     loader::Format type,
     addr_t base,
     const std::vector<CmdlineArg>& args,
+    const environ_t& envp,
     const std::string& virtual_path,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs

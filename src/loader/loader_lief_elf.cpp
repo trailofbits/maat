@@ -26,6 +26,7 @@ void LoaderLIEF::load_elf(
     const std::string& binary,
     addr_t base,
     std::vector<CmdlineArg> args,
+    const environ_t& envp,
     const std::string& virtual_path,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs
@@ -113,19 +114,17 @@ void LoaderLIEF::load_elf(
     load_cmdline_args(engine, args, argc, argv_addresses);
 
     // 2 ---------------- Write env to memory -----------------
-    /* TODO get env from env ;)
-    std::vector<addr_t> env_addresses;
-    std::string var;
-    addr_t mem_arg_addr;
-    for( i = 0; i < env_variables.size(); i++ )
+    std::vector<addr_t> envp_addresses;
+    for (auto& it : envp)
     {
-        var = env_variables[i];
-        // Decrease esp of its size + 1 for null byte
-        mem_arg_addr = (uint32_t)engine->cpu.ctx().concretize(X86_ESP) - var.size() - 1;
-        engine->cpu.ctx().set(X86_ESP, exprcst(32, mem_arg_addr));
+        std::string var = it.first + '=' + it.second;
+        // Decrease sp of its size + 1 for null byte
+        addr_t sp = engine->cpu.ctx().get(engine->arch->sp())->as_uint();
+        addr_t mem_arg_addr = sp - var.size() - 1;
+        engine->cpu.ctx().set(engine->arch->sp(), mem_arg_addr);
         engine->mem->write_buffer(mem_arg_addr, (uint8_t*)var.c_str(), var.size()+1);
-        env_addresses.insert(env_addresses.begin(), mem_arg_addr);
-    } */
+        envp_addresses.insert(envp_addresses.begin(), mem_arg_addr);
+    }
 
     // 3 ---------------- Generate auxilliary vector -----------------
     // This updates the stack (writing random bytes, etc)
@@ -143,6 +142,7 @@ void LoaderLIEF::load_elf(
                 &env[1]
                 ...
                 0
+                aux vector
      High Addr.
     */
 
@@ -159,18 +159,14 @@ void LoaderLIEF::load_elf(
         engine->mem->write(tmp_sp+arch_bytes, it->second, arch_bytes);
     }
 
-    // Setup env
-    // TODO GET ENV FROM ENV :) 
-    /* 
+    // Setup env 
     tmp_sp -= arch_bytes;
     engine->mem->write(tmp_sp, 0, arch_bytes); // At the end of env variables add a null pointer
-    for (auto it = env_addresses.rbegin(); it != env_addresses.rend(); it++)
+    for (addr_t addr : envp_addresses)
     {
         tmp_sp -= arch_bytes;
-        engine->mem->write(tmp_sp, *it, arch_bytes);
-    } */
-    // TODO: Setup env pointer in environment ? 
-    // engine->env->env_array = engine->cpu.ctx().as_unsigned(X86_ESP); // Set env[] pointer in environment :)
+        engine->mem->write(tmp_sp, addr, arch_bytes);
+    }
 
     // Setup argv
     tmp_sp -= arch_bytes;
@@ -186,7 +182,6 @@ void LoaderLIEF::load_elf(
     engine->cpu.ctx().set(reg_sp, tmp_sp);
     
     // Point PC to entrypoint
-    std::cout << "DEBUG finish, inter entry ? " << interpreter_entry.value() << std::endl;
     addr_t real_entry = interpreter_entry.has_value() ?
         interpreter_entry.value() : _elf->entrypoint() + base;
     engine->cpu.ctx().set(reg_pc, real_entry);

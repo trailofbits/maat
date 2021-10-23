@@ -1223,6 +1223,7 @@ void MaatEngine::load(
     loader::Format type,
     addr_t base,
     const std::vector<loader::CmdlineArg>& args,
+    const loader::environ_t& envp,
     const std::string& virtual_path,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs
@@ -1236,6 +1237,7 @@ void MaatEngine::load(
         type,
         base,
         args,
+        envp,
         virtual_path,
         libdirs,
         ignore_libs

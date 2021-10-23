@@ -33,6 +33,7 @@ namespace test
                 loader::Format::ELF32,
                 0x56555000,
                 std::vector<CmdlineArg>{CmdlineArg("12345678")},
+                {},
                 "",
                 {},
                 {}

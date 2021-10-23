@@ -70,6 +70,8 @@ public:
     bool is_concolic() const; ///< Return true if the argument is concolic
 };
 
+/// Environment variables for a given process
+typedef std::unordered_map<std::string, std::string> environ_t;
 
 /// Loader interface for loading executables into a *MaatEngine*
 class Loader
@@ -90,6 +92,7 @@ public:
         loader::Format type,
         addr_t base,
         const std::vector<CmdlineArg>& args,
+        const environ_t& envp,
         const std::string& virtual_path,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs
@@ -115,6 +118,7 @@ public:
         loader::Format type,
         addr_t base,
         const std::vector<CmdlineArg>& args,
+        const environ_t& envp,
         const std::string& virtual_path,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs
@@ -146,6 +150,7 @@ private:
         const std::string& binary,
         addr_t base,
         std::vector<CmdlineArg> args,
+        const environ_t& envp,
         const std::string& virtual_path,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs

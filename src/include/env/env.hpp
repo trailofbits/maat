@@ -47,6 +47,7 @@ public:
     const Library& get_library_by_num(int num) const;
     /// Return a list of all emulated libraries
     const std::vector<Library>& libraries() const;
+public:
 // Virtual functions
 public:
     /// Add a running process to the environment

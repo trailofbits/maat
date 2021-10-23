@@ -138,8 +138,8 @@ static PyObject* FileSystem_get_stdin_for_pid(PyObject* self, PyObject *args)
 static PyMethodDef FileSystem_methods[] = {
     {"new_fa", (PyCFunction)FileSystem_new_fa, METH_VARARGS, "Create a new file accessor for a file"},
     {"get_fa_by_handle", (PyCFunction)FileSystem_get_fa_by_handle, METH_VARARGS, "Get a file accessor by handle"},
-    {"delete_fa", (PyCFunction)FileSystem_delete_fa, METH_VARARGS | METH_KEYWORDS, "Remove a file accessor"},
-    {"get_file", (PyCFunction)FileSystem_get_file, METH_VARARGS | METH_KEYWORDS, "Get a physical file"},
+    {"delete_fa", (PyCFunction)FileSystem_delete_fa, METH_VARARGS | METH_KEYWORDS, "Remove a file accessor"},
+    {"get_file", (PyCFunction)FileSystem_get_file, METH_VARARGS | METH_KEYWORDS, "Get a physical file"},
     {"get_stdin_for_pid", (PyCFunction)FileSystem_get_stdin_for_pid, METH_VARARGS, "Get the name of the stdin file for a given process"},
     {NULL, NULL, 0, NULL}
 };
@@ -289,7 +289,7 @@ static PyObject* FileAccessor_read_buffer(PyObject* self, PyObject* args)
 
 static PyMethodDef FileAccessor_methods[] = {
     {"write_buffer", (PyCFunction)FileAccessor_write_buffer, METH_VARARGS, "Write a buffer to a file"},
-    {"read_buffer", (PyCFunction)FileAccessor_read_buffer, METH_VARARGS | METH_KEYWORDS, "Read a buffer from a file"},
+    {"read_buffer", (PyCFunction)FileAccessor_read_buffer, METH_VARARGS | METH_KEYWORDS, "Read a buffer from a file"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -441,7 +441,7 @@ static PyObject* File_read_buffer(PyObject* self, PyObject* args)
 
 static PyMethodDef File_methods[] = {
     {"write_buffer", (PyCFunction)File_write_buffer, METH_VARARGS, "Write a buffer to a file"},
-    {"read_buffer", (PyCFunction)File_read_buffer, METH_VARARGS | METH_KEYWORDS, "Read a buffer from a file"},
+    {"read_buffer", (PyCFunction)File_read_buffer, METH_VARARGS | METH_KEYWORDS, "Read a buffer from a file"},
     {NULL, NULL, 0, NULL}
 };
 

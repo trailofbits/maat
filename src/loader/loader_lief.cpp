@@ -17,6 +17,7 @@ void LoaderLIEF::load(
     loader::Format type,
     addr_t base,
     const std::vector<CmdlineArg>& args,
+    const environ_t& envp,
     const std::string& virtual_path,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs
@@ -27,7 +28,7 @@ void LoaderLIEF::load(
     {
         case loader::Format::ELF32:
         case loader::Format::ELF64:
-            load_elf(engine, binary, base, args, virtual_path, libdirs, ignore_libs);
+            load_elf(engine, binary, base, args, envp, virtual_path, libdirs, ignore_libs);
             break;
         default: 
             throw loader_exception("LoaderLIEF::load(): Unsupported executable format");
