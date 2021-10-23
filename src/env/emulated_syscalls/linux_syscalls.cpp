@@ -45,6 +45,51 @@ FunctionCallback::return_t sys_linux_brk(
     return 0; // Success
 }
 
+// int arch_prctl(struct task_struct *task, int code, unsigned long* addr)
+FunctionCallback::return_t sys_linux_arch_prctl(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    /* Function codes
+        #define ARCH_SET_GS		0x1001
+        #define ARCH_SET_FS		0x1002
+        #define ARCH_GET_FS		0x1003
+        #define ARCH_GET_GS		0x1004
+
+        #define ARCH_GET_CPUID		0x1011
+        #define ARCH_SET_CPUID		0x1012
+
+        #define ARCH_CET_STATUS		0x3001
+        #define ARCH_CET_DISABLE	0x3002
+        #define ARCH_CET_LOCK		0x3003
+        #define ARCH_CET_EXEC		0x3004
+        #define ARCH_CET_ALLOC_SHSTK	0x3005
+        #define ARCH_CET_PUSH_SHSTK	0x3006
+    */
+    ucst_t code = args[0]->as_uint(*engine.vars);
+    if (code == 0x1002) // Set FS
+    {
+        // HACK: in Maat we don't distinguish between segment selector
+        // and the address their entry points to 
+        engine.cpu.ctx().set(X64::FS, args[1]);
+    }
+    else if (code >= 0x3001 and code <= 0x3006)
+    {
+        // CET stuff, not supported but pretend everything went fine
+        return 0; // Success
+    }
+    else
+    {
+        throw env_exception(
+            Fmt() << "Emulated arch_prctl(): unsupported subfunction code: 0x"
+            << std::hex << code
+            >> Fmt::to_str
+        );
+    }
+
+    return 0; // Success
+}
 // ================= Build the syscall maps =================
 syscall_func_map_t linux_x86_syscall_map()
 {
@@ -59,7 +104,8 @@ syscall_func_map_t linux_x64_syscall_map()
 {
     syscall_func_map_t res
     {
-        {12, Function("brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))}
+        {12, Function("brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {158, Function("arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))}
     };
     return res;
 }

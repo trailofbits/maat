@@ -46,8 +46,7 @@ void X86_RDTSC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
 
 void X86_CPUID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    /* TODO pcode expects to return a pointer to the CPUID struct (see terminak)
-    so write in the kernel stack! */
+    // http://www.flounder.com/cpuid_explorer2.htm for reference
     /* Apparently in pcode the instruction puts a pointer in the res parameter.
      * The area pointed contains: eax:ebx:edx:ecx in this order, 4 bytes each */
     ucst_t eax, ebx, ecx, edx;
@@ -91,6 +90,39 @@ void X86_CPUID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
         ebx = additional_info;
         ecx = ecx_feature_info;
         edx = edx_feature_info;
+    }
+    else if (leaf == 0x80000000)
+    {
+        // eax gets highest supported leaf for extended CPUID
+        eax = 0x80000004;
+        // ebx, ecx, edx: reserved
+        ebx = 0;
+        ecx = 0;
+        edx = 0;
+    }
+    else if (leaf == 0x80000001)
+    {
+        eax = 0; // Undefined for Intel CPUs
+        ebx = 0; // Reserved
+        // ECX
+        ucst_t  lahf_available = 1 << 0;
+        ecx = lahf_available;
+        // EDX
+        ucst_t  syscall_available = 1 << 11;
+        edx = syscall_available;
+    }
+    else if (
+        leaf == 0x80000002
+        or leaf == 0x80000003
+        or leaf == 0x80000004
+    )
+    {
+        // Processor brand string continued
+        // String is "ocessor 1.10GH"
+        eax = 0x7365636f; // 'seco'
+        ebx = 0x20726f73; // ' ros'
+        ecx = 0x30312e31; // '01.1'
+        edx = 0x007a4847; // '\0zHG'
     }
     else
     {

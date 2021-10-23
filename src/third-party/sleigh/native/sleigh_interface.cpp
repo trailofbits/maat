@@ -407,6 +407,11 @@ public:
 
                 for (auto& inst : m_pcodes.back().m_insts)
                 {
+                    std::cout << "DEBUG " << inst << "\n";
+                }
+
+                for (auto& inst : m_pcodes.back().m_insts)
+                {
                     // Check for CALLOTHER, we need dedicated handlers to support them
                     if (inst.op == maat::ir::Op::CALLOTHER)
                     {
