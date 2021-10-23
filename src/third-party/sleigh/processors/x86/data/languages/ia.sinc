@@ -6670,10 +6670,75 @@ define pcodeop pminub;
 :PMINUB        XmmReg1, XmmReg2 is vexMode=0 &  $(PRE_66) & byte=0x0F; byte=0xDA; xmmmod = 3 & XmmReg1 & XmmReg2 { XmmReg1 = pminub(XmmReg1, XmmReg2); }
 
 define pcodeop pmovmskb;
-:PMOVMSKB       Reg32, mmxreg2   is vexMode=0 &   mandover=0 & byte=0x0F; byte=0xD7; Reg32 & mmxreg2 { Reg32 = pmovmskb(Reg32, mmxreg2); }
-:PMOVMSKB       Reg32, XmmReg2   is vexMode=0 &   $(PRE_66) & byte=0x0F; byte=0xD7; Reg32 & XmmReg2 { Reg32 = pmovmskb(Reg32, XmmReg2); }
+:PMOVMSKB       Reg32, mmxreg2   is vexMode=0 &   mandover=0 & byte=0x0F; byte=0xD7; Reg32 & mmxreg2
+{
+    TempA:4 = 0;
+    TempA[0, 1] = mmxreg2[7, 1];
+    TempA[1, 1] = mmxreg2[15, 1];
+    TempA[2, 1] = mmxreg2[23, 1];
+    TempA[3, 1] = mmxreg2[31, 1];
+    TempA[4, 1] = mmxreg2[39, 1];
+    TempA[5, 1] = mmxreg2[47, 1];
+    TempA[6, 1] = mmxreg2[55, 1];
+    TempA[7, 1] = mmxreg2[63, 1];
+    Reg32 = TempA;
+}
+:PMOVMSKB       Reg32, XmmReg2   is vexMode=0 &   $(PRE_66) & byte=0x0F; byte=0xD7; Reg32 & XmmReg2
+{
+    TempA:4 = 0;
+    TempA[0, 1] = XmmReg2[7, 1];
+    TempA[1, 1] = XmmReg2[15, 1];
+    TempA[2, 1] = XmmReg2[23, 1];
+    TempA[3, 1] = XmmReg2[31, 1];
+    TempA[4, 1] = XmmReg2[39, 1];
+    TempA[5, 1] = XmmReg2[47, 1];
+    TempA[6, 1] = XmmReg2[55, 1];
+    TempA[7, 1] = XmmReg2[63, 1];
+    TempA[8, 1] = XmmReg2[71, 1];
+    TempA[9, 1] = XmmReg2[79, 1];
+    TempA[10, 1] = XmmReg2[87, 1];
+    TempA[11, 1] = XmmReg2[95, 1];
+    TempA[12, 1] = XmmReg2[103, 1];
+    TempA[13, 1] = XmmReg2[111, 1];
+    TempA[14, 1] = XmmReg2[119, 1];
+    TempA[15, 1] = XmmReg2[127, 1];
+    Reg32 = TempA;
+}
 @ifdef IA64
-:PMOVMSKB       Reg64, mmxreg2   is vexMode=0 &   opsize=2 & mandover=0 & byte=0x0F; byte=0xD7; Reg64 & mmxreg2 { Reg64 = pmovmskb(Reg64, mmxreg2); }
+:PMOVMSKB       Reg64, mmxreg2   is vexMode=0 &   opsize=2 & mandover=0 & byte=0x0F; byte=0xD7; Reg64 & mmxreg2
+{
+    TempA:8 = 0;
+    TempA[0, 1] = mmxreg2[7, 1];
+    TempA[1, 1] = mmxreg2[15, 1];
+    TempA[2, 1] = mmxreg2[23, 1];
+    TempA[3, 1] = mmxreg2[31, 1];
+    TempA[4, 1] = mmxreg2[39, 1];
+    TempA[5, 1] = mmxreg2[47, 1];
+    TempA[6, 1] = mmxreg2[55, 1];
+    TempA[7, 1] = mmxreg2[63, 1];
+    Reg64 = TempA;
+}
+:PMOVMSKB       Reg64, XmmReg2   is vexMode=0 &   $(PRE_66) & opsize=2 & byte=0x0F; byte=0xD7; Reg64 & XmmReg2
+{
+    TempA:8 = 0;
+    TempA[0, 1] = XmmReg2[7, 1];
+    TempA[1, 1] = XmmReg2[15, 1];
+    TempA[2, 1] = XmmReg2[23, 1];
+    TempA[3, 1] = XmmReg2[31, 1];
+    TempA[4, 1] = XmmReg2[39, 1];
+    TempA[5, 1] = XmmReg2[47, 1];
+    TempA[6, 1] = XmmReg2[55, 1];
+    TempA[7, 1] = XmmReg2[63, 1];
+    TempA[8, 1] = XmmReg2[71, 1];
+    TempA[9, 1] = XmmReg2[79, 1];
+    TempA[10, 1] = XmmReg2[87, 1];
+    TempA[11, 1] = XmmReg2[95, 1];
+    TempA[12, 1] = XmmReg2[103, 1];
+    TempA[13, 1] = XmmReg2[111, 1];
+    TempA[14, 1] = XmmReg2[119, 1];
+    TempA[15, 1] = XmmReg2[127, 1];
+    Reg64 = TempA;
+}
 @endif
 
 define pcodeop pmulhrsw;
