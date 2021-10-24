@@ -7679,9 +7679,31 @@ define pcodeop rsqrtss;
 :RSQRTSS         XmmReg, m32      is vexMode=0 &  $(PRE_F3) & byte=0x0F; byte=0x52; XmmReg ... & m32 { XmmReg = rsqrtss(XmmReg, m32); }
 :RSQRTSS         XmmReg1, XmmReg2 is vexMode=0 &  $(PRE_F3) & byte=0x0F; byte=0x52; xmmmod = 3 & XmmReg1 & XmmReg2 { XmmReg1 = rsqrtss(XmmReg1, XmmReg2); }
 
+
 define pcodeop shufpd;
-:SHUFPD          XmmReg, m128, imm8     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0xC6; XmmReg ... & m128; imm8 { XmmReg = shufpd(XmmReg, m128, imm8:8); }
-:SHUFPD          XmmReg1, XmmReg2, imm8  is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0xC6; xmmmod=3 & XmmReg1 & XmmReg2; imm8 { XmmReg1 = shufpd(XmmReg1, XmmReg2, imm8:8); }
+:SHUFPD          XmmReg, m128, imm8     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0xC6; XmmReg ... & m128; imm8
+{
+    shifted:16 = XmmReg >> ((imm8 & 0x1)*64);
+    tempA:8 = shifted:8;
+
+    shifted = m128 >> ((imm8 & 0x2)*64);
+    tempB:8 = shifted:8;
+
+    XmmReg[0, 64] = tempA;
+    XmmReg[64, 64] = tempB;
+}
+
+:SHUFPD          XmmReg1, XmmReg2, imm8  is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0xC6; xmmmod=3 & XmmReg1 & XmmReg2; imm8
+{
+    shifted:16 = XmmReg1 >> ((imm8 & 0x1)*64);
+    tempA:8 = shifted:8;
+
+    shifted = XmmReg2 >> ((imm8 & 0x2)*64);
+    tempB:8 = shifted:8;
+
+    XmmReg1[0, 64] = tempA;
+    XmmReg1[64, 64] = tempB;
+}
 
 :SHUFPS  XmmReg, m128, imm8  is vexMode=0 & mandover=0 & byte=0x0F; byte=0xC6; (m128 & XmmReg ...); imm8 & Order0 & Order1 & Order2 & Order3
 {
