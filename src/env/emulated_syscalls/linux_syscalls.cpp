@@ -53,6 +53,54 @@ FunctionCallback::return_t sys_linux_brk(
     return 0; // Success
 }
 
+// int uname(struct utsname *buf);
+FunctionCallback::return_t sys_linux_newuname(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    /*
+     * buf is of following type:
+    struct utsname {
+               char sysname[];    // Operating system name (e.g., "Linux")
+               char nodename[];   // Name within "some implementation-defined
+                                     network"
+               char release[];    // Operating system release (e.g., "2.6.28")
+               char version[];    // Operating system version
+               char machine[];    // Hardware identifier 
+           #ifdef _GNU_SOURCE
+               char domainname[]; // NIS or YP domain name
+           #endif
+           };
+        
+        Note: Each array is actually of size 65 !
+    */
+
+
+    addr_t utsname = args[0]->as_uint(*engine.vars);
+    std::string sysname = "Linux\x00";
+    std::string nodename = "\x00"; // Not supported
+    std::string release = "4.15.0-88-generic\x00";
+    std::string version = "#88-Ubuntu SMP Tue Feb 11 20:11:34 UTC 2020\x00";
+    std::string machine = "x86_64\x00";
+    std::string domainname = "\x00"; // Not supported
+
+    // Write OS name
+    engine.mem->write_buffer(utsname, (uint8_t*)sysname.c_str(), sysname.size()+1);
+    // nodename ?
+    engine.mem->write_buffer(utsname + 65, (uint8_t*)nodename.c_str(), nodename.size()+1);
+    // Write OS release and version
+    engine.mem->write_buffer(utsname + 65*2, (uint8_t*)release.c_str(), release.size()+1);
+    engine.mem->write_buffer(utsname + 65*3, (uint8_t*)version.c_str(), version.size()+1);
+    // Write hardware id
+    engine.mem->write_buffer(utsname + 65*4, (uint8_t*)machine.c_str(), machine.size()+1);
+    // Write domain name
+    engine.mem->write_buffer(utsname + 65*5, (uint8_t*)domainname.c_str(), domainname.size()+1);
+    
+    // On success return zero
+    return 0;
+}
+
 // int arch_prctl(struct task_struct *task, int code, unsigned long* addr)
 FunctionCallback::return_t sys_linux_arch_prctl(
     MaatEngine& engine,
@@ -103,7 +151,8 @@ syscall_func_map_t linux_x86_syscall_map()
 {
     syscall_func_map_t res
     {
-        {45, Function("brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))}
+        {45, Function("brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {122, Function("newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))}
     };
     return res;
 }
@@ -113,6 +162,7 @@ syscall_func_map_t linux_x64_syscall_map()
     syscall_func_map_t res
     {
         {12, Function("brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {63, Function("newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {158, Function("arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))}
     };
     return res;

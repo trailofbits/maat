@@ -87,7 +87,7 @@ const Function& EnvEmulator::get_syscall_func_by_num(int num) const
     return it->second;
 }
 
-void EnvEmulator::add_running_process(const ProcessInfo& pinfo, uint8_t* binary_content, size_t binary_size)
+void EnvEmulator::add_running_process(const ProcessInfo& pinfo, const std::string& filepath)
 {
     throw env_exception("add_running_process() not supported for generic EnvEmulator");
 }
@@ -112,13 +112,12 @@ LinuxEmulator::LinuxEmulator(Arch::Type arch): EnvEmulator(arch, OS::LINUX)
     }
 }
 
-void LinuxEmulator::add_running_process(const ProcessInfo& pinfo, uint8_t* binary_content, size_t binary_size)
+void LinuxEmulator::add_running_process(const ProcessInfo& pinfo, const std::string& filepath)
 {
-    addr_t offset = 0;
     // Create actual file
     fs.create_file(pinfo.binary_path, true); // create_path = true
     physical_file_t file = fs.get_file(pinfo.binary_path);
-    file->write_buffer(binary_content, offset, binary_size);
+    file->copy_real_file(filepath);
 
     // Set symbolic links to loaded binary in /proc/<pid>/exe
     std::stringstream ss;
@@ -136,8 +135,6 @@ void LinuxEmulator::add_running_process(const ProcessInfo& pinfo, uint8_t* binar
     fs._new_fa(stdin, 0);
     fs._new_fa(stdout, 1);
     fs._new_fa(stderr, 2);
-
-    std::cout << fs << std::endl; // DEBUG
 }
 
 } // namespace env

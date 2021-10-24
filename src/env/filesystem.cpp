@@ -1,4 +1,5 @@
 #include "env/filesystem.hpp"
+#include <fstream>
 
 namespace maat
 {
@@ -17,6 +18,27 @@ PhysicalFile::PhysicalFile(PhysicalFile::Type t): type(t)
 unsigned int PhysicalFile::size()
 {
     return _size;
+}
+
+unsigned int PhysicalFile::copy_real_file(const std::string& filename)
+{
+    // Read file content
+    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    std::vector<char> buffer(size);
+    if (file.read(buffer.data(), size))
+    {
+        addr_t offset = 0;
+        return write_buffer((uint8_t*)buffer.data(), offset, size);
+    }
+    else
+    {
+        throw env_exception(
+            Fmt() << "Error reading contents of '" << filename << "'"
+            >> Fmt::to_str
+        );
+    }
 }
 
 unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t& write_ptr)
@@ -82,9 +104,9 @@ unsigned int PhysicalFile::write_buffer(uint8_t* buffer, addr_t& offset, int nb_
     while (offset + nb_bytes -1 > data->end)
     {
         // Extend file to write more
-        data->extend_after(data->size()); // Double size
+        data->extend_after(nb_bytes > data->size()? nb_bytes : data->size());
     }
-    
+
     /* TODO
     if( _snapshot_manager != nullptr ){
         // If snapshot manager provided, record write
@@ -520,8 +542,10 @@ bool Directory::_contains_name(const std::string& name)
 void Directory::print(std::ostream& os, const std::string& indent_string) const
 {
     std::string tmp_indent;
+    std::string next_indent;
     // Start with subdirs  
     tmp_indent = indent_string + " \u2502  ";
+    next_indent = indent_string + " \u2502  ";
     for (
         auto subdir = subdirs.begin();
         subdir != subdirs.end() and subdir != std::prev(subdirs.end());
@@ -529,9 +553,9 @@ void Directory::print(std::ostream& os, const std::string& indent_string) const
     )
     {
         // Print dir
-        os << indent_string << " " << subdir->first << "/" << std::endl;
         os << indent_string << " \u251C" << "\u2500\u2500";
-        subdir->second->print(os, tmp_indent);
+        os << " " << subdir->first << "/\n";
+        subdir->second->print(os, next_indent);
     }
     // Print last subdir
     if (not subdirs.empty())
@@ -547,7 +571,7 @@ void Directory::print(std::ostream& os, const std::string& indent_string) const
             tmp_indent = indent_string + " \u2502  ";
             os << indent_string << " \u251C" << "\u2500\u2500";
         }
-        os << " " << subdir->first << "\n";
+        os << " " << subdir->first << "/\n";
         subdir->second->print(os, tmp_indent);
     }
 

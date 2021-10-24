@@ -51,28 +51,16 @@ void LoaderLIEF::load(
     pwd.pop_back();
     engine->process->pwd = engine->env->fs.path_from_fspath(pwd);
     // Add binary to filesystem
-    // Read the actual file on disk
-    std::ifstream file(binary, std::ios::binary | std::ios::ate);
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-    std::vector<char> content(size);
-    if (not (file.read(content.data(), size)))
+    try
     {
-        engine->log.warning("LoaderLIEF::load(): couldn't read file: ", binary);
+        engine->env->add_running_process(*engine->process, binary);
     }
-    else
+    catch(const env_exception& e)
     {
-        try
-        {
-            engine->env->add_running_process(*engine->process, (uint8_t*)content.data(), content.size());
-        }
-        catch(const env_exception& e)
-        {
-            engine->log.warning(
-                "Failed to add the binary in the virtual filesystem due to the following error: ",
-                e.what()
-            );
-        }
+        engine->log.warning(
+            "Failed to add the binary in the virtual filesystem due to the following error: ",
+            e.what()
+        );
     }
 }
 

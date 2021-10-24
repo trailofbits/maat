@@ -65,6 +65,8 @@ public:
     unsigned int read_buffer(std::vector<Expr>& buffer, addr_t& offset, unsigned int nb_elems, unsigned int elem_size);
     /// Return the total size of the physical file content in bytes
     unsigned int size();
+    /// Fill the emulated file with concrete content from a real file. Return the size of 'filename'
+    unsigned int copy_real_file(const std::string& filename);
 
 public:
     /// Set the deleted status of the file

@@ -186,7 +186,12 @@ private:
         std::vector<CmdlineArg> args,
         const environ_t& envp,
         const std::string& virtual_path,
+        const std::list<std::string>& libdirs,
         const std::string& interp_path
+    );
+    void add_elf_dependencies_to_emulated_fs(
+        MaatEngine* engine,
+        const std::list<std::string>& libdirs
     );
     // Return the base address for the loaded lib
     addr_t load_elf_library(

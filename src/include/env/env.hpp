@@ -54,17 +54,17 @@ public:
 // Virtual functions
 public:
     /// Add a running process to the environment
-    virtual void add_running_process(const ProcessInfo& pinfo, uint8_t* binary_content, size_t binary_size);
+    virtual void add_running_process(const ProcessInfo& pinfo, const std::string& filepath);
 };
 
-/** Specialisation of 'EnvEmulator' for the Linux operating system */ 
+/// Specialisation of 'EnvEmulator' for the Linux operating system 
 class LinuxEmulator: public EnvEmulator
 {
 public:
     LinuxEmulator(Arch::Type arch);
 public:
     /// Add a running process to the environment
-    virtual void add_running_process(const ProcessInfo& pinfo, uint8_t* binary_content, size_t binary_size);
+    virtual void add_running_process(const ProcessInfo& pinfo, const std::string& filepath);
 };
 
 
