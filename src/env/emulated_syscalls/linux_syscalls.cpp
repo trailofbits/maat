@@ -17,6 +17,9 @@ FunctionCallback::return_t sys_linux_brk(
     addr_t end_heap, prev_end;
     addr_t extend_bytes = 0;
 
+    std::cout << "DEBUG BRK address " << addr << std::endl;
+    // throw std::exception();
+
     // Find the heap's end address
     auto heap = engine.mem->get_segment_by_name("Heap");
     if (heap == nullptr)
@@ -24,8 +27,13 @@ FunctionCallback::return_t sys_linux_brk(
         throw env_exception("Emulated brk(): didn't find 'Heap' segment!");
     }
     end_heap = heap->end+1;
+    // Special behaviour for brk(NULL), return end of Heap
+    if (addr == 0)
+    {
+        return (cst_t)(heap->end+1);
+    }
     // Try to resize this segment
-    if (addr > heap->end +1)
+    else if (addr > heap->end +1)
     {
         // First check if memory is free for extending
         extend_bytes = addr - heap->end -1;

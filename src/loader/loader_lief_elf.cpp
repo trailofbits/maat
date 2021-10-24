@@ -9,6 +9,16 @@ namespace maat
 namespace loader
 {
 
+// Remove prefixes like /lib64/... on interpreter name
+std::string _clean_interpreter_name(const std::string& name)
+{
+    size_t idx = name.find_last_of("/");
+    if (idx != std::string::npos)
+        return name.substr(idx+1);
+    else
+        return name;
+}
+
 std::string get_symbol_name(LIEF::ELF::Symbol& symbol)
 {
     try
@@ -21,7 +31,178 @@ std::string get_symbol_name(LIEF::ELF::Symbol& symbol)
     }
 }
 
+// Return first address after 'name' ends
+addr_t end_of_segment(MemEngine& mem, const std::string& name)
+{
+    addr_t res = 0;
+    for (auto& segment : mem.segments())
+    {
+        std::cout << "debug" << segment->name << std::endl;
+        if (segment->name == name and res < segment->end)
+            res = segment->end + 1;
+    }
+    if (res == 0)
+        throw loader_exception(
+            Fmt() << "end_of_segment(): didn't find segment named "
+            << name >> Fmt::to_str
+        );
+    return res;
+}
+
+
+std::string find_library_file(
+    const std::string& lib_name,
+    const std::list<std::string>& libdirs
+)
+{
+    std::string lib_path;
+    struct stat path_stat;
+    // Search candidate file 
+    for (const std::string& path : libdirs)
+    {
+        // Check if file or directory
+        if( stat(path.c_str(), &path_stat) )
+        {
+            continue; // Error in stat, skip this file
+        }
+        // Create candidate filename
+        if( S_ISREG(path_stat.st_mode))
+        {
+            // Regular file
+            // DO nothing
+            lib_path = path;
+        }
+        else if( S_ISDIR(path_stat.st_mode))
+        {
+            // Directory
+            lib_path = path + "/" + lib_name;
+        }
+        else
+        {
+            continue;
+        }
+
+        // Check if file exists
+        if( stat(lib_path.c_str(), &path_stat) != 0 )
+        {    
+            continue;
+        }
+
+        // Check if same name as requested lib
+        if( lib_path.size()+1 < lib_name.size() )
+            continue;
+        if( lib_path.substr(lib_path.size()- lib_name.size()-1, lib_path.size()) == (std::string("/") + lib_name) ){
+            return lib_path;
+        }
+    }
+    return ""; // Not found
+}
+
 void LoaderLIEF::load_elf(
+    MaatEngine* engine,
+    const std::string& binary,
+    addr_t base,
+    std::vector<CmdlineArg> args,
+    const environ_t& envp,
+    const std::string& virtual_path,
+    const std::list<std::string>& libdirs,
+    const std::list<std::string>& ignore_libs,
+    bool load_interp
+)
+{
+    // Parse binary with LIEF
+    parse_binary(binary, Format::ELF32);
+
+    // Get interpreter
+    if (load_interp and _elf->has_interpreter())
+    {
+        std::string interp_name = _clean_interpreter_name(_elf->interpreter());
+        std::string interp_path = find_library_file(interp_name, libdirs);
+        if (not interp_path.empty())
+        {
+            return load_elf_using_interpreter(
+                engine,
+                binary,
+                base,
+                args,
+                envp,
+                virtual_path,
+                interp_path
+            );
+        }
+        else
+        {
+            engine->log.warning("Couln't find interpreter ", interp_name,
+            ". Loading binary manually...");
+        }
+    }
+    // If load_interp option not enabled or interpreter not found
+    return load_elf_binary(
+        engine,
+        binary,
+        base,
+        args,
+        envp,
+        virtual_path,
+        libdirs,
+        ignore_libs
+    );
+}
+
+void LoaderLIEF::load_elf_using_interpreter(
+    MaatEngine* engine,
+    const std::string& binary,
+    addr_t base,
+    std::vector<CmdlineArg> args,
+    const environ_t& envp,
+    const std::string& virtual_path,
+    const std::string& interp_path
+)
+{
+    reg_t reg_sp = -1;
+    reg_t reg_bp = -1;
+    reg_t reg_gs = -1;
+    reg_t reg_fs = -1;
+    reg_t reg_pc = -1;
+    addr_t stack_base, stack_size, stack_top;
+
+    // Get particular registers
+    get_arch_special_registers(*engine->arch, reg_pc, reg_sp, reg_bp, reg_gs, reg_fs);
+
+    // Map and copy segments to memory
+    map_elf_segments(engine, base);
+
+    // Add symbols to symbol manager
+    add_elf_symbols(engine, base);
+
+    // Allocate heap after binary
+    addr_t heap_base = end_of_segment(*engine->mem, binary_name);
+    addr_t heap_size = 0x400000;
+    engine->mem->new_segment(
+        heap_base,
+        heap_base+heap_size-1,
+        maat::mem_flag_rw,
+        "Heap"
+    );
+
+    // Setup process stack
+    stack_size = 0x00200000;
+    stack_top = engine->arch->bits() == 32 ? 0x0c000000 : 0x80000000000;
+    stack_base = alloc_segment(engine, stack_top-stack_size, stack_size, maat::mem_flag_rw, "Stack");
+    engine->cpu.ctx().set(reg_sp, stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
+    engine->cpu.ctx().set(reg_bp, stack_base+stack_size-0x400);
+
+    // Load interpreter
+    load_elf_interpreter(engine, interp_path, *this);
+
+    // Setup stack
+    elf_setup_stack(engine, base, args, envp);
+
+    // Point PC to interpreter entrypoint
+    engine->cpu.ctx().set(reg_pc, interpreter_entry.value());
+}
+
+void LoaderLIEF::load_elf_binary(
     MaatEngine* engine,
     const std::string& binary,
     addr_t base,
@@ -32,7 +213,7 @@ void LoaderLIEF::load_elf(
     const std::list<std::string>& ignore_libs
 )
 {
-    addr_t stack_base, stack_size, heap_base, heap_size;
+    addr_t stack_base, stack_top, stack_size, heap_base, heap_size;
     addr_t gs, fs;
     std::list<std::string> loaded_libs;
     reg_t reg_sp = -1;
@@ -41,9 +222,6 @@ void LoaderLIEF::load_elf(
     reg_t reg_fs = -1;
     reg_t reg_pc = -1;
     int arch_bytes = engine->arch->octets();
-
-    // Parse binary with LIEF
-    parse_binary(binary, Format::ELF32);
 
     // Get particular registers
     get_arch_special_registers(*engine->arch, reg_pc, reg_sp, reg_bp, reg_gs, reg_fs);
@@ -55,15 +233,21 @@ void LoaderLIEF::load_elf(
     add_elf_symbols(engine, base);
 
     // Setup process stack
-    stack_size = 0x04000000;
-    stack_base = alloc_segment(engine, 0x2000000, stack_size, maat::mem_flag_rw, "Stack");
+    stack_size = 0x00200000;
+    stack_top = engine->arch->bits() == 32 ? 0x0c000000 : 0x80000000000;
+    stack_base = alloc_segment(engine, stack_top-stack_size, stack_size, maat::mem_flag_rw, "Stack");
     engine->cpu.ctx().set(reg_sp, stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
-    engine->cpu.ctx().set(reg_bp, stack_base+stack_size-0x400); 
+    engine->cpu.ctx().set(reg_bp, stack_base+stack_size-0x400);
 
     // Setup heap
-    heap_size = 0x06000000;
-    heap_base = alloc_segment(engine, 0x09000000, heap_size, maat::mem_flag_rw, "Heap");
-    // engine->env->init_mem_allocator(heap_base, heap_base+heap_size-1);
+    heap_base = end_of_segment(*engine->mem, binary_name);
+    heap_size = 0x400000;
+    engine->mem->new_segment(
+        heap_base,
+        heap_base+heap_size-1,
+        maat::mem_flag_rw,
+        "Heap"
+    );
 
     // Allocate some segments for GS and FS segment selectors (stack canary stuff)
     if (reg_gs != -1)
@@ -73,18 +257,6 @@ void LoaderLIEF::load_elf(
         engine->cpu.ctx().set(reg_gs, gs);
         engine->cpu.ctx().set(reg_fs, fs);
     }
-
-    // Load misc. things
-    // TODO auto load everything from Env !!
-    /* 
-    _load_ctype_tables(sym);
-    _load_stdio(sym);
-    _load_kernel_data(sym);
-    */
-
-    // Initialize default signal handlers
-    // TODO Do that in Env directly
-    // _init_signal_handlers(sym);
 
     // Preload emulated libraries. We do it before loading dependencies
     // because dependencies themselves might need functions from emulated libs...
@@ -98,6 +270,20 @@ void LoaderLIEF::load_elf(
     // Perform relocations
     perform_elf_relocations(engine, base);
 
+    // Setup initial stack frame
+    elf_setup_stack(engine, base, args, envp);
+    
+    // Point PC to program entrypoint
+    engine->cpu.ctx().set(reg_pc, _elf->entrypoint() + base);
+}
+
+void LoaderLIEF::elf_setup_stack(
+    MaatEngine* engine,
+    addr_t base,
+    std::vector<CmdlineArg> args,
+    const environ_t& envp
+)
+{
     // Setup args, env, auxilliary vector, etc in memory
     // 1 ---------------- Write Args to memory -----------------
     std::vector<addr_t> argv_addresses;
@@ -143,8 +329,8 @@ void LoaderLIEF::load_elf(
 
     // Setup auxilliary vector
     // At the end of aux add two null pointers (termination key/value)
-    addr_t tmp_sp = engine->cpu.ctx().get(reg_sp)->as_uint() - (arch_bytes*2);
-    engine->cpu.ctx().set(reg_sp,  - arch_bytes*2);
+    size_t arch_bytes = engine->arch->octets();
+    addr_t tmp_sp = engine->cpu.ctx().get(engine->arch->sp())->as_uint() - (arch_bytes*2);
     engine->mem->write(tmp_sp, 0, arch_bytes);
     engine->mem->write(tmp_sp+arch_bytes, 0, arch_bytes);
     for (auto it = aux_vector.rbegin(); it != aux_vector.rend(); it++)
@@ -154,7 +340,7 @@ void LoaderLIEF::load_elf(
         engine->mem->write(tmp_sp+arch_bytes, it->second, arch_bytes);
     }
 
-    // Setup env 
+    // Setup envp
     tmp_sp -= arch_bytes;
     engine->mem->write(tmp_sp, 0, arch_bytes); // At the end of env variables add a null pointer
     for (addr_t addr : envp_addresses)
@@ -174,13 +360,8 @@ void LoaderLIEF::load_elf(
     // Setup argc
     tmp_sp -= arch_bytes;
     engine->mem->write(tmp_sp, argc, arch_bytes);
-    engine->cpu.ctx().set(reg_sp, tmp_sp);
+    engine->cpu.ctx().set(engine->arch->sp(), tmp_sp);
     
-    // Point PC to entrypoint
-    addr_t real_entry = interpreter_entry.has_value() ?
-        interpreter_entry.value() : _elf->entrypoint() + base;
-    engine->cpu.ctx().set(reg_pc, real_entry);
-
 }
 
 void LoaderLIEF::map_elf_segments(MaatEngine* engine, addr_t base_address)
@@ -217,24 +398,12 @@ void LoaderLIEF::map_elf_segments(MaatEngine* engine, addr_t base_address)
             addr = segment.virtual_address() + base_address;
             flags = get_segment_flags(segment);
             // Create new segment
-            std::stringstream ss;
-            ss << "[" << _elf->name() << "]";
-            engine->mem->new_segment(addr, addr+virtual_size-1, flags, ss.str());
+            engine->mem->new_segment(addr, addr+virtual_size-1, flags, _elf->name());
             // Write content
             engine->mem->write_buffer(addr, data, physical_size, true);
             delete [] data; data = nullptr;
         }
     }
-}
-
-// Remove prefixes like /lib64/... on interpreter name
-std::string _clean_interpreter_name(const std::string& name)
-{
-    size_t idx = name.find_last_of("/");
-    if (idx != std::string::npos)
-        return name.substr(idx+1);
-    else
-        return name;
 }
 
 void LoaderLIEF::load_elf_dependencies(
@@ -247,8 +416,6 @@ void LoaderLIEF::load_elf_dependencies(
 {
     LoaderLIEF lib_loader;
     std::string lib_path;
-    struct stat path_stat;
-    bool found = false;
     for (const std::string& lib_name : _elf->imported_libraries())
     {
         if( std::find(ignore_libs.begin(), ignore_libs.end(), lib_name) != ignore_libs.end())
@@ -259,48 +426,13 @@ void LoaderLIEF::load_elf_dependencies(
         {
             continue;
         }
-        found = false;
         // Add lib to list of loaded libs (no matter if success or not)
         loaded_libs.push_back(lib_name);
-        // Search candidate file 
-        for (const std::string& path : libdirs)
-        {
-            // Check if file or directory
-            if( stat(path.c_str(), &path_stat) )
-            {
-                continue; // Error in stat, skip this file
-            }
-            // Create cnadidate filename
-            if( S_ISREG(path_stat.st_mode))
-            {
-                // Regular file
-                // DO nothing
-                lib_path = path;
-            }else if( S_ISDIR(path_stat.st_mode)){
-                // Directory
-                lib_path = path + "/" + lib_name;
-            }else{
-                continue;
-            }
+        lib_path = find_library_file(lib_name, libdirs);
 
-            // Check if file exists
-            if( stat(lib_path.c_str(), &path_stat) != 0 )
-            {    
-                continue;
-            }
-
-            // Check if same name as requested lib
-            if( lib_path.size()+1 < lib_name.size() )
-                continue;
-            if( lib_path.substr(lib_path.size()- lib_name.size()-1, lib_path.size()) == (std::string("/") + lib_name) ){
-                found = true;
-                break;
-            }
-        }
-        
-        if( ! found )
+        if (lib_path.empty())
         {
-            engine->log.warning("LIEFLoader: Couldn't find library '", lib_name, "': skipping import");
+            engine->log.warning("Couldn't find library '", lib_name, "': skipping import");
             continue;
         }
 
@@ -344,8 +476,6 @@ void LoaderLIEF::load_elf_dependencies(
             );
         }
         // If this was the interpreter, record its entry point
-        std::cout << "DEBUG loaded dep: " << lib_name << std::endl;
-        std::cout << "debug interp " << _clean_interpreter_name(_elf->interpreter());
         if (
             top_loader._elf->has_interpreter() and
             _clean_interpreter_name(top_loader._elf->interpreter()) == lib_name
@@ -395,6 +525,52 @@ addr_t LoaderLIEF::load_elf_library(
     perform_elf_relocations(engine, base_address);
 
     return base_address;
+}
+
+void LoaderLIEF::load_elf_interpreter(
+    MaatEngine* engine,
+    const std::string& interp_path,
+    LoaderLIEF& top_loader
+)
+{
+    LoaderLIEF interp_loader;
+    std::string interp_name = _clean_interpreter_name(top_loader._elf->interpreter());
+
+    // Parse binary with LIEF
+    interp_loader.parse_binary(interp_path, Format::ELF32);
+
+    // Find available base address
+    uint64_t vsize = interp_loader._elf->virtual_size();
+    addr_t base_address = find_free_space(engine, 0x1000, vsize);
+    if (base_address == 0)
+    {
+        throw loader_exception(
+            Fmt() << "LIEFLoader::load_elf_interpreter(): couldn't allocate "
+            << std::hex << "0x" << vsize << " bytes to load interpreter '" << interp_path << "'"
+            >> Fmt::to_str
+        );
+    }
+    top_loader.interpreter_base = base_address;
+    top_loader.interpreter_entry = interp_loader._elf->entrypoint() + base_address;
+
+    // Load segments
+    interp_loader.map_elf_segments(engine, base_address);
+
+    // Add symbols to symbol manager
+    interp_loader.add_elf_symbols(engine, base_address);
+
+    // Add heap
+    addr_t heap_base = end_of_segment(
+        *engine->mem,
+        interp_loader.binary_name
+    );
+    addr_t heap_size = 0x400000;
+    engine->mem->new_segment(
+        heap_base,
+        heap_base+heap_size-1,
+        maat::mem_flag_rw,
+        "Interp. Heap"
+    );
 }
 
 std::vector<std::pair<uint64_t, uint64_t>> LoaderLIEF::generate_aux_vector(
@@ -451,7 +627,12 @@ std::vector<std::pair<uint64_t, uint64_t>> LoaderLIEF::generate_aux_vector(
     aux_vector.push_back(std::make_pair(4, _elf->header().program_header_size())); // Size of program table (just after header)
     aux_vector.push_back(std::make_pair(5, _elf->header().numberof_segments())); // Number of segments in program header
     aux_vector.push_back(std::make_pair(6, 0x1000)); // Default page size at 0x1000
-    aux_vector.push_back(std::make_pair(7, 0)); // Base address of interpreter, we don't specify it 
+    aux_vector.push_back(
+        std::make_pair(
+            7,
+            interpreter_base.has_value()? *interpreter_base : 0
+        )
+    ); // Base address of interpreter, we don't specify it
     aux_vector.push_back(std::make_pair(8, 0)); // Set flags to 0 (I don't know what they do ...)
     aux_vector.push_back(std::make_pair(9, base_segment + _elf->entrypoint())); // Program entry point
     aux_vector.push_back(std::make_pair(11, 1000)); // uid

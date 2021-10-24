@@ -405,10 +405,10 @@ public:
                 // Increment offset to point to next instruction
                 offset += ilen;
 
-                for (auto& inst : m_pcodes.back().m_insts)
-                {
-                    std::cout << "DEBUG " << inst << "\n";
-                }
+                // for (auto& inst : m_pcodes.back().m_insts)
+                // {
+                //     std::cout << "DEBUG " << inst << "\n";
+                // }
 
                 for (auto& inst : m_pcodes.back().m_insts)
                 {

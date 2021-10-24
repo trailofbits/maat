@@ -85,7 +85,12 @@ public:
      * @param args Command line arguments with whom to invoke the executable
      * @param virtual_path Path of the loaded binary in the emulated file system
      * @param libdirs Directories where to search for shared objects the binary might depend on
-     * @param ignore_libs List of libraries to **NOT** load even though the binary lists them as dependencies */
+     * @param ignore_libs List of libraries to **NOT** load even though the binary lists them as dependencies. This option has no effect when 'interpreter' is 'true'
+     * @param interpreter If set to <code>True</code>, load and emulate the interpreter and let it load
+     *   the binary and dependencies by itself. The interpreter binary must be found in one of 
+     *   the 'libdirs' directories. If the interpreter is missing, Maat loads the binary and 
+     *   dependencies manually */
+
     virtual void load(
         MaatEngine*engine,
         const std::string& binary,
@@ -95,10 +100,9 @@ public:
         const environ_t& envp,
         const std::string& virtual_path,
         const std::list<std::string>& libdirs,
-        const std::list<std::string>& ignore_libs
+        const std::list<std::string>& ignore_libs,
+        bool interpreter = true
     );
-    // TODO handle PID in env...
-    // TODO handle Env variables in env as well
 protected:
     void load_emulated_libs(MaatEngine* engine);
 };
@@ -111,6 +115,7 @@ private:
     std::unique_ptr<LIEF::ELF::Binary> _elf;
     std::string binary_name;
     std::optional<addr_t> interpreter_entry;
+    std::optional<addr_t> interpreter_base; // For aux vector
 public:
     virtual void load(
         MaatEngine*engine,
@@ -121,8 +126,10 @@ public:
         const environ_t& envp,
         const std::string& virtual_path,
         const std::list<std::string>& libdirs,
-        const std::list<std::string>& ignore_libs
+        const std::list<std::string>& ignore_libs,
+        bool interpreter = true
     );
+
 private:
     void parse_binary(const std::string& binary, loader::Format type);
     void get_arch_special_registers(
@@ -144,6 +151,12 @@ private:
         const std::string& name = "",
         bool is_special_segment = false
     );
+    void elf_setup_stack(
+        MaatEngine* engine,
+        addr_t base,
+        std::vector<CmdlineArg> args,
+        const environ_t& envp
+    );
     addr_t find_free_space(MaatEngine*engine, addr_t start, addr_t size);
     void load_elf(
         MaatEngine*engine,
@@ -153,7 +166,27 @@ private:
         const environ_t& envp,
         const std::string& virtual_path,
         const std::list<std::string>& libdirs,
+        const std::list<std::string>& ignore_libs,
+        bool load_interp
+    );
+    void load_elf_binary(
+        MaatEngine*engine,
+        const std::string& binary,
+        addr_t base,
+        std::vector<CmdlineArg> args,
+        const environ_t& envp,
+        const std::string& virtual_path,
+        const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs
+    );
+    void load_elf_using_interpreter(
+        MaatEngine*engine,
+        const std::string& binary,
+        addr_t base,
+        std::vector<CmdlineArg> args,
+        const environ_t& envp,
+        const std::string& virtual_path,
+        const std::string& interp_path
     );
     // Return the base address for the loaded lib
     addr_t load_elf_library(
@@ -163,6 +196,11 @@ private:
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs,
         std::list<std::string>& loaded_libs,
+        LoaderLIEF& top_loader
+    );
+    void load_elf_interpreter(
+        MaatEngine* engine,
+        const std::string& interp_path,
         LoaderLIEF& top_loader
     );
     std::vector<std::pair<uint64_t, uint64_t>> generate_aux_vector(

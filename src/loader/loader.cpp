@@ -75,7 +75,8 @@ void Loader::load(
     const environ_t& envp,
     const std::string& virtual_path,
     const std::list<std::string>& libdirs,
-    const std::list<std::string>& ignore_libs
+    const std::list<std::string>& ignore_libs,
+    bool interpreter
 )
 {
     throw runtime_exception("Loader::load(): shouldn't be called from base class!");

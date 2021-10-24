@@ -126,8 +126,12 @@ public:
      * @param args Command line arguments with whom to invoke the loaded executable
      * @param virtual_path Path of the loaded binary in the emulated file system
      * @param libdirs Directories where to search for shared objects the binary might depend on
-     * @param ignore_libs List of libraries to *NOT* load even though the binary lists them as dependencies
-     * */
+     * @param ignore_libs List of libraries to **NOT** load even though the binary lists them as dependencies. This option has no effect when 'load_interp' is 'true'
+     * @param load_interp If set to <code>True</code>, load and emulate the interpreter and let it load
+     *   the binary and dependencies by itself. The interpreter binary must be found in one of 
+     *   the 'libdirs' directories. If the interpreter is missing, Maat loads the binary and 
+     *   dependencies manually
+     */
     void load(
         const std::string& binary,
         loader::Format type,
@@ -136,7 +140,8 @@ public:
         const loader::environ_t& envp,
         const std::string& virtual_path,
         const std::list<std::string>& libdirs,
-        const std::list<std::string>& ignore_libs
+        const std::list<std::string>& ignore_libs,
+        bool load_interp = true
     );
 public:
     /** \brief Return a solver-refined value set for expression *e*. The refined

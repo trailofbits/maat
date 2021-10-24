@@ -97,17 +97,18 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
     std::list<std::string> lib_paths, ignore_libs;
     loader::environ_t envp;
     char *virtual_path = "";
+    int load_interp = 1; // True by default
     Py_ssize_t i;
 
     // TODO ADD envp argument as option
-    char* keywd[] = {"", "", "base", "args", "envp", "libdirs", "ignore_libs", "virtual_path", NULL};
+    char* keywd[] = {"", "", "base", "args", "envp", "libdirs", "ignore_libs", "virtual_path", "load_interp", NULL};
 
     if( !PyArg_ParseTupleAndKeywords(
-            args, keywords, "si|KOOOs", keywd,
+            args, keywords, "si|KOOOsp", keywd,
             &name, &bin_type, &base, 
             &py_cmdline_args, &py_envp,
             &py_libs, &py_ignore_libs,
-            &virtual_path
+            &virtual_path, &load_interp
         )
     )
     {
@@ -208,7 +209,8 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
             envp,
             std::string(virtual_path),
             lib_paths,
-            ignore_libs
+            ignore_libs,
+            load_interp
         );
     }
     catch(std::exception& e)

@@ -1233,7 +1233,8 @@ void MaatEngine::load(
     const loader::environ_t& envp,
     const std::string& virtual_path,
     const std::list<std::string>& libdirs,
-    const std::list<std::string>& ignore_libs
+    const std::list<std::string>& ignore_libs,
+    bool load_interp
 )
 {
 #ifdef HAS_LOADER_BACKEND
@@ -1247,7 +1248,8 @@ void MaatEngine::load(
         envp,
         virtual_path,
         libdirs,
-        ignore_libs
+        ignore_libs,
+        load_interp
     );
 #else
     throw runtime_exception("Maat was compiled without a loader backend");
