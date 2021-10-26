@@ -217,7 +217,7 @@ void PhysicalFile::set_deleted(bool val)
 }
 
 FileAccessor::FileAccessor(physical_file_t file, filehandle_t handle):
-flags(0), physical_file(file), deleted(false), _alloc_addr(0)
+flags(0), physical_file(file), _handle(handle), deleted(false), _alloc_addr(0)
 {
     // Init access state
     state.read_ptr = 0;
@@ -503,7 +503,7 @@ node_status_t Directory::get_node_status(fspath_t path)
     node_status_t status = 0;
     if (path.empty())
     {
-        return -1;
+        return node::none;
     }
     
     try // Try file
@@ -526,11 +526,11 @@ node_status_t Directory::get_node_status(fspath_t path)
         }
         catch(const env_exception& e)
         {
-            throw env_exception("Directory::get_node_status(): no node for the supplied path!");
+            return node::none;
         }
         
     }
-    return -1;
+    return node::none;
 }
 
 bool Directory::_contains_name(const std::string& name)
@@ -636,6 +636,17 @@ physical_file_t FileSystem::get_file(const std::string& path, bool follow_symlin
         res = get_file(res->symlink());
     }
     return res;
+}
+physical_file_t FileSystem::get_file_by_handle(filehandle_t handle)
+{
+    FileAccessor& fa = get_fa_by_handle(handle);
+    return fa.physical_file;
+}
+
+bool FileSystem::file_exists(const std::string& path)
+{
+    node_status_t status = get_node_status(path);
+    return node::check_is_file(status);
 }
 
 bool FileSystem::delete_file(const std::string& path, bool weak)
@@ -844,6 +855,13 @@ std::string FileSystem::pointed_path_from_symlink(std::string symlink_file)
     return res;
 }
 
+bool FileSystem::is_relative_path(const std::string& path)
+{
+    return (
+        path.substr(0, path_separator.size()) != path_separator
+    );
+}
+
 node_status_t FileSystem::get_node_status(const std::string& path)
 {
     Directory& dir = (path[0] == orphan_file_wildcard) ? orphan_files : root;
@@ -896,10 +914,20 @@ std::ostream& operator<<(std::ostream& os, const FileSystem& fs)
 
 namespace node
 {
-    
+ 
 bool check_is_file(node_status_t s)
 {
     return s & node::is_file;
+}
+
+bool check_is_dir(node_status_t s)
+{
+    return s & node::is_dir;
+}
+
+bool check_is_symlink(node_status_t s)
+{
+    return s & node::is_symlink;
 }
 
 }

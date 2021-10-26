@@ -1530,6 +1530,8 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
         if (reg_name == "CR0") return maat::ir::Reg(maat::X64::CR0, 64);
         if (reg_name == "XCR0") return maat::ir::Reg(maat::X64::XCR0, 64);
 
+        if (reg_name == "SSP") return maat::ir::Reg(maat::X64::SSP, 64);
+
         throw maat::runtime_exception(maat::Fmt()
                 << "X64: Register translation from SLEIGH to MAAT missing for register "
                 << reg_name

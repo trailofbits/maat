@@ -260,7 +260,9 @@ namespace X64
     static constexpr reg_t C2 = 61; ///< FPU flag
     static constexpr reg_t C3 = 62; ///< FPU flag
     static constexpr reg_t FPUCW = 63; ///< FPU control word (16 bits)
-    static constexpr reg_t NB_REGS = 64;
+    // Shadow memory
+    static constexpr reg_t SSP = 64; ///< Shadow stack pointer
+    static constexpr reg_t NB_REGS = 65;
 
     /** \addtogroup arch
      * \{ */

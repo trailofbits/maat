@@ -16,12 +16,16 @@ namespace env
 typedef unsigned node_status_t;
 namespace node
 {
+    static constexpr node_status_t none = 0;
+
     static constexpr node_status_t exists = 1 << 0;
     static constexpr node_status_t is_file = 1 << 1;
     static constexpr node_status_t is_symlink = 1 << 2;
     static constexpr node_status_t is_dir = 1 << 3;
 
     bool check_is_file(node_status_t s);
+    bool check_is_symlink(node_status_t s);
+    bool check_is_dir(node_status_t s);
 }
 
 /// Absolute path to a file or directory node in the virtual file system
@@ -92,13 +96,14 @@ typedef std::shared_ptr<PhysicalFile> physical_file_t;
 /** This class mimics a basic FILE* like structure used to read/write from a file */
 class FileAccessor
 {
+friend class FileSystem;
 public:
     struct State
     {
         addr_t read_ptr; /// Current read offset in file
         addr_t write_ptr; ///  Current write offset in file
     };
-private:
+protected:
     filehandle_t _handle;
     int flags; // TODO ? 
     physical_file_t physical_file;
@@ -180,11 +185,15 @@ public:
 
 public:
     // Physical files
-    // get_file_by_* functions don't check whether the path is marked as 'deleted' !
+    // get_fa_by_* functions don't check whether the path is marked as 'deleted' !
+
     /** \brief Get a file in the file system
      * @param path Absolute path of the file
      * @param follow_symlink If set to 'true', resolve potential symbolic links to get the actual file */ 
     physical_file_t get_file(const std::string& path, bool follow_symlink=true);
+    /** \brief Convenience function to get a physical file by handle.
+     * @param handle The handle of the file */
+     physical_file_t get_file_by_handle(filehandle_t handle);
     /** \brief Create a file specified by its absolute path. 
      * Returns 'true' on success and 'false' on failure.
      * @param path Absolute path of the file
@@ -198,6 +207,8 @@ public:
      * snapshot rewinds back to before the deletion. If set to 'false' the file object
      * is completely deleted internally */
     bool delete_file(const std::string& path, bool weak=true);
+    /** \brief Check if a file exists in the filesystem */
+    bool file_exists(const std::string& path);
 
     // Symlinks
     /** \brief Create a symbolic link
@@ -239,6 +250,7 @@ public:
     fspath_t fspath_from_path_relative_to(std::string rel_path, fspath_t path_base);
     std::string path_from_relative_path(std::string rel_path, std::string path_base);
     std::string pointed_path_from_symlink(std::string symlink_file);
+    bool is_relative_path(const std::string& path);
 
     node_status_t get_node_status(const std::string& path);
 

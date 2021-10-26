@@ -373,6 +373,7 @@ namespace X64
     const std::string C2_str = "c2";
     const std::string C3_str = "c3";
     const std::string CR0_str = "cr0";
+    const std::string SSP_str = "ssp";
 
     
     ArchX64::ArchX64(): Arch(Arch::Type::X64, 64, X64::NB_REGS)
@@ -448,6 +449,7 @@ namespace X64
             case C2: return C2_str;
             case C3: return C3_str;
             case CR0: return CR0_str;
+            case SSP: return SSP_str;
             default:
                 throw runtime_exception(
                     Fmt() << "ArchX64::reg_name() got unknown reg num: "
@@ -523,6 +525,7 @@ namespace X64
         else if( name == C2_str) return C2;
         else if( name == C3_str) return C3;
         else if( name == CR0_str) return CR0;
+        else if (name == SSP_str) return SSP;
         else 
             throw runtime_exception(Fmt ()
                     << "ArchX64::reg_num() got unknown reg name: " << name
@@ -542,6 +545,7 @@ namespace X64
             case RSI:
             case RBP:
             case RSP:
+            case SSP:
             case RIP:
             case R8:
             case R9:

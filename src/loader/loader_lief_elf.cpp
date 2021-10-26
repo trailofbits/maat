@@ -372,11 +372,11 @@ void LoaderLIEF::elf_setup_stack(
 
 void LoaderLIEF::map_elf_segments(MaatEngine* engine, addr_t base_address)
 {
-    uint64_t addr;
+    uint64_t vaddr, aligned_addr, end_addr;
     mem_flag_t flags;
-    int i;
     uint8_t* data;
     unsigned int virtual_size, physical_size;
+    addr_t page_size = engine->mem->page_manager.page_size();
 
     for (LIEF::ELF::Segment& segment: _elf->segments())
     {
@@ -387,27 +387,27 @@ void LoaderLIEF::map_elf_segments(MaatEngine* engine, addr_t base_address)
                 throw loader_exception("LoaderLIEF::map_elf_segments(): Inconsistent sizes for segment content and its physical size!");
             }
 
-            // Copy segment content (vector<uint8_t>) into a buffer
-            data = new uint8_t[segment.physical_size()]; // FIXME, use std::array...
-            i = 0;
-            for( auto b : segment.content())
-            {
-                data[i++] = b;
-            }
             virtual_size = segment.virtual_size();
-            // Aligne virtual size
-            if( virtual_size % engine->mem->page_manager.page_size() != 0)
-            {
-                virtual_size += engine->mem->page_manager.page_size() - (virtual_size % engine->mem->page_manager.page_size());
-            }
             physical_size = segment.physical_size();
-            addr = segment.virtual_address() + base_address;
+            vaddr = segment.virtual_address() + base_address;
+            // Align start address
+            aligned_addr = vaddr;
+            if (aligned_addr % page_size != 0)
+            {
+                aligned_addr -= (aligned_addr % page_size);
+            }
+            // Align end address
+            end_addr = vaddr + virtual_size;
+            if (end_addr % page_size != 0)
+            {
+                end_addr += page_size - (end_addr % page_size);
+            }
+            
             flags = get_segment_flags(segment);
             // Create new segment
-            engine->mem->new_segment(addr, addr+virtual_size-1, flags, _elf->name());
+            engine->mem->new_segment(aligned_addr, end_addr-1, flags, _elf->name());
             // Write content
-            engine->mem->write_buffer(addr, data, physical_size, true);
-            delete [] data; data = nullptr;
+            engine->mem->write_buffer(vaddr, (uint8_t*)segment.content().data(), physical_size, true);
         }
     }
 }
