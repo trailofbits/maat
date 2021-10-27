@@ -222,7 +222,7 @@ static PyObject* FileAccessor_write_buffer(PyObject* self, PyObject *args)
     
     try
     {
-        if (PyArg_ParseTuple(args, "O!", &buf, &PyList_Type))
+        if (PyArg_ParseTuple(args, "O!", &PyList_Type, &buf))
         {
             // Buffer = list of expressions
             for (int i = 0; i < PyList_Size(buf); i++)

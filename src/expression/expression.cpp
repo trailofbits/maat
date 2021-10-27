@@ -2006,6 +2006,50 @@ std::string VarContext::new_name_from(const std::string& name) const
         >> Fmt::to_str);
 }
 
+std::vector<Expr> VarContext::new_symbolic_buffer(
+    const std::string& name,
+    int nb_elems,
+    int elem_size
+)
+{
+    std::vector<Expr> res;
+    std::stringstream ss;
+    for (int i = 0; i < nb_elems; i++)
+    {
+        ss.str("");
+        ss << name << "_" << i;
+        res.push_back(exprvar(elem_size*8, ss.str()));
+    }
+    return res;
+}
+
+std::vector<Expr> VarContext::new_concolic_buffer(
+    const std::string& name,
+    const std::vector<cst_t>& concrete_buffer,
+    int nb_elems,
+    int elem_size
+)
+{
+    std::vector<Expr> res;
+    std::stringstream ss;
+    for (int i = 0; i < nb_elems; i++)
+    {
+        ss.str("");
+        ss << name << "_" << i;
+        std::string var_name = ss.str();
+        if (contains(var_name))
+        {
+            throw var_context_exception(
+                Fmt() << "VarContext::new_concolic_buffer(): variable named "
+                << var_name << " already exists! " >> Fmt::to_str
+            );
+        }
+        res.push_back(exprvar(elem_size*8, var_name));
+        set(var_name, concrete_buffer[i]);
+    }
+    return res;
+}
+
 void VarContext::remove(const std::string& name)
 {
     varmap.erase(name);

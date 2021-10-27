@@ -625,7 +625,29 @@ public:
     std::string get_as_string(std::string var) const;
     void remove(const std::string& var); ///< Remove concrete value for symbolic variable 
     bool contains(const std::string& var) const; ///< Return true if a concrete value is associated to the symbolic variable
-    std::string new_name_from(const std::string& var) const;
+    std::string new_name_from(const std::string& hint) const;
+    /** \brief Create a new buffer of symbolic variables.
+     * Returns a pair <buffer_name, buffer>.
+     * @param name Base name after whom to name variables
+     * @param nb_elems Number of variables in the buffer
+     * @param elem_size Size in bytes of each variable */
+    std::vector<Expr> new_symbolic_buffer(
+        const std::string& name,
+        int nb_elems,
+        int elem_size=1
+    );
+    /** \brief Create a new buffer of concolic variables.
+     * Returns a pair <buffer_name, buffer>.
+     * @param name Base name after whom to name variables
+     * @param concrete_buffer The concrete values with whom to initialize variables
+     * @param nb_elems Number of variables in the buffer
+     * @param elem_size Size in bytes of each variable */
+    std::vector<Expr> new_concolic_buffer(
+        const std::string& name,
+        const std::vector<cst_t>& concrete_buffer,
+        int nb_elems,
+        int elem_size=1
+    );
     /** \brief Copy the mapping between concrete values and symbolic variables from 'other'.
      * - If a variable is contained in both 'other' and this context, it takes the value
      *   that it has in 'other'. 

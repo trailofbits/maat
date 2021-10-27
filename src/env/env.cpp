@@ -135,6 +135,8 @@ void LinuxEmulator::add_running_process(const ProcessInfo& pinfo, const std::str
     fs._new_fa(stdin, 0);
     fs._new_fa(stdout, 1);
     fs._new_fa(stderr, 2);
+    fs.get_file_by_handle(1)->flush_stream = std::ref(std::cout);
+    fs.get_file_by_handle(2)->flush_stream = std::ref(std::cerr);
 }
 
 } // namespace env

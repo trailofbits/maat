@@ -439,7 +439,6 @@ FunctionCallback::return_t sys_linux_access(
             F = 0;
     ucst_t mode = args[1]->as_uint(*engine.vars);
     std::string file = engine.mem->read_string(args[0]);
-    std::cout << "debug filename " << file << std::endl;
     // Get file
     env::node_status_t status = engine.env->fs.get_node_status(file);
     // Test if file exists 

@@ -47,6 +47,7 @@ unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t&
     VarContext dummy_ctx;
 
     _adjust_write_offset(write_ptr);
+    addr_t start_write_ptr = write_ptr;
 
     if (deleted)
     {
@@ -79,6 +80,27 @@ unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t&
     if (write_ptr > _size)
     {
         _size = write_ptr;
+    }
+
+    // If ostream, flush input
+    if (flush_stream.has_value())
+    {
+        std::ostream& os = flush_stream.value().get();
+        for (int i = 0; i < n; i++)
+        {
+            Expr e = data->read(start_write_ptr+i, 1);
+            try
+            {
+                os << (char)e->as_int();
+            }
+            catch (const expression_exception& e)
+            {
+                // If the expression contains abstract variables we don't have 
+                // a context to concretize them so just replace with a wildcard
+                // character
+                os << "#";
+            }
+        }
     }
 
     return n;
@@ -120,6 +142,14 @@ unsigned int PhysicalFile::write_buffer(uint8_t* buffer, addr_t& offset, int nb_
     if (offset > _size)
     {
         _size = offset;
+    }
+
+    // If ostream, flush input
+    if (flush_stream.has_value())
+    {
+        std::ostream& os = flush_stream.value().get();
+        for (int i = 0; i < nb_bytes; i++)
+            os << (char)buffer[i];
     }
 
     return nb_bytes;
@@ -221,7 +251,8 @@ node_status_t PhysicalFile::status()
     node_status_t res = node::none;
     if (is_symlink())
         res |= node::is_symlink;
-    res |= node::is_file | node::exists;
+    res |= node::is_file | node::exists;
+    return res;
 }
 
 FileAccessor::FileAccessor(physical_file_t file, filehandle_t handle):

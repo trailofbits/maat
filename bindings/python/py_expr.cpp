@@ -667,6 +667,104 @@ static PyObject* VarContext_get_as_string(PyObject* self, PyObject* args)
     return res;
 }
 
+static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args)
+{
+    const char * name;
+    std::vector<cst_t> concrete_buffer;
+    PyObject* py_concrete_buffer;
+    int nb_elems, elem_size =1;
+    
+    if( !PyArg_ParseTuple(args, "sO!ii", &name, &PyList_Type, &py_concrete_buffer , &nb_elems, &elem_size))
+    {
+        return NULL;
+    }
+
+    // Buffer = list of concrete vals
+    for (int i = 0; i < PyList_Size(py_concrete_buffer); i++)
+    {
+        PyObject* val = PyList_GetItem(py_concrete_buffer, i);
+        if (not PyLong_Check(val))
+        {
+            return PyErr_Format(PyExc_TypeError, "Buffer element %d is not an integer", i);
+        }
+        concrete_buffer.push_back(PyLong_AsLongLong(val));
+    }
+
+    std::vector<Expr> res;
+    try
+    {
+        res = as_varctx_object(self).ctx->new_concolic_buffer(
+            std::string(name),
+            concrete_buffer,
+            nb_elems,
+            elem_size
+        );
+    }
+    catch(const var_context_exception& e)
+    {
+        return PyErr_Format(PyExc_ValueError, e.what());
+    }
+    
+    // Build result back to python
+    // TODO: transforming a std::vector<Expr> into a list of Expr should
+    // be factorized in a util function
+    PyObject* list = PyList_New(0);
+    if( list == NULL )
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
+    }
+    for (Expr e : res)
+    {
+        if( PyList_Append(list, PyExpr_FromExpr(e)) == -1)
+        {
+            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
+        }
+    }
+    return list;
+}
+
+static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args)
+{
+    const char * name;
+    int nb_elems, elem_size =1;
+    
+    if( !PyArg_ParseTuple(args, "sii", &name, &nb_elems, &elem_size))
+    {
+        return NULL;
+    }
+
+    std::vector<Expr> res;
+    try
+    {
+        res = as_varctx_object(self).ctx->new_symbolic_buffer(
+            std::string(name),
+            nb_elems,
+            elem_size
+        );
+    }
+    catch(const var_context_exception& e)
+    {
+        return PyErr_Format(PyExc_ValueError, e.what());
+    }
+    
+    // Build result back to python
+    // TODO: transforming a std::vector<Expr> into a list of Expr should
+    // be factorized in a util function
+    PyObject* list = PyList_New(0);
+    if( list == NULL )
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
+    }
+    for (Expr e : res)
+    {
+        if( PyList_Append(list, PyExpr_FromExpr(e)) == -1)
+        {
+            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
+        }
+    }
+    return list;
+}
+
 static PyObject* VarContext_remove(PyObject* self, PyObject* args)
 {
     const char * name;
@@ -712,6 +810,8 @@ static PyMethodDef VarContext_methods[] = {
     {"remove", (PyCFunction)VarContext_remove, METH_VARARGS, "Remove the concrete value associated with a symbolic variable"},
     {"contains", (PyCFunction)VarContext_contains, METH_VARARGS, "Check if a given symbolic variable has an associated concrete value"},
     {"update_from", (PyCFunction)VarContext_update_from, METH_VARARGS, "Update concrete values associated with symbolic variables according to another VarContext"},
+    {"new_concolic_buffer", (PyCFunction)VarContext_new_concolic_buffer, METH_VARARGS, "Create a new buffer of concolic variables"},
+    {"new_symbolic_buffer", (PyCFunction)VarContext_new_symbolic_buffer, METH_VARARGS, "Create a new buffer of symbolic variables"},    
     {NULL, NULL, 0, NULL}
 };
 

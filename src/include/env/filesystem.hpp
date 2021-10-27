@@ -56,7 +56,10 @@ private:
     Type type;
 private:
     addr_t istream_read_offset; ///< Used by IOSTREAM files
-
+public:
+    /** \brief If this field is set, flush every write to the file in the
+     * stream as well. This is mostly used for stdout/stderr emulated files */
+    std::optional<std::reference_wrapper<std::ostream>> flush_stream;
 public:
     /// Create a new physical file
     PhysicalFile(Type type = Type::REGULAR); // TODO snapshot ???
