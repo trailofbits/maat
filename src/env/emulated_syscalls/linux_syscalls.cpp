@@ -49,10 +49,11 @@ FunctionCallback::return_t sys_linux_pread(
     return res;
 }
 
-// int stat(const char *restrict pathname,struct stat *restrict statbuf);
-FunctionCallback::return_t sys_linux_stat(
+// Generic helper for stat, fstat
+FunctionCallback::return_t _stat(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    env::physical_file_t file,
+    addr_t statbuf
 )
 {
     /* struct stat {
@@ -83,7 +84,6 @@ FunctionCallback::return_t sys_linux_stat(
 
     // stmode_t stuff 
     ucst_t xS_IFMT =   0170000; //  bit mask for the file type bit field
-
     ucst_t xS_IFSOCK = 0140000; //   socket
     ucst_t xS_IFLNK = 0120000;  // symbolic link
     ucst_t xS_IFREG = 0100000;  // regular file
@@ -92,20 +92,14 @@ FunctionCallback::return_t sys_linux_stat(
     ucst_t xS_IFCHR = 0020000;  // character device
     ucst_t xS_IFIFO = 0010000;  //  FIFO
 
-    std::string filepath = engine.mem->read_string(args[0]);
-    addr_t statbuf = args[1]->as_uint(*engine.vars);
     addr_t long_size = engine.arch->octets(); // Size for long unsigned int / long int fields
 
-    if (engine.env->fs.is_relative_path(filepath))
-        filepath = engine.env->fs.path_from_relative_path(filepath, engine.process->pwd);
-    
-    // Check file info
-    env::node_status_t status = engine.env->fs.get_node_status(filepath);
     ucst_t st_mode = 0;
     ucst_t st_size = 0;
+    node_status_t status = file->status();
     if (env::node::check_is_file(status))
     {
-        st_size = engine.env->fs.get_file(filepath)->size();
+        st_size = file->size();
         st_mode |= xS_IFREG;
     }
     if (env::node::check_is_dir(status))
@@ -160,6 +154,235 @@ FunctionCallback::return_t sys_linux_stat(
 
     return 0; // Success
 }
+// int stat(const char *restrict pathname,struct stat *restrict statbuf);
+FunctionCallback::return_t sys_linux_stat(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    std::string filepath = engine.mem->read_string(args[0]);
+    addr_t statbuf = args[1]->as_uint(*engine.vars);
+
+    if (engine.env->fs.is_relative_path(filepath))
+        filepath = engine.env->fs.path_from_relative_path(filepath, engine.process->pwd);
+
+    // Check if file exists
+    if (not engine.env->fs.file_exists(filepath))
+        return -1; // Error
+    // Fill the statbuf struct
+    env::physical_file_t file = engine.env->fs.get_file(filepath);
+    return _stat(engine, file, statbuf);
+}
+
+// int close(int fd);
+FunctionCallback::return_t sys_linux_close(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    int fd = args[0]->as_uint(*engine.vars);
+
+    try
+    {
+        engine.env->fs.delete_fa(fd);
+        return 0;
+    }
+    catch(const env_exception& e)
+    {
+        engine.log.warning("Emulated close(): catched error from filesystem: ", e.what());
+        return -1; // Failure
+    }
+}
+
+// int fstat(int fd, struct stat *restrict statbuf);
+FunctionCallback::return_t sys_linux_fstat(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    int fd = args[0]->as_uint(*engine.vars);
+    addr_t statbuf = args[1]->as_uint(*engine.vars);
+
+    env::physical_file_t file = engine.env->fs.get_file_by_handle(fd);
+    return _stat(engine, file, statbuf);
+}
+
+// void *mmap(void *addr, size_t length, int prot, int flags,
+//            int fd, off_t offset);
+// TODO: make this generic to support the old_mmap() syscall on X86 
+// where arguments are passed in a struct pointer :/
+FunctionCallback::return_t sys_linux_mmap(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    addr_t addr = args[0]->as_uint(*engine.vars);
+    cst_t length = args[1]->as_uint(*engine.vars);
+    int prot = args[2]->as_uint(*engine.vars);
+    ucst_t flags = args[3]->as_uint(*engine.vars);
+    cst_t fd = args[4]->as_uint(*engine.vars);
+    offset_t offset  = args[5]->as_uint(*engine.vars);
+    mem_flag_t mflags = 0;
+    addr_t res = -1;
+    cst_t aligned_length;
+    ucst_t MAP_ANONYMOUS = 0x20, MAP_FIXED=0x10;
+    int PROT_EXEC = 0x4, PROT_READ = 0x1, PROT_WRITE = 0x2;
+
+    // Mode
+    if (prot & PROT_EXEC)
+        mflags |= maat::mem_flag_x;
+    if (prot & PROT_READ)
+        mflags |= maat::mem_flag_r;
+    if (prot & PROT_WRITE)
+        mflags |= maat::mem_flag_w;
+
+    // Adjust addr
+    if (addr % 0x1000 != 0)
+    {
+        if (!(flags & MAP_FIXED))
+            addr = addr + (0x1000 - (addr % 0x1000));
+        else
+        {
+            engine.log.warning(
+                "Emulated mmap(): called with MAP_FIXED but address isn't aligned on page size"
+            );
+            return -1;
+        }
+    }
+    // Adjust length to be a multiple 
+    if( length % 0x1000 != 0)
+        aligned_length = length + (0x1000 - (length % 0x1000));
+    else
+        aligned_length = length;
+
+    // If not ANONYMOUS, get the file
+    physical_file_t file = nullptr;
+    if (not (flags & MAP_ANONYMOUS))
+    {
+        try
+        {
+            file = engine.env->fs.get_file_by_handle(fd);
+        }
+        catch(const env_exception& e)
+        {
+            engine.log.warning("Emulated mmap(): couldn't get file for fd: ", fd);
+            return -1;
+        }
+    }
+
+    // Allocate memory
+    if (flags & MAP_FIXED)
+    {
+        // Find where to allocate new memory
+        addr_t prev_end = 0;
+        addr_t map_end_addr = addr + aligned_length -1;
+        std::vector<std::tuple<addr_t, addr_t, mem_flag_t>> to_create;
+        for (auto& seg : engine.mem->segments())
+        {
+            // Check if there is a space between both segments
+            if(prev_end < seg->start-1)
+            {
+                // Check if space between segments are contained in the requested mapping
+                if( addr <= prev_end+1 && map_end_addr >= seg->start-1)
+                    // Space contained in mapping, fill it completely
+                    to_create.push_back(std::make_tuple(prev_end+1, seg->start-1, mflags));
+                else if( addr >= prev_end+1 && map_end_addr <= seg->start-1)
+                    // Space contains mapping
+                    to_create.push_back(std::make_tuple(addr, map_end_addr, mflags));
+                else if( addr <= prev_end+1 && map_end_addr >= prev_end+1)
+                    // Overlap low part of space between segments
+                    to_create.push_back(std::make_tuple(prev_end+1, map_end_addr, mflags));
+                else if( addr <= seg->start-1 && map_end_addr >= seg->start-1)
+                    // Overlap high part of space between segments
+                    to_create.push_back(std::make_tuple(addr, seg->start-1, mflags));
+                //else
+                    // No overlap at all, do nothing
+
+            }
+            prev_end = seg->end;
+            if (seg->start > map_end_addr)
+                break;
+        }
+
+        for (auto& t : to_create)
+        {
+            engine.mem->new_segment(std::get<0>(t), std::get<1>(t), std::get<2>(t), "mmap");
+        }
+        
+        // Change memory mapping flags
+        engine.mem->page_manager.set_flags(addr, map_end_addr, mflags);
+        res = addr;
+    }
+    else
+    {
+        // Try to allocate memory wherever possible
+        try
+        {
+            res = engine.mem->allocate_segment(addr == 0 ? 0x4000000: addr, aligned_length, 0x1000, mflags, "mmap"); 
+        }
+        catch(const mem_exception& e)
+        {
+            // Return error
+            engine.log.warning("Emulated mmap(): memory engine failed to allocate requested memory");
+            return -1;
+        }
+    }
+
+    // Map file content
+    if (not (flags & MAP_ANONYMOUS))
+    {
+        // Read the file content as a buffer
+        if (offset + length > file->size())
+        {
+            // If requesting too many bytes, adjust to real file size
+            length = file->size() - offset;
+        }
+        std::vector<Expr> content;
+        file->read_buffer(content, offset, length, 1); // Read file content into buffer
+        // Write the file content in allocated memory
+        engine.mem->write_buffer(res, content, true); // Ignore flags when mapping file
+    }
+    else
+    {
+        // ANONYMOUS map, fill with zeros
+        std::vector<uint8_t> zeros(aligned_length, 0);
+        engine.mem->write_buffer(res, zeros.data(), aligned_length, true);
+    }
+
+    return (cst_t)res;
+}
+
+// int mprotect(void *addr, size_t len, int prot);
+FunctionCallback::return_t sys_linux_mprotect(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    addr_t addr = args[0]->as_uint(*engine.vars);
+    cst_t length = args[1]->as_uint(*engine.vars);
+    int prot = args[2]->as_int(*engine.vars);
+    mem_flag_t flags = 0;
+    int PROT_EXEC = 0x4, PROT_READ = 0x1, PROT_WRITE = 0x2;
+
+    // Check addr
+    if (addr % 0x1000 != 0)
+    {
+        engine.log.warning("Emulated mprotect(): address not multiple of page size (0x1000)");
+        return -1; // Error
+    }
+
+    // Mode
+    if (prot & PROT_EXEC)
+        flags |= maat::mem_flag_x;
+    if (prot & PROT_READ)
+        flags |= maat::mem_flag_r;
+    if (prot & PROT_WRITE)
+        flags |= maat::mem_flag_w;
+
+    // Change memory mode/flags
+    engine.mem->page_manager.set_flags(addr, addr+length-1, flags);
+    return 0; // Success
+}
 
 // int brk(void* addr)
 FunctionCallback::return_t sys_linux_brk(
@@ -170,9 +393,6 @@ FunctionCallback::return_t sys_linux_brk(
     addr_t addr = args[0]->as_uint(*engine.vars);
     addr_t end_heap, prev_end;
     addr_t extend_bytes = 0;
-
-    std::cout << "DEBUG BRK address " << addr << std::endl;
-    // throw std::exception();
 
     // Find the heap's end address
     auto heap = engine.mem->get_segment_by_name("Heap");
@@ -365,7 +585,6 @@ FunctionCallback::return_t sys_linux_openat(
     if (flags & O_APPEND)
         throw env_exception("Emulated openat(): O_APPEND flag not supported");
 
-    std::cout << "DEBUG openat filepath " << filepath << "\n\n\n\n\n";
     try
     {
         // Check if file exists
@@ -393,10 +612,13 @@ syscall_func_map_t linux_x86_syscall_map()
     syscall_func_map_t res
     {
         {3, Function("sys_read", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_read))},
+        {6, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {18, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
+        {28, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
         {33, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
         {45, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
         {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
+        {125, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {180, Function("sys_pread", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))}
     };
     return res;
@@ -407,7 +629,11 @@ syscall_func_map_t linux_x64_syscall_map()
     syscall_func_map_t res
     {
         {0, Function("sys_read", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_read))},
+        {3, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {4, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
+        {5, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
+        {9, Function("sys_mmap", FunctionCallback({env::abi::auto_argsize, 4, 4, 4, 4, 4}, sys_linux_mmap))},
+        {10, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {12, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
         {17, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
         {21, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},

@@ -401,10 +401,10 @@ public:
                 // Process pcode for this instruction
                 m_pcodes.emplace_back(this, ilen);
                 m_sleigh->oneInstruction(m_pcodes.back(), addr);
-                
+
                 // Increment offset to point to next instruction
                 offset += ilen;
-
+                
                 // for (auto& inst : m_pcodes.back().m_insts)
                 // {
                 //     std::cout << "DEBUG " << inst << "\n";
@@ -430,7 +430,7 @@ public:
                         if (id == callother::Id::UNSUPPORTED)
                         {
                             throw maat::lifter_exception(
-                                maat::Fmt() << ": Can not lift instruction at 0x"
+                                maat::Fmt() << "Can not lift instruction at 0x"
                                 << std::hex << tmp_addr << ": " << tmp_cacher.get_asm(tmp_addr)
                                 << " (unsupported callother occurence)"
                                 >> maat::Fmt::to_str
@@ -470,11 +470,15 @@ public:
                     }
                 }
             } catch (UnimplError &e) {
-                // TODO: handle exception
-                break;
+                throw maat::lifter_exception(
+                    Fmt() << "Sleigh raised an unimplemented exception: " << e.explain
+                    >> Fmt::to_str
+                );
             } catch (BadDataError &e) {
-                // TODO: handle exception
-                break;
+                throw maat::lifter_exception(
+                    Fmt() << "Sleigh raised a bad data exception: " << e.explain
+                    >> Fmt::to_str
+                );
             }
         }
 
@@ -1007,6 +1011,12 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
         if (reg_name == "C2") return maat::ir::Reg(maat::X86::C2, 8);
         if (reg_name == "C3") return maat::ir::Reg(maat::X86::C3, 8);
 
+        if (reg_name == "FPUControlWord") return maat::ir::Reg(maat::X86::FPUCW, 16);
+        if (reg_name == "FPUStatusWord") return maat::ir::Reg(maat::X86::FPUSW, 16);
+        if (reg_name == "FPUTagWord") return maat::ir::Reg(maat::X86::FPUTW, 16);
+        if (reg_name == "FPUInstructionPointer") return maat::ir::Reg(maat::X86::FPUIP, 32);
+        if (reg_name == "FPUDataPointer") return maat::ir::Reg(maat::X86::FPUDP, 32);
+        if (reg_name == "FPULastInstructionOpcode") return maat::ir::Reg(maat::X86::FPUOP, 11);
         if (reg_name == "CR0") return maat::ir::Reg(maat::X86::CR0, 32);
 
         throw maat::runtime_exception(maat::Fmt()
@@ -1521,16 +1531,32 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
         if (reg_name == "XMM7_Wf") return maat::ir::Reg(maat::X64::ZMM7, 95, 80);
         if (reg_name == "XMM7_Wg") return maat::ir::Reg(maat::X64::ZMM7, 111, 96);
         if (reg_name == "XMM7_Wh") return maat::ir::Reg(maat::X64::ZMM7, 127, 112);
-    
+
         if (reg_name == "C0") return maat::ir::Reg(maat::X64::C0, 8);
         if (reg_name == "C1") return maat::ir::Reg(maat::X64::C1, 8);
         if (reg_name == "C2") return maat::ir::Reg(maat::X64::C2, 8);
         if (reg_name == "C3") return maat::ir::Reg(maat::X64::C3, 8);
 
+        if (reg_name == "FPUControlWord") return maat::ir::Reg(maat::X64::FPUCW, 16);
+        if (reg_name == "FPUStatusWord") return maat::ir::Reg(maat::X64::FPUSW, 16);
+        if (reg_name == "FPUTagWord") return maat::ir::Reg(maat::X64::FPUTW, 16);
+        if (reg_name == "FPUInstructionPointer") return maat::ir::Reg(maat::X64::FPUIP, 64);
+        if (reg_name == "FPUDataPointer") return maat::ir::Reg(maat::X64::FPUDP, 64);
+        if (reg_name == "FPULastInstructionOpcode") return maat::ir::Reg(maat::X64::FPUOP, 11);
         if (reg_name == "CR0") return maat::ir::Reg(maat::X64::CR0, 64);
         if (reg_name == "XCR0") return maat::ir::Reg(maat::X64::XCR0, 64);
+        if (reg_name == "MXCSR") return maat::ir::Reg(maat::X64::MXCSR, 32);
 
         if (reg_name == "SSP") return maat::ir::Reg(maat::X64::SSP, 64);
+
+        if (reg_name == "ST0") return maat::ir::Reg(maat::X64::ST0, 80);
+        if (reg_name == "ST1") return maat::ir::Reg(maat::X64::ST1, 80);
+        if (reg_name == "ST2") return maat::ir::Reg(maat::X64::ST2, 80);
+        if (reg_name == "ST3") return maat::ir::Reg(maat::X64::ST3, 80);
+        if (reg_name == "ST4") return maat::ir::Reg(maat::X64::ST4, 80);
+        if (reg_name == "ST5") return maat::ir::Reg(maat::X64::ST5, 80);
+        if (reg_name == "ST6") return maat::ir::Reg(maat::X64::ST6, 80);
+        if (reg_name == "ST7") return maat::ir::Reg(maat::X64::ST7, 80);
 
         throw maat::runtime_exception(maat::Fmt()
                 << "X64: Register translation from SLEIGH to MAAT missing for register "

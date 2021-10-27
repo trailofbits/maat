@@ -41,22 +41,21 @@ public:
     /// Types of files
     enum class Type
     {
-        REGULAR, /// Regular file supporting arbitrary read write
-        IOSTREAM, /// Stream (reads consume data from the beginning, writes append data at the end)
-        SYMLINK /// Symbolic link to another file
+        REGULAR, ///< Regular file supporting arbitrary read write
+        IOSTREAM, ///< Stream (reads consume data from the beginning, writes append data at the end)
+        SYMLINK ///< Symbolic link to another file
     };
 
 private:
     // TODO snapshot ????
     std::shared_ptr<MemSegment> data;
     int flags;
-    bool deleted; /// 'True' if the file was deleted by the emulated program
-    addr_t _size; /// Size in bytes
-    std::string _symlink; /// Path if this file is a symlink
+    bool deleted; ///< 'True' if the file was deleted by the emulated program
+    addr_t _size; ///< Size in bytes
+    std::string _symlink; ///< Path if this file is a symlink
     Type type;
-
 private:
-    addr_t istream_read_offset; /// Used by IOSTREAM files
+    addr_t istream_read_offset; ///< Used by IOSTREAM files
 
 public:
     /// Create a new physical file
@@ -71,7 +70,9 @@ public:
     unsigned int size();
     /// Fill the emulated file with concrete content from a real file. Return the size of 'filename'
     unsigned int copy_real_file(const std::string& filename);
-
+public:
+    /// Return the file status
+    node_status_t status();
 public:
     /// Set the deleted status of the file
     void set_deleted(bool deleted);
@@ -169,6 +170,7 @@ friend class LinuxEmulator;
 private:
     filehandle_t _handle_cnt;
     std::string path_separator;
+    std::string rootdir_prefix;
     char orphan_file_wildcard;
     Directory root;
     Directory orphan_files; // Stdin, stdout, stderr, network streams, ...

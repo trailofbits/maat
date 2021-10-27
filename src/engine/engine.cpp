@@ -357,7 +357,16 @@ info::Stop MaatEngine::run(int max_inst)
             else if (branch_type == MaatEngine::branch_none)
             {
                 // No branch, go to next instruction
-                ir_inst_id += 1;
+                if (ir_inst_id == block->nb_ir_inst()-1)
+                {
+                    // That was the last IR inst of this IR block, exit and go to next IR block
+                    // This case occurs when the last instruction of the block has a CBRANCH
+                    // in the middle of its IR and CBRANCH is not taken
+                    next_block = true;
+                    break;
+                }
+                else
+                    ir_inst_id += 1;
             }
             // else: pcode relative branching, ir_inst_id has already
             // been updated by process_branch(), so do nothing and 

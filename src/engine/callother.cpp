@@ -11,6 +11,7 @@ Id mnemonic_to_id(const std::string& mnemonic, const std::string& arch)
     if (mnemonic == "SYSCALL")
         if (arch == "X64") return Id::X64_SYSCALL;
     if (mnemonic == "CPUID") return Id::X86_CPUID;
+    if (mnemonic == "PMINUB") return Id::X86_PMINUB;
     return Id::UNSUPPORTED;
 }
 
@@ -42,6 +43,28 @@ void X86_RDTSC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
         throw callother_exception("RDTSC: inconsistent sizes for output parameter and TSC");
     }
     pinst.res = counter;
+}
+
+// Use a handler for PMINUB instead of adding support in sleigh because pcode
+// doesn't have an ITE opcode
+void X86_PMINUB_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    Expr    src1 = pinst.in0.as_expr(),
+            src2 = pinst.in1.as_expr();
+    Expr res = ITE(
+        extract(src1, 7, 0), ITECond::LT, extract(src2, 7, 0),
+        extract(src1, 7, 0),
+        extract(src2, 7, 0)
+    );
+    for (int i = 8; i < src1->size; i+=8)
+    {
+        res = ITE(
+            extract(src1, i+7, i), ITECond::LT, extract(src2, i+7, i),
+            concat(extract(src1, i+7, i), res),
+            concat(extract(src2, i+7, i), res)
+        );
+    }
+    pinst.res = res;
 }
 
 void X86_CPUID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
@@ -183,6 +206,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::X86_RDTSC, X86_RDTSC_handler);
     h.set_handler(Id::X86_CPUID, X86_CPUID_handler);
     h.set_handler(Id::X64_SYSCALL, X64_SYSCALL_handler);
+    h.set_handler(Id::X86_PMINUB, X86_PMINUB_handler);
     return h;
 }
 

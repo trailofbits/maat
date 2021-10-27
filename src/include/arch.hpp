@@ -59,6 +59,8 @@ public:
 
 private: 
     const int _bits; ///< Size of the architecture in bits
+protected:
+    std::unordered_map<std::string, reg_t> reg_map; ///< name to reg mapping
 public:
     const Arch::Type type; ///< Architecture identifier
     const int nb_regs; ///< Number of registers in this architecture
@@ -66,8 +68,8 @@ public:
 public:
     /** Constructor */
     Arch(Arch::Type type, int bits, int nb_regs): type(type), _bits(bits), nb_regs(nb_regs){};
-    virtual const std::string& reg_name(reg_t num) const = 0; ///< Get name of register 'num'
-    virtual reg_t reg_num(const std::string& name) const = 0; ///< Get num of register named 'name'
+    const std::string& reg_name(reg_t num) const; ///< Get name of register 'num'
+    reg_t reg_num(const std::string& name) const; ///< Get num of register named 'name'
     virtual size_t reg_size(reg_t reg) const = 0; ///< Get size in bits of register 'reg'
     virtual reg_t sp() const = 0; ///< Stack pointer for this architecture
     virtual reg_t pc() const = 0; ///< Program counter for this architecture
@@ -80,15 +82,11 @@ public:
 // A dummy implementation of an architecture, used for tests
 class ArchNone: public Arch
 {
-private:
-    std::string __dummy_reg_name = "reg";
 public:
     ArchNone(): Arch(Arch::Type::NONE, 32, 20)
     {
         available_modes = {CPUMode::NONE};
     };
-    const std::string& reg_name(reg_t num) const {return __dummy_reg_name;};
-    reg_t reg_num(const std::string& name) const {return 0;};
     size_t reg_size(reg_t reg_num) const {return 32;};
     reg_t sp() const {return 19;};
     reg_t pc() const {return 18;};
@@ -165,7 +163,20 @@ namespace X86
     static constexpr reg_t C1 = 53; ///< FPU flag
     static constexpr reg_t C2 = 54; ///< FPU flag
     static constexpr reg_t C3 = 55; ///< FPU flag
-    static constexpr reg_t NB_REGS = 56;
+    static constexpr reg_t FPUSW = 56; ///< FPU status word (16 bits)
+    static constexpr reg_t FPUTW = 57; ///< FPU tag word (16 bits)
+    static constexpr reg_t FPUIP = 58; ///< FPU instruction pointer
+    static constexpr reg_t FPUDP = 59; ///< FPU data pointer
+    static constexpr reg_t FPUOP = 60; ///< FPU tag word (11 bits)
+    static constexpr reg_t ST0 = 61;
+    static constexpr reg_t ST1 = 62;
+    static constexpr reg_t ST2 = 63;
+    static constexpr reg_t ST3 = 64;
+    static constexpr reg_t ST4 = 65;
+    static constexpr reg_t ST5 = 66;
+    static constexpr reg_t ST6 = 67;
+    static constexpr reg_t ST7 = 68;
+    static constexpr reg_t NB_REGS = 69;
 
     /** \addtogroup arch
      * \{ */
@@ -174,8 +185,6 @@ namespace X86
     {
     public:
         ArchX86();
-        const std::string& reg_name(reg_t num) const;
-        reg_t reg_num(const std::string& name) const;
         size_t reg_size(reg_t reg_num) const;
         reg_t sp() const ;
         reg_t pc() const ;
@@ -260,9 +269,24 @@ namespace X64
     static constexpr reg_t C2 = 61; ///< FPU flag
     static constexpr reg_t C3 = 62; ///< FPU flag
     static constexpr reg_t FPUCW = 63; ///< FPU control word (16 bits)
+    static constexpr reg_t FPUSW = 64; ///< FPU status word (16 bits)
+    static constexpr reg_t FPUTW = 65; ///< FPU tag word (16 bits)
+    static constexpr reg_t FPUIP = 66; ///< FPU instruction pointer
+    static constexpr reg_t FPUDP = 67; ///< FPU data pointer
+    static constexpr reg_t FPUOP = 68; ///< FPU tag word (11 bits)
     // Shadow memory
-    static constexpr reg_t SSP = 64; ///< Shadow stack pointer
-    static constexpr reg_t NB_REGS = 65;
+    static constexpr reg_t SSP = 69; ///< Shadow stack pointer
+    static constexpr reg_t MXCSR = 70; ///< SSE control register
+    // FP Stack, experimental
+    static constexpr reg_t ST0 = 71;
+    static constexpr reg_t ST1 = 72;
+    static constexpr reg_t ST2 = 73;
+    static constexpr reg_t ST3 = 74;
+    static constexpr reg_t ST4 = 75;
+    static constexpr reg_t ST5 = 76;
+    static constexpr reg_t ST6 = 77;
+    static constexpr reg_t ST7 = 78;
+    static constexpr reg_t NB_REGS = 79;
 
     /** \addtogroup arch
      * \{ */
@@ -272,8 +296,6 @@ namespace X64
     {
     public:
         ArchX64();
-        const std::string& reg_name(reg_t num) const ;
-        reg_t reg_num(const std::string& name) const ;
         size_t reg_size(reg_t reg_num) const ;
         reg_t sp() const ;
         reg_t pc() const ;

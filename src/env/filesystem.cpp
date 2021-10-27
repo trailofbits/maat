@@ -216,6 +216,14 @@ void PhysicalFile::set_deleted(bool val)
     deleted = val;
 }
 
+node_status_t PhysicalFile::status()
+{
+    node_status_t res = node::none;
+    if (is_symlink())
+        res |= node::is_symlink;
+    res |= node::is_file | node::exists;
+}
+
 FileAccessor::FileAccessor(physical_file_t file, filehandle_t handle):
 flags(0), physical_file(file), _handle(handle), deleted(false), _alloc_addr(0)
 {
@@ -254,17 +262,13 @@ bool Directory::create_file(fspath_t path, bool create_path)
 {
     if (path.empty())
     {
-        std::cout << "DEBUG EMPTY PATH " << std::endl;
         return false;
     }
     else if (path.size() == 1)
     {
-        
-        std::cout << "DEBUG path[-1] " << path.back() << std::endl;
         // Check if file name already taken
         if (_contains_name(path.back()))
         {
-            std::cout << "DEBUG already exists " << std::endl;
             return false; // File already exists ! 
         }
 
@@ -275,7 +279,6 @@ bool Directory::create_file(fspath_t path, bool create_path)
     }
     else
     {
-        std::cout << "DEBUG subdir " << path.front() << std::endl;
         // Create file in subdir
         for (auto& dir : subdirs)
         {
@@ -601,6 +604,7 @@ FileSystem::FileSystem(OS system): _handle_cnt(0), orphan_file_wildcard('#')
         case OS::LINUX:
         case OS::NONE:
             path_separator = "/";
+            rootdir_prefix = "/";
             reserved_handles = {0,1,2}; // stdin, stdout, stderr
             break;
         case OS::WINDOWS:
@@ -619,6 +623,7 @@ bool FileSystem::create_file(const std::string& path, bool create_path)
     {
         return false;
     }
+
     /* TODO
     if( _snapshot_manager != nullptr ){
         // Record fot snapshots
