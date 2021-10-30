@@ -256,6 +256,11 @@ namespace breakpoint
                 e1 = exprvar(32, "e1"),
                 e2 = exprvar(32, "e2");
 
+        // Disable heavy symptr options
+        engine.settings.symptr_refine_range = false;
+        engine.settings.symptr_limit_range = true;
+        engine.settings.symptr_max_range = 20;
+
         auto block = std::make_shared<ir::Block>("at_0x200", 0x200, 0x2ff);
         block->add_inst(ir::Inst(0x200, ir::Op::LOAD, ir::Reg(0, 31, 0), ir::Param::None(), ir::Reg(0, 31, 0)));
         block->add_inst(ir::Inst(0x201, ir::Op::STORE, ir::Param::None(), ir::Param::None(), ir::Reg(1, 31, 0), ir::Reg(2, 31, 0)));
@@ -660,11 +665,11 @@ namespace breakpoint
         std::vector<bp::BPCallback> cbs{_cb1, _cb3};
         engine.bp_manager.disable_all();
         engine.bp_manager.add_addr_bp(cbs, (addr_t)0x1);
-        engine.run_from(0x0);
+        engine.run_from(0x0, 3);
 
         nb += _assert(engine.cpu.ctx().get(5)->as_uint() == 0x12345678, "MaatEngine: breakpoint failed");
         nb += _assert(engine.cpu.ctx().get(6)->as_uint() == 0xcafebabe, "MaatEngine: breakpoint failed");
-        nb += _assert(engine.info.stop == info::Stop::NONE, "MaatEngine: breakpoint failed");
+        nb += _assert(engine.info.stop == info::Stop::INST_COUNT, "MaatEngine: breakpoint failed");
        
         engine.bp_manager.disable_all();
         return nb;

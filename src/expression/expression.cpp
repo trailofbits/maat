@@ -2009,7 +2009,8 @@ std::string VarContext::new_name_from(const std::string& name) const
 std::vector<Expr> VarContext::new_symbolic_buffer(
     const std::string& name,
     int nb_elems,
-    int elem_size
+    int elem_size,
+    bool null_terminated
 )
 {
     std::vector<Expr> res;
@@ -2020,6 +2021,8 @@ std::vector<Expr> VarContext::new_symbolic_buffer(
         ss << name << "_" << i;
         res.push_back(exprvar(elem_size*8, ss.str()));
     }
+    if (null_terminated)
+        res.push_back(exprcst(elem_size*8, 0));
     return res;
 }
 
@@ -2027,12 +2030,18 @@ std::vector<Expr> VarContext::new_concolic_buffer(
     const std::string& name,
     const std::vector<cst_t>& concrete_buffer,
     int nb_elems,
-    int elem_size
+    int elem_size,
+    bool null_terminated
 )
 {
     std::vector<Expr> res;
     std::stringstream ss;
-    for (int i = 0; i < nb_elems; i++)
+    if (nb_elems > concrete_buffer.size())
+        throw var_context_exception(
+            "VarContext::new_concolic_buffer(): 'nb_elems' is bigger than the concrete buffer size"
+        );
+
+    for (int i = 0; i <  nb_elems; i++)
     {
         ss.str("");
         ss << name << "_" << i;
@@ -2047,6 +2056,8 @@ std::vector<Expr> VarContext::new_concolic_buffer(
         res.push_back(exprvar(elem_size*8, var_name));
         set(var_name, concrete_buffer[i]);
     }
+    if (null_terminated)
+        res.push_back(exprcst(elem_size*8, 0));
     return res;
 }
 

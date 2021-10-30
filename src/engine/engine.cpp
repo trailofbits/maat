@@ -313,6 +313,20 @@ info::Stop MaatEngine::run(int max_inst)
                 )
             }
 
+            // Simplify abstract expressions
+            if (settings.force_simplify)
+            {
+                // Simplify only if not concrete
+                if (
+                    pinst.res.is_abstract() 
+                    and inst.out.is_reg()
+                    and not pinst.res.expr->is_concrete(*vars)
+                )
+                {
+                    pinst.res = simplifier->simplify(pinst.res.expr);
+                }
+            }
+
             // Apply semantics to the IR CPU
             cpu.apply_semantics(inst, pinst);
 
@@ -488,6 +502,7 @@ bool MaatEngine::process_branch(
                 info.addr = inst.addr;
                 // TODO - set in the "unresolved" state
                 // and the user can call resolved(taken/not taken) to continue in one branch or another
+                // ---> this will change with the event system anyways
                 return false;
             }
             if (in1->as_uint(*vars) != 0) // branch condition is true, branch to target
@@ -505,7 +520,10 @@ bool MaatEngine::process_branch(
                     branch_type = MaatEngine::branch_native;
                 }
                 // Add path constraint
-                if (settings.record_path_constraints)
+                if (
+                    settings.record_path_constraints 
+                    and not in1->is_concrete(*vars)
+                )
                 {
                     path.add(in1 != 0);
                 }
@@ -514,7 +532,10 @@ bool MaatEngine::process_branch(
             {
                 branch_type = MaatEngine::branch_none;
                 // Add path constraint
-                if (settings.record_path_constraints)
+                if (
+                    settings.record_path_constraints
+                    and not in1->is_concrete(*vars)
+                )
                 {
                     path.add(in1 == 0);
                 }
@@ -984,18 +1005,18 @@ void MaatEngine::restore_snapshot(snapshot_t snapshot, bool remove)
     // start by rewinding until 'idx' and delete more recent snapshots 
     while (idx < snapshots->size()-1)
     {
-        restore_snapshot(true); // remove = true
+        restore_last_snapshot(true); // remove = true
     }
     // For the last one (the 'idx' snapshot), pass the user provided 'remove' parameter
     if (idx == snapshots->size()-1)
     {
-        restore_snapshot(remove);
+        restore_last_snapshot(remove);
     }
 }
 
 /** Restore the engine state to the lastest snapshot. If remove is true, the 
  * snapshot is removed after being restored */
-void MaatEngine::restore_snapshot(bool remove)
+void MaatEngine::restore_last_snapshot(bool remove)
 {
     mem_alert_t mem_alert = maat::mem_alert_none;
 

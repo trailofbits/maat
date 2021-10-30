@@ -121,7 +121,7 @@ static PyObject* Expr_as_uint(PyObject* self, PyObject* args)
             return PyLong_FromString(ss.str().c_str(), NULL, 16);
         }
     }
-    catch(var_context_exception& e)
+    catch(const var_context_exception& e)
     {
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
@@ -163,7 +163,7 @@ static PyObject* Expr_as_int(PyObject* self, PyObject* args)
             return PyLong_FromString(ss.str().c_str(), NULL, 16);
         }
     }
-    catch(var_context_exception& e)
+    catch(const var_context_exception& e)
     {
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
@@ -195,7 +195,7 @@ static PyObject* Expr_as_float(PyObject* self, PyObject* args)
             return PyErr_Format(PyExc_RuntimeError, "as_float() not supported for expressions bigger than 64 bits");
         }
     }
-    catch(var_context_exception& e)
+    catch(const var_context_exception& e)
     {
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
@@ -667,20 +667,24 @@ static PyObject* VarContext_get_as_string(PyObject* self, PyObject* args)
     return res;
 }
 
-static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args)
+static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, PyObject* keywords)
 {
     const char * name;
     std::vector<cst_t> concrete_buffer;
     PyObject* py_concrete_buffer;
     int nb_elems, elem_size =1;
+    int null_terminated=0;
     
-    if( !PyArg_ParseTuple(args, "sO!ii", &name, &PyList_Type, &py_concrete_buffer , &nb_elems, &elem_size))
+    static char* kwlist[] = {"", "", "", "elem_size", "null_terminated", NULL};
+
+    if( !PyArg_ParseTupleAndKeywords(args, keywords, "sO!i|ip", kwlist, &name, &PyList_Type, 
+        &py_concrete_buffer , &nb_elems, &elem_size, &null_terminated))
     {
         return NULL;
     }
 
     // Buffer = list of concrete vals
-    for (int i = 0; i < PyList_Size(py_concrete_buffer); i++)
+    for (int i = 0; i < PyList_Size(py_concrete_buffer) and i < nb_elems; i++)
     {
         PyObject* val = PyList_GetItem(py_concrete_buffer, i);
         if (not PyLong_Check(val))
@@ -697,7 +701,8 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args)
             std::string(name),
             concrete_buffer,
             nb_elems,
-            elem_size
+            elem_size,
+            (bool)null_terminated
         );
     }
     catch(const var_context_exception& e)
@@ -723,12 +728,16 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args)
     return list;
 }
 
-static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args)
+static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args, PyObject* keywords)
 {
     const char * name;
     int nb_elems, elem_size =1;
+    int null_terminated=0;
     
-    if( !PyArg_ParseTuple(args, "sii", &name, &nb_elems, &elem_size))
+    static char* kwlist[] = {"", "", "elem_size", "null_terminated", NULL};
+
+    if( !PyArg_ParseTupleAndKeywords(args, keywords, "si|ip", kwlist, &name, 
+        &nb_elems, &elem_size, &null_terminated))
     {
         return NULL;
     }
@@ -739,7 +748,8 @@ static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args)
         res = as_varctx_object(self).ctx->new_symbolic_buffer(
             std::string(name),
             nb_elems,
-            elem_size
+            elem_size,
+            (bool)null_terminated
         );
     }
     catch(const var_context_exception& e)
@@ -810,8 +820,8 @@ static PyMethodDef VarContext_methods[] = {
     {"remove", (PyCFunction)VarContext_remove, METH_VARARGS, "Remove the concrete value associated with a symbolic variable"},
     {"contains", (PyCFunction)VarContext_contains, METH_VARARGS, "Check if a given symbolic variable has an associated concrete value"},
     {"update_from", (PyCFunction)VarContext_update_from, METH_VARARGS, "Update concrete values associated with symbolic variables according to another VarContext"},
-    {"new_concolic_buffer", (PyCFunction)VarContext_new_concolic_buffer, METH_VARARGS, "Create a new buffer of concolic variables"},
-    {"new_symbolic_buffer", (PyCFunction)VarContext_new_symbolic_buffer, METH_VARARGS, "Create a new buffer of symbolic variables"},    
+    {"new_concolic_buffer", (PyCFunction)VarContext_new_concolic_buffer, METH_VARARGS|METH_KEYWORDS, "Create a new buffer of concolic variables"},
+    {"new_symbolic_buffer", (PyCFunction)VarContext_new_symbolic_buffer, METH_VARARGS|METH_KEYWORDS, "Create a new buffer of symbolic variables"},
     {NULL, NULL, 0, NULL}
 };
 

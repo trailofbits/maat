@@ -65,19 +65,24 @@ static PyObject* BPManager_add(PyObject* self, PyObject*args, PyObject* keywords
             callbacks_list.push_back(bp::BPCallback(cb));
         }
     }
-    
+
+    bp::Event event = (bp::Event)int_event;
+
     // Get value1
-    if (PyLong_Check(value1))
+    if (not bp::is_simple_bp(event))
     {
-        value1_int = PyLong_AsUnsignedLongLong(value1);
-    }
-    else if (PyUnicode_Check(value1))
-    {
-        reg_name = PyUnicode_AsUTF8(value1);
-    }
-    else
-    {
-        return PyErr_Format(PyExc_TypeError, "Expected 'int' or 'str' as third argument");
+        if (value1 != nullptr and PyLong_Check(value1))
+        {
+            value1_int = PyLong_AsUnsignedLongLong(value1);
+        }
+        else if (value1 != nullptr and PyUnicode_Check(value1))
+        {
+            reg_name = PyUnicode_AsUTF8(value1);
+        }
+        else
+        {
+            return PyErr_Format(PyExc_TypeError, "Expected 'int' or 'str' as third argument");
+        }
     }
 
     /* Handle the case where optional parameter was not specified, then it must be equal to the 
@@ -87,7 +92,6 @@ static PyObject* BPManager_add(PyObject* self, PyObject*args, PyObject* keywords
         value2 = value1_int;
     }
 
-    bp::Event event = (bp::Event)int_event;
     try
     {
         if (is_reg_bp(event))

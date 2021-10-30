@@ -372,7 +372,7 @@ public:
      * @param varctx VarContext to use when concretising abstract expressions
      * @param arch_bits Default address size in bits
      * @param snap Snapshot manager to use if snapshots are enabled */
-    MemEngine(std::shared_ptr<VarContext> varctx=nullptr, size_t arch_bits=0, std::shared_ptr<SnapshotManager<Snapshot>> snap=nullptr);
+    MemEngine(std::shared_ptr<VarContext> varctx=nullptr, size_t arch_bits=64, std::shared_ptr<SnapshotManager<Snapshot>> snap=nullptr);
     ~MemEngine();
 
     /// Create a new memory segment from addresses 'start' to 'end' (included)
@@ -415,7 +415,7 @@ public:
      * @param addr Start address of the buffer
      * @param nb_elems Number of elements to read in the buffer
      * @param elem_size Size of a single buffer element in bytes */
-    void read_buffer(std::vector<Expr>& res, const Expr& addr, unsigned int nb_elems, unsigned int elem_size=1);
+    void read_buffer(std::vector<Expr>& res, Expr addr, unsigned int nb_elems, unsigned int elem_size=1);
     /** \brief Read a concrete string of length *len* from address *addr*. If len=0,
      * it reads a C-style string and stops at the first null-byte. If *addr* is not concrete,
      * the function raises a **mem_exception**. */

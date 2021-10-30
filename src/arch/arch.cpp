@@ -312,7 +312,8 @@ namespace X64
             {"st5", ST5},
             {"st6", ST6},
             {"st7", ST7},
-            {"mxcsr", MXCSR}
+            {"mxcsr", MXCSR},
+            {"ssp", SSP}
         };
     }
 

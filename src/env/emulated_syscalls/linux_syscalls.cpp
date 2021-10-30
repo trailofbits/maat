@@ -49,6 +49,36 @@ FunctionCallback::return_t sys_linux_pread(
     return res;
 }
 
+// ssize_t write(int fd, const void *buf, size_t count);
+FunctionCallback::return_t sys_linux_write(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    int fd = args[0]->as_uint(*engine.vars);
+    cst_t count = args[2]->as_uint(*engine.vars);
+    Expr buf = args[1];
+    cst_t res;
+
+    try
+    {
+        env::FileAccessor& fa = engine.env->fs.get_fa_by_handle(fd);
+        // Read buffer of bytes
+        std::vector<Expr> buffer;
+        engine.mem->read_buffer(buffer, buf, count, 1);
+        // Write it to file
+        res = fa.write_buffer(buffer);
+    }
+    catch(const env_exception& e)
+    {
+        engine.log.warning("Emulated write(): failed because of env exception: ", e.what());
+        return -1; // Failure
+    }
+
+    // Return number of bytes written
+    return res;
+}
+
 // Generic helper for stat, fstat
 FunctionCallback::return_t _stat(
     MaatEngine& engine,
@@ -328,7 +358,11 @@ FunctionCallback::return_t sys_linux_mmap(
         }
     }
 
-    // Map file content
+    // Fill mapping with zeros
+    std::vector<uint8_t> zeros(aligned_length, 0);
+    engine.mem->write_buffer(res, zeros.data(), aligned_length, true);
+
+    // Complete with file content
     if (not (flags & MAP_ANONYMOUS))
     {
         // Read the file content as a buffer
@@ -341,12 +375,6 @@ FunctionCallback::return_t sys_linux_mmap(
         file->read_buffer(content, offset, length, 1); // Read file content into buffer
         // Write the file content in allocated memory
         engine.mem->write_buffer(res, content, true); // Ignore flags when mapping file
-    }
-    else
-    {
-        // ANONYMOUS map, fill with zeros
-        std::vector<uint8_t> zeros(aligned_length, 0);
-        engine.mem->write_buffer(res, zeros.data(), aligned_length, true);
     }
 
     return (cst_t)res;
@@ -611,6 +639,7 @@ syscall_func_map_t linux_x86_syscall_map()
     syscall_func_map_t res
     {
         {3, Function("sys_read", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_read))},
+        {4, Function("sys_write", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_write))},
         {6, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {18, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {28, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
@@ -628,6 +657,7 @@ syscall_func_map_t linux_x64_syscall_map()
     syscall_func_map_t res
     {
         {0, Function("sys_read", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_read))},
+        {1, Function("sys_write", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_write))},
         {3, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {4, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {5, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},

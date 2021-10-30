@@ -11,7 +11,7 @@ namespace solver
  * Translations from maat to z3 expressions 
  * ========================================= */
 
-z3::expr expr_to_z3(z3::context* c, Expr e); // Forward declaration
+z3::expr expr_to_z3(z3::context* c, Expr e, size_t extend_to_size=0); // Forward declaration
 
 z3::expr ITE_cond_to_z3(z3::context* c, Expr left, ITECond cond, Expr right)
 {
@@ -29,11 +29,25 @@ z3::expr ITE_cond_to_z3(z3::context* c, Expr left, ITECond cond, Expr right)
     }
 }
 
-z3::expr expr_to_z3(z3::context* c, Expr e)
+z3::expr expr_to_z3(z3::context* c, Expr e, size_t extend_to_size)
 {
+    // This is used to have the same sizes in SHL/SHR
+    if (extend_to_size != 0 and e->size < extend_to_size)
+    {
+        e = concat(exprcst(extend_to_size-e->size, 0), e);
+    }
+
     switch(e->type)
     {
-        case ExprType::CST: return c->bv_val(e->as_uint(), e->size);
+        case ExprType::CST: 
+            if (e->size <= 64)
+                return c->bv_val(e->as_uint(), e->size);
+            else
+            {
+                std::stringstream ss;
+                e->as_number().print(ss, true); // Decimal = true
+                return c->bv_val(ss.str().c_str(), e->size);
+            }
         case ExprType::VAR: return c->bv_const(e->name().c_str(), e->size);
         case ExprType::BINOP:
             switch (e->op())
@@ -49,9 +63,18 @@ z3::expr expr_to_z3(z3::context* c, Expr e)
                 case Op::SDIV: return expr_to_z3(c, e->args[0]) / expr_to_z3(c, e->args[1]);
                 case Op::MOD: return z3::mod(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
                 case Op::SMOD: return z3::srem(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
-                case Op::SHL: return z3::shl(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
-                case Op::SHR: return z3::lshr(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
-                case Op::SAR: return z3::ashr(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1])); 
+                case Op::SHL: return z3::shl(
+                    expr_to_z3(c, e->args[0]),
+                    expr_to_z3(c, e->args[1], e->args[0]->size)
+                );
+                case Op::SHR: return z3::lshr(
+                    expr_to_z3(c, e->args[0]),
+                    expr_to_z3(c, e->args[1], e->args[0]->size)
+                );
+                case Op::SAR: return z3::ashr(
+                    expr_to_z3(c, e->args[0]),
+                    expr_to_z3(c, e->args[1], e->args[0]->size)
+                );
                 case Op::AND: return expr_to_z3(c, e->args[0]) & expr_to_z3(c, e->args[1]);
                 case Op::OR: return expr_to_z3(c, e->args[0]) | expr_to_z3(c, e->args[1]);
                 case Op::XOR: return expr_to_z3(c, e->args[0]) ^ expr_to_z3(c, e->args[1]);
@@ -150,11 +173,16 @@ bool SolverZ3::check()
 
 std::shared_ptr<VarContext> SolverZ3::get_model()
 {
+    return std::shared_ptr<VarContext>(_get_model_raw());
+}
+
+VarContext* SolverZ3::_get_model_raw()
+{
     if (not has_model)
         return nullptr;
 
     z3::model m = sol->get_model();
-    auto res = std::make_shared<VarContext>(_model_id_cnt++);
+    auto res = new VarContext(_model_id_cnt++);
     for (int i = 0; i < m.num_consts(); i++)
     {
         res->set(

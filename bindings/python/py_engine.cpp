@@ -64,19 +64,22 @@ static PyObject* MaatEngine_take_snapshot(PyObject* self){
 };
 
 static PyObject* MaatEngine_restore_snapshot(PyObject* self, PyObject* args, PyObject* keywords){
-    unsigned int id = -1;
+    int id = -1;
     int remove = 0;
     static char *kwlist[] = {"", "remove", NULL};
 
-    if( ! PyArg_ParseTupleAndKeywords(args, keywords, "|Ip", kwlist, &id, &remove) ){
+    if( ! PyArg_ParseTupleAndKeywords(args, keywords, "|ip", kwlist, &id, &remove) ){
         return NULL;
     }
 
     try{
-        if( id == -1 ){
-            as_engine_object(self).engine->restore_snapshot((bool)remove);
-        }else{
-            as_engine_object(self).engine->restore_snapshot(id, (bool)remove);
+        if (id == -1)
+        {
+            as_engine_object(self).engine->restore_last_snapshot((bool)remove);
+        }
+        else
+        {
+            as_engine_object(self).engine->restore_snapshot((MaatEngine::snapshot_t)id, (bool)remove);
         }
     }catch(snapshot_exception& e){
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());

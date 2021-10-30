@@ -98,7 +98,7 @@ namespace test
             engine.mem->write(0x3ffd, 0xabcdef11deadbeef, 8);
             engine.take_snapshot();
             engine.mem->write(0x3ffc, e2);
-            engine.restore_snapshot();
+            engine.restore_last_snapshot();
 
             nb += _assert(engine.mem->read(0x3ffd, 8)->as_uint() == 0xabcdef11deadbeef, "SnapshotManager: restore failed for symbolic write overlapping between segments");
 
@@ -171,14 +171,14 @@ namespace test
             nb += _assert(engine.mem->read(0x3000, 4)->as_uint(*engine.vars) != 0x87654321, "Snapshot X86: failed to restore snapshot");
 
             /* Restore again */
-            engine.restore_snapshot();
+            engine.restore_last_snapshot();
             nb += _assert(engine.cpu.ctx().get(X86::EDX)->as_int() == 4, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_int() == 2, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::EBX)->as_int() == 2, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::ECX)->as_int() == 7, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.mem->read(0x2000, 4)->as_uint(*engine.vars) == 4, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.mem->read(0x3000, 4)->as_uint(*engine.vars) == 0x87654321, "Snapshot X86: failed to restore snapshot");
-            
+
             /* Restore to first */
             engine.restore_snapshot(s1, true);
             nb += _assert(engine.cpu.ctx().get(X86::EDX)->as_int() == 4, "Snapshot X86: failed to restore snapshot");

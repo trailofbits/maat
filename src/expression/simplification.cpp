@@ -87,11 +87,11 @@ Expr ExprSimplifier::simplify(Expr e, bool mark_as_simplified)
             prev_expr = tmp_expr;
             tmp_expr = run_simplifiers(tmp_expr);
         }
-    }while( prev_expr->neq(tmp_expr));
+    } while (prev_expr->neq(tmp_expr));
 
-    if( mark_as_simplified )
+    if (mark_as_simplified)
     {
-        if( tmp_expr->neq(e) )
+        if (tmp_expr->neq(e))
         {
             // If the expression was simplified then save the pointer to the 
             // simplified expression. If not the don't save anything because
@@ -114,6 +114,7 @@ std::unique_ptr<ExprSimplifier> NewDefaultExprSimplifier()
     simp->add(es_arithmetic_properties);
     simp->add(es_involution);
     simp->add(es_extract_patterns);
+
     simp->add(es_basic_transform);
     simp->add(es_logical_properties);
     simp->add(es_concat_patterns);
@@ -136,24 +137,24 @@ Expr es_constant_folding(Expr e)
     if( e->is_type(ExprType::BINOP) && e->args[0]->is_type(ExprType::CST) &&
         e->args[1]->is_type(ExprType::CST)){
         /* Binary operators */
-        res = exprcst(e->size, e->as_int());
+        res = exprcst(e->as_number());
     }
     else if( e->is_type(ExprType::UNOP) && e->args[0]->is_type(ExprType::CST))
     {
         /* Unary operators */
-        res = exprcst(e->size, e->as_int());
+        res = exprcst(e->as_number());
     }
     else if(   e->is_type(ExprType::EXTRACT) && e->args[0]->is_type(ExprType::CST) &&
                 e->args[1]->is_type(ExprType::CST) && e->args[2]->is_type(ExprType::CST))
     {
         /* Extract */ 
-        res = exprcst(e->size, e->as_int());
+        res = exprcst(e->as_number());
     }
     else if( e->is_type(ExprType::CONCAT) && e->args[0]->is_type(ExprType::CST) &&
                 e->args[1]->is_type(ExprType::CST) )
     {
         /* Concat */ 
-        res = exprcst(e->size, e->as_int());
+        res = exprcst(e->as_number());
     }
     else if( e->is_type(ExprType::ITE) && e->cond_left()->is_type(ExprType::CST) && e->cond_right()->is_type(ExprType::CST))
     {
@@ -333,15 +334,18 @@ Expr es_extract_patterns(Expr e)
 /* Basic transformations to canonize expressions a bit more */
 Expr es_basic_transform(Expr e)
 {
+    if (e->size > 64)
+        return e;
+
     if( e->is_type(ExprType::BINOP, Op::SHL) && e->args[1]->is_type(ExprType::CST))
     {
         // X << Y --> X * (2**Y)
-        return e->args[0]*exprcst(e->size, ((ucst_t)1<<(ucst_t)e->args[1]->cst()));
+        return e->args[0]*exprcst(e->size, ((ucst_t)1<<e->args[1]->as_uint()));
     }
     else if( e->is_type(ExprType::BINOP, Op::SHR) && e->args[1]->is_type(ExprType::CST) )
     {
         // X >> Y --> X / (2**Y)
-        return e->args[0]/exprcst(e->size, ((ucst_t)1<<(ucst_t)(e->args[1]->cst())));
+        return e->args[0]/exprcst(e->size, ((ucst_t)1<<e->args[1]->as_uint()));
     }
     // -X --> -1*X
     else if(e->is_type(ExprType::UNOP, Op::NEG))
@@ -435,8 +439,7 @@ Expr es_finegrain_absorbing_element(Expr e)
     if( !e->is_type(ExprType::BINOP, Op::AND) || !e->args[0]->is_type(ExprType::CST))
         return e;
 
-    // DEBUG TODO 
-
+    // TODO:  
     /*
     if( e->args[0] & 1 ){
         masking_zero = false;
@@ -469,9 +472,12 @@ Expr es_concat_patterns(Expr e)
             e->args[0]->args[2]->cst() == e->args[1]->args[1]->cst()+1){
         return extract(e->args[0]->args[0], e->args[0]->args[1], e->args[1]->args[2]);
     }
+    
+    // TODO: support the below simplifications for expressions > 64bits also
+    if (e->size > 64)
+        return e;
     if( e->is_type(ExprType::BINOP, Op::AND) && e->args[0]->is_type(ExprType::CST) && e->args[1]->is_type(ExprType::CONCAT))
     {
-
         if( e->args[0]->as_uint() == (((ucst_t)1<<e->args[1]->args[1]->size)-1)){
             if( e->args[1]->args[1]->is_type(ExprType::CST) && e->args[1]->args[1]->is_type(ExprType::CST) == 0 ){
                 // concat(X,0) & 0x000...11111 = 0
@@ -500,6 +506,8 @@ Expr es_concat_patterns(Expr e)
 Expr es_arithmetic_factorize(Expr e)
 {
     if( !e->is_type(ExprType::BINOP, Op::ADD))
+        return e;
+    if (e->size > 64)
         return e;
 
     if( e->args[0]->is_type(ExprType::BINOP) && op_is_multiplication(e->args[0]->op()))
@@ -636,9 +644,11 @@ Expr es_basic_ite(Expr e)
     {
         switch( e->cond_op() ){
             case ITECond::EQ: 
-            case ITECond::LE: 
+            case ITECond::LE:
+            case ITECond::SLE:
                 return e->if_true();
             case ITECond::LT:
+            case ITECond::SLT:
                 return e;
             default:
                 throw runtime_exception("es_basic_ite(): got unsupported ITECond");

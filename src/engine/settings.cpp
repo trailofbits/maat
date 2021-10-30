@@ -8,7 +8,7 @@ Settings::Settings():
     force_simplify(true),
     ignore_missing_imports(false),
     ignore_missing_syscalls(false),
-    record_path_constraints(false),
+    record_path_constraints(true),
     symptr_read(true),
     symptr_write(true),
     symptr_assume_aligned(false),

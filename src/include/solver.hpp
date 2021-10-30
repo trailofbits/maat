@@ -45,10 +45,14 @@ public:
     /** Get model for the last solved constraints. If the previous call to *check()*
      * had returned *false*, the function will return a null pointer */
     virtual std::shared_ptr<VarContext> get_model() = 0;
+    // Mainly for use in python bindings
+    virtual VarContext* _get_model_raw() = 0;
 };
 
 /// Return a solver instance
 std::unique_ptr<Solver> new_solver();
+// Mainly for use in python bindings
+Solver* _new_solver_raw();
 
 #ifdef Z3_BACKEND
 class SolverZ3 : public Solver
@@ -67,7 +71,8 @@ public:
     void add(const Constraint& constr);
     void pop();
     bool check();
-    std::shared_ptr<VarContext> get_model();
+    virtual std::shared_ptr<VarContext> get_model();
+    virtual VarContext* _get_model_raw();
 };
 #endif
 

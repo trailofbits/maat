@@ -58,7 +58,7 @@ unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t&
     {
         throw env_exception("Can not write to symbolic link file");
     }
-    
+
     for (const auto& e : buffer)
     {
         if (e->size/8 + write_ptr - 1 > data->end)
@@ -91,7 +91,7 @@ unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t&
             Expr e = data->read(start_write_ptr+i, 1);
             try
             {
-                os << (char)e->as_int();
+                os.put((char)e->as_int()&0xff);
             }
             catch (const expression_exception& e)
             {
@@ -101,6 +101,7 @@ unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t&
                 os << "#";
             }
         }
+        os << std::flush;
     }
 
     return n;
@@ -149,7 +150,8 @@ unsigned int PhysicalFile::write_buffer(uint8_t* buffer, addr_t& offset, int nb_
     {
         std::ostream& os = flush_stream.value().get();
         for (int i = 0; i < nb_bytes; i++)
-            os << (char)buffer[i];
+            os.put((char)buffer[i]);
+        os << std::flush;
     }
 
     return nb_bytes;
@@ -176,7 +178,7 @@ unsigned int PhysicalFile::read_buffer(
     _adjust_read_offset(read_ptr);
 
     // If nothing to read, just return
-    if (read_ptr >= _size)
+    if (read_ptr >= _size or _size < elem_size)
     {
         return 0;
     }
@@ -186,9 +188,12 @@ unsigned int PhysicalFile::read_buffer(
         if (read_ptr + elem_size > _size)
         {
             // Reached end of file buffer
-            buffer.push_back(data->read(read_ptr, _size-read_ptr));
-            cnt += (_size-read_ptr);
-            read_ptr = _size;
+            if (read_ptr < _size)
+            {
+                buffer.push_back(data->read(read_ptr, _size-read_ptr));
+                cnt += (_size-read_ptr);
+                read_ptr = _size;
+            }
             break;
         }
         else

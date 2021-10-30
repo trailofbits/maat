@@ -238,6 +238,17 @@ PyObject* get_Env_Type();
 PyObject* PyEnv_FromEnvEmulator(env::EnvEmulator* env, bool is_ref);
 #define as_env_object(x)  (*((Env_Object*)x))
 
+// ================= Solver ===================
+#ifdef HAS_SOLVER_BACKEND
+typedef struct{
+    PyObject_HEAD
+    maat::solver::Solver* solver;
+} Solver_Object;
+PyObject* get_Solver_Type();
+PyObject* maat_Solver(PyObject* module);
+#define as_solver_object(x)  (*((Solver_Object*)x))
+#endif
+
 } // namespace py
 } // namespace maat
 #endif

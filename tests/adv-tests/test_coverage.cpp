@@ -66,7 +66,7 @@ namespace code_coverage{
                         cont = false;
                         while (engine.nb_snapshots() > 0)
                         {
-                            engine.restore_snapshot(true);
+                            engine.restore_last_snapshot(true);
                             _assert(engine.info.bp_name == "path", "do_code_coverage(): failed to re-break on conditionnal instruction");
                             sol.reset();
                             for (auto c : engine.path.constraints())

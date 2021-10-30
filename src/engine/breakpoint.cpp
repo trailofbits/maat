@@ -732,7 +732,7 @@ bool BPSimple::check(MaatEngine& engine, const ir::Inst& inst, const ir::Process
             triggered = true;
         }
     }
-    
+
     // Tainted memory read
     if (
         not triggered

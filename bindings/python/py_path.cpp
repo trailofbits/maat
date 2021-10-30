@@ -56,7 +56,6 @@ static PyMemberDef Path_members[] = {
     {NULL}
 };
 
-
 static PyTypeObject Path_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "PathManager",                            /* tp_name */

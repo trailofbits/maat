@@ -115,7 +115,7 @@ namespace solve_symbolic_ptr{
                 "Re-evaluating result with new VarContext gives wrong value");
 
             // Try to restore model and run the program again with the solved solution
-            engine.restore_snapshot();
+            engine.restore_last_snapshot();
             engine.vars->update_from(*model);
 
             // Re-run program
@@ -176,7 +176,7 @@ namespace solve_symbolic_ptr{
                 "Re-evaluating result with new VarContext gives wrong value");
 
             // Try to restore model and run the program again with the solved solution
-            engine.restore_snapshot();
+            engine.restore_last_snapshot();
             engine.vars->update_from(*model);
 
             // Re-run program
@@ -268,7 +268,7 @@ namespace solve_symbolic_ptr{
                 "Re-evaluating result with new VarContext gives wrong value");
 
             // Try to restore model and run the program again with the solved solution
-            engine.restore_snapshot();
+            engine.restore_last_snapshot();
             engine.vars->update_from(*model);
 
             // Re-run program

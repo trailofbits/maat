@@ -25,5 +25,14 @@ std::unique_ptr<Solver> new_solver()
 #endif
 }
 
+Solver* _new_solver_raw()
+{
+#ifdef Z3_BACKEND
+    return new SolverZ3();
+#else
+    return nullptr;
+#endif
+}
+
 } // namespace solver
 } // namespace maat

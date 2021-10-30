@@ -372,13 +372,13 @@ namespace test{
             nb += _assert( mem.read(0x1200, 8)->eq(concat( exprcst(16, 0x1234), concat( e2, concat( exprcst(8, 0xde), concat(extract(e4, 63, 56) ,c2))))), 
                     "MemSegment: concrete/symbolic juxtaposition failed");
             return nb; 
-        } 
+        }
 
-        
+
         unsigned int mem_engine()
         {
             std::shared_ptr<VarContext> ctx = std::make_shared<VarContext>(0);
-            MemEngine mem(ctx);
+            MemEngine mem(ctx, 64);
 
             mem.new_segment(0x1000, 0x1fff, maat::mem_flag_rw);
             mem.new_segment(0x3000, 0x5fff, maat::mem_flag_rwx);
@@ -493,7 +493,7 @@ namespace test{
         {
             unsigned int nb = 0;
             std::shared_ptr<VarContext> ctx = std::make_shared<VarContext>(0);
-            MemEngine mem(ctx);
+            MemEngine mem(ctx, 64);
 
             mem.new_segment(0x1000, 0x1fff, maat::mem_flag_rw);
             mem.write(0x1000, 0x12345678deadbeef, 8);
@@ -542,7 +542,7 @@ namespace test{
             unsigned int nb = 0; 
             Expr e = exprvar(64, "var1"), e2;
             std::shared_ptr<VarContext> ctx = std::make_shared<VarContext>(0);
-            MemEngine mem(ctx);
+            MemEngine mem(ctx, 64);
 
             mem.new_segment(0x1000, 0x1fff, maat::mem_flag_rwx);
             mem.new_segment(0x2000, 0x2fff, maat::mem_flag_rwx);

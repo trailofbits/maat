@@ -5690,19 +5690,12 @@ define pcodeop movmskps;
 
 :MOVUPS       XmmReg, m128     is vexMode=0 &  byte=0x0F; byte=0x10; m128 & XmmReg ...
 {
-    local m:16 = m128;
-    XmmReg[0,32] = m[0,32];
-    XmmReg[32,32] = m[32,32];
-    XmmReg[64,32] = m[64,32];
-    XmmReg[96,32] = m[96,32];
+    XmmReg = m128;
 }
 
 :MOVUPS       XmmReg1, XmmReg2 is vexMode=0 &  byte=0x0F; byte=0x10; xmmmod = 3 & XmmReg1 & XmmReg2
 {
-    XmmReg1[0,32] = XmmReg2[0,32];
-    XmmReg1[32,32] = XmmReg2[32,32];
-    XmmReg1[64,32] = XmmReg2[64,32];
-    XmmReg1[96,32] = XmmReg2[96,32];
+    XmmReg1 = XmmReg2;
 }
 
 :MOVUPS       m128, XmmReg     is vexMode=0 &  mandover=0 & byte=0x0F; byte=0x11; m128 & XmmReg ...
@@ -5712,10 +5705,7 @@ define pcodeop movmskps;
 
 :MOVUPS       XmmReg2, XmmReg1 is vexMode=0 &  mandover=0 & byte=0x0F; byte=0x11; xmmmod = 3 & XmmReg1 & XmmReg2
 {
-    XmmReg1[0,32] = XmmReg2[0,32];
-    XmmReg1[32,32] = XmmReg2[32,32];
-    XmmReg1[64,32] = XmmReg2[64,32];
-    XmmReg1[96,32] = XmmReg2[96,32];
+    XmmReg2 = XmmReg1;
 }
 
 :MULPD        XmmReg, m128     is vexMode=0 &  $(PRE_66) & byte=0x0F; byte=0x59; m128 & XmmReg ...

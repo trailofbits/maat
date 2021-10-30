@@ -219,33 +219,42 @@ static PyObject* FileAccessor_write_buffer(PyObject* self, PyObject *args)
     std::vector<Expr> native_buf;
     const char* bytes;
     int bytes_len=0, len=-1;
-    
+    size_t expr_size_hint = 8; // Size hint in bits for int values, to allow mixing Expr and int
+
     try
     {
-        if (PyArg_ParseTuple(args, "O!", &PyList_Type, &buf))
+        if (PyArg_ParseTuple(args, "s#|i", &bytes, &bytes_len, &len))
         {
+            len = (len < 0)? bytes_len : len;
+            return PyLong_FromLong(as_fileaccessor_object(self).fa->write_buffer((uint8_t*)bytes, len));
+        }
+        else if (PyArg_ParseTuple(args, "O!", &PyList_Type, &buf))
+        {
+            PyErr_Clear();
             // Buffer = list of expressions
             for (int i = 0; i < PyList_Size(buf); i++)
             {
                 PyObject* expr = PyList_GetItem(buf, i);
-                if (not PyObject_TypeCheck(expr, (PyTypeObject*)get_Expr_Type()))
+                if (PyObject_TypeCheck(expr, (PyTypeObject*)get_Expr_Type()))
                 {
-                    return PyErr_Format(PyExc_TypeError, "Buffer element %d is not an Expr object", i);
+                    native_buf.push_back(*as_expr_object(expr).expr);
+                    expr_size_hint = (*as_expr_object(expr).expr)->size;
                 }
-                native_buf.push_back(*as_expr_object(expr).expr);
+                else if (PyLong_Check(expr))
+                {
+                    native_buf.push_back(exprcst(expr_size_hint, PyLong_AsLongLong(expr)));
+                }
+                else
+                {
+                    return PyErr_Format(PyExc_TypeError, "Buffer element %d is not an Expr not an int", i);
+                }
             }
             return PyLong_FromLong(as_fileaccessor_object(self).fa->write_buffer(native_buf));
-        }
-        else if (PyArg_ParseTuple(args, "s#|i", &bytes, &bytes_len, &len))
-        {
-            len = (len < 0)? bytes_len : len;
-            return PyLong_FromLong(as_fileaccessor_object(self).fa->write_buffer((uint8_t*)bytes, len));
         }
         else
         {
             return PyErr_Format(PyExc_TypeError, "write_buffer(): parameters have wrong type");
         }
-
     }
     catch (const env_exception& e)
     {

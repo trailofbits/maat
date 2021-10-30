@@ -375,8 +375,8 @@ void Number::set_sdiv(const Number& n1, const Number& n2)
     if (size <= 64)
     {
         set_cst(
-            __number_cst_sign_extend(n1.size, n1.cst_) / 
-            __number_cst_sign_extend(n2.size, n2.cst_)
+            __number_cst_sign_extend(n1.size, n1.get_cst()) /
+            __number_cst_sign_extend(n2.size, n2.get_cst())
         );
     }
     else
@@ -397,8 +397,8 @@ void Number::set_div(const Number& n1, const Number& n2)
     size = n1.size;
     if (size <= 64)
     {
-        ucst_t t1 = (n1.size == 64) ? n1.cst_ : n1.cst_ & (((ucst_t)1<<(ucst_t)n1.size)-1);
-        ucst_t t2 = n2.cst_;
+        ucst_t t1 = n1.get_ucst();
+        ucst_t t2 = n2.get_ucst();
         set_cst(t1 / t2);
     }
     else
@@ -466,7 +466,7 @@ void Number::set_concat(const Number& n1, const Number& n2)
         if (n1.is_mpz())
             mpz_ = n1.mpz_;
         else
-            mpz_ = mpz_class((unsigned long int)n1.cst_);
+            mpz_ = mpz_class((unsigned long int)n1.get_ucst());
         mpz_mul_2exp(mpz_.get_mpz_t(), mpz_.get_mpz_t(), n2.size); // shift left
         // Set lower
         if (n2.is_mpz())
@@ -474,11 +474,11 @@ void Number::set_concat(const Number& n1, const Number& n2)
         else
         {
             mpz_t t1;
-            mpz_init_set_ui(t1, (ucst_t)n2.cst_);
+            mpz_init_set_ui(t1, (ucst_t)n2.get_ucst());
             mpz_ior(mpz_.get_mpz_t(), mpz_.get_mpz_t(), t1);
             mpz_clear(t1);
-            adjust_mpz();
         }
+        adjust_mpz();
     }
 }
 
@@ -584,6 +584,11 @@ void Number::set_overwrite(const Number& n1, const Number& n2, int lb)
 
     if (n2.size + lb > n1.size)
         throw expression_exception("Number::set_overwrite(): src number is too big to fit in dest!");
+    if (n2.size == n1.size)
+    {
+        *this = n2;
+        return;
+    }
 
     if (n1.size <= 64)
     {
@@ -613,7 +618,6 @@ void Number::set_overwrite(const Number& n1, const Number& n2, int lb)
         mpz_ = tmp;
         this->size = n1.size;
     }
-
 }
 
 bool Number::sless_than(const Number& other)
@@ -748,17 +752,28 @@ bool Number::is_mpz() const
 
 std::ostream& operator<<(std::ostream& os, const Number& n)
 {
-    if (n.is_mpz())
+    n.print(os);
+    return os;
+}
+
+const char* __hex_format = "%Zx";
+const char* __dec_format = "%Zd";
+
+void Number::print(std::ostream& os, bool decimal) const
+{
+    if (is_mpz())
     {
         char str[1000];  // Enough to store the string representation
                         // of a number on 512 bits
         //mpz_get_str(str, 16,n. mpz_); // Base 16
-        gmp_snprintf(str, sizeof(str), "%Zx", n.mpz_.get_mpz_t());
-        os << "0x" << std::string(str);
+        const char* fmt = decimal? __dec_format : __hex_format; 
+        gmp_snprintf(str, sizeof(str), fmt, mpz_.get_mpz_t());
+        if (not decimal)
+            os << "0x";
+        os << std::string(str);
     }
     else
-        os << std::showbase << n.cst_ << std::noshowbase;
-    return os;
+        os << std::hex << std::showbase << get_ucst() << std::noshowbase;
 }
 
 } // namespace maat

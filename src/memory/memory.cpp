@@ -754,11 +754,8 @@ Expr MemSegment::symbolic_ptr_read(const Expr& addr, ValueSet& addr_value_set, u
     }
 
     // Get all other possible values
-    for( ; a-1+nb_bytes <= end; a++ )
+    for( ; a <= addr_value_set.max and a-1+nb_bytes <= end; a += addr_value_set.stride)
     {
-        if( !addr_value_set.contains(a) )
-            break;
-            
         /* Optimisation to detect huge areas containing only a single byte (typically zeros) */
         if( _bitmap.is_concrete(a-start))
         {
@@ -1254,18 +1251,7 @@ Expr MemEngine::read(Expr addr, unsigned int nb_bytes)
     }
 }
 
-std::vector<Expr> MemEngine::read_buffer(Expr addr, unsigned int nb_elems, unsigned int elem_size)
-{
-    // Do the read
-    if( addr->is_symbolic(*_varctx))
-    {
-        throw mem_exception("MemEngine::read_buffer(): doesn't support symbolic expression as address");
-    }
-    else
-    {
-        return read_buffer(addr->as_uint(*_varctx), nb_elems, elem_size);
-    }
-}
+
 
 std::string MemEngine::read_string(Expr addr, unsigned int len)
 {
@@ -1433,21 +1419,33 @@ Expr MemEngine::symbolic_ptr_read(Expr addr, const ValueSet& range, unsigned int
 
 std::vector<Expr> MemEngine::read_buffer(addr_t addr, unsigned int nb_elems, unsigned int elem_size)
 {
+    return read_buffer(exprcst(_arch_bits, addr), nb_elems, elem_size);
+}
+
+std::vector<Expr> MemEngine::read_buffer(Expr addr, unsigned int nb_elems, unsigned int elem_size)
+{
     std::vector<Expr> res;
-    read_buffer(res,addr, nb_elems, elem_size);
+    read_buffer(res, addr, nb_elems, elem_size);
     return res;
+}
+
+void MemEngine::read_buffer(std::vector<Expr>& buffer, Expr addr, unsigned int nb_elems, unsigned int elem_size)
+{
+    if (elem_size > 16)
+    {
+        throw mem_exception(
+            "MemEngine::read_buffer(): Buffer element size should not exceed 16 bytes"
+        );
+    }
+    for (int i = 0; i < nb_elems; i++)
+    {
+        buffer.push_back(read(addr+(i*elem_size), elem_size));
+    }
 }
 
 void MemEngine::read_buffer(std::vector<Expr>& buffer, addr_t addr, unsigned int nb_elems, unsigned int elem_size)
 {
-    if( elem_size > 8 )
-    {
-        throw mem_exception("Buffer element size should not exceed 8 bytes");
-    }
-    for( int i = 0; i < nb_elems; i++)
-    {
-        buffer.push_back(read(addr+(i*elem_size), elem_size));
-    }
+    return read_buffer(buffer, exprcst(_arch_bits, addr), nb_elems, elem_size);
 }
 
 /* Read a string of size len 

@@ -114,7 +114,7 @@ public:
     void restore_snapshot(snapshot_t snapshot, bool remove=false);
     /** \brief Restore the engine state to the lastest snapshot. If remove is true, the 
      * snapshot is removed after being restored */
-    void restore_snapshot(bool remove=false);
+    void restore_last_snapshot(bool remove=false);
     /// Return the current number of active snapshots
     int nb_snapshots();
 public:

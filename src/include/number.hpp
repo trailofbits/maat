@@ -104,6 +104,8 @@ public:
     /// Return the value (0 or 1) of the bit 'idx' in the number
     int get_bit(unsigned int idx) const;
 public:
+    void print(std::ostream& os, bool decimal=false) const;
+    /// Print number to a stream
     friend std::ostream& operator<<(std::ostream& os, const Number& n);
 };
 
