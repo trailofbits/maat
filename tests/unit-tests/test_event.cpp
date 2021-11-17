@@ -2,10 +2,12 @@
 #include "engine.hpp"
 #include "ir.hpp"
 
+
 namespace test
 {
-namespace breakpoint
-{        
+namespace event
+{      
+/*  
     using namespace maat;
 
     unsigned int _assert(bool val, const std::string& msg)
@@ -674,15 +676,19 @@ namespace breakpoint
         engine.bp_manager.disable_all();
         return nb;
     }
-
+*/
 } // namespace breakpoint
 } // namespace test
 
-using namespace test::breakpoint;
+
+
+using namespace test::event;
+
+
 // All unit tests 
-void test_breakpoints()
+void test_events()
 {
-    MaatEngine engine(Arch::Type::NONE);
+    maat::MaatEngine engine(maat::Arch::Type::NONE);
     engine.mem->new_segment(0x60000, 0x70000);
     engine.mem->new_segment(0x0, 0x2000);
 
@@ -693,17 +699,17 @@ void test_breakpoints()
 
     std::cout   << bold << "[" << green << "+" 
                 << def << bold << "]" << def 
-                << " Testing breakpoints... " << std::flush;
+                << " Testing event hooks... " << std::flush;
 
-    total += reg_breakpoints(engine);
-    total += mem_breakpoints(engine);
-    total += addr_breakpoints(engine);
-    total += symptr_breakpoints(engine);
-    total += branch_breakpoints(engine);
-    total += tainted_reg_breakpoints(engine);
-    total += tainted_mem_breakpoints(engine);
-    total += path_breakpoint(engine);
-    total += callbacks(engine);
+    // total += reg_breakpoints(engine);
+    // total += mem_breakpoints(engine);
+    // total += addr_breakpoints(engine);
+    // total += symptr_breakpoints(engine);
+    // total += branch_breakpoints(engine);
+    // total += tainted_reg_breakpoints(engine);
+    // total += tainted_mem_breakpoints(engine);
+    // total += path_breakpoint(engine);
+    // total += callbacks(engine);
 
     std::cout   << "\t\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;

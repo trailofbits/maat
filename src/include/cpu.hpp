@@ -8,6 +8,8 @@
 #include "ir.hpp"
 #include "constraint.hpp"
 #include "arch.hpp"
+#include "event.hpp"
+#include "pinst.hpp"
 
 namespace maat
 {
@@ -16,78 +18,18 @@ namespace ir
 /** \addtogroup ir
  * \{ */
 
-
-/** A ProcessedInst holds all the current values (in CPU and memory) of 
- * an IR instruction parameters for the current CPU context and memory state.
- * It is an internal intermediary structure used by the symbolic emulation engine to process
- * IR code.
- * 
- * The values held by the member fields depend on the type of operation that was
- * processed. For *in0*, *in1*, *in2*, the current value is computed. For *out*,
- * the FULL value is used (without performing potential bitfield extracts).
- * */
-class ProcessedInst
-{
-public:
-    /** \brief A processed parameter, it can hold either an abstract value,
-     * a concrete value, or no value at all */
-    class Param
-    {
-    public:
-        enum class Type
-        {
-            NONE,
-            ABSTRACT,
-            CONCRETE
-        };
-    
-        Expr expr;
-        Number number;
-        ProcessedInst::Param::Type type;
-        /** \brief Optional auxilliary value, used to store the original address 
-         * expression when processing a parameter that is a memory address
-         * (the original parameter 'expr' gets replaced by the loaded expression 
-         * */
-        Expr auxilliary;
-    public:
-        Param();
-        Param(const Param& other);
-        Param& operator=(const Param& other);
-        Param& operator=(Param&& other) = delete;
-        ~Param() = default;
-    public:
-        bool is_abstract() const;
-        bool is_concrete() const;
-        bool is_none() const;
-    public:
-        Expr as_expr() const;
-    public:
-        Param& operator=(const Expr& e);
-        Param& operator=(Expr&& e);
-        Param& operator=(const Number& c);
-        void set_none();
-    };
-    /** \typedef param_t
-     * Parameter of an processed instruction */
-    using param_t = Param;
-public:
-    bool is_concrete;
-public:
-    ProcessedInst() = default ;
-    ProcessedInst(const ProcessedInst& other) = default;
-    ProcessedInst& operator=(const ProcessedInst& other) = default;
-    ~ProcessedInst() = default;
-public:
-    Param res; ///< Result of the operation to be assigned to destination operand (if applicable)
-    Param out; ///< Value of output variable
-    Param in0; ///< Value of first input parameter
-    Param in1; ///< Value fo second input parameter
-    Param in2; ///< Value of third input parameter
-public:
-    const Param& in(int i) const; ///< Return processed parameter 'i'
-public:
-    void reset(); ///< Empty the contents of the processed instruction
-};
+#define CPU_HANDLE_EVENT_ACTION(statement, res) \
+{\
+    event::Action tmp = statement;\
+    if (tmp == event::Action::ERROR)\
+    {\
+        return tmp; \
+    }\
+    else\
+    {\
+        res = event::merge_actions(res, tmp);\
+    }\
+}
 
 /** The CPU context in Maat's IR. It is basically
  * a mapping between abstract expressions and CPU registers */
@@ -312,6 +254,10 @@ public:
     friend std::ostream& operator<<(std::ostream& os, TmpContext& ctx);
 };
 
+// Hacky method to get engine.events and avoid the compiler to
+// complain that engine is an incomplete type (because cpu.hpp is
+// included in engine.hpp)
+event::EventManager& get_engine_events(MaatEngine& engine);
 
 /** The CPU is responsible for processing most IR instructions when executing code */
 template <size_t NB_REGS>
@@ -320,10 +266,13 @@ class CPU
 private:
     CPUContext<NB_REGS> _cpu_ctx; ///< CPU registers context
     TmpContext tmp_ctx; ///< Temporary values context
-
 private:
     ProcessedInst processed_inst; ///< Processed instruction
 
+public:
+    CPU() = default;
+    CPU(const CPU& other) = default;
+    CPU& operator=(const CPU& other) = default;
 private:
     /** \brief Return 'true' if this instruction assigns a value to
      * the output parameter that entirely replaces its old value (i.e
@@ -383,16 +332,19 @@ private:
     /** \brief Get value of parameter 'param' (extract bits if needed).
      * get_full_register is set to true, the function doesn't truncate the
      * expression if the parameter is a register */
-    inline void _get_abstract_param_value(
+    inline event::Action _get_abstract_param_value(
         ProcessedInst::param_t& dest,
-        const ir::Param& param, 
+        const ir::Param& param,
+        MaatEngine& engine,
+        const ir::Inst& inst,
         bool get_full_register = false
     )
     __attribute__((always_inline))
     {
+        event::Action action = event::Action::CONTINUE;
         if (param.is_none())
         {
-            return dest.set_none();
+            dest.set_none();
         }
         else if (param.is_cst())
         {
@@ -424,6 +376,10 @@ private:
         }
         else if (param.is_reg())
         {
+            CPU_HANDLE_EVENT_ACTION(
+                get_engine_events(engine).before_reg_read(engine, inst, param.reg()),
+                action
+            )
             Expr res = _cpu_ctx.get(param.reg());
             if (get_full_register)
             {
@@ -435,11 +391,16 @@ private:
             {
                 dest = _extract_abstract_if_needed(res, param.hb, param.lb);
             }
+            CPU_HANDLE_EVENT_ACTION(
+                get_engine_events(engine).after_reg_read(engine, inst, param.reg(), dest),
+                action
+            )
         }
         else
         {
             throw runtime_exception("CPU::_get_abstract_param_value(): got unsupported parameter type");
         }
+        return action;
     };
 
     /** \brief Compute value to be assigned to the output parameter
@@ -805,14 +766,17 @@ private:
     /** \brief Get value of parameter 'param' (extract bits if needed).
      * get_full_register is set to true, the function doesn't truncate the
      * expression if the parameter is a register */
-    inline void _get_concrete_param_value(
+    inline event::Action _get_concrete_param_value(
         ProcessedInst::param_t& dest,
         const ir::Param& param,
+        MaatEngine& engine,
+        const ir::Inst& inst,
         bool get_full_register = false
     )
     __attribute__((always_inline))
     {
         Number res(param.size());
+        event::Action action = event::Action::CONTINUE;
 
         if (param.is_none())
         {
@@ -855,17 +819,26 @@ private:
         }
         else if (param.is_reg())
         {
+            CPU_HANDLE_EVENT_ACTION(
+                get_engine_events(engine).before_reg_read(engine, inst, param.reg()),
+                action
+            )
             res = _cpu_ctx.get_concrete(param.reg());
             if (!get_full_register)
             {
                 _extract_concrete_if_needed(res, param.hb, param.lb);
             }
             dest = res;
+            CPU_HANDLE_EVENT_ACTION(
+                get_engine_events(engine).after_reg_read(engine, inst, param.reg(), dest),
+                action
+            )
         }
         else
         {
             throw runtime_exception("CPU::_get_concrete_param_value(): got unsupported parameter type");
         }
+        return action;
     };
 
     /** \brief Compute value to be assigned to the output parameter
@@ -1138,7 +1111,7 @@ public:
      * pre_process_inst() is called again, any previously returned reference will then
      * point to invalid data and can no longer be used (more precisely, it will point to the
      * parameter values of the lastest processed instruction) */
-    ProcessedInst& pre_process_inst(const ir::Inst& inst)
+    ProcessedInst& pre_process_inst(const ir::Inst& inst, event::Action& action, MaatEngine& engine)
     {
 
         processed_inst.reset();
@@ -1147,10 +1120,10 @@ public:
             // If at least one parameter is abstract, get all
             // parameter values as Expr instances
             processed_inst.is_concrete = false;
-            _get_abstract_param_value(processed_inst.out, inst.out, true);
-            _get_abstract_param_value(processed_inst.in0, inst.in[0]);
-            _get_abstract_param_value(processed_inst.in1, inst.in[1]);
-            _get_abstract_param_value(processed_inst.in2, inst.in[2]);
+            _get_abstract_param_value(processed_inst.out, inst.out, engine, inst, true);
+            event::merge_actions(action, _get_abstract_param_value(processed_inst.in0, inst.in[0], engine, inst));
+            event::merge_actions(action, _get_abstract_param_value(processed_inst.in1, inst.in[1], engine, inst));
+            event::merge_actions(action, _get_abstract_param_value(processed_inst.in2, inst.in[2], engine, inst));
         }
         else
         {
@@ -1159,12 +1132,12 @@ public:
             // Except for out parameter for which we need the current value
             // if we want to use it in breakpoint callbacks
             if (_is_param_abstract(inst.out))
-                _get_abstract_param_value(processed_inst.out, inst.out, true);
+                _get_abstract_param_value(processed_inst.out, inst.out, engine, inst, true);
             else
-                _get_concrete_param_value(processed_inst.out, inst.out, true);
-            _get_concrete_param_value(processed_inst.in0, inst.in[0]);
-            _get_concrete_param_value(processed_inst.in1, inst.in[1]);
-            _get_concrete_param_value(processed_inst.in2, inst.in[2]);
+                _get_concrete_param_value(processed_inst.out, inst.out, engine, inst, true);
+            event::merge_actions(action, _get_concrete_param_value(processed_inst.in0, inst.in[0], engine, inst));
+            event::merge_actions(action, _get_concrete_param_value(processed_inst.in1, inst.in[1], engine, inst));
+            event::merge_actions(action, _get_concrete_param_value(processed_inst.in2, inst.in[2], engine, inst));
         }
 
         return processed_inst;
@@ -1191,8 +1164,13 @@ public:
     }
 
     /// Apply the semantics specified by **pinst** for instruction **inst** to the current CPU context
-    void apply_semantics(const ir::Inst& inst, const ProcessedInst& pinst)
+    event::Action apply_semantics(
+        const ir::Inst& inst,
+        const ProcessedInst& pinst,
+        MaatEngine& engine
+    )
     {
+        event::Action action = event::Action::CONTINUE;
         // Apply semantics only if destination is a register or a temporary
         if (
             (
@@ -1208,7 +1186,25 @@ public:
         {
             if (inst.out.is_reg())
             {
+                // TODO: handle errors ??? How ??
+                CPU_HANDLE_EVENT_ACTION(
+                    get_engine_events(engine).before_reg_write(
+                        engine,
+                        inst,
+                        inst.out.reg(),
+                        pinst.res
+                    ),
+                    action
+                )
                 _cpu_ctx.set(inst.out.reg(), pinst.res);
+                CPU_HANDLE_EVENT_ACTION(
+                    get_engine_events(engine).after_reg_write(
+                        engine,
+                        inst,
+                        inst.out.reg()
+                    ),
+                    action
+                )
             }
             else if (inst.out.is_tmp())
             {
@@ -1219,6 +1215,7 @@ public:
                 throw ir_exception("CPU::apply_semantics(): got unexpected destination parameter in instruction");
             }
         }
+        return action;
     }
 public:
     /// Get the current CPU context

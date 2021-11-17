@@ -55,12 +55,44 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
 #endif
 }
 
+// TODO: such macros are probably not best practice...
 #define ASSERT_SUCCESS(statement) \
 if (statement != true)\
 {               \
     log.error("Unexpected error when processing IR instruction, aborting..."); \
     info.stop = info::Stop::FATAL; \
     return info.stop; \
+}
+
+#define HANDLE_EVENT_ACTION(statement) \
+{\
+    event::Action action = statement;\
+    if (action == event::Action::ERROR)\
+    {\
+        log.error("Error executing event callback, aborting..."); \
+        info.reset();\
+        info.stop = info::Stop::FATAL; \
+        return info.stop; \
+    }\
+    else if (action == event::Action::HALT)\
+    {\
+        _halt_after_inst = true;\
+    }\
+}
+
+// Handle action in subfunction returning boolean
+#define SUB_HANDLE_EVENT_ACTION(statement, ret_val) \
+{\
+    event::Action action = statement;\
+    if (action == event::Action::ERROR)\
+    {\
+        log.error("Error executing event callback, aborting..."); \
+        return ret_val;\
+    }\
+    else if (action == event::Action::HALT)\
+    {\
+        _halt_after_inst = true;\
+    }\
 }
 
 info::Stop MaatEngine::run(int max_inst)
@@ -76,6 +108,7 @@ info::Stop MaatEngine::run(int max_inst)
 
     // Reset info field
     info.reset();
+    _halt_after_inst = false;
 
     // Process pending breakpoints
     // If a breakpoint requested halting the execution, there might be other
@@ -181,6 +214,12 @@ info::Stop MaatEngine::run(int max_inst)
             // Actions to do everytime we change ASM instruction
             if (current_inst_addr != inst.addr)
             {
+                if (_halt_after_inst)
+                {
+                    info.stop = info::Stop::EVENT;
+                    return info.stop;
+                }
+
                 // Update current_inst_addr
                 current_inst_addr = inst.addr;
                 // TODO: periodically increment tsc() ?
@@ -194,7 +233,18 @@ info::Stop MaatEngine::run(int max_inst)
                     info.addr = current_inst_addr;
                     return info.stop;
                 }
-                
+
+                // EXEC event
+                HANDLE_EVENT_ACTION(events.before_exec(*this, current_inst_addr))
+                if (info.addr.has_value() and *info.addr != current_inst_addr)
+                {
+                    // If user callback changed the address to execute, exit the loop
+                    next_block = true;
+                    cpu.ctx().set(arch->pc(), *info.addr);
+                    break;
+                }
+                info.reset();
+
                 // Print current asm instruction if option is set
                 if (settings.log_insts)
                 {
@@ -239,7 +289,21 @@ info::Stop MaatEngine::run(int max_inst)
             // std::cout << "DEBUG " << inst << std::endl;
 
             // Pre-process IR instruction
-            ir::ProcessedInst& pinst = cpu.pre_process_inst(inst);
+            event::Action tmp_action = event::Action::CONTINUE;
+            ir::ProcessedInst& pinst = cpu.pre_process_inst(inst, tmp_action, *this);
+            // Check event results on register read
+            if (tmp_action == event::Action::ERROR)
+            {
+                log.error("Error in event callback when processing instruction");
+                info.addr = current_inst_addr;
+                info.stop = info::Stop::FATAL;
+                return info.stop;
+            }
+            else if (tmp_action == event::Action::HALT)
+            {
+                _halt_after_inst = true;
+            }
+            info.reset(); // Reset info here because the CPU can not do it
 
             // Process Addr parameters and load them from memory
             ASSERT_SUCCESS(process_addr_params(inst, pinst))
@@ -328,7 +392,10 @@ info::Stop MaatEngine::run(int max_inst)
             }
 
             // Apply semantics to the IR CPU
-            cpu.apply_semantics(inst, pinst);
+            HANDLE_EVENT_ACTION(
+                cpu.apply_semantics(inst, pinst, *this)
+            )
+            info.reset(); // Reset info here because the CPU can not do it
 
             // Check for breakpoints to execute at the end of an ASM instruction
             // Note: End of instruction if we branch or change instruction within the
@@ -385,6 +452,10 @@ info::Stop MaatEngine::run(int max_inst)
             // else: pcode relative branching, ir_inst_id has already
             // been updated by process_branch(), so do nothing and 
             // just loop again
+
+            // Event EXEC
+            HANDLE_EVENT_ACTION(events.after_exec(*this, current_inst_addr))
+            info.reset();
         }
     }
 
@@ -456,6 +527,10 @@ bool MaatEngine::process_branch(
         throw runtime_exception("MaatEngine::process_branch(): called with non-branching instruction!");
     
     Expr in0, in1;
+    addr_t next = inst.addr + inst.size;
+    bool taken = false;
+    bool pcode_rela = inst.in[0].is_cst();
+
     if (pinst.in0.is_abstract())
         in0 = pinst.in0.expr;
     else if (pinst.in0.is_concrete())
@@ -479,33 +554,65 @@ bool MaatEngine::process_branch(
             }
             else // address, branch to it
             {
+                SUB_HANDLE_EVENT_ACTION(events.before_branch(*this, inst, in0, next), false)
                 // TODO handle branch to same instruction !
                 // find to which IR inst id we have to loop back !
                 cpu.ctx().set(arch->pc(), in0);
                 branch_type = MaatEngine::branch_native;
+                SUB_HANDLE_EVENT_ACTION(events.after_branch(*this, inst, in0, next), false)
+                info.reset();
             }
             break;
         case ir::Op::RETURN: // Equivalent to branchind
         case ir::Op::CALLIND: // Equivalent to branchind
         case ir::Op::BRANCHIND:
+            SUB_HANDLE_EVENT_ACTION(events.before_branch(*this, inst, in0, next), false)
             // Branch to in0
             cpu.ctx().set(arch->pc(), in0);
             branch_type = MaatEngine::branch_native;
+            SUB_HANDLE_EVENT_ACTION(events.after_branch(*this, inst, in0, next), false)
+            info.reset();
             break;
         case ir::Op::CBRANCH:
-            // Test condition !
+            // TODO: indicate that the branch is pcode relative if it's the case
+            // probably add a info.branch.type field
+            SUB_HANDLE_EVENT_ACTION(
+                events.before_branch(
+                    *this,
+                    inst, 
+                    pcode_rela? nullptr : in0,
+                    next,
+                    in1 != 0 // cond
+                ), false
+            )
+
+            // Resolve the branch
             if (in1->is_symbolic(*vars))
             {
-                // Symbolic condition, stop ! 
-                // TODO: have Stop::SYMBOLIC_BRANCH ??
-                info.stop = info::Stop::ERROR;
-                info.addr = inst.addr;
-                // TODO - set in the "unresolved" state
-                // and the user can call resolved(taken/not taken) to continue in one branch or another
-                // ---> this will change with the event system anyways
-                return false;
+                if (info.branch->taken.has_value())
+                {
+                    // User callback specified which branch to take
+                    taken = info.branch->taken.value();
+                }
+                else
+                {
+                    log.error("Purely symbolic branch condition");
+                    // TODO: have Stop::SYMBOLIC_BRANCH ?
+                    info.stop = info::Stop::ERROR;
+                    info.addr = inst.addr;
+                    return false;
+                }
             }
-            if (in1->as_uint(*vars) != 0) // branch condition is true, branch to target
+            else if (in1->as_uint(*vars) != 0) // branch condition is true, branch to target
+            {
+                taken = true;
+            }
+            else
+            {
+                taken = false;
+            }
+            // Perform the branch
+            if (taken) // branch taken
             {
                 if (inst.in[0].is_cst()) // internal pcode branch
                 {
@@ -530,6 +637,7 @@ bool MaatEngine::process_branch(
             }
             else // branch condition is false, so no branch
             {
+                taken = false;
                 branch_type = MaatEngine::branch_none;
                 // Add path constraint
                 if (
@@ -540,6 +648,18 @@ bool MaatEngine::process_branch(
                     path.add(in1 == 0);
                 }
             }
+
+            SUB_HANDLE_EVENT_ACTION(
+                events.after_branch(
+                    *this,
+                    inst, 
+                    pcode_rela? nullptr : in0,
+                    next,
+                    in1 != 0, // cond
+                    taken
+                ), false
+            )
+            info.reset();
             break;
         default:
             throw runtime_exception(Fmt()
@@ -552,28 +672,24 @@ bool MaatEngine::process_branch(
 }
 
 
-Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::param_t& addr)
+Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param, ir::ProcessedInst::param_t& addr)
 {
     Expr loaded;
     bool do_abstract_load = true;
-    addr_t concrete_addr = 0;
 
     if (addr.is_concrete())
     {
         do_abstract_load = false;
-        concrete_addr = addr.number.get_ucst();
         addr.auxilliary = exprcst(addr.number);
     }
     else if (addr.is_abstract() and addr.expr->is_concrete(*vars))
     {
         do_abstract_load = false;
-        concrete_addr = addr.expr->as_uint(*vars);
         addr.auxilliary = addr.expr;
     }
     else if (addr.is_abstract() and addr.expr->is_concolic(*vars) and not settings.symptr_read)
     {
         do_abstract_load = false;
-        concrete_addr = addr.expr->as_uint(*vars);
         addr.auxilliary = addr.expr;
     }
     else if (addr.is_abstract() and addr.expr->is_symbolic(*vars) and not settings.symptr_read)
@@ -589,23 +705,63 @@ Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
 
     try
     {
+        // Memory read event
+        SUB_HANDLE_EVENT_ACTION(
+            events.before_mem_read(
+                *this,
+                inst,
+                addr.auxilliary, // addr
+                param.size()/8 // size in bytes
+            ),
+            nullptr
+        )
+
         if (do_abstract_load)
         {
-            simplifier->simplify(addr.expr);
-            ValueSet range = addr.expr->value_set();
+            simplifier->simplify(addr.auxilliary);
+            ValueSet range = addr.auxilliary->value_set();
             if (settings.symptr_refine_range)
             {
-                range = refine_value_set(addr.expr);
+                range = refine_value_set(addr.auxilliary);
             }
-            loaded = mem->symbolic_ptr_read(addr.expr, range, param.size()/8, settings);
+            loaded = mem->symbolic_ptr_read(addr.auxilliary, range, param.size()/8, settings);
         }
         else
         {
-            loaded = mem->read(concrete_addr, param.size()/8);
+            loaded = mem->read(addr.auxilliary, param.size()/8);
         }
+        // Mem read event
+        SUB_HANDLE_EVENT_ACTION(
+            events.after_mem_read(
+                *this,
+                inst,
+                addr.auxilliary, // addr
+                loaded // value
+            ),
+            nullptr
+        )
+        // If callback changed the loaded value, update it
+        loaded = info.mem_access->value;
+        // Sanity checks
+        if (loaded == nullptr)
+        {
+            log.error("Memory read event callback changed the read value to a null pointer ");
+            return nullptr;
+        }
+        else if (loaded->size != param.size())
+        {
+            log.error(
+                "Memory read event callback changed the read value expression size, expected ",
+                (int)param.size(), "bits but got ", (int)loaded->size
+            );
+            return nullptr;
+        }
+        // Reset info
+        info.reset();
     }
-    catch(mem_exception& e)
+    catch (const mem_exception& e)
     {
+        info.reset();
         info.stop = info::Stop::FATAL;
         log.error(
             "MaatEngine::resolve_addr_param(): Memory exception when resolving IR address parameter: ",
@@ -617,7 +773,7 @@ Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
     // Update processed parameter (auxiliary already set at the 
     // beginning of the method). Here we can just re-assign 'addr'
     // to an abstract value because Address parameters are expected 
-    // to always trigger abstract processing in the CPU 
+    // to always trigger abstract processing in the CPU
     addr = loaded;
     return loaded;
 }
@@ -630,8 +786,8 @@ bool MaatEngine::process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pi
         return true;
 
     if (
-        (inst.in[0].is_addr() and !resolve_addr_param(inst.in[0], pinst.in0))
-        or (inst.in[1].is_addr() and !resolve_addr_param(inst.in[1], pinst.in1))
+        (inst.in[0].is_addr() and !resolve_addr_param(inst, inst.in[0], pinst.in0))
+        or (inst.in[1].is_addr() and !resolve_addr_param(inst, inst.in[1], pinst.in1))
     )
     {
         log.error("MaatEngine::process_addr_params(): failed to process IR inst: ", inst);
@@ -645,7 +801,7 @@ bool MaatEngine::process_load(const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     Expr loaded;
 
-    if ((loaded = resolve_addr_param(inst.out, pinst.in1)) == nullptr)
+    if ((loaded = resolve_addr_param(inst, inst.out, pinst.in1)) == nullptr)
     {
         log.error("MaatEngine::process_load(): failed to resolve address parameter");
         return false;
@@ -698,7 +854,7 @@ bool MaatEngine::process_store(
     mem_alert_t mem_alert = maat::mem_alert_none;
     ir::ProcessedInst::param_t& addr = pinst.in1;
     bool do_abstract_store = true;
-    addr_t concrete_addr = 0;
+    Expr store_addr = nullptr;
     Expr to_store = nullptr;
 
     // Get address and value to store
@@ -707,17 +863,17 @@ bool MaatEngine::process_store(
         if (addr.is_concrete())
         {
             do_abstract_store = false;
-            concrete_addr = addr.number.get_ucst();
+            store_addr = exprcst(arch->bits(), addr.number.get_ucst());
         }
         else if (addr.is_abstract() and addr.expr->is_concrete(*vars))
         {
             do_abstract_store = false;
-            concrete_addr = addr.expr->as_uint(*vars);
+            store_addr = addr.expr;
         }
         else if (addr.is_abstract() and addr.expr->is_concolic(*vars) and not settings.symptr_write)
         {
             do_abstract_store = false;
-            concrete_addr = addr.expr->as_uint(*vars);
+            store_addr = addr.expr;
         }
         else if (addr.is_abstract() and addr.expr->is_symbolic(*vars) and not settings.symptr_write)
         {
@@ -725,32 +881,66 @@ bool MaatEngine::process_store(
             info.stop = info::Stop::FATAL;
             return false;
         }
+        else // symbolic address and symbolic writes enabled
+        {
+            store_addr = addr.expr;
+        }
         to_store = pinst.in2.is_abstract() ? pinst.in2.expr : exprcst(pinst.in2.number);
     }
     else // out parameter is a constant address and operation is an assignment operation
     {
         do_abstract_store = false;
-        concrete_addr = inst.out.addr();
+        store_addr = exprcst(arch->bits(), inst.out.addr());
         to_store = pinst.res.is_abstract() ? pinst.res.expr : exprcst(pinst.res.number);
     }
 
     // Perform the memory store
     try
     {
+        // Mem read event
+        SUB_HANDLE_EVENT_ACTION(
+            events.before_mem_write(
+                *this,
+                inst,
+                store_addr, // addr
+                to_store // value
+            ),
+            false
+        )
+        // If callback changed the stored value, update it
+        to_store = info.mem_access->value;
+        // Sanity checks
+        if (to_store == nullptr)
+        {
+            log.error("Memory write event callback changed the value to store to a null pointer");
+            return false;
+        }
+
         if (do_abstract_store)
         {
-            simplifier->simplify(addr.expr);
-            ValueSet range = addr.expr->value_set();
+            store_addr = simplifier->simplify(store_addr);
+            ValueSet range = store_addr->value_set();
             if (settings.symptr_refine_range)
             {
-                range = refine_value_set(addr.expr);
+                range = refine_value_set(store_addr);
             }
-            mem->symbolic_ptr_write(addr.expr, range, to_store, settings, &mem_alert, true);
+            mem->symbolic_ptr_write(store_addr, range, to_store, settings, &mem_alert, true);
         }
         else
         {
-            mem->write(concrete_addr, to_store, &mem_alert, true);
+            mem->write(store_addr->as_uint(*vars), to_store, &mem_alert, true);
         }
+        // Mem write event
+        SUB_HANDLE_EVENT_ACTION(
+            events.after_mem_write(
+                *this,
+                inst,
+                store_addr, // addr
+                to_store // value
+            ),
+            false
+        )
+        info.reset(); // Reset info after event callbacks
     }
     catch(mem_exception& e)
     {
@@ -766,6 +956,7 @@ bool MaatEngine::process_store(
         !do_abstract_store
     )
     {
+        addr_t concrete_addr = store_addr->as_uint(*vars);
         addr_t end_addr = concrete_addr-1+(to_store->size/8);
         if (current_block->contains(concrete_addr, end_addr))
             automodifying_block = true;

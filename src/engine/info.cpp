@@ -16,13 +16,11 @@ std::ostream& operator<<(std::ostream& os, const MemAccess& mem_access)
 
     os << space << "Addr: " << mem_access.addr << "\n";
     os << space << "Size: " << mem_access.size << " (bytes)\n";
-    if (mem_access.old_value)
-        os << space << "Old value:" << mem_access.old_value << "\n";
-    if (mem_access.written and mem_access.new_value)
-        os << space << "New value " << mem_access.new_value << "\n";
-    
+    if (mem_access.value)
+        os << space << "Value:" << mem_access.value << "\n";
+
     return os;
-} 
+}
 
 /// Print branch info to a stream
 std::ostream& operator<<(std::ostream& os, const Branch& branch)

@@ -409,7 +409,6 @@ bool BPMem::check(MaatEngine& engine, const ir::Inst& inst, const ir::ProcessedI
             _info.mem_access = info::MemAccess{
                 pinst.in(i).auxilliary, // addr
                 inst.out.size()/8, // size
-                old_value,
                 new_value,
                 false, // written
                 true // read
@@ -460,7 +459,6 @@ bool BPMem::check(MaatEngine& engine, const ir::Inst& inst, const ir::ProcessedI
             _info.mem_access = info::MemAccess{
                 addr_expr, // addr
                 new_value->size/8, // size
-                old_value,
                 new_value,
                 true, // written
                 false // read
@@ -541,7 +539,6 @@ bool BPSimple::check(MaatEngine& engine, const ir::Inst& inst, const ir::Process
                 _info.mem_access = info::MemAccess{
                     addr_expr, // addr
                     inst.out.size()/8, // size
-                    old_value,
                     new_value,
                     false, // written
                     true // read
@@ -569,7 +566,6 @@ bool BPSimple::check(MaatEngine& engine, const ir::Inst& inst, const ir::Process
                 _info.mem_access = info::MemAccess{
                     addr_expr, // addr
                     inst.in[2].size()/8, // size
-                    nullptr, // old_value, unknown
                     new_value,
                     true, // written
                     false // read
@@ -765,7 +761,6 @@ bool BPSimple::check(MaatEngine& engine, const ir::Inst& inst, const ir::Process
             _info.mem_access = info::MemAccess{
                 pinst.in(i).auxilliary, // addr
                 inst.out.size()/8, // size
-                loaded, // old_value
                 loaded, // new_value
                 false, // written
                 true // read
@@ -816,7 +811,6 @@ bool BPSimple::check(MaatEngine& engine, const ir::Inst& inst, const ir::Process
         _info.mem_access = info::MemAccess{
             addr_expr, // addr
             new_value->size/8, // size
-            old_value,
             new_value,
             true, // written
             false // read

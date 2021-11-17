@@ -16,6 +16,7 @@
 #include "lifter.hpp"
 #include "info.hpp"
 #include "breakpoint.hpp"
+#include "event.hpp"
 #include "settings.hpp"
 #include "loader.hpp"
 #include "path.hpp"
@@ -52,6 +53,9 @@ private:
     static constexpr int branch_native = 1;
     static constexpr int branch_pcode = 2;
 private:
+    // Variable put here by commidity to avoid passing it in every sub-method
+    bool _halt_after_inst;
+private:
     /** This field is used when the engine stops running in the middle
      * of a native instruction. It indicates the exact IR instruction 
      * whom to resume execution from. Typically it will only be useful
@@ -69,6 +73,7 @@ public:
     std::shared_ptr<MemEngine> mem;
     ir::CPU<ir::max_cpu_regs> cpu;
     bp::BPManager bp_manager;
+    event::EventManager events;
     PathManager path;
     std::shared_ptr<env::EnvEmulator> env;
     std::shared_ptr<SymbolManager> symbols;
@@ -158,7 +163,7 @@ private:
      * 'param' is a reference either to the parameter corresponding to 'addr' or - when
      * invoked by 'process_load' - to the output parameter. It's used to get the number
      * of bits to read in memory */
-    Expr resolve_addr_param(const ir::Param& param, ir::ProcessedInst::param_t& addr);
+    Expr resolve_addr_param(const ir::Inst& inst, const ir::Param& param, ir::ProcessedInst::param_t& addr);
     /** \brief Resolve all Address parameters in the instruction if needed. This method
      * returns 'true' on success and 'false' if an error occured */
     bool process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pinst);

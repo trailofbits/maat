@@ -1695,7 +1695,7 @@ void MemEngine::write_buffer(addr_t addr, uint8_t* src, int nb_bytes, bool ignor
     for( auto& segment : _segments)
     {
         if( segment->contains(addr) )
-        { 
+        {
             if( 
                 not ignore_flags
                 and not page_manager.has_flags(addr, maat::mem_flag_w)

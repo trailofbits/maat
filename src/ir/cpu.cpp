@@ -1,4 +1,6 @@
 #include "cpu.hpp"
+#include "pinst.hpp"
+#include "engine.hpp"
 
 namespace maat
 {
@@ -227,6 +229,11 @@ ProcessedInst::Param& ProcessedInst::Param::operator=(const Number& n)
 void ProcessedInst::Param::set_none()
 {
     type = Param::Type::NONE;
+}
+
+event::EventManager& get_engine_events(MaatEngine& engine)
+{
+    return engine.events;
 }
 
 } // namespace ir

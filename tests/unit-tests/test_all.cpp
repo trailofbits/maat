@@ -12,7 +12,7 @@ void test_symbolic_memory();
 void test_ir();
 void test_archX86();
 void test_archX64();
-void test_breakpoints();
+void test_events();
 void test_snapshots();
 void test_solver();
 void test_loader();
@@ -48,7 +48,7 @@ int main(int argc, char ** argv)
                 test_memory();
                 test_symbolic_memory();
                 test_ir();
-                test_breakpoints();
+                test_events();
                 test_snapshots();
                 test_archX86();
                 test_archX64();
@@ -56,11 +56,7 @@ int main(int argc, char ** argv)
                 test_loader();
                 
                 /* TODO
-                test_symbolic();
-                
-                test_archX64();
                 test_archARM64();
-                
                 test_env();
                  */
             }
@@ -83,8 +79,8 @@ int main(int argc, char ** argv)
                         test_archX86();
                     else if( !strcmp(argv[i], "X64"))
                         test_archX64();
-                    else if( !strcmp(argv[i], "bp"))
-                        test_breakpoints();
+                    else if( !strcmp(argv[i], "event"))
+                        test_events();
                     else if( !strcmp(argv[i], "snap"))
                         test_snapshots();
                     else if( !strcmp(argv[i], "solver"))
@@ -92,8 +88,6 @@ int main(int argc, char ** argv)
                     else if( !strcmp(argv[i], "loader"))
                         test_loader();
                     /*
-                    else if( !strcmp(argv[i], "sym"))
-                        test_symbolic();
                     else if( !strcmp(argv[i], "ARM64"))
                         test_archARM64();
                     else if( !strcmp(argv[i], "env"))

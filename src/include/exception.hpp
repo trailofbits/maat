@@ -96,11 +96,18 @@ public:
     explicit loader_exception(std::string msg): generic_exception(msg){};
 }; 
 
-/** Breakpoint exception */
+/** Event exception */
+class event_exception: public generic_exception {
+public:
+    explicit event_exception(std::string msg): generic_exception(msg){};
+};
+
+// TODO remove
+/** Event exception */
 class bp_exception: public generic_exception {
 public:
     explicit bp_exception(std::string msg): generic_exception(msg){};
-}; 
+};
 
 /** IR exception */
 class ir_exception: public generic_exception {

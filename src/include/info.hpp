@@ -20,7 +20,8 @@ namespace info
 /** Reason while the engine stopped running code */
 enum class Stop
 {
-    BP, ///< Breakpoint was hit
+    EVENT, ///< Event callback halted the engine
+    BP, ///< Breakpoint was hit // TODO: remove
     SYMBOLIC_PC, ///< Program counter is purely symbolic 
     SYMBOLIC_CODE, ///< Code to execute is purely symbolic
     MISSING_FUNCTION, ///< Calling a function that is neither loaded nor emulated
@@ -39,8 +40,8 @@ enum class Stop
 typedef struct
 {
     ir::reg_t reg; ///< Register that is accessed
-    Expr old_value; ///< Value of register before access
-    Expr new_value; ///< Value of register after access (for register reads, it's equal to 'old_value')
+    Expr value; ///< Current value of the register
+    Expr new_value; ///< Value of the register after access (for reads it is the same as 'value')
     bool written; ///< If the register is written
     bool read; ///< If the register is read
     
@@ -57,7 +58,7 @@ typedef struct
             os << "Register read & written: ";
 
         os << "\n" << space << "Reg: " << arch.reg_name(reg) << "\n";
-        os << space << "Old value: " << old_value << "\n";
+        os << space << "Curr. value: " << value << "\n";
         if (written)
             os << space << "New value " << new_value << "\n";
     }
@@ -70,22 +71,21 @@ typedef struct
 {
     Expr addr; ///< Address where memory is accessed
     size_t size; ///< Number of bytes accessed
-    Expr old_value; ///< Value present at 'addr' before memory access (*warning*: can be null)
-    Expr new_value; ///< Value present at 'addr' after memory access (for memory loads, it's equal to 'old_value')
+    Expr value; ///< Value read/written from/to memory
     bool written; ///< If the memory is written
     bool read; ///< If the memory is read
-
 } MemAccess;
 
 /// Print memory access info to a stream
 std::ostream& operator<<(std::ostream& os, const MemAccess& mem_access);
 
+// TODO: next could be a simple addr_t
 /// Struct holding information about a regular or conditional branch operation
 typedef struct
 {
     std::optional<bool> taken = std::nullopt; ///< Boolean indicating if the branch is taken or not (it has no value for purely symbolic conditions)
-    Constraint cond; ///< Condition for the branch. The branch is taken if the constraint evaluates to True (**warning**: null for regular branch)
-    Expr target; ///< Target address if the branch is taken
+    Constraint cond; ///< Condition for the branch. The branch is taken if the constraint evaluates to True (**warning**: null for unconditional branches)
+    Expr target; ///< Target address if the branch is taken (**warning**: null for IR internal branches)
     Expr next; ///< Next instruction if the branch is not taken (**warning**: null for regular branch operation)
 } Branch;
 

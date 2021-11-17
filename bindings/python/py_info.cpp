@@ -36,11 +36,11 @@ static PyObject* RegAccess_get_reg(PyObject* self, void* closure){
     return PyLong_FromLong(as_regaccess_object(self).access->reg);
 }
 
-static PyObject* RegAccess_get_old_value(PyObject* self, void* closure){
-    if( as_regaccess_object(self).access->old_value == nullptr ){
-        return PyErr_Format(PyExc_AttributeError, "'old_value' property is not set currently");
+static PyObject* RegAccess_get_value(PyObject* self, void* closure){
+    if( as_regaccess_object(self).access->value == nullptr ){
+        return PyErr_Format(PyExc_AttributeError, "'value' property is not set currently");
     }
-    return PyExpr_FromExpr(as_regaccess_object(self).access->old_value);
+    return PyExpr_FromExpr(as_regaccess_object(self).access->value);
 }
 
 static PyObject* RegAccess_get_new_value(PyObject* self, void* closure){
@@ -62,8 +62,8 @@ static PyGetSetDef RegAccess_getset[] = {
     {"read", RegAccess_get_read, NULL, "Is the register being read", NULL},
     {"written", RegAccess_get_written, NULL, "Is the register being written", NULL},
     {"reg", RegAccess_get_reg, NULL, "Register being accessed", NULL},
-    {"new_value", RegAccess_get_new_value, NULL, "Expression that is assigned to the register", NULL},
-    {"old_value", RegAccess_get_old_value, NULL, "Value of the register before being modified", NULL},
+    {"new_value", RegAccess_get_new_value, NULL, "Value that is written to the register", NULL},
+    {"value", RegAccess_get_value, NULL, "Current value of the register", NULL},
     {NULL}
 };
 
@@ -175,18 +175,11 @@ static PyObject* MemAccess_get_size(PyObject* self, void* closure){
     return PyLong_FromLong(as_memaccess_object(self).access->size);
 }
 
-static PyObject* MemAccess_get_old_value(PyObject* self, void* closure){
-    if( as_memaccess_object(self).access->old_value == nullptr ){
-        return PyErr_Format(PyExc_AttributeError, "'old_value' property is not set currently");
+static PyObject* MemAccess_get_value(PyObject* self, void* closure){
+    if( as_memaccess_object(self).access->value == nullptr ){
+        return PyErr_Format(PyExc_AttributeError, "'value' property is not set currently");
     }
-    return PyExpr_FromExpr(as_memaccess_object(self).access->old_value);
-}
-
-static PyObject* MemAccess_get_new_value(PyObject* self, void* closure){
-    if( as_memaccess_object(self).access->new_value == nullptr ){
-        return PyErr_Format(PyExc_AttributeError, "'old_value' property is not set currently");
-    }
-    return PyExpr_FromExpr(as_memaccess_object(self).access->new_value);
+    return PyExpr_FromExpr(as_memaccess_object(self).access->value);
 }
 
 static PyObject* MemAccess_get_read(PyObject* self, void* closure){
@@ -202,8 +195,7 @@ static PyGetSetDef MemAccess_getset[] = {
     {"read", MemAccess_get_read, NULL, "Is the memory being read", NULL},
     {"written", MemAccess_get_written, NULL, "Is the memory being written", NULL},
     {"size", MemAccess_get_size, NULL, "Number of bytes accessed", NULL},
-    {"old_value", MemAccess_get_old_value, NULL, "Value in memory before access", NULL},
-    {"new_value", MemAccess_get_new_value, NULL, "Value in memory after access", NULL},
+    {"value", MemAccess_get_value, NULL, "Value read/written from/to memory", NULL},
     {NULL}
 };
 
