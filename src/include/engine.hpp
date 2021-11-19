@@ -55,6 +55,10 @@ private:
 private:
     // Variable put here by commidity to avoid passing it in every sub-method
     bool _halt_after_inst;
+    // Indicates the last addr before which the engine halted because of an EXEC event
+    // handler. It is used to avoid halting forever on the same instr once we resume 
+    // execution
+    addr_t _previous_halt_before_exec;
 private:
     /** This field is used when the engine stops running in the middle
      * of a native instruction. It indicates the exact IR instruction 

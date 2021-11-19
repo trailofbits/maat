@@ -50,6 +50,8 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
     // Initialize all registers to their proper bit-size with value 0
     for (reg_t reg = 0; reg < arch->nb_regs; reg++)
         cpu.ctx().set(reg, Number(arch->reg_size(reg), 0));
+    // Initialize some variables for execution statefullness
+    _previous_halt_before_exec = -1;
 #ifdef PYTHON_BINDINGS
     self_python_wrapper_object = nullptr;
 #endif
@@ -214,6 +216,10 @@ info::Stop MaatEngine::run(int max_inst)
             // Actions to do everytime we change ASM instruction
             if (current_inst_addr != inst.addr)
             {
+                // Update instruction pointer:
+                cpu.ctx().set(arch->pc(), inst.addr);
+
+                // If halt was triggered on the previous instruction, halt now
                 if (_halt_after_inst)
                 {
                     info.stop = info::Stop::EVENT;
@@ -225,8 +231,6 @@ info::Stop MaatEngine::run(int max_inst)
                 current_inst_addr = inst.addr;
                 // TODO: periodically increment tsc() ?
                 // TODO: increment stats with instr count
-                // Update instruction pointer:
-                cpu.ctx().set(arch->pc(), current_inst_addr);
                 // Check if max_instr limit has been reached
                 if (check_max_inst and max_inst <= 0)
                 {
@@ -237,11 +241,24 @@ info::Stop MaatEngine::run(int max_inst)
 
                 // EXEC event
                 HANDLE_EVENT_ACTION(events.before_exec(*this, current_inst_addr))
+                // If we already halted before executing this instruction, don't halt
+                // again, neither before not after the instruction
+                if (_previous_halt_before_exec == current_inst_addr)
+                    _halt_after_inst = false;
+                // For EXEC event, if a hook halts execution then we stop directly
+                if (_halt_after_inst)
+                {
+                    info.stop = info::Stop::EVENT;
+                    _previous_halt_before_exec = current_inst_addr;
+                    return info.stop;
+                }
+                _previous_halt_before_exec = -1;
+                // If user callback changed the address to execute, exit the loop
                 if (info.addr.has_value() and *info.addr != current_inst_addr)
                 {
-                    // If user callback changed the address to execute, exit the loop
                     next_block = true;
                     cpu.ctx().set(arch->pc(), *info.addr);
+                    info.reset();
                     break;
                 }
                 info.reset();

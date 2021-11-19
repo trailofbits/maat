@@ -266,8 +266,8 @@ namespace events
         return nb;
     }
 
-/* 
-    unsigned int addr_breakpoints(MaatEngine& engine)
+ 
+    unsigned int exec_event(MaatEngine& engine)
     {
         unsigned int nb = 0;
 
@@ -275,33 +275,31 @@ namespace events
         block->add_inst(ir::Inst(0x200, ir::Op::COPY, ir::Reg(0, 31, 0), ir::Cst(10, 31, 0)));
         block->add_inst(ir::Inst(0x201, ir::Op::COPY, ir::Reg(1, 31, 0), ir::Cst(11, 31, 0)));
         block->add_inst(ir::Inst(0x202, ir::Op::COPY, ir::Reg(2, 31, 0), ir::Cst(12, 31, 0)));
+        block->add_inst(ir::Inst(0x203, ir::Op::COPY, ir::Reg(10, 31, 0), ir::Cst(42, 31, 0)));
         engine.ir_blocks->add(block);
 
-        // Break on address
-        engine.bp_manager.disable_all();
-        engine.bp_manager.add_addr_bp(0x200, "a1");
-        engine.bp_manager.add_addr_bp(0x201, "a2");
+        engine.events.disable_all();
+        engine.events.hook(Event::EXEC, When::BEFORE, "", AddrFilter(0x200));
+        engine.events.hook(Event::EXEC, When::AFTER, {_cb3, _cb2}, "", AddrFilter(0x201));
         engine.cpu.ctx().set(0, 0x0);
         engine.cpu.ctx().set(1, 0x0);
+        engine.cpu.ctx().set(6, 0x0);
         engine.run_from(0x200);
-
+        nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x200, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(0)->as_uint() == 0, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.stop == info::Stop::BP, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.bp_name == "a1", "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
         nb += _assert(*engine.info.addr == 0x200, "MaatEngine: event hook failed");
-
         engine.run();
-        
-        nb += _assert(engine.cpu.ctx().get(0)->as_uint() == 10, "MaatEngine: event hook failed");
-        nb += _assert(engine.cpu.ctx().get(1)->as_uint() == 0, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.stop == info::Stop::BP, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.bp_name == "a2", "MaatEngine: event hook failed");
+        nb += _assert(engine.cpu.ctx().get(6)->as_uint() == 0xcafebabe, "MaatEngine: event hook failed");
+        nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x202, "MaatEngine: event hook failed");
+        nb += _assert(engine.cpu.ctx().get(1)->as_uint() == 11, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
         nb += _assert(*engine.info.addr == 0x201, "MaatEngine: event hook failed");
 
-        engine.bp_manager.disable_all();
         return nb;
     }
 
+/*
     unsigned int branch_breakpoints(MaatEngine& engine)
     {
         unsigned int nb = 0;
@@ -483,7 +481,7 @@ void test_events()
 
     total += reg_events(engine);
     total += mem_events(engine);
-    // total += addr_breakpoints(engine);
+    total += exec_event(engine);
     // total += symptr_breakpoints(engine);
     // total += branch_breakpoints(engine);
     // total += tainted_reg_breakpoints(engine);
