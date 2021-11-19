@@ -337,7 +337,8 @@ private:
         const ir::Param& param,
         MaatEngine& engine,
         const ir::Inst& inst,
-        bool get_full_register = false
+        bool get_full_register = false,
+        bool trigger_events = true
     )
     __attribute__((always_inline))
     {
@@ -376,10 +377,13 @@ private:
         }
         else if (param.is_reg())
         {
-            CPU_HANDLE_EVENT_ACTION(
-                get_engine_events(engine).before_reg_read(engine, inst, param.reg()),
-                action
-            )
+            if (trigger_events)
+            {
+                CPU_HANDLE_EVENT_ACTION(
+                    get_engine_events(engine).before_reg_read(engine, inst, param.reg()),
+                    action
+                )
+            }
             Expr res = _cpu_ctx.get(param.reg());
             if (get_full_register)
             {
@@ -391,10 +395,13 @@ private:
             {
                 dest = _extract_abstract_if_needed(res, param.hb, param.lb);
             }
-            CPU_HANDLE_EVENT_ACTION(
-                get_engine_events(engine).after_reg_read(engine, inst, param.reg(), dest),
-                action
-            )
+            if (trigger_events)
+            {
+                CPU_HANDLE_EVENT_ACTION(
+                    get_engine_events(engine).after_reg_read(engine, inst, param.reg(), dest),
+                    action
+                )
+            }
         }
         else
         {
@@ -771,7 +778,8 @@ private:
         const ir::Param& param,
         MaatEngine& engine,
         const ir::Inst& inst,
-        bool get_full_register = false
+        bool get_full_register = false,
+        bool trigger_events = true
     )
     __attribute__((always_inline))
     {
@@ -819,20 +827,26 @@ private:
         }
         else if (param.is_reg())
         {
-            CPU_HANDLE_EVENT_ACTION(
-                get_engine_events(engine).before_reg_read(engine, inst, param.reg()),
-                action
-            )
+            if (trigger_events)
+            {
+                CPU_HANDLE_EVENT_ACTION(
+                    get_engine_events(engine).before_reg_read(engine, inst, param.reg()),
+                    action
+                )
+            }
             res = _cpu_ctx.get_concrete(param.reg());
             if (!get_full_register)
             {
                 _extract_concrete_if_needed(res, param.hb, param.lb);
             }
             dest = res;
-            CPU_HANDLE_EVENT_ACTION(
-                get_engine_events(engine).after_reg_read(engine, inst, param.reg(), dest),
-                action
-            )
+            if (trigger_events)
+            {
+                CPU_HANDLE_EVENT_ACTION(
+                    get_engine_events(engine).after_reg_read(engine, inst, param.reg(), dest),
+                    action
+                )
+            }
         }
         else
         {
@@ -1120,7 +1134,7 @@ public:
             // If at least one parameter is abstract, get all
             // parameter values as Expr instances
             processed_inst.is_concrete = false;
-            _get_abstract_param_value(processed_inst.out, inst.out, engine, inst, true);
+            _get_abstract_param_value(processed_inst.out, inst.out, engine, inst, true, false);
             event::merge_actions(action, _get_abstract_param_value(processed_inst.in0, inst.in[0], engine, inst));
             event::merge_actions(action, _get_abstract_param_value(processed_inst.in1, inst.in[1], engine, inst));
             event::merge_actions(action, _get_abstract_param_value(processed_inst.in2, inst.in[2], engine, inst));
@@ -1130,11 +1144,11 @@ public:
             // If all parameters are concrete, get them as Number instances
             processed_inst.is_concrete = true;
             // Except for out parameter for which we need the current value
-            // if we want to use it in breakpoint callbacks
+            // if we want to use it in event callbacks
             if (_is_param_abstract(inst.out))
-                _get_abstract_param_value(processed_inst.out, inst.out, engine, inst, true);
+                _get_abstract_param_value(processed_inst.out, inst.out, engine, inst, true, false);
             else
-                _get_concrete_param_value(processed_inst.out, inst.out, engine, inst, true);
+                _get_concrete_param_value(processed_inst.out, inst.out, engine, inst, true, false);
             event::merge_actions(action, _get_concrete_param_value(processed_inst.in0, inst.in[0], engine, inst));
             event::merge_actions(action, _get_concrete_param_value(processed_inst.in1, inst.in[1], engine, inst));
             event::merge_actions(action, _get_concrete_param_value(processed_inst.in2, inst.in[2], engine, inst));

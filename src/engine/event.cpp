@@ -137,6 +137,7 @@ Action EventCallback::execute(MaatEngine& engine) const
         }
         catch (const std::exception& e)
         {
+            engine.log.error("Caught exception is event callback: ", e.what());
             return Action::ERROR;
         }
     }
@@ -211,9 +212,10 @@ bool EventHook::check_filter(MaatEngine& engine)
         if (engine.info.mem_access->addr->is_symbolic(*engine.vars))
             return false;
         else
-            return filter.monitors(
-                engine.info.mem_access->addr->as_uint(*engine.vars)
-            );
+        {
+            addr_t addr = engine.info.mem_access->addr->as_uint(*engine.vars);
+            return filter.monitors(addr, addr+engine.info.mem_access->size-1);
+        }
     }
     else if (is_exec_event(event))
     {

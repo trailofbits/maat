@@ -82,5 +82,5 @@ public:
 };
 
 } // namespace ir
-} // namespace maat
+} // namespace maat
 #endif

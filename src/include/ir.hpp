@@ -244,7 +244,7 @@ public:
         const std::optional<Param>& in0 = std::nullopt,
         const std::optional<Param>& in1 = std::nullopt,
         const std::optional<Param>& in2 = std::nullopt,
-        size_t size = 0
+        size_t size = 1
     );
     /// Copy constructor
     Inst(const Inst& other) = default;

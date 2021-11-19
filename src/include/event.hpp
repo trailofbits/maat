@@ -149,6 +149,16 @@ public:
         else
             return addr == *addr_min;
     };
+    /// Return true if any address between '_min' and '_max' (both included) is monitored
+    bool monitors(addr_t _min, addr_t _max)
+    {
+        if (not addr_min)
+            return false;
+        else if (addr_max)
+            return _max >= *addr_min and _min <= *addr_max;
+        else
+            return *addr_min >= _min and *addr_min <= _max;
+    };
 };
 
 class EventManager; // Forward declaration
@@ -271,7 +281,7 @@ public:
         AddrFilter filter=AddrFilter(),
         std::string group = ""
     );
-    /** \brief Hook an event hook with a single callback
+    /** \brief Add an event hook with a single callback
      * @param event Event to monitor
      * @param when When to trigger the hook
      * @param callback Callback to execute when the hook is triggered

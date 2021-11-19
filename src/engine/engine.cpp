@@ -217,6 +217,7 @@ info::Stop MaatEngine::run(int max_inst)
                 if (_halt_after_inst)
                 {
                     info.stop = info::Stop::EVENT;
+                    info.addr = current_inst_addr;
                     return info.stop;
                 }
 
