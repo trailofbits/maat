@@ -19,7 +19,8 @@ namespace hash
 {
         
     using namespace maat;
-    
+    using namespace maat::event;
+
     unsigned int _assert(bool val, const string& msg)
     {
         if( !val){
@@ -37,11 +38,10 @@ namespace hash
         /* Set input at esp + 0x4 */
         engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+4, exprcst(32, in));
 
-        engine.bp_manager.add_addr_bp(0x5a6, "end");
-
+        engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x5a6));
         // Execute
         engine.run_from(0x56d);
-        engine.bp_manager.remove_all();
+        engine.hooks.disable_all();
         
         // Check res in eax
         return _assert(engine.cpu.ctx().get(X86::EAX)->as_uint() == out, "Hash emulation test: X86: simple_algo_1: failed");
@@ -198,11 +198,10 @@ namespace hash
         engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+4, exprcst(32, 0x11000));
         engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+8, exprcst(32, strlen(in)));
 
-        engine.bp_manager.add_addr_bp(0x8048b81, "end");
-
+        engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x8048b81));
         // Execute
         engine.run_from(0x8048960);
-        engine.bp_manager.remove_all();
+        engine.hooks.disable_all();
 
         // Check res at 0x80dbca4
         return _assert( engine.mem->read(0x80dbcac, 4)->as_uint() == out0 &&

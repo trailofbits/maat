@@ -21,6 +21,7 @@ namespace solve_symbolic_ptr{
 #if defined(HAS_SOLVER_BACKEND) and defined(HAS_LOADER_BACKEND)
 
         using namespace maat;
+        using namespace maat::event;
 
         unsigned int _assert(bool val, const string& msg){
             if( !val){
@@ -56,13 +57,12 @@ namespace solve_symbolic_ptr{
             engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP)->as_uint() - 0x40);
             engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint() + 4, symarg);
             // Breakpoint at the end of func
-            engine.bp_manager.add_addr_bp(0x588, "b1");
+            engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x588));
 
             // Run function until the end
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP, "Failed to run the target function ");
-            nb += _assert(engine.info.bp_name == "b1", "Failed to run the target function ");
+            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target function ");
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
@@ -95,15 +95,14 @@ namespace solve_symbolic_ptr{
             );
 
             // Breakpoint at the end of func
-            engine.bp_manager.add_addr_bp(0x588, "b1");
+            engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x588));
             // Take snapshot
             engine.take_snapshot();
             // Run function until the end
             engine.settings.symptr_limit_range = true;
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP, "Failed to run the target program ");
-            nb += _assert(engine.info.bp_name == "b1", "Failed to run the target program ");
+            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target program ");
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
@@ -122,8 +121,7 @@ namespace solve_symbolic_ptr{
             engine.settings.symptr_refine_timeout = 0; // Don't loose time to refine symbolic accesses, we just want a concrete run
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP, "Failed to re-run the target program to check solution ");
-            nb += _assert(engine.info.bp_name == "b1", "Failed to re-run the target program to check solution ");
+            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to re-run the target program to check solution ");
             nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_uint(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
 
             return nb;
@@ -154,15 +152,14 @@ namespace solve_symbolic_ptr{
             );
 
             // Breakpoint at the end of func
-            engine.bp_manager.add_addr_bp(0x593, "b1");
+            engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x593));
             // Take snapshot
             engine.take_snapshot();
             // Run function until the end
             engine.settings.record_path_constraints = true;
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP, "Failed to run the target program ");
-            nb += _assert(engine.info.bp_name == "b1", "Failed to run the target program ");
+            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target program ");
 
             // Check if there is a value for the argument so that we return '1' (SUCCESS)
             sol->reset();
@@ -183,8 +180,7 @@ namespace solve_symbolic_ptr{
             engine.settings.symptr_refine_range = false; // Don't loose time to refine symbolic accesses, we just want a concrete run
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP, "Failed to re-run the target program to check solution ");
-            nb += _assert(engine.info.bp_name == "b1", "Failed to re-run the target program to check solution ");
+            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to re-run the target program to check solution ");
             nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_int(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
 
             return nb;
@@ -210,14 +206,13 @@ namespace solve_symbolic_ptr{
             engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP) - 0x40);
             engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint() + 4, symarg);
             // Breakpoint at the end of func
-            engine.bp_manager.add_addr_bp(0x57d, "b1");
+            engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x57d));
 
             // Run function until the end
             engine.settings.symptr_limit_range = true;
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP, "Failed to run the target function ");
-            nb += _assert(engine.info.bp_name == "b1", "Failed to run the target function ");
+            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target function ");
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
@@ -249,14 +244,13 @@ namespace solve_symbolic_ptr{
             );
 
             // Breakpoint at the end of func
-            engine.bp_manager.add_addr_bp(0x57d, "b1");
+            engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x57d));
             // Take snapshot
             engine.take_snapshot();
             // Run function until the end
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP, "Failed to run the target program ");
-            nb += _assert(engine.info.bp_name == "b1", "Failed to run the target program ");
+            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target program ");
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
@@ -275,8 +269,7 @@ namespace solve_symbolic_ptr{
             engine.settings.symptr_refine_timeout = 0; // Don't loose time to refine symbolic accesses, we just want a concrete run
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP, "Failed to re-run the target program to check solution ");
-            nb += _assert(engine.info.bp_name == "b1", "Failed to re-run the target program to check solution ");
+            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to re-run the target program to check solution ");
             nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_uint(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
 
             return nb;
@@ -305,7 +298,7 @@ namespace solve_symbolic_ptr{
             engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint() + 8, idx1);
 
             // Breakpoint at the end of func
-            engine.bp_manager.add_addr_bp(0x5cc, "b1");
+            engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x5cc));
 
             // Run function until the end
             engine.settings.symptr_refine_range = false;
@@ -313,8 +306,7 @@ namespace solve_symbolic_ptr{
 
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP, "Failed to run the target function ");
-            nb += _assert(engine.info.bp_name == "b1", "Failed to run the target function ");
+            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target function ");
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();

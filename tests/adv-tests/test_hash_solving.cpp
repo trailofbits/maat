@@ -17,6 +17,7 @@ namespace test{
 namespace solve_hash{
 
     using namespace maat;
+    using namespace maat::event;
 
 #ifdef HAS_SOLVER_BACKEND
     unsigned int _assert(bool val, const string& msg){
@@ -26,7 +27,7 @@ namespace solve_hash{
         }
         return 1; 
     }
-    
+
     unsigned int _x86_assert_algo_2(MaatEngine& engine, uint32_t in, uint32_t out)
     {
         // Init stack
@@ -35,11 +36,10 @@ namespace solve_hash{
         // Set input at esp + 0x4
         engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+4, exprcst(32, in));
 
-        engine.bp_manager.add_addr_bp(0x597, "end");
-
+        engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x597));
         // Execute
         engine.run_from(0x56d);
-        engine.bp_manager.remove_all();
+        engine.hooks.disable_all();
 
         // Check res in eax
         return _assert((uint32_t)engine.cpu.ctx().get(X86::EAX)->as_uint() == out, "Hash solving: simple_algo_2: failed");
@@ -52,11 +52,11 @@ namespace solve_hash{
         engine.cpu.ctx().set(X86::EBP, 0x9000);
         // Set input at esp + 0x4
         engine.mem->write(0x9004, exprvar(32, "input"));
-        engine.bp_manager.add_addr_bp(0x597, "end");
+        engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x597));
 
         // Execute
         engine.run_from(0x56d);
-        engine.bp_manager.remove_all();
+        engine.hooks.disable_all();
 
         // Check res in eax
         std::unique_ptr<solver::Solver> sol = solver::new_solver();
