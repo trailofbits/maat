@@ -719,6 +719,7 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
 {
     Expr loaded;
     bool do_abstract_load = true;
+    int load_size = param.size()%8 == 0 ? param.size()/8 : (param.size()/8) + 1;
 
     if (addr.is_concrete())
     {
@@ -754,7 +755,7 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
                 *this,
                 inst,
                 addr.auxilliary, // addr
-                param.size()/8 // size in bytes
+                load_size // size in bytes
             ),
             nullptr
         )
@@ -767,12 +768,20 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
             {
                 range = refine_value_set(addr.auxilliary);
             }
-            loaded = mem->symbolic_ptr_read(addr.auxilliary, range, param.size()/8, settings);
+            loaded = mem->symbolic_ptr_read(addr.auxilliary, range, load_size, settings);
         }
         else
         {
-            loaded = mem->read(addr.auxilliary, param.size()/8);
+            loaded = mem->read(addr.auxilliary, load_size);
         }
+        // P-code can load a number of bits that's not a multiple of 8.
+        // If that's the case, readjust the loaded value size by trimming
+        // the extra bits
+        if (loaded->size > param.size())
+        {
+            loaded = extract(loaded, param.size()-1, 0);
+        }
+
         // Mem read event
         SUB_HANDLE_EVENT_ACTION(
             hooks.after_mem_read(
@@ -795,7 +804,7 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
         {
             log.error(
                 "Memory read event callback changed the read value expression size, expected ",
-                (int)param.size(), "bits but got ", (int)loaded->size
+                (int)param.size(), " bits but got ", (int)loaded->size
             );
             return nullptr;
         }

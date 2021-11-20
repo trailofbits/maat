@@ -485,7 +485,7 @@ void BPMem::print(std::ostream& os, const maat::Arch& arch)
     if (!name.empty())
         os << "/" << name;
     os << ": ";
-    
+
     switch (event)
     {
         case bp::Event::MEM_R:
@@ -502,7 +502,7 @@ void BPMem::print(std::ostream& os, const maat::Arch& arch)
     else
         os << std::hex << "[0x" << addr_min << "-0x" << addr_max << "]";
     os << " ";
-        
+
     if (!enabled)
         os << " (disabled)";
 }

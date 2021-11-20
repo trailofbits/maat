@@ -12,7 +12,7 @@ static void MaatEngine_dealloc(PyObject* self)
     Py_DECREF(as_engine_object(self).info);
     Py_DECREF(as_engine_object(self).cpu);
     Py_DECREF(as_engine_object(self).vars);    
-    Py_DECREF(as_engine_object(self).bp);    
+    Py_DECREF(as_engine_object(self).hooks);    
     Py_DECREF(as_engine_object(self).path);
     Py_DECREF(as_engine_object(self).env);
 
@@ -238,7 +238,7 @@ static PyMemberDef MaatEngine_members[] = {
     {"vars", T_OBJECT_EX, offsetof(MaatEngine_Object, vars), READONLY, "Symbolic Variables Context"},
     {"cpu", T_OBJECT_EX, offsetof(MaatEngine_Object, cpu), READONLY, "Emulated CPU"},
     {"mem", T_OBJECT_EX, offsetof(MaatEngine_Object, mem), READONLY, "Memory Engine"},
-    {"bp", T_OBJECT_EX, offsetof(MaatEngine_Object, bp), READONLY, "Breakpoint Manager"},
+    {"hooks", T_OBJECT_EX, offsetof(MaatEngine_Object, hooks), READONLY, "Event Hooks Manager"},
     {"info", T_OBJECT_EX, offsetof(MaatEngine_Object, info), READONLY, "Symbolic Engine Info"},
     {"path", T_OBJECT_EX, offsetof(MaatEngine_Object, path), READONLY, "Path Manager"},
     {"env", T_OBJECT_EX, offsetof(MaatEngine_Object, env), READONLY, "Environment Manager"},
@@ -321,7 +321,7 @@ PyObject* maat_MaatEngine(PyObject* self, PyObject* args){
                 object->engine->vars
             );
             object->mem = PyMemEngine_FromMemEngine(object->engine->mem.get(), true);
-            object->bp = PyBPManager_FromBPManagerAndArch(&(object->engine->bp_manager), true, &(*object->engine->arch));
+            object->hooks = PyEventManager_FromEventManager(&(object->engine->hooks), true);
             object->info = PyInfo_FromInfoAndArch(&(object->engine->info), true, &(*object->engine->arch));
             object->path = PyPath_FromPath(&(object->engine->path), true);
             object->env = PyEnv_FromEnvEmulator(object->engine->env.get(), true);
@@ -346,7 +346,7 @@ void init_engine(PyObject* module)
 {
     /* STOP enum */
     PyObject* stop_enum = PyDict_New();
-    PyDict_SetItemString(stop_enum, "BP", PyLong_FromLong((int)info::Stop::BP));
+    PyDict_SetItemString(stop_enum, "HOOK", PyLong_FromLong((int)info::Stop::HOOK));
     PyDict_SetItemString(stop_enum, "SYMBOLIC_PC", PyLong_FromLong((int)info::Stop::SYMBOLIC_PC));
     PyDict_SetItemString(stop_enum, "SYMBOLIC_CODE", PyLong_FromLong((int)info::Stop::SYMBOLIC_CODE));
     PyDict_SetItemString(stop_enum, "MISSING_FUNCTION", PyLong_FromLong((int)info::Stop::MISSING_FUNCTION));

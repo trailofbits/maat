@@ -49,7 +49,7 @@ PyMODINIT_FUNC PyInit_maat()
     init_constraint(module);
     init_memory(module);
     init_engine(module);
-    init_breakpoint(module);
+    init_event(module);
     init_loader(module);
     init_env(module);
     return module;

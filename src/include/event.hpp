@@ -17,12 +17,34 @@ namespace maat
 class MaatEngine; // Forward declaration
 
 /** \defgroup event Events
- * \brief Instrumenting the engine with event subscribers
+ * \brief Instrumenting the engine with event hooks
  * 
- * TODO write doc
+ * The MaatEngine can instrument emulated code with event hooks.
+ * Hooks can be placed on events such as register access, memory access,
+ * branch operation, etc. The complete list of available events is given
+ * by the event::Event enum class.
+ * 
+ * Hooks can be placed either before or after the event occurs.
+ *
+ * Event hooks usually come with one or several user defined callbacks: 
+ * those are functions that are
+ * executed automatically everytime the hook is triggered. Callbacks
+ * must return an action for the engine:
+ *   - event::Action::CONTINUE: continue to execute code
+ *   - event::Action::HALT: stop executing code
+ *   - event::Action::ERROR: indicates that a fatal error happended in the callback and
+ *      that the engine should abort execution
+ * 
+ * Note that hooks set with no callbacks at all will always halt execution,
+ * just as if they had a callback returning event::Action::HALT.
+ * 
+ * A hook is optionally identified by a unique name, which can be used to
+ * enable or disable it at will. Hooks can also belong to a "group" (also
+ * identified by a unique name) allowing to enable or disable multiple
+ * hooks simultaneously. 
  * */
 
-/// Namespace regrouping hook related classes and types
+/// Namespace regrouping event related classes and types
 namespace event
 {
 
@@ -205,7 +227,7 @@ public:
     void add_callback(EventCallback cb);
 public:
     /// Pretty print to stream
-    void print(std::ostream& os, const Arch& arch);
+    friend std::ostream& operator<<(std::ostream& os, const EventHook& hook);
 private:
     /// Return true if the filter allows the hook to be triggered
     bool check_filter(MaatEngine& engine);
@@ -229,9 +251,10 @@ public:
 private:
     /// Counter for giving unique IDs to new hooks
     int _id_cnt;
-private:
+protected:
     /// A list of all hooks
     std::list<hook_t> all_hooks;
+private:
     using when_map_t = std::unordered_map<When, std::list<hook_t>>;
     using hook_map_t = std::unordered_map<Event, when_map_t>;
     hook_map_t hook_map;
@@ -329,7 +352,7 @@ public:
     void enable(int id);
 public:
     /// Pretty print hooks
-    void print(std::ostream& os, const Arch& arch); 
+    friend std::ostream& operator<<(std::ostream& os, const EventManager& manager);
 private:
     /// Raises a event_exception if a hook with name 'name' already exists
     void _check_unique_name(const std::string& str);

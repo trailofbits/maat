@@ -296,9 +296,9 @@ void EventHook::add_callback(EventCallback cb)
     _callbacks.push_back(cb);
 }
 
-void EventHook::print(std::ostream& os, const maat::Arch& arch)
+std::ostream& operator<<(std::ostream& os, const EventHook& h)
 {
-    throw runtime_exception("EventHook::check(): shouldn't be called from base class!");
+    throw runtime_exception("operator<< not implemented for EventHook");
 }
 
 
@@ -364,12 +364,11 @@ void EventManager::enable(int id)
 }
 
 
-void EventManager::print(std::ostream& os, const maat::Arch& arch)
+std::ostream& operator<<(std::ostream& os, const EventManager& m)
 {
-    for (auto& hook : all_hooks)
+    for (auto& hook : m.all_hooks)
     {
-        hook->print(os, arch);
-        os << "\n";
+        os << hook << "\n";
     }
 }
 

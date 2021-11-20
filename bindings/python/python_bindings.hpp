@@ -78,6 +78,17 @@ typedef struct{
 PyObject* PyBPManager_FromBPManagerAndArch(bp::BPManager* b, bool is_ref, Arch* arch);
 #define as_bp_object(x) (*((BPManager_Object*)x))
 
+// ================== Events ==================
+void init_event(PyObject* module);
+
+typedef struct{
+    PyObject_HEAD
+    event::EventManager* manager;
+    bool is_ref;
+} EventManager_Object;
+PyObject* PyEventManager_FromEventManager(event::EventManager* m, bool is_ref);
+#define as_event_object(x) (*((EventManager_Object*)x))
+
 // =================== Engine ====================
 void init_engine(PyObject* module);
 
@@ -88,7 +99,7 @@ typedef struct{
     PyObject* vars;
     PyObject* cpu; 
     PyObject* mem; 
-    PyObject* bp;
+    PyObject* hooks;
     PyObject* info;
     PyObject* path;
     PyObject* env;
