@@ -62,7 +62,7 @@ namespace solve_symbolic_ptr{
             // Run function until the end
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target function ");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to run the target function ");
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
@@ -102,7 +102,7 @@ namespace solve_symbolic_ptr{
             engine.settings.symptr_limit_range = true;
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target program ");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to run the target program ");
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
@@ -121,7 +121,7 @@ namespace solve_symbolic_ptr{
             engine.settings.symptr_refine_timeout = 0; // Don't loose time to refine symbolic accesses, we just want a concrete run
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to re-run the target program to check solution ");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to re-run the target program to check solution ");
             nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_uint(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
 
             return nb;
@@ -159,7 +159,7 @@ namespace solve_symbolic_ptr{
             engine.settings.record_path_constraints = true;
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target program ");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to run the target program ");
 
             // Check if there is a value for the argument so that we return '1' (SUCCESS)
             sol->reset();
@@ -180,7 +180,7 @@ namespace solve_symbolic_ptr{
             engine.settings.symptr_refine_range = false; // Don't loose time to refine symbolic accesses, we just want a concrete run
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to re-run the target program to check solution ");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to re-run the target program to check solution ");
             nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_int(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
 
             return nb;
@@ -212,7 +212,7 @@ namespace solve_symbolic_ptr{
             engine.settings.symptr_limit_range = true;
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target function ");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to run the target function ");
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
@@ -250,7 +250,7 @@ namespace solve_symbolic_ptr{
             // Run function until the end
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target program ");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to run the target program ");
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
@@ -269,7 +269,7 @@ namespace solve_symbolic_ptr{
             engine.settings.symptr_refine_timeout = 0; // Don't loose time to refine symbolic accesses, we just want a concrete run
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to re-run the target program to check solution ");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to re-run the target program to check solution ");
             nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_uint(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
 
             return nb;
@@ -306,7 +306,7 @@ namespace solve_symbolic_ptr{
 
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::EVENT, "Failed to run the target function ");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to run the target function ");
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();

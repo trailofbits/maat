@@ -54,7 +54,7 @@ namespace code_coverage{
             bool cont = true;
             engine.settings.record_path_constraints = true;
 
-            while (engine.run() == info::Stop::EVENT)
+            while (engine.run() == info::Stop::HOOK)
             {
                 // First try to find a model for EAX == 1
                 sol.reset();

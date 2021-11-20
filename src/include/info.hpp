@@ -20,7 +20,7 @@ namespace info
 /** Reason while the engine stopped running code */
 enum class Stop
 {
-    EVENT, ///< Event callback halted the engine
+    HOOK, ///< Event hook halted the engine
     BP, ///< Breakpoint was hit // TODO: remove
     SYMBOLIC_PC, ///< Program counter is purely symbolic 
     SYMBOLIC_CODE, ///< Code to execute is purely symbolic

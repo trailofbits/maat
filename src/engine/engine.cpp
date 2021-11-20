@@ -148,7 +148,7 @@ info::Stop MaatEngine::run(int max_inst)
         // make the logic of this main execution loop significantly cleaner
         if (_halt_after_inst)
         {
-            info.stop = info::Stop::EVENT;
+            info.stop = info::Stop::HOOK;
             info.addr = current_inst_addr;
             return info.stop;
         }
@@ -231,7 +231,7 @@ info::Stop MaatEngine::run(int max_inst)
                 // If halt was triggered on the previous instruction, halt now
                 if (_halt_after_inst)
                 {
-                    info.stop = info::Stop::EVENT;
+                    info.stop = info::Stop::HOOK;
                     info.addr = current_inst_addr;
                     return info.stop;
                 }
@@ -257,7 +257,7 @@ info::Stop MaatEngine::run(int max_inst)
                 // For EXEC event, if a hook halts execution then we stop directly
                 if (_halt_after_inst)
                 {
-                    info.stop = info::Stop::EVENT;
+                    info.stop = info::Stop::HOOK;
                     _previous_halt_before_exec = current_inst_addr;
                     return info.stop;
                 }

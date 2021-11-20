@@ -76,7 +76,7 @@ namespace events
         engine.hooks.add(event::Event::REG_W, event::When::AFTER , EventCallback(callback2), "reg_w_a");
         engine.run_from(0, 3);
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 1, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
         nb += _assert(*engine.info.addr == 0, "MaatEngine: event hook failed");
 
 
@@ -213,7 +213,7 @@ namespace events
         engine.run_from(0x200);
         // cb2 halts execution
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x201, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
         nb += _assert(*engine.info.addr == 0x200, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(5)->as_uint() == 0xaaaaaaaa, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(2)->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
@@ -254,12 +254,12 @@ namespace events
         engine.hooks.disable_all();
         engine.hooks.add(event::Event::MEM_RW, event::When::BEFORE, {event::EventCallback(callback3), _cb3},  "mem_rw", AddrFilter(0x60001,0x60002));
         engine.run_from(0x200);
-        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x201, "MaatEngine: event hook failed");
         nb += _assert(*engine.info.addr == 0x200, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(6)->as_uint() == 0xcafebabe, "MaatEngine: event hook failed");
         engine.run();
-        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
         nb += _assert(*engine.info.addr == 0x202, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x203, "MaatEngine: event hook failed");
 
@@ -287,13 +287,13 @@ namespace events
         engine.run_from(0x200);
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x200, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(0)->as_uint() == 0, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
         nb += _assert(*engine.info.addr == 0x200, "MaatEngine: event hook failed");
         engine.run();
         nb += _assert(engine.cpu.ctx().get(6)->as_uint() == 0xcafebabe, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x202, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(1)->as_uint() == 11, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
         nb += _assert(*engine.info.addr == 0x201, "MaatEngine: event hook failed");
 
         return nb;
@@ -333,7 +333,7 @@ namespace events
         engine.run_from(0x200, 2);
         nb += _assert(engine.cpu.ctx().get(6)->as_uint() == 0xcafebabe, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x123456, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
 
     
         // check that it doesn't trigger on pcode branch
@@ -446,7 +446,7 @@ namespace events
         engine.hooks.disable_all();
         engine.hooks.add(Event::PATH, When::AFTER, EventCallback(callback1));
         engine.run_from(0x400);
-        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
 
         // symbolic path constraint
@@ -469,7 +469,7 @@ namespace events
         engine.hooks.disable_all();
         engine.hooks.add(Event::PATH, When::BEFORE, EventCallback(callback2));
         engine.run_from(0x400);
-        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x403, "MaatEngine: event hook failed");
 
         return nb;
