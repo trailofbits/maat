@@ -299,8 +299,7 @@ namespace events
         return nb;
     }
 
-/*
-    unsigned int branch_breakpoints(MaatEngine& engine)
+    unsigned int branch_events(MaatEngine& engine)
     {
         unsigned int nb = 0;
 
@@ -318,22 +317,29 @@ namespace events
         engine.cpu.ctx().set(0, e0);
         engine.cpu.ctx().set(1, 0x123456);
         engine.cpu.ctx().set(2, e2);
-        engine.bp_manager.disable_all();
-        engine.bp_manager.add_bp(event::Event::BRANCH, "branch");
-        engine.run_from(0x200);
 
-        nb += _assert(engine.info.stop == info::Stop::BP, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.bp_name == "branch", "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.addr == 0x201, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.branch->taken == true, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->target->as_uint() == 0x123456, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->next == nullptr, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->cond == nullptr, "MaatEngine: event hook failed");
-        
+        auto callback1 = [](MaatEngine& engine)
+        {
+            _assert(*engine.info.addr == 0x201, "MaatEngine: event hook failed");
+            _assert(*engine.info.branch->taken == true, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->target->as_uint() == 0x123456, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->next->as_uint() == 0x202, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->cond == nullptr, "MaatEngine: event hook failed");
+            return Action::HALT;
+        };
+
+        engine.events.disable_all();
+        engine.events.hook(Event::BRANCH, When::BEFORE, {EventCallback(callback1), _cb1}, "branch");
+        engine.run_from(0x200, 2);
+        nb += _assert(engine.cpu.ctx().get(6)->as_uint() == 0xcafebabe, "MaatEngine: event hook failed");
+        nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x123456, "MaatEngine: event hook failed");
+        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+
+    
         // check that it doesn't trigger on pcode branch
         block = std::make_shared<ir::Block>("at_0x400", 0x300, 0x3ff);
         block->add_inst(ir::Inst(0x300, ir::Op::COPY, ir::Reg(0, 31, 0), ir::Reg(0, 31, 0)));
-        block->add_inst(ir::Inst(0x301, ir::Op::BRANCH, std::nullopt, ir::Cst(2, 31, 0)));
+        block->add_inst(ir::Inst(0x301, ir::Op::BRANCH, std::nullopt, ir::Cst(1, 31, 0)));
         block->add_inst(ir::Inst(0x301, ir::Op::COPY, ir::Reg(0, 31, 0), ir::Reg(0, 31, 0)));
         block->add_inst(ir::Inst(0x301, ir::Op::COPY, ir::Reg(0, 31, 0), ir::Reg(0, 31, 0)));
         block->add_inst(ir::Inst(0x302, ir::Op::BRANCH, std::nullopt, ir::Addr(0x123456, 32)));
@@ -342,15 +348,21 @@ namespace events
         engine.cpu.ctx().set(0, 0xaaaaa);
         engine.cpu.ctx().set(1, 0);
         engine.cpu.ctx().set(2, 0);
+        
+        auto callback2 = [](MaatEngine& engine)
+        {
+            _assert(*engine.info.addr == 0x302, "MaatEngine: event hook failed");
+            _assert(*engine.info.branch->taken == true, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->target->as_uint() == 0x123456, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->next->as_uint() == 0x303, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->cond == nullptr, "MaatEngine: event hook failed");
+            return Action::HALT;
+        };
+
+        engine.events.disable_all();
+        engine.events.hook(Event::BRANCH, When::BEFORE, EventCallback(callback2));
         engine.run_from(0x300);
 
-        nb += _assert(engine.info.stop == info::Stop::BP, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.bp_name == "branch", "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.addr == 0x302, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.branch->taken == true, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->target->as_uint() == 0x123456, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->next == nullptr, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->cond == nullptr, "MaatEngine: event hook failed");
 
         // conditional branch (taken)
         block = std::make_shared<ir::Block>("at_0x400", 0x400, 0x4ff);
@@ -362,38 +374,46 @@ namespace events
         engine.cpu.ctx().set(0, 0xaaaabbbb);
         engine.cpu.ctx().set(1, 0x1);
         engine.cpu.ctx().set(2, e2);
-        engine.run_from(0x400);
+        
+        auto callback3 = [](MaatEngine& engine)
+        {
+            _assert(*engine.info.addr == 0x401, "MaatEngine: event hook failed");
+            _assert(*engine.info.branch->taken == true, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->target->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->next->as_uint() == 0x402, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->cond != nullptr, "MaatEngine: event hook failed");
+            return Action::HALT;
+        };
 
-        nb += _assert(engine.info.stop == info::Stop::BP, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.bp_name == "branch", "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.addr == 0x401, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.branch->taken == true, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->target->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->next->as_uint() == 0x402, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->cond != nullptr , "MaatEngine: event hook failed"); 
+        engine.events.disable_all();
+        engine.events.hook(Event::BRANCH, When::AFTER, EventCallback(callback3));
+        engine.run_from(0x400);
 
         // conditional branch (not taken)
         engine.cpu.ctx().set(0, 0xaaaabbbb);
         engine.cpu.ctx().set(1, 0);
         engine.cpu.ctx().set(2, e2);
         engine.bp_manager.disable_all();
-        engine.bp_manager.add_bp(event::Event::CBRANCH, "cbranch");
-        engine.run_from(0x400);
+        
+        auto callback4 = [](MaatEngine& engine)
+        {
+            _assert(*engine.info.addr == 0x401, "MaatEngine: event hook failed");
+            _assert(*engine.info.branch->taken == false, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->target->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->next->as_uint() == 0x402, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->cond != nullptr, "MaatEngine: event hook failed");
+            return Action::HALT;
+        };
 
-        nb += _assert(engine.info.stop == info::Stop::BP, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.bp_name == "cbranch", "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.addr == 0x401, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.branch->taken == false, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->target->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->next->as_uint() == 0x402, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->cond != nullptr , "MaatEngine: event hook failed");
+        engine.events.disable_all();
+        engine.events.hook(Event::BRANCH, When::AFTER, EventCallback(callback4));
+        engine.run_from(0x400);
 
         return nb;
     }
     
  
-
-    unsigned int path_breakpoint(MaatEngine& engine)
+    unsigned int path_event(MaatEngine& engine)
     {
         unsigned int nb = 0;
 
@@ -407,54 +427,55 @@ namespace events
         block->add_inst(ir::Inst(0x401, ir::Op::CBRANCH, std::nullopt, ir::Reg(0, 31, 0), ir::Reg(1, 31, 0), std::nullopt, 2 ));
         block->add_inst(ir::Inst(0x403, ir::Op::COPY, ir::Reg(0, 31, 0), ir::Reg(2, 31, 0), std::nullopt, std::nullopt, 1));
         engine.ir_blocks->add(block);
-        // Add another block because we test on Arch::NONE so if we branch to 0xaaaabbbb 
-        // it will try to lift it and crash (because no lifters for the NONE arch). So
-        // we add it manually
-        block = std::make_shared<ir::Block>("at_0xaaaabbbb", 0xaaaabbbb, 0xaaaabbbf);
-        block->add_inst(ir::Inst(0xaaaabbbb, ir::Op::COPY, ir::Reg(0, 32), ir::Reg(0, 32)));
-        engine.ir_blocks->add(block);
 
         engine.cpu.ctx().set(0, 0xaaaabbbb);
         engine.cpu.ctx().set(1, e0);
         engine.cpu.ctx().set(2, 0x0);
         engine.vars->set("e0", 0x12);
-        engine.bp_manager.add_bp(event::Event::PATH, "path");
+
+        auto callback1 = [](MaatEngine& engine)
+        {
+            _assert(*engine.info.addr == 0x401, "MaatEngine: event hook failed");
+            _assert(*engine.info.branch->taken == true, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->target->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->next->as_uint() == 0x403, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->cond != nullptr , "MaatEngine: event hook failed");
+            return Action::HALT;
+        };
+
+        engine.events.disable_all();
+        engine.events.hook(Event::PATH, When::AFTER, EventCallback(callback1));
         engine.run_from(0x400);
-
-        nb += _assert(engine.info.stop == info::Stop::BP, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.bp_name == "path", "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.addr == 0x401, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.branch->taken == true, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->target->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->next->as_uint() == 0x403, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->cond != nullptr , "MaatEngine: event hook failed"); 
-        
-        // Finish to run the instruction
-        engine.run(1);
-        nb += _assert(engine.info.stop == info::Stop::INST_COUNT, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.addr == 0xaaaabbbb, "MaatEngine: event hook failed");
-
+        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
 
         // symbolic path constraint
         engine.cpu.ctx().set(0, 0xaaaabbbb);
         engine.cpu.ctx().set(1, e1);
         engine.cpu.ctx().set(2, 0);
         engine.vars->remove("e1");
-        engine.run_from(0x400);
+        
+        auto callback2 = [](MaatEngine& engine)
+        {
+            _assert(*engine.info.addr == 0x401, "MaatEngine: event hook failed");
+            _assert(not engine.info.branch->taken.has_value(), "MaatEngine: event hook failed");
+            _assert(engine.info.branch->target->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->next->as_uint() == 0x403, "MaatEngine: event hook failed");
+            _assert(engine.info.branch->cond != nullptr , "MaatEngine: event hook failed");
+            engine.info.branch->taken = false;
+            return Action::HALT;
+        };
 
-        nb += _assert(engine.info.stop == info::Stop::BP, "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.bp_name == "path", "MaatEngine: event hook failed");
-        nb += _assert(*engine.info.addr == 0x401, "MaatEngine: event hook failed");
-        nb += _assert(!engine.info.branch->taken.has_value(), "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->target->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->next->as_uint() == 0x403, "MaatEngine: event hook failed");
-        nb += _assert(engine.info.branch->cond != nullptr , "MaatEngine: event hook failed");
+        engine.events.disable_all();
+        engine.events.hook(Event::PATH, When::BEFORE, EventCallback(callback2));
+        engine.run_from(0x400);
+        nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
+        nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x403, "MaatEngine: event hook failed");
 
         return nb;
     }
 
 
-*/
 } // namespace events
 } // namespace test
 
@@ -468,6 +489,7 @@ void test_events()
 {
     maat::MaatEngine engine(maat::Arch::Type::NONE);
     engine.mem->new_segment(0x60000, 0x70000);
+    engine.mem->new_segment(0x120000, 0x124000);
     engine.mem->new_segment(0x0, 0x2000);
 
     unsigned int total = 0;
@@ -482,12 +504,8 @@ void test_events()
     total += reg_events(engine);
     total += mem_events(engine);
     total += exec_event(engine);
-    // total += symptr_breakpoints(engine);
-    // total += branch_breakpoints(engine);
-    // total += tainted_reg_breakpoints(engine);
-    // total += tainted_mem_breakpoints(engine);
-    // total += path_breakpoint(engine);
-    // total += callbacks(engine);
+    total += branch_events(engine);
+    total += path_event(engine);
 
     std::cout   << "\t\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;

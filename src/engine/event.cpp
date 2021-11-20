@@ -630,8 +630,11 @@ Action EventManager::before_branch(
 {
     Action res = Action::CONTINUE;
     engine.info.addr = inst.addr;
+    std::optional<bool> taken = std::nullopt;
+    if (cond == nullptr)
+        taken = true;
     engine.info.branch = info::Branch{
-        std::nullopt, // taken
+        taken, // taken
         cond, // cond
         target, // target
         target==nullptr? nullptr : exprcst(target->size, next) // next

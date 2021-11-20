@@ -128,8 +128,6 @@ info::Stop MaatEngine::run(int max_inst)
 
     // TODO: check if program already exited
 
-    // TODO: reset error_info
-
     /* Execute forever while there is a block to execute */
     while (next_block)
     {
@@ -141,6 +139,18 @@ info::Stop MaatEngine::run(int max_inst)
         if (not cpu.ctx().get(arch->pc())->is_symbolic(*vars))
         {
             to_execute = cpu.ctx().get(arch->pc())->as_uint(*vars);
+        }
+
+        // TODO: *IMPORTANT* this check is also done later but it is duplicated
+        // here to avoid calling get_location() on uninitialised memory when executing
+        // event unit-tests... 
+        // --> This will disappear once I rework how IR blocks are managed, which will
+        // make the logic of this main execution loop significantly cleaner
+        if (_halt_after_inst)
+        {
+            info.stop = info::Stop::EVENT;
+            info.addr = current_inst_addr;
+            return info.stop;
         }
 
         // If the target to execute is a function emulated with a callback,
@@ -184,7 +194,6 @@ info::Stop MaatEngine::run(int max_inst)
             }
             location = get_location(to_execute);
         }
-        
 
         if (!location)
         {
@@ -655,7 +664,6 @@ bool MaatEngine::process_branch(
             }
             else // branch condition is false, so no branch
             {
-                taken = false;
                 branch_type = MaatEngine::branch_none;
                 // Add path constraint
                 if (
