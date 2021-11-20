@@ -249,7 +249,7 @@ info::Stop MaatEngine::run(int max_inst)
                 }
 
                 // EXEC event
-                HANDLE_EVENT_ACTION(events.before_exec(*this, current_inst_addr))
+                HANDLE_EVENT_ACTION(hooks.before_exec(*this, current_inst_addr))
                 // If we already halted before executing this instruction, don't halt
                 // again, neither before not after the instruction
                 if (_previous_halt_before_exec == current_inst_addr)
@@ -481,7 +481,7 @@ info::Stop MaatEngine::run(int max_inst)
             // just loop again
 
             // Event EXEC
-            HANDLE_EVENT_ACTION(events.after_exec(*this, current_inst_addr))
+            HANDLE_EVENT_ACTION(hooks.after_exec(*this, current_inst_addr))
             info.reset();
         }
     }
@@ -581,30 +581,30 @@ bool MaatEngine::process_branch(
             }
             else // address, branch to it
             {
-                SUB_HANDLE_EVENT_ACTION(events.before_branch(*this, inst, in0, next), false)
+                SUB_HANDLE_EVENT_ACTION(hooks.before_branch(*this, inst, in0, next), false)
                 // TODO handle branch to same instruction !
                 // find to which IR inst id we have to loop back !
                 cpu.ctx().set(arch->pc(), in0);
                 branch_type = MaatEngine::branch_native;
-                SUB_HANDLE_EVENT_ACTION(events.after_branch(*this, inst, in0, next), false)
+                SUB_HANDLE_EVENT_ACTION(hooks.after_branch(*this, inst, in0, next), false)
                 info.reset();
             }
             break;
         case ir::Op::RETURN: // Equivalent to branchind
         case ir::Op::CALLIND: // Equivalent to branchind
         case ir::Op::BRANCHIND:
-            SUB_HANDLE_EVENT_ACTION(events.before_branch(*this, inst, in0, next), false)
+            SUB_HANDLE_EVENT_ACTION(hooks.before_branch(*this, inst, in0, next), false)
             // Branch to in0
             cpu.ctx().set(arch->pc(), in0);
             branch_type = MaatEngine::branch_native;
-            SUB_HANDLE_EVENT_ACTION(events.after_branch(*this, inst, in0, next), false)
+            SUB_HANDLE_EVENT_ACTION(hooks.after_branch(*this, inst, in0, next), false)
             info.reset();
             break;
         case ir::Op::CBRANCH:
             // TODO: indicate that the branch is pcode relative if it's the case
             // probably add a info.branch.type field
             SUB_HANDLE_EVENT_ACTION(
-                events.before_branch(
+                hooks.before_branch(
                     *this,
                     inst, 
                     pcode_rela? nullptr : in0,
@@ -676,7 +676,7 @@ bool MaatEngine::process_branch(
             }
 
             SUB_HANDLE_EVENT_ACTION(
-                events.after_branch(
+                hooks.after_branch(
                     *this,
                     inst, 
                     pcode_rela? nullptr : in0,
@@ -733,7 +733,7 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
     {
         // Memory read event
         SUB_HANDLE_EVENT_ACTION(
-            events.before_mem_read(
+            hooks.before_mem_read(
                 *this,
                 inst,
                 addr.auxilliary, // addr
@@ -758,7 +758,7 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
         }
         // Mem read event
         SUB_HANDLE_EVENT_ACTION(
-            events.after_mem_read(
+            hooks.after_mem_read(
                 *this,
                 inst,
                 addr.auxilliary, // addr
@@ -925,7 +925,7 @@ bool MaatEngine::process_store(
     {
         // Mem read event
         SUB_HANDLE_EVENT_ACTION(
-            events.before_mem_write(
+            hooks.before_mem_write(
                 *this,
                 inst,
                 store_addr, // addr
@@ -958,7 +958,7 @@ bool MaatEngine::process_store(
         }
         // Mem write event
         SUB_HANDLE_EVENT_ACTION(
-            events.after_mem_write(
+            hooks.after_mem_write(
                 *this,
                 inst,
                 store_addr, // addr

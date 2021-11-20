@@ -233,7 +233,7 @@ void ProcessedInst::Param::set_none()
 
 event::EventManager& get_engine_events(MaatEngine& engine)
 {
-    return engine.events;
+    return engine.hooks;
 }
 
 } // namespace ir

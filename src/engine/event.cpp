@@ -401,7 +401,7 @@ const std::list<EventManager::hook_t>& EventManager::get_all()
 }
 
 
-void EventManager::hook(
+void EventManager::add(
     event::Event event,
     event::When when,
     std::string name,
@@ -418,7 +418,7 @@ void EventManager::hook(
     hook_map.at(event).at(when).push_back(h);
 }
 
-void EventManager::hook(
+void EventManager::add(
     event::Event event,
     event::When when,
     EventCallback callback,
@@ -437,7 +437,7 @@ void EventManager::hook(
     hook_map.at(event).at(when).push_back(h);
 }
 
-void EventManager::hook(
+void EventManager::add(
     event::Event event,
     event::When when,
     const std::vector<EventCallback>& callbacks,

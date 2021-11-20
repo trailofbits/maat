@@ -274,7 +274,7 @@ public:
      * @param name hook unique name (optional)
      * @param filter Address filter (optional)
      * @param group hook group (optional) */
-    void hook(
+    void add(
         event::Event event,
         event::When when,
         std::string name="",
@@ -288,7 +288,7 @@ public:
      * @param name hook unique name (optional)
      * @param filter Address filter (optional)
      * @param group hook group (optional) */
-    void hook(
+    void add(
         event::Event event,
         event::When when,
         EventCallback callback,
@@ -303,7 +303,7 @@ public:
      * @param name hook unique name (optional)
      * @param filter Address filter (optional)
      * @param group hook group (optional) */
-    void hook(
+    void add(
         event::Event event,
         event::When when,
         const std::vector<EventCallback>& callbacks,

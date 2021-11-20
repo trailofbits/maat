@@ -71,9 +71,9 @@ namespace events
             return event::Action::CONTINUE;
         };
 
-        engine.events.disable_all();
-        engine.events.hook(event::Event::REG_W, event::When::BEFORE , EventCallback(callback1), "reg_w_b");
-        engine.events.hook(event::Event::REG_W, event::When::AFTER , EventCallback(callback2), "reg_w_a");
+        engine.hooks.disable_all();
+        engine.hooks.add(event::Event::REG_W, event::When::BEFORE , EventCallback(callback1), "reg_w_b");
+        engine.hooks.add(event::Event::REG_W, event::When::AFTER , EventCallback(callback2), "reg_w_a");
         engine.run_from(0, 3);
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 1, "MaatEngine: event hook failed");
         nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
@@ -123,9 +123,9 @@ namespace events
             return event::Action::CONTINUE;
         };
 
-        engine.events.disable_all();
-        engine.events.hook(event::Event::REG_R, event::When::BEFORE, event::EventCallback(callback3), "reg_r_a");
-        engine.events.hook(event::Event::REG_RW, event::When::AFTER, event::EventCallback(callback4), "reg_r_b");
+        engine.hooks.disable_all();
+        engine.hooks.add(event::Event::REG_R, event::When::BEFORE, event::EventCallback(callback3), "reg_r_a");
+        engine.hooks.add(event::Event::REG_RW, event::When::AFTER, event::EventCallback(callback4), "reg_r_b");
         engine.run_from(0x100, 3);
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x103, "MaatEngine: event hook failed");
         nb += _assert(engine.info.stop == info::Stop::INST_COUNT, "MaatEngine: event hook failed");
@@ -207,9 +207,9 @@ namespace events
             return event::Action::HALT;
         };
 
-        engine.events.disable_all();
-        engine.events.hook(event::Event::MEM_R, event::When::BEFORE, {EventCallback(callback1), _cb1}, "mem_r_b", event::AddrFilter(0x60000));
-        engine.events.hook(event::Event::MEM_RW, event::When::AFTER, {EventCallback(callback2), _cb2}, "mem_r_a", event::AddrFilter(0x60000));
+        engine.hooks.disable_all();
+        engine.hooks.add(event::Event::MEM_R, event::When::BEFORE, {EventCallback(callback1), _cb1}, "mem_r_b", event::AddrFilter(0x60000));
+        engine.hooks.add(event::Event::MEM_RW, event::When::AFTER, {EventCallback(callback2), _cb2}, "mem_r_a", event::AddrFilter(0x60000));
         engine.run_from(0x200);
         // cb2 halts execution
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x201, "MaatEngine: event hook failed");
@@ -251,8 +251,8 @@ namespace events
             return event::Action::HALT;
         };
 
-        engine.events.disable_all();
-        engine.events.hook(event::Event::MEM_RW, event::When::BEFORE, {event::EventCallback(callback3), _cb3},  "mem_rw", AddrFilter(0x60001,0x60002));
+        engine.hooks.disable_all();
+        engine.hooks.add(event::Event::MEM_RW, event::When::BEFORE, {event::EventCallback(callback3), _cb3},  "mem_rw", AddrFilter(0x60001,0x60002));
         engine.run_from(0x200);
         nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x201, "MaatEngine: event hook failed");
@@ -278,9 +278,9 @@ namespace events
         block->add_inst(ir::Inst(0x203, ir::Op::COPY, ir::Reg(10, 31, 0), ir::Cst(42, 31, 0)));
         engine.ir_blocks->add(block);
 
-        engine.events.disable_all();
-        engine.events.hook(Event::EXEC, When::BEFORE, "", AddrFilter(0x200));
-        engine.events.hook(Event::EXEC, When::AFTER, {_cb3, _cb2}, "", AddrFilter(0x201));
+        engine.hooks.disable_all();
+        engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x200));
+        engine.hooks.add(Event::EXEC, When::AFTER, {_cb3, _cb2}, "", AddrFilter(0x201));
         engine.cpu.ctx().set(0, 0x0);
         engine.cpu.ctx().set(1, 0x0);
         engine.cpu.ctx().set(6, 0x0);
@@ -328,8 +328,8 @@ namespace events
             return Action::HALT;
         };
 
-        engine.events.disable_all();
-        engine.events.hook(Event::BRANCH, When::BEFORE, {EventCallback(callback1), _cb1}, "branch");
+        engine.hooks.disable_all();
+        engine.hooks.add(Event::BRANCH, When::BEFORE, {EventCallback(callback1), _cb1}, "branch");
         engine.run_from(0x200, 2);
         nb += _assert(engine.cpu.ctx().get(6)->as_uint() == 0xcafebabe, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x123456, "MaatEngine: event hook failed");
@@ -359,8 +359,8 @@ namespace events
             return Action::HALT;
         };
 
-        engine.events.disable_all();
-        engine.events.hook(Event::BRANCH, When::BEFORE, EventCallback(callback2));
+        engine.hooks.disable_all();
+        engine.hooks.add(Event::BRANCH, When::BEFORE, EventCallback(callback2));
         engine.run_from(0x300);
 
 
@@ -385,8 +385,8 @@ namespace events
             return Action::HALT;
         };
 
-        engine.events.disable_all();
-        engine.events.hook(Event::BRANCH, When::AFTER, EventCallback(callback3));
+        engine.hooks.disable_all();
+        engine.hooks.add(Event::BRANCH, When::AFTER, EventCallback(callback3));
         engine.run_from(0x400);
 
         // conditional branch (not taken)
@@ -405,8 +405,8 @@ namespace events
             return Action::HALT;
         };
 
-        engine.events.disable_all();
-        engine.events.hook(Event::BRANCH, When::AFTER, EventCallback(callback4));
+        engine.hooks.disable_all();
+        engine.hooks.add(Event::BRANCH, When::AFTER, EventCallback(callback4));
         engine.run_from(0x400);
 
         return nb;
@@ -443,8 +443,8 @@ namespace events
             return Action::HALT;
         };
 
-        engine.events.disable_all();
-        engine.events.hook(Event::PATH, When::AFTER, EventCallback(callback1));
+        engine.hooks.disable_all();
+        engine.hooks.add(Event::PATH, When::AFTER, EventCallback(callback1));
         engine.run_from(0x400);
         nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0xaaaabbbb, "MaatEngine: event hook failed");
@@ -466,8 +466,8 @@ namespace events
             return Action::HALT;
         };
 
-        engine.events.disable_all();
-        engine.events.hook(Event::PATH, When::BEFORE, EventCallback(callback2));
+        engine.hooks.disable_all();
+        engine.hooks.add(Event::PATH, When::BEFORE, EventCallback(callback2));
         engine.run_from(0x400);
         nb += _assert(engine.info.stop == info::Stop::EVENT, "MaatEngine: event hook failed");
         nb += _assert(engine.cpu.ctx().get(engine.arch->pc())->as_uint() == 0x403, "MaatEngine: event hook failed");

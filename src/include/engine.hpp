@@ -77,7 +77,7 @@ public:
     std::shared_ptr<MemEngine> mem;
     ir::CPU<ir::max_cpu_regs> cpu;
     bp::BPManager bp_manager;
-    event::EventManager events;
+    event::EventManager hooks;
     PathManager path;
     std::shared_ptr<env::EnvEmulator> env;
     std::shared_ptr<SymbolManager> symbols;
