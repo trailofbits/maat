@@ -556,6 +556,7 @@ bool MaatEngine::process_branch(
     Expr in0, in1;
     addr_t next = inst.addr + inst.size;
     bool taken = false;
+    std::optional<bool> opt_taken;
     bool pcode_rela = inst.in[0].is_cst();
 
     if (pinst.in0.is_abstract())
@@ -601,6 +602,19 @@ bool MaatEngine::process_branch(
             info.reset();
             break;
         case ir::Op::CBRANCH:
+            // Try to resolve the branch is not symbolic
+            if (not in1->is_symbolic(*vars))
+            {
+                if (in1->as_uint(*vars) != 0) // branch condition is true, branch to target
+                    opt_taken = true;
+                else
+                    opt_taken = false;
+            }
+            else
+            {
+                opt_taken = std::nullopt;
+            }
+
             // TODO: indicate that the branch is pcode relative if it's the case
             // probably add a info.branch.type field
             SUB_HANDLE_EVENT_ACTION(
@@ -609,11 +623,13 @@ bool MaatEngine::process_branch(
                     inst, 
                     pcode_rela? nullptr : in0,
                     next,
-                    in1 != 0 // cond
+                    in1 != 0, // cond,
+                    opt_taken
                 ), false
             )
 
-            // Resolve the branch
+            // Resolve the branch again to account for potential changes made by
+            // user callbacks
             if (in1->is_symbolic(*vars))
             {
                 if (info.branch->taken.has_value())
@@ -638,6 +654,7 @@ bool MaatEngine::process_branch(
             {
                 taken = false;
             }
+
             // Perform the branch
             if (taken) // branch taken
             {

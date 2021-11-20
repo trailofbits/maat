@@ -17,7 +17,8 @@ namespace code_coverage{
 #ifdef HAS_SOLVER_BACKEND        
         
         using namespace maat;
-        
+        using namespace maat::event;
+
         unsigned int _assert(bool val, const string& msg)
         {
             if( !val)
@@ -32,75 +33,72 @@ namespace code_coverage{
         {
             solver::SolverZ3 sol;
 
+            // Path constraint callback
+            EventCallback path_cb = EventCallback(
+                [](MaatEngine& engine)
+                {
+                    engine.take_snapshot();
+                    return Action::CONTINUE;
+                }
+            );
+
             // Set breakpoints and handlers
-            engine.bp_manager.add_addr_bp(end, "end");
-            engine.bp_manager.add_bp(bp::Event::PATH, "path");
+            engine.hooks.add(Event::EXEC, When::BEFORE, "end", AddrFilter(end));
+            engine.hooks.add(Event::PATH, When::BEFORE, EventCallback(path_cb), "path");
 
             // Set EIP at starting point
             engine.cpu.ctx().set(X86::EIP, start);
-            
+
             // Do code coverage
             bool success = false;
             bool cont = true;
             engine.settings.record_path_constraints = true;
-            while (engine.run() == info::Stop::BP)
+
+            while (engine.run() == info::Stop::EVENT)
             {
-                if (engine.info.bp_name == "end")
+                // First try to find a model for EAX == 1
+                sol.reset();
+                for (auto c : engine.path.constraints())
+                    sol.add(c);
+                sol.add(engine.cpu.ctx().get(X86::EAX) != 0);
+                if (sol.check())
                 {
-                    // First try to find a model for EAX == 1
-                    sol.reset();
-                    for (auto c : engine.path.constraints())
-                        sol.add(c);
-                    sol.add(engine.cpu.ctx().get(X86::EAX) != 0);
-                    if (sol.check())
-                    {
-                        success = true;
-                        auto model = sol.get_model();
-                        // Update context and continue from here with new values
-                        engine.vars->update_from(*model);
-                        break; // Success
-                    }
-                    else
-                    {
-                        // Else go back to previous snapshot and invert condition
-                        cont = false;
-                        while (engine.nb_snapshots() > 0)
-                        {
-                            engine.restore_last_snapshot(true);
-                            _assert(engine.info.bp_name == "path", "do_code_coverage(): failed to re-break on conditionnal instruction");
-                            sol.reset();
-                            for (auto c : engine.path.constraints())
-                                sol.add(c);
-                            // Add inverted path constraint
-                            _assert(engine.info.branch->taken.has_value(), "do_code_coverage(): got invalid branch info on path constraint breakpoint");
-                            if (*engine.info.branch->taken)
-                                sol.add(engine.info.branch->cond->invert());
-                            else
-                                sol.add(engine.info.branch->cond);
-                            //_assert(sol->check(), "find_input(): couldn't find model to explore new branch");
-                            if (sol.check())
-                            {
-                                // Get new input
-                                auto model = sol.get_model();
-                                // Update context and continue from here with new values
-                                engine.vars->update_from(*model);
-                                cont = true;
-                                break;
-                            }
-                        }
-                        // If all snapshots consumed, we tried all possible paths, stop execution !
-                        if (!cont)
-                            break;
-                    }
-                }
-                else if (engine.info.bp_name == "path")
-                {
-                    engine.take_snapshot();
+                    success = true;
+                    auto model = sol.get_model();
+                    // Update context and continue from here with new values
+                    engine.vars->update_from(*model);
+                    break; // Success
                 }
                 else
                 {
-                    cout << "\nFail: find_input(): got unknown breapoint " << std::endl;
-                    throw test_exception();
+                    // Else go back to previous snapshot and invert condition
+                    cont = false;
+                    while (engine.nb_snapshots() > 0)
+                    {
+                        engine.restore_last_snapshot(true);
+                        sol.reset();
+                        for (auto c : engine.path.constraints())
+                            sol.add(c);
+                        // Add inverted path constraint
+                        _assert(engine.info.branch->taken.has_value(), "do_code_coverage(): got invalid branch info on path constraint breakpoint");
+                        if (*engine.info.branch->taken)
+                            sol.add(engine.info.branch->cond->invert());
+                        else
+                            sol.add(engine.info.branch->cond);
+                        // _assert(sol.check(), "find_input(): couldn't find model to explore new branch");
+                        if (sol.check())
+                        {
+                            // Get new input
+                            auto model = sol.get_model();
+                            // Update context and continue from here with new values
+                            engine.vars->update_from(*model);
+                            cont = true;
+                            break;
+                        }
+                    }
+                    // If all snapshots consumed, we tried all possible paths, stop execution !
+                    if (!cont)
+                        break;
                 }
             }
             return success;

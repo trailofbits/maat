@@ -252,7 +252,7 @@ public:
     Action before_mem_write(MaatEngine& engine, const ir::Inst& inst, Expr addr, Expr new_value);
     Action after_mem_write(MaatEngine& engine, const ir::Inst& inst, Expr addr, Expr new_value);
     // Branch
-    Action before_branch(MaatEngine& engine, const ir::Inst& inst, Expr target, addr_t next, Constraint cond=nullptr);
+    Action before_branch(MaatEngine& engine, const ir::Inst& inst, Expr target, addr_t next, Constraint cond=nullptr, std::optional<bool> taken=true);
     Action after_branch(MaatEngine& engine, const ir::Inst& inst, Expr target, addr_t next, Constraint cond=nullptr, bool taken=true);
     // Exec
     Action before_exec(MaatEngine& engine, addr_t addr);

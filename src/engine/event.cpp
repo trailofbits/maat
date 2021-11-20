@@ -625,14 +625,12 @@ Action EventManager::before_branch(
     const ir::Inst& inst,
     Expr target,
     addr_t next,
-    Constraint cond
+    Constraint cond,
+    std::optional<bool> taken
 )
 {
     Action res = Action::CONTINUE;
     engine.info.addr = inst.addr;
-    std::optional<bool> taken = std::nullopt;
-    if (cond == nullptr)
-        taken = true;
     engine.info.branch = info::Branch{
         taken, // taken
         cond, // cond
