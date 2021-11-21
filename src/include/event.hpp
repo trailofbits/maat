@@ -162,7 +162,7 @@ public:
         std::optional<addr_t> addr_max = std::nullopt
     ): addr_min(addr_min), addr_max(addr_max){};
     /// Return true if 'addr' is monitored
-    bool monitors(addr_t addr)
+    bool monitors(addr_t addr) const
     {
         if (not addr_min)
             return false;
@@ -172,7 +172,7 @@ public:
             return addr == *addr_min;
     };
     /// Return true if any address between '_min' and '_max' (both included) is monitored
-    bool monitors(addr_t _min, addr_t _max)
+    bool monitors(addr_t _min, addr_t _max) const
     {
         if (not addr_min)
             return false;
@@ -180,6 +180,11 @@ public:
             return _max >= *addr_min and _min <= *addr_max;
         else
             return *addr_min >= _min and *addr_min <= _max;
+    };
+    /// Return true if the filter monitors at least one address
+    bool is_active() const
+    {
+        return addr_min.has_value();
     };
 };
 

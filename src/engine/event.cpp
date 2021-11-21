@@ -298,7 +298,47 @@ void EventHook::add_callback(EventCallback cb)
 
 std::ostream& operator<<(std::ostream& os, const EventHook& h)
 {
-    throw runtime_exception("operator<< not implemented for EventHook");
+    os << std::dec << h._id;
+    if (not h.name.empty())
+        os << "/" << h.name;
+    os << ": ";
+
+    switch (h.event)
+    {
+        case Event::REG_R:
+            os << "Register read"; break;
+        case Event::REG_W:
+            os << "Register write"; break;
+        case Event::REG_RW:
+            os << "Register read/write"; break;
+        case Event::MEM_R:
+            os << "Memory read"; break;
+        case Event::MEM_W:
+            os << "Memory write"; break;
+        case Event::MEM_RW:
+            os << "Memory read/write"; break;
+        case Event::BRANCH:
+            os << "Branch"; break;
+        case Event::PATH:
+            os << "Path constraint"; break;
+        case Event::EXEC:
+            os << "Execute"; break;
+        default:
+            throw runtime_exception("operator<<: got unexpected Event enum value");
+    }
+    
+    if (h.filter.is_active())
+    {
+        if (not h.filter.addr_max.has_value())
+            os << std::hex << " [0x" << *h.filter.addr_min << ']';
+        else
+            os << std::hex << " [0x" << *h.filter.addr_min << "-0x" << *h.filter.addr_max << "]";
+    }
+
+    if (!h.enabled)
+        os << " (disabled)";
+
+    return os;
 }
 
 
