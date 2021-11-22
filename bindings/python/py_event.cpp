@@ -44,14 +44,14 @@ static PyObject* EventManager_add(PyObject* self, PyObject*args, PyObject* keywo
     char* keywd[] = {"", "", "name", "filter", "callbacks", "group", NULL};
 
     if( !PyArg_ParseTupleAndKeywords(
-        args, keywords, "si|O(KK)O", keywd, &int_event, &int_when, &name, &filter_min, &filter_max, &callbacks, &group))
+        args, keywords, "ii|s(KK)Os", keywd, &int_event, &int_when, &name, &filter_min, &filter_max, &callbacks, &group))
     {
+        PyErr_Clear();
         if( !PyArg_ParseTupleAndKeywords(
-        args, keywords, "si|OOO", keywd, &int_event, &int_when, &name, &filter, &callbacks))
+        args, keywords, "ii|sOOs", keywd, &int_event, &int_when, &name, &filter, &callbacks, &group))
         {
             return NULL;
         }
-        PyErr_Clear();
     }
 
     // Check callbacks list
