@@ -112,7 +112,7 @@ class EventCallback
 public:
     /** \typedef native_cb_t 
      * \brief A callback function taking a pointer to  the MaatEngine */
-    using native_cb_t = Action (*)(maat::MaatEngine&);
+    using native_cb_t = std::function<Action(MaatEngine&)>;// Action (*)(maat::MaatEngine&);
     enum class Type
     {
         NATIVE,

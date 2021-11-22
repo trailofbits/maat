@@ -32,12 +32,16 @@ namespace code_coverage{
         bool do_code_coverage(MaatEngine& engine, addr_t start, addr_t end)
         {
             solver::SolverZ3 sol;
-
+            bool snapshot_next = true;
             // Path constraint callback
             EventCallback path_cb = EventCallback(
-                [](MaatEngine& engine)
+                [&snapshot_next](MaatEngine& engine)
                 {
-                    engine.take_snapshot();
+                    if (snapshot_next)
+                    {
+                        engine.take_snapshot();
+                    }
+                    snapshot_next = true;
                     return Action::CONTINUE;
                 }
             );
@@ -93,6 +97,7 @@ namespace code_coverage{
                             // Update context and continue from here with new values
                             engine.vars->update_from(*model);
                             cont = true;
+                            snapshot_next = false; // Don't resnapshot this path constraint
                             break;
                         }
                     }

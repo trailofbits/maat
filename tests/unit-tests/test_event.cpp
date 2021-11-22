@@ -393,7 +393,7 @@ namespace events
         engine.cpu.ctx().set(0, 0xaaaabbbb);
         engine.cpu.ctx().set(1, 0);
         engine.cpu.ctx().set(2, e2);
-        
+
         auto callback4 = [](MaatEngine& engine)
         {
             _assert(*engine.info.addr == 0x401, "MaatEngine: event hook failed");
