@@ -399,13 +399,6 @@ static PyObject* Info_get_stop(PyObject* self, void* closure){
     return PyLong_FromLong((int)as_info_object(self).info->stop);
 }
 
-static PyObject* Info_get_bp_name(PyObject* self, void* closure){
-    if( not as_info_object(self).info->bp_name.has_value()){
-        return PyErr_Format(PyExc_AttributeError, "'bp' property is not set currently");
-    }
-    return PyUnicode_FromString(as_info_object(self).info->bp_name.value().c_str());
-}
-
 static PyObject* Info_get_addr(PyObject* self, void* closure){
     if( not as_info_object(self).info->addr.has_value()){
         return PyErr_Format(PyExc_AttributeError, "'addr' property is not set currently");
@@ -447,9 +440,8 @@ static PyObject* Info_get_reg_access(PyObject* self, void* closure){
 
 static PyGetSetDef Info_getset[] = {
     {"stop", Info_get_stop, NULL, "Reason why emulation stopped", NULL},
-    {"addr", Info_get_addr, NULL, "Address of the instruction where the engine stopped or where the breakpoint was triggered", NULL},
+    {"addr", Info_get_addr, NULL, "Address of the instruction where the engine stopped", NULL},
     {"exit_status", Info_get_exit_status, NULL, "Exit value of the program", NULL},
-    {"bp", Info_get_bp_name, NULL, "Name of the breakpoint that was triggered", NULL},
     {"branch", Info_get_branch, NULL, "Branch operation info", NULL},
     {"reg_access", Info_get_reg_access, NULL, "Register access info", NULL},
     {"mem_access", Info_get_mem_access, NULL, "Memory access info", NULL},

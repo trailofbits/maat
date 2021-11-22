@@ -103,8 +103,8 @@ class Info
 {
 public:
     info::Stop stop; ///< Reason why the engine stopped
-    std::optional<int> bp_id; ///< ID of the breakpoint hit
-    std::optional<std::string> bp_name; ///< Name of the breakpoint hit
+    // std::optional<int> bp_id; ///< ID of the breakpoint hit
+    // std::optional<std::string> bp_name; ///< Name of the breakpoint hit
     std::optional<addr_t> addr; ///< Address of the instruction where the engine stopped
     // TODO the lifter should give this info std::optional<std::string> inst; ///< ASM of the instruction where the engine stopped (if applicable)
     // TODO bb_start, bb_end: the ir_blocks should give this info...
@@ -120,16 +120,16 @@ public:
     /// Reset all current information
     void reset()
     {
-        // TODO: add other members to reset
         stop = info::Stop::NONE;
-        bp_name = std::nullopt;
+        // bp_name = std::nullopt;
         addr = std::nullopt;
         branch = std::nullopt;
         exit_status = std::nullopt;
         reg_access = std::nullopt;
         mem_access = std::nullopt;
-        bp_id = std::nullopt;
+        // bp_id = std::nullopt;
     };
+
     friend std::ostream& operator<<(std::ostream& os, const Info& info)
     {
         // TODO

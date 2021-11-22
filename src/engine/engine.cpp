@@ -112,14 +112,6 @@ info::Stop MaatEngine::run(int max_inst)
     info.reset();
     _halt_after_inst = false;
 
-    // Process pending breakpoints
-    // If a breakpoint requested halting the execution, there might be other
-    // breakpoints still pending, so process them all before resuming execution.
-    // This gets called before handle_pending_x_mem_overwrites() because 
-    // breakpoint callbacks might alter memory 
-    if (!process_pending_breakpoints())
-        return info.stop;
-
     // Handle potential pending X memory overwrites: if a user callback
     // or a user script did mess with the memory, make sure that any lifted
     // basic block that was overwritten gets its IR deleted since it is
@@ -205,8 +197,7 @@ info::Stop MaatEngine::run(int max_inst)
         block = location->block;
         // Set the current instruction address to -1. It will be set to the proper
         // address in the while() loop below. Setting it to -1 enables to treat the
-        // first instruction executed after a branch as a new instruction, and check
-        // for Trigger::BEFORE breakpoints and other stuff
+        // first instruction executed after a branch as a new instruction
         current_inst_addr = -1;
         // Execute the IR block
         while (ir_inst_id < block->nb_ir_inst())
@@ -278,28 +269,7 @@ info::Stop MaatEngine::run(int max_inst)
                     log.info("Run 0x", std::hex, current_inst_addr, ": ", get_inst_asm(current_inst_addr));
                 }
 
-                // Check for breakpoints to execute when entering new ASM instruction
-                if (bp_manager.check_before(*this, inst))
-                {
-                    // Process pending breakpoints
-                    // We stop if an error occurs or if a breakpoint requests 
-                    // to HALT the analysis
-                    if (!process_pending_breakpoints())
-                        return info.stop;
-                }
-                // Untrigger all breakpoints
-                // Note: We do it after the bp_manager.check() call because
-                // if we have a BEFORE breakpoint that halts, then continue
-                // the execution and reset breakpoints at the beginning of the
-                // function, the breakpoints would be re-triggered
-                // Note2: we don't reset INSTANT breakpoints here, otherwise
-                // they would keep retriggering when we enter their IR instruction.
-                // INSTANT breakpoints need to be reset at the end of IR instructions.
-                bp_manager.reset_triggers(bp::Trigger::BEFORE);
-                bp_manager.reset_triggers(bp::Trigger::AFTER);
-                // Update max_instructions count, we do this AFTER checking for
-                // breakpoints because if we halt execution before the instruction
-                // we dont want to update the instruction count
+                // Update max_instructions count
                 max_inst--;
                 // If block modified itself, stop executing the current block
                 // to re-lift it
@@ -350,24 +320,6 @@ info::Stop MaatEngine::run(int max_inst)
                 ASSERT_SUCCESS(process_load(inst, pinst))
             }
 
-            // We test & process INSTANT breakpoints before branch instructions are processed.
-            // That's because if we snapshot the state before a branch instruction 
-            // we want the current PC, not the updated one...
-            if (bp_manager.check_instant(*this, inst, pinst))
-            {
-                // Set pending IR state in case breakpoints halt execution
-                pending_ir_state = ir::BlockMap::InstLocation(block, ir_inst_id);
-                if (!process_pending_instant_breakpoints())
-                {
-                    // Halt requested by instant breakpoint (or error occured)
-                    return info.stop;
-                }
-                // reset pending IR state
-                pending_ir_state.reset();
-            }
-            // Reset instant breakpoints
-            bp_manager.reset_triggers(bp::Trigger::INSTANT);
-
             // If branch instruction, update control flow now
             // This will also add potential path constraints to the path manager
             if (ir::is_branch_op(inst.op))
@@ -382,12 +334,6 @@ info::Stop MaatEngine::run(int max_inst)
 
             // Update program counter/instruction pointer
             update_pc_if_needed(*block, ir_inst_id, branch_type);
-
-            // We test for AFTER breakpoints after processing instruction and branching, but
-            // before altering the engine state with STORE/apply_semantics. It's needed
-            // so that the breakpoints can use current register/mem values in their info
-            // field before they are altered when applying semantics/store.
-            bp_manager.check_after(*this, inst, pinst);
 
             // If STORE, apply the store
             // NOTE: if overwriting code in memory, this will
@@ -424,37 +370,7 @@ info::Stop MaatEngine::run(int max_inst)
             )
             info.reset(); // Reset info here because the CPU can not do it
 
-            // Check for breakpoints to execute at the end of an ASM instruction
-            // Note: End of instruction if we branch or change instruction within the
-            // same block
-            if (
-                // End of IR instruction conditions
-                (branch_type == MaatEngine::branch_none and ir_inst_id == block->nb_ir_inst()-1) // last instruction of block
-                or (branch_type == MaatEngine::branch_native) // branch native
-                or (
-                    ir_inst_id + 1 < block->nb_ir_inst()
-                    and block->instructions()[ir_inst_id+1].addr != current_inst_addr
-                ) // change ASM instruction
-            )
-            {
-                // Process pending breakpoints
-                // We stop if an error occurs or if a breakpoint requests 
-                // to HALT the analysis
-                if (!process_pending_breakpoints())
-                    return info.stop;
-
-                // Untrigger all breakpoints if none of them halted
-                bp_manager.reset_triggers();
-
-                // Handle executable memory overwrite
-                // TODO:
-                // FIXME: this currently will remove the current block
-                // from the block map if it has been overwritten but the
-                // executing loop won't detect that it's automodifying, thus
-                // the current and now 'invalid' ir block will continue to
-                // be executed until we branch  out from it
-                handle_pending_x_mem_overwrites();
-            }
+            handle_pending_x_mem_overwrites();
 
             // Manage branching and IR instruction ID update in the end
             if (branch_type == MaatEngine::branch_native)
@@ -492,10 +408,6 @@ info::Stop MaatEngine::run(int max_inst)
 
 info::Stop MaatEngine::run_from(addr_t addr, unsigned int max_inst)
 {
-    // Reset all breakpoints if case there were pending triggered breakpoints
-    bp_manager.clear_pending_bps();
-    bp_manager.reset_triggers();
-
     // Set PC to new location to execute
     cpu.ctx().set(arch->pc(), addr);
     // Reset pending IR state
@@ -1044,78 +956,6 @@ bool MaatEngine::process_callother(const ir::Inst& inst, ir::ProcessedInst& pins
     return true;
 }
 
-bool MaatEngine::_process_breakpoint(bp::BPManager::bp_t& breakpoint, bool& halt)
-{
-    // Set info field to the breakpoint info
-    info = breakpoint->info();
-
-    // If breakpoint has no callbacks, halt execution
-    if (breakpoint->callbacks().empty())
-        halt = true;
-
-    // If breakpoint has callbacks, execute them
-    for (const bp::BPCallback& cb : breakpoint->callbacks())
-    {
-        switch (cb.execute(*this))
-        {
-            case bp::Action::CONTINUE:
-                break;
-            case bp::Action::HALT:
-                halt = true;
-                break;
-            case bp::Action::ERROR:
-                info.reset();
-                info.stop = info::Stop::FATAL;
-                log.fatal("MaatEngine::_process_breakpoint(): error in breakpoint callback");
-                return false;
-            default: // Unknown return value for breakpoint...
-                info.reset();
-                info.stop = info::Stop::FATAL;
-                std::string _name;
-                if (info.bp_name.has_value())
-                    _name = info.bp_name.value();
-                log.fatal(
-                    "MaatEngine::_process_breakpoint(): breakpoint callback for '",
-                    _name,
-                    "' returned unsupported Action value: "
-                );
-                return false;
-        }
-    }
-    // No error, return true
-    return true;
-}
-
-bool MaatEngine::process_pending_instant_breakpoints()
-{
-    bp::BPManager::bp_t breakpoint = nullptr;
-    bool halt = false;
-    while ((breakpoint = bp_manager.next_pending_instant_bp()) != nullptr)
-    {
-        if (!_process_breakpoint(breakpoint, halt))
-        {
-            // Error while executing breakpoints
-            return false;
-        }
-    }
-    return !halt;
-}
-
-
-bool MaatEngine::process_pending_breakpoints()
-{
-    bp::BPManager::bp_t breakpoint = nullptr;
-    bool halt = false;
-    while ((breakpoint = bp_manager.next_pending_bp()) != nullptr)
-    {
-        if (!_process_breakpoint(breakpoint, halt))
-        {
-            return false;
-        }
-    }
-    return !halt;
-}
-
 bool MaatEngine::process_callback_emulated_function(addr_t addr)
 {
     const Symbol& symbol = symbols->get_by_addr(addr);
@@ -1197,7 +1037,6 @@ std::optional<ir::BlockMap::InstLocation> MaatEngine::get_location(addr_t addr)
     }
         // TODO: check if symbolic
         // TODO: check if optimize IR
-        // --> Not check for breakpoints and stuff here, do it later...
 
     // Add new block to IR block map
     ir_blocks->add(block);
@@ -1225,11 +1064,6 @@ MaatEngine::snapshot_t MaatEngine::take_snapshot()
     snapshot.info = info;
     snapshot.page_permissions = mem->page_manager.regions();
     snapshot.path = path.take_snapshot();
-    // Save current breakpoint triggers
-    for (auto& bp : bp_manager.get_all())
-    {
-        snapshot.bp_triggers.push_back(std::make_pair(bp->id(), bp->is_triggered()));
-    }
     // Snapshot ID is its index in the snapshots list
     return snapshots->size()-1;
 }
@@ -1270,13 +1104,6 @@ void MaatEngine::restore_last_snapshot(bool remove)
     info = snapshot.info;
     mem->page_manager.set_regions(std::move(snapshot.page_permissions));
     path.restore_snapshot(snapshot.path);
-
-    // Restore breakpoint triggers
-    for (auto p : snapshot.bp_triggers)
-    {
-        bp_manager.get_by_id(p.first)->set_triggered(p.second);
-    }
-    snapshot.bp_triggers.clear();
     // Restore memory segments
     for (addr_t start : snapshot.created_segments)
     {

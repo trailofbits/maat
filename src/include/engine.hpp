@@ -15,7 +15,6 @@
 #include "constraint.hpp"
 #include "lifter.hpp"
 #include "info.hpp"
-#include "breakpoint.hpp"
 #include "event.hpp"
 #include "settings.hpp"
 #include "loader.hpp"
@@ -76,7 +75,6 @@ public:
     std::shared_ptr<VarContext> vars;
     std::shared_ptr<MemEngine> mem;
     ir::CPU<ir::max_cpu_regs> cpu;
-    bp::BPManager bp_manager;
     event::EventManager hooks;
     PathManager path;
     std::shared_ptr<env::EnvEmulator> env;
@@ -233,31 +231,6 @@ private:
      *
      * This method returns 'true' on success and 'false' if an error occured */
     bool process_callother(const ir::Inst& inst, ir::ProcessedInst& pinst);
-
-    /** \brief Process pending breakpoints that are in a triggered state.
-     * Returns 'true' if the engine should resume execution, 'false' if
-     * it should halt execution. \n
-     * This method processes breakpoints one after another. After being
-     * processed, the breakpoint is removed from the pending list. If
-     * a breakpoint requires the execution to halt, the method sets the 
-     * info field with the breakoint information, then returns 'false'.
-     * The other unprocessed breakpoints remain in the pending
-     * list. \n
-     * If a breakpoints indicates or causes an error, the method sets the info
-     * field accordingly and returns 'false'. \n
-     * This method is used for BEFORE and AFTER breakpoints. The breakpoints
-     * are not un-triggered after being processed.
-     */
-    bool process_pending_breakpoints();
-    
-    /** \brief Similar to 'process_pending_breakpoints()' but for
-     * INSTANT breakpoints. */
-    bool process_pending_instant_breakpoints();
-    /** \brief Process the breakpoint 'breakoint'. If the breakpoint requests
-     * to halt the execution, set 'halt' to 'true', otherwise don't modify it.
-     * It an error occurs while executing the breakpoint, return 'false', otherwise
-     * return 'true' */
-    bool _process_breakpoint(bp::BPManager::bp_t& breakpoint, bool& halt);
     bool process_callback_emulated_function(addr_t addr);
 private:
     /** \brief Get the IR location corresponding to address 'addr', lift assembly to new IR Block if needed.

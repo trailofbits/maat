@@ -66,18 +66,6 @@ typedef struct{
 PyObject* PyMemEngine_FromMemEngine(MemEngine* mem, bool is_ref);
 #define as_mem_object(x) (*((MemEngine_Object*)x))
 
-// ================== Breakpoints ==================
-void init_breakpoint(PyObject* module);
-
-typedef struct{
-    PyObject_HEAD
-    bp::BPManager* bp;
-    bool is_ref;
-    Arch* arch; // Always ref, for printing
-} BPManager_Object;
-PyObject* PyBPManager_FromBPManagerAndArch(bp::BPManager* b, bool is_ref, Arch* arch);
-#define as_bp_object(x) (*((BPManager_Object*)x))
-
 // ================== Events ==================
 void init_event(PyObject* module);
 

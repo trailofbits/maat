@@ -12,6 +12,7 @@ namespace test
     namespace snapshot
     {        
         using namespace maat;
+        using namespace maat::event;
 
         unsigned int _assert(bool val, const std::string& msg)
         {
@@ -143,7 +144,7 @@ namespace test
             engine.mem->write_buffer(0x5000, code, sizeof(code));
 
             /* Set breakpoint */
-            engine.bp_manager.add_addr_bp(0x5000+0x19, "end");
+            engine.hooks.add(Event::EXEC, When::BEFORE, "end", AddrFilter(0x5000+0x19));
 
             /* Take snapshots */
             s1 = engine.take_snapshot();
@@ -153,7 +154,7 @@ namespace test
             s3 = engine.take_snapshot();
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP && engine.info.bp_name == "end" , "Snapshot X86: failed to hit end breakpoint");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Snapshot X86: failed to hit end breakpoint");
             nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_int() != 1, "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::EBX)->as_int() != 2, "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::ECX)->as_int() != 3, "Snapshot X86: unexpected state");
@@ -204,7 +205,7 @@ namespace test
             s3 = engine.take_snapshot();
             engine.run();
 
-            nb += _assert(engine.info.stop == info::Stop::BP && engine.info.bp_name == "end" , "Snapshot X86: failed to hit end breakpoint");
+            nb += _assert(engine.info.stop == info::Stop::HOOK, "Snapshot X86: failed to hit end breakpoint");
             nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_int() != 1, "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::EBX)->is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::ECX)->is_symbolic(*engine.vars), "Snapshot X86: unexpected state");

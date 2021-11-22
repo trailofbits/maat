@@ -59,8 +59,6 @@ public:
     PathManager::path_snapshot_t path;
     /// Engine info snapshot
     info::Info info;
-    /// Breakpoint triggers state when taking the snapshot (map <id:triggered>)
-    std::list<std::pair<int, bool>> bp_triggers;
 public:
     Snapshot() = default;
     Snapshot(const Snapshot& other) = delete;

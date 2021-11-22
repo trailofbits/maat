@@ -1,4 +1,4 @@
-#include "breakpoint.hpp"
+#include "event.hpp"
 #include "engine.hpp"
 #include "ir.hpp"
 
@@ -393,7 +393,6 @@ namespace events
         engine.cpu.ctx().set(0, 0xaaaabbbb);
         engine.cpu.ctx().set(1, 0);
         engine.cpu.ctx().set(2, e2);
-        engine.bp_manager.disable_all();
         
         auto callback4 = [](MaatEngine& engine)
         {

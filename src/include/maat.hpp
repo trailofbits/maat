@@ -8,7 +8,6 @@
 #include "memory.hpp"
 #include "ir.hpp"
 #include "cpu.hpp"
-#include "breakpoint.hpp"
 #include "constraint.hpp"
 #include "lifter.hpp"
 #include "loader.hpp"
@@ -16,6 +15,8 @@
 #include "solver.hpp"
 #include "engine.hpp"
 #include "settings.hpp"
+#include "event.hpp"
+#include "pinst.hpp"
 
 
 #endif
