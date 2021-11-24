@@ -42,7 +42,6 @@ typedef struct
 class Snapshot
 {
 public:
-    // TODO path snapshot_id
     /// CPU state snapshot
     ir::CPU<ir::max_cpu_regs> cpu;
     /// Snapshot id for the symbolic memory engine
@@ -59,6 +58,8 @@ public:
     PathManager::path_snapshot_t path;
     /// Engine info snapshot
     info::Info info;
+    /// Environment
+    int env;
 public:
     Snapshot() = default;
     Snapshot(const Snapshot& other) = delete;
@@ -68,13 +69,18 @@ public:
     void add_created_segment(addr_t segment_start);
 };
 
+// Forward decl
+namespace env
+{
+    class FileSystem;
+}
 
 /// Wrapper class to manage a list of snapshots
 template<typename T>
 class SnapshotManager
 {
 friend class MaatEngine;
-friend class EnvEmulator;
+friend class maat::env::FileSystem;
 private:
     std::list<T> _snapshots;
 protected:
@@ -110,26 +116,7 @@ public:
         return _snapshots.size();
     }
 };
-
-namespace env
-{
-
-class PhysicalFile; // forward decl
-// Env Snapshot 
-class Snapshot
-{
-public:
-    std::list<std::pair<std::shared_ptr<PhysicalFile>, SavedMemState>> saved_file_contents;
-public:
-    Snapshot() = default;
-    Snapshot(const Snapshot& other) = delete;
-    Snapshot& operator=(const Snapshot& other) = delete;
-public:
-    void add_saved_file_content(std::shared_ptr<PhysicalFile> file, SavedMemState&& content);
-};
-
-}
-
 /** \} */ // doxygen Engine group
+
 } // namespace maat
 #endif

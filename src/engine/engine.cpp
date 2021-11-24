@@ -1064,6 +1064,7 @@ MaatEngine::snapshot_t MaatEngine::take_snapshot()
     snapshot.info = info;
     snapshot.page_permissions = mem->page_manager.regions();
     snapshot.path = path.take_snapshot();
+    snapshot.env = env->fs.take_snapshot();
     // Snapshot ID is its index in the snapshots list
     return snapshots->size()-1;
 }
@@ -1104,6 +1105,7 @@ void MaatEngine::restore_last_snapshot(bool remove)
     info = snapshot.info;
     mem->page_manager.set_regions(std::move(snapshot.page_permissions));
     path.restore_snapshot(snapshot.path);
+    env->fs.restore_snapshot(snapshot.env);
     // Restore memory segments
     for (addr_t start : snapshot.created_segments)
     {

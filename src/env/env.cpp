@@ -93,6 +93,20 @@ void EnvEmulator::add_running_process(const ProcessInfo& pinfo, const std::strin
 }
 
 
+/// Take a snapshot of the current engine state
+EnvEmulator::snapshot_t EnvEmulator::take_snapshot()
+{
+    return fs.take_snapshot();
+}
+
+/** Restore the engine state to 'snapshot'. If remove is true, the 
+ * snapshot is removed after being restored */
+void EnvEmulator::restore_snapshot(snapshot_t snapshot, bool remove)
+{
+    return fs.restore_snapshot(snapshot, remove);
+}
+
+
 LinuxEmulator::LinuxEmulator(Arch::Type arch): EnvEmulator(arch, OS::LINUX)
 {
     // Load emulated libraries

@@ -51,6 +51,12 @@ public:
     const std::vector<Library>& libraries() const;
 public:
     const Function& get_syscall_func_by_num(int num) const;
+public:
+    using snapshot_t = int;
+    /// Take a snapshot of the environment
+    virtual snapshot_t take_snapshot();
+    /// Restore a snapshot of the environment
+    virtual void restore_snapshot(snapshot_t snapshot, bool remove=false);
 // Virtual functions
 public:
     /// Add a running process to the environment
