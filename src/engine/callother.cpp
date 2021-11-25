@@ -1,6 +1,7 @@
 #include "callother.hpp"
 #include "engine.hpp"
 #include "memory.hpp"
+#include "env/library.hpp"
 
 namespace maat{
 namespace callother{
@@ -12,6 +13,7 @@ Id mnemonic_to_id(const std::string& mnemonic, const std::string& arch)
         if (arch == "X64") return Id::X64_SYSCALL;
     if (mnemonic == "CPUID") return Id::X86_CPUID;
     if (mnemonic == "PMINUB") return Id::X86_PMINUB;
+    if (mnemonic == "INT") return Id::X86_INT;
     return Id::UNSUPPORTED;
 }
 
@@ -199,6 +201,47 @@ void X64_SYSCALL_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processed
     }
 }
 
+void X86_INT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    // Get interrupt number
+    cst_t num = pinst.in1.as_expr()->as_uint(*engine.vars);
+    if (num != 0x80)
+    {
+        throw callother_exception("INT: only supported for number 0x80");
+    }
+
+    // Get syscall number
+    Expr sys_num = engine.cpu.ctx().get(X86::EAX);
+    if (sys_num->is_symbolic(*engine.vars))
+    {
+        throw callother_exception("INT 0x80: syscall number is symbolic!");
+    }
+
+    // Get function to emulate syscall
+    try
+    {
+        const env::Function& func = engine.env->get_syscall_func_by_num(
+            sys_num->as_uint(*engine.vars)
+        );
+        // Execute function callback
+        switch (func.callback().execute(engine, env::abi::X86_LINUX_INT80::instance()))
+        {
+            case env::Action::CONTINUE:
+                break;
+            case env::Action::ERROR:
+                throw callother_exception(
+                    "INT 0x80: Emulation callback signaled an error"
+                );
+        }
+    }
+    catch(const env_exception& e)
+    {
+        throw callother_exception(
+            Fmt() << "INT 0x80: " << e.what() >> Fmt::to_str
+        );
+    }
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -207,6 +250,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::X86_CPUID, X86_CPUID_handler);
     h.set_handler(Id::X64_SYSCALL, X64_SYSCALL_handler);
     h.set_handler(Id::X86_PMINUB, X86_PMINUB_handler);
+    h.set_handler(Id::X86_INT, X86_INT_handler);
     return h;
 }
 

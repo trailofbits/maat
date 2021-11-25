@@ -179,38 +179,6 @@ void X86_STDCALL::ret(MaatEngine& engine) const
     engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP) + 4);
 }
 
-// ========== ABI X86 LINUX INT80 ============
-X86_LINUX_INT80::X86_LINUX_INT80(): ABI(Type::X86_LINUX_INT80)
-{}
-
-const ABI& X86_LINUX_INT80::instance()
-{
-    static X86_LINUX_INT80 abi;
-    return abi;
-}
-
-void X86_LINUX_INT80::get_args(
-    MaatEngine& engine,
-    const args_spec_t& args_spec,
-    std::vector<Expr>& args
-) const
-{
-    int i = 0;
-    for (auto arg : args_spec)
-        args.push_back(get_arg(engine, i++, arg));
-}
-
-Expr X86_LINUX_INT80::get_arg(MaatEngine& engine, int n, size_t arg_size) const
-{
-    std::vector<reg_t> arg_regs{X86::EBX, X86::ECX, X86::EDX, X86::ESI, X86::EDI, X86::EBP};
-    if (n > 6)
-    {
-        throw env_exception("X86 Linux INT80 ABI doesn't support more than 6 arguments");
-    }
-    arg_size = ABI::real_arg_size(engine, arg_size);
-    Expr res = engine.cpu.ctx().get(arg_regs[n]);
-    return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
-}
 
 // ========== ABI X86 LINUX SYSENTER ============
 X86_LINUX_SYSENTER::X86_LINUX_SYSENTER(): ABI(Type::X86_LINUX_SYSENTER)
@@ -367,6 +335,61 @@ void X64_LINUX_SYSCALL::set_ret_value(
 }
 
 void X64_LINUX_SYSCALL::ret(MaatEngine& engine) const
+{
+    // Do nothing
+}
+
+
+// ========== ABI X64 SYSCALL LINUX ============
+X86_LINUX_INT80::X86_LINUX_INT80(): ABI(Type::X86_LINUX_INT80)
+{}
+
+const ABI& X86_LINUX_INT80::instance()
+{
+    static X86_LINUX_INT80 abi;
+    return abi;
+}
+
+void X86_LINUX_INT80::get_args(
+    MaatEngine& engine,
+    const args_spec_t& args_spec,
+    std::vector<Expr>& args
+) const
+{
+    int i = 0;
+    for (auto arg : args_spec)
+        args.push_back(get_arg(engine, i++, arg));
+}
+
+Expr X86_LINUX_INT80::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+{
+    std::vector<reg_t> arg_regs{X86::EBX, X86::ECX, X86::EDX, X86::ESI, X86::EDI, X86::EBP};
+    Expr res = nullptr;
+    arg_size = ABI::real_arg_size(engine, arg_size);
+    if (n >= arg_regs.size())
+    {
+        throw env_exception("get_arg(): Linux X86 int 0x80 ABI supports only up to 6 arguments");
+    }
+    else
+    {
+        res = engine.cpu.ctx().get(arg_regs[n]);
+    }
+    return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+}
+
+void X86_LINUX_INT80::set_ret_value(
+    MaatEngine& engine,
+    const FunctionCallback::return_t& ret_val
+) const
+{
+    // Return value in EAX
+    std::visit(maat::util::overloaded{
+        [](std::monostate arg){return;}, // no return value
+        [&engine](auto arg){engine.cpu.ctx().set(X86::EAX, arg);}
+    }, ret_val);
+}
+
+void X86_LINUX_INT80::ret(MaatEngine& engine) const
 {
     // Do nothing
 }

@@ -134,10 +134,12 @@ void LinuxEmulator::add_running_process(const ProcessInfo& pinfo, const std::str
     file->copy_real_file(filepath);
 
     // Set symbolic links to loaded binary in /proc/<pid>/exe
+    // and /proc/self/exe
     std::stringstream ss;
     ss << "/proc/" << std::dec << pinfo.pid << "/exe";
     fs.create_symlink(ss.str(), pinfo.binary_path, true);
-    
+    fs.create_symlink("/proc/self/exe", pinfo.binary_path, true);
+
     // Create stdin,stdout,stderr, for this process
     std::string stdin = fs.get_stdin_for_pid(pinfo.pid);
     std::string stdout = fs.get_stdout_for_pid(pinfo.pid);

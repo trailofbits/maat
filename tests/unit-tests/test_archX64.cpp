@@ -2511,6 +2511,77 @@ namespace test{
 
             return nb;
         }
+
+
+        unsigned int disass_xchg(MaatEngine& sym)
+        {
+            unsigned int nb = 0;
+            string code;
+
+            // xchg al,bl
+            code = string("\x86\xd8",2);
+            sym.cpu.ctx().set(X64::RAX, exprcst(64, 0x23));
+            sym.cpu.ctx().set(X64::RBX, exprcst(64, 0x1));
+            sym.mem->write_buffer(0x1040, (uint8_t*)code.c_str(), 2);
+            sym.mem->write_buffer(0x1040+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
+            sym.run_from(0x1040, 1);
+            nb += _assert(  sym.cpu.ctx().get(X64::RAX)->as_uint() ==  0x1, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::RBX)->as_uint() ==  0x23, "ArchX64: failed to disassembly and/or execute XCHG");
+
+            // xchg bx, ax
+            code = string("\x66\x93",2);
+            sym.cpu.ctx().set(X64::RAX, exprcst(64, 0xaa23));
+            sym.cpu.ctx().set(X64::RBX, exprcst(64, 0xbb01));
+            sym.mem->write_buffer(0x1050, (uint8_t*)code.c_str(), 2);
+            sym.mem->write_buffer(0x1050+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
+            sym.run_from(0x1050, 1);
+            nb += _assert(  sym.cpu.ctx().get(X64::RAX)->as_uint() ==  0xbb01, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::RBX)->as_uint() ==  0xaa23, "ArchX64: failed to disassembly and/or execute XCHG"); 
+
+            // xchg r8w, bx
+            code = string("\x66\x41\x87\xD8",4);
+            sym.cpu.ctx().set(X64::RBX, exprcst(64, 0xaa23));
+            sym.cpu.ctx().set(X64::R8, exprcst(64, 0xbb01));
+            sym.mem->write_buffer(0x1070, (uint8_t*)code.c_str(), 4);
+            sym.mem->write_buffer(0x1070+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
+            sym.run_from(0x1070, 1);
+            nb += _assert(  sym.cpu.ctx().get(X64::RBX)->as_uint() ==  0xbb01, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::R8)->as_uint() ==  0xaa23, "ArchX64: failed to disassembly and/or execute XCHG"); 
+
+            // xchg r8w, ax
+            code = string("\x66\x41\x90",3);
+            sym.cpu.ctx().set(X64::RAX, exprcst(64, 0xaa23));
+            sym.cpu.ctx().set(X64::R8, exprcst(64, 0xbb01));
+            sym.mem->write_buffer(0x1060, (uint8_t*)code.c_str(), 3);
+            sym.mem->write_buffer(0x1060+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
+            sym.run_from(0x1060, 1);
+            nb += _assert(  sym.cpu.ctx().get(X64::RAX)->as_uint() ==  0xbb01, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::R8)->as_uint() ==  0xaa23, "ArchX64: failed to disassembly and/or execute XCHG"); 
+
+            // xchg DWORD PTR [ecx], ecx 
+            code = string("\x67\x87\x09", 3);
+            sym.mem->write_buffer(0x1100, (uint8_t*)code.c_str(), 3);
+            sym.mem->write_buffer(0x1100+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
+            sym.mem->write(0x1700, exprcst(32, 0x12345678));
+            sym.cpu.ctx().set(X64::RCX, exprcst(64, 0x1700));
+            sym.run_from(0x1100, 1);
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() ==  0x1700, "ArchX86: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::RCX)->as_uint() ==  0x12345678, "ArchX86: failed to disassembly and/or execute XCHG"); 
+
+            /*
+            // xchg al, BYTE PTR [bx]
+            code = string("\x67\x86\x07", 3);
+            sym.mem->write_buffer(0x1110, (uint8_t*)code.c_str(), 3);
+            sym.mem->write_buffer(0x1110+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
+            sym.mem->write(0x20, exprcst(32, 0x12));
+            sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xfAA));
+            sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x10020));
+            sym.run_from(0x1110, 1);
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() ==  0xf12, "ArchX86: failed to disassembly and/or execute XCHG");
+            nb += _assert(  (uint8_t)sym.mem->read(0x20, 1)->as_uint() ==  0xAA, "ArchX86: failed to disassembly and/or execute XCHG");
+            */
+            return nb;
+        }
     }
 }
 
@@ -2708,7 +2779,9 @@ void test_archX64(){
     total += disass_vpmulld(engine);
     total += disass_vpsubb(engine);
     total += disass_xadd(engine);
+    */
     total += disass_xchg(engine);
+    /*
     total += disass_xor(engine);
     total += disass_xorpd(engine); */
     

@@ -213,6 +213,13 @@ public:
     ) const;
     /// Get function argument number 'n' (starting at 0)
     virtual Expr get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    /// Set a function's return value before it returns
+    virtual void set_ret_value(
+        MaatEngine& engine,
+        const FunctionCallback::return_t& ret_val
+    ) const;
+    /// Return from the syscall
+    virtual void ret(MaatEngine& engine) const;
 };
 
 /// X86 Linux SYSENTER ABI

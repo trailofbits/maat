@@ -517,16 +517,18 @@ void EventManager::_check_unique_name(const std::string& str)
 }
 
 
-// TODO: add checks if there are active hooks to avoid doing computations for nothing ?
-// The costly thing here is creating Expr for concrete processed params, especially memory reads
-// and register writes...
+
 std::vector<Event> reg_read_events = {Event::REG_R, Event::REG_RW};
 std::vector<Event> reg_write_events = {Event::REG_W, Event::REG_RW};
 std::vector<Event> mem_read_events = {Event::MEM_R, Event::MEM_RW};
 std::vector<Event> mem_write_events = {Event::MEM_W, Event::MEM_RW};
+std::vector<Event> exec_events = {Event::EXEC};
 
 Action EventManager::before_reg_read(MaatEngine& engine, const ir::Inst& inst, reg_t reg)
 {
+    if (not has_hooks(reg_read_events, When::BEFORE))
+        return Action::CONTINUE;
+
     engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
@@ -545,6 +547,9 @@ Action EventManager::after_reg_read(
     const ir::ProcessedInst::Param& value
 )
 {
+    if (not has_hooks(reg_read_events, When::AFTER))
+        return Action::CONTINUE;
+
     engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
@@ -563,6 +568,9 @@ Action EventManager::before_reg_write(
     const ir::ProcessedInst::Param& new_value
 )
 {
+    if (not has_hooks(reg_write_events, When::BEFORE))
+        return Action::CONTINUE;
+
     engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
@@ -576,6 +584,9 @@ Action EventManager::before_reg_write(
 
 Action EventManager::after_reg_write(MaatEngine& engine, const ir::Inst& inst, reg_t reg)
 {
+    if (not has_hooks(reg_write_events, When::AFTER))
+        return Action::CONTINUE;
+
     engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
@@ -590,10 +601,13 @@ Action EventManager::after_reg_write(MaatEngine& engine, const ir::Inst& inst, r
 Action EventManager::before_mem_read(
     MaatEngine& engine,
     const ir::Inst& inst,
-    Expr addr,
+    Expr& addr,
     size_t nb_bytes
 )
 {
+    if (not has_hooks(mem_read_events, When::BEFORE))
+        return Action::CONTINUE;
+
     engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
@@ -608,10 +622,13 @@ Action EventManager::before_mem_read(
 Action EventManager::after_mem_read(
     MaatEngine& engine,
     const ir::Inst& inst,
-    Expr addr,
-    Expr value
+    Expr& addr,
+    Expr& value
 )
 {
+    if (not has_hooks(mem_read_events, When::AFTER))
+        return Action::CONTINUE;
+
     engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
@@ -626,10 +643,13 @@ Action EventManager::after_mem_read(
 Action EventManager::before_mem_write(
     MaatEngine& engine,
     const ir::Inst& inst,
-    Expr addr,
-    Expr new_value
+    Expr& addr,
+    Expr& new_value
 )
 {
+    if (not has_hooks(mem_write_events, When::BEFORE))
+        return Action::CONTINUE;
+
     engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
@@ -644,10 +664,13 @@ Action EventManager::before_mem_write(
 Action EventManager::after_mem_write(
     MaatEngine& engine,
     const ir::Inst& inst,
-    Expr addr,
-    Expr new_value
+    Expr& addr,
+    Expr& new_value
 )
 {
+    if (not has_hooks(mem_write_events, When::AFTER))
+        return Action::CONTINUE;
+
     engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
@@ -709,12 +732,18 @@ Action EventManager::after_branch(
 
 Action EventManager::before_exec(MaatEngine& engine, addr_t addr)
 {
+    if (not has_hooks(exec_events, When::BEFORE))
+        return Action::CONTINUE;
+
     engine.info.addr = addr;
     return _trigger_hooks(Event::EXEC, When::BEFORE, engine);
 }
 
 Action EventManager::after_exec(MaatEngine& engine, addr_t addr)
 {
+    if (not has_hooks(exec_events, When::AFTER))
+        return Action::CONTINUE;
+
     engine.info.addr = addr;
     return _trigger_hooks(Event::EXEC, When::AFTER, engine);
 }
@@ -751,6 +780,14 @@ Action EventManager::_trigger_hooks(Event event, When when, MaatEngine& engine)
             res = merge_actions(res, tmp);
     }
     return res;
+}
+
+bool EventManager::has_hooks(const std::vector<Event>& events, When when)
+{
+    for (auto& e : events)
+        if (not hook_map[e][when].empty())
+            return true;
+    return false;       
 }
 
 } // namespace event

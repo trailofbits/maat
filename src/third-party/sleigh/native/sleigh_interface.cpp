@@ -411,7 +411,7 @@ public:
                 // }
 
                 for (auto& inst : m_pcodes.back().m_insts)
-                {
+                {  
                     // Check for CALLOTHER, we need dedicated handlers to support them
                     if (inst.op == maat::ir::Op::CALLOTHER)
                     {
@@ -582,7 +582,8 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
         if (reg_name == "CS") return maat::ir::Reg(maat::X86::CS, 31, 0);
         if (reg_name == "DS") return maat::ir::Reg(maat::X86::DS, 31, 0);
         if (reg_name == "ES") return maat::ir::Reg(maat::X86::ES, 31, 0);
-        if (reg_name == "GS") return maat::ir::Reg(maat::X86::GS, 31, 0);
+        if (reg_name == "GS" or reg_name == "GS_OFFSET")
+            return maat::ir::Reg(maat::X86::GS, 31, 0);
         if (reg_name == "FS" or reg_name == "FS_OFFSET")
             return maat::ir::Reg(maat::X86::FS, 31, 0);
         if (reg_name == "SS") return maat::ir::Reg(maat::X86::SS, 31, 0);
@@ -1005,11 +1006,12 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
         if (reg_name == "XMM7_Wf") return maat::ir::Reg(maat::X86::ZMM7, 95, 80);
         if (reg_name == "XMM7_Wg") return maat::ir::Reg(maat::X86::ZMM7, 111, 96);
         if (reg_name == "XMM7_Wh") return maat::ir::Reg(maat::X86::ZMM7, 127, 112);
-    
+
         if (reg_name == "C0") return maat::ir::Reg(maat::X86::C0, 8);
         if (reg_name == "C1") return maat::ir::Reg(maat::X86::C1, 8);
         if (reg_name == "C2") return maat::ir::Reg(maat::X86::C2, 8);
         if (reg_name == "C3") return maat::ir::Reg(maat::X86::C3, 8);
+        if (reg_name == "XCR0") return maat::ir::Reg(maat::X86::XCR0, 64);
 
         if (reg_name == "FPUControlWord") return maat::ir::Reg(maat::X86::FPUCW, 16);
         if (reg_name == "FPUStatusWord") return maat::ir::Reg(maat::X86::FPUSW, 16);
@@ -1101,7 +1103,8 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
         if (reg_name == "CS") return maat::ir::Reg(maat::X64::CS, 63, 0);
         if (reg_name == "DS") return maat::ir::Reg(maat::X64::DS, 63, 0);
         if (reg_name == "ES") return maat::ir::Reg(maat::X64::ES, 63, 0);
-        if (reg_name == "GS") return maat::ir::Reg(maat::X64::GS, 63, 0);
+        if (reg_name == "GS" or reg_name == "GS_OFFSET")
+            return maat::ir::Reg(maat::X64::GS, 63, 0);
         if (reg_name == "FS" or reg_name == "FS_OFFSET")
             return maat::ir::Reg(maat::X64::FS, 63, 0);
         if (reg_name == "SS") return maat::ir::Reg(maat::X64::SS, 63, 0);

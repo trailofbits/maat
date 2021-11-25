@@ -275,10 +275,10 @@ public:
     Action before_reg_write(MaatEngine& engine, const ir::Inst& inst, reg_t reg, const ir::ProcessedInst::Param& new_value);
     Action after_reg_write(MaatEngine& engine, const ir::Inst& inst, reg_t reg);
     // Mem events
-    Action before_mem_read(MaatEngine& engine, const ir::Inst& inst, Expr addr, size_t nb_bytes);
-    Action after_mem_read(MaatEngine& engine, const ir::Inst& inst, Expr addr, Expr value);
-    Action before_mem_write(MaatEngine& engine, const ir::Inst& inst, Expr addr, Expr new_value);
-    Action after_mem_write(MaatEngine& engine, const ir::Inst& inst, Expr addr, Expr new_value);
+    Action before_mem_read(MaatEngine& engine, const ir::Inst& inst, Expr& addr, size_t nb_bytes);
+    Action after_mem_read(MaatEngine& engine, const ir::Inst& inst, Expr& addr, Expr& value);
+    Action before_mem_write(MaatEngine& engine, const ir::Inst& inst, Expr& addr, Expr& new_value);
+    Action after_mem_write(MaatEngine& engine, const ir::Inst& inst, Expr& addr, Expr& new_value);
     // Branch
     Action before_branch(MaatEngine& engine, const ir::Inst& inst, Expr target, addr_t next, Constraint cond=nullptr, std::optional<bool> taken=true);
     Action after_branch(MaatEngine& engine, const ir::Inst& inst, Expr target, addr_t next, Constraint cond=nullptr, bool taken=true);
@@ -370,6 +370,10 @@ private:
         Event event,
         When when,
         MaatEngine& engine
+    ) __attribute__((always_inline));
+    inline bool has_hooks(
+        const std::vector<Event>& events,
+        When when
     ) __attribute__((always_inline));
 };
 

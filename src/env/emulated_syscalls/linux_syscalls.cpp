@@ -79,6 +79,37 @@ FunctionCallback::return_t sys_linux_write(
     return res;
 }
 
+// ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
+// struct iovec {
+//     void  *iov_base;    /* Starting address */
+//     size_t iov_len;     /* Number of bytes to transfer */
+// };
+FunctionCallback::return_t sys_linux_writev(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    int fd = args[0]->as_uint(*engine.vars);
+    cst_t count = args[2]->as_uint(*engine.vars);
+    Expr iov = args[1];
+    cst_t res = 0;
+    Expr iov_len, iov_base;
+    ucst_t ptr_size = engine.arch->octets();
+    ucst_t struct_size = ptr_size*2;
+    // Write all iov buffers
+    for (cst_t i = 0; i < count; i++)
+    {
+        // Read iovec struct
+        iov_base = engine.mem->read(iov->as_uint(*engine.vars) + i*struct_size, ptr_size);
+        iov_len = engine.mem->read(iov->as_uint(*engine.vars) + i*struct_size + ptr_size, ptr_size);
+        res += iov_len->as_uint(*engine.vars);
+        // Perform write() syscall
+        std::vector<Expr> write_args = {args[0], iov_base, iov_len};
+        sys_linux_write(engine, write_args);
+    }
+    return res;
+}
+
 // Generic helper for stat, fstat
 FunctionCallback::return_t _stat(
     MaatEngine& engine,
@@ -380,6 +411,18 @@ FunctionCallback::return_t sys_linux_mmap(
     return (cst_t)res;
 }
 
+// Similar to mmap except the last argument specifies the offset
+// into the file in 4096-byte units (instead of bytes, as is done by mmap(2))
+FunctionCallback::return_t sys_linux_mmap2(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    std::vector<Expr> new_args = args;
+    new_args[5] = new_args[5]*4096;
+    return sys_linux_mmap(engine, new_args);
+}
+
 // int mprotect(void *addr, size_t len, int prot);
 FunctionCallback::return_t sys_linux_mprotect(
     MaatEngine& engine,
@@ -570,34 +613,8 @@ FunctionCallback::return_t sys_linux_arch_prctl(
     return 0; // Success
 }
 
-// int openat(int dirfd, const char *pathname, int flags, mode_t mode);
-FunctionCallback::return_t sys_linux_openat(
-    MaatEngine& engine,
-    const std::vector<Expr>& args
-)
+FunctionCallback::return_t linux_generic_open(MaatEngine& engine, const std::string& filepath, int flags)
 {
-    cst_t AT_FDCWD = -100; 
-    std::string pathname = engine.mem->read_string(args[1]);
-    int dirfd = args[0]->as_int(*engine.vars);
-    int flags = args[2]->as_int(*engine.vars);
-    bool absolute_path = pathname[0] == '/';
-    std::string filepath = "";
-    // Get filepath
-    if (absolute_path)
-    {
-        filepath = pathname;
-    }
-    else
-    {
-        if (dirfd == AT_FDCWD) // Relative to current dir
-        {
-            filepath = engine.env->fs.path_from_relative_path(pathname, engine.process->pwd);
-        }
-        else // Relative to dirfd
-        {
-            throw env_exception("Emulated openat(): not supported for arbitrary dirfd");
-        }
-    }
     // Open file 
     // Flags in octal
     int O_CREAT = 00000100;
@@ -633,6 +650,59 @@ FunctionCallback::return_t sys_linux_openat(
     }
 }
 
+// int open(const char *pathname, int flags, mode_t mode);
+FunctionCallback::return_t sys_linux_open(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    std::string pathname = engine.mem->read_string(args[0]);
+    int flags = args[1]->as_int(*engine.vars);
+    bool absolute_path = pathname[0] == '/';
+    std::string filepath = "";
+    // Get filepath
+    if (absolute_path)
+    {
+        filepath = pathname;
+    }
+    else
+    {
+        filepath = engine.env->fs.path_from_relative_path(pathname, engine.process->pwd);
+    }
+    return linux_generic_open(engine, filepath, flags);
+}
+
+// int openat(int dirfd, const char *pathname, int flags, mode_t mode);
+FunctionCallback::return_t sys_linux_openat(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    cst_t AT_FDCWD = -100; 
+    std::string pathname = engine.mem->read_string(args[1]);
+    int dirfd = args[0]->as_int(*engine.vars);
+    int flags = args[2]->as_int(*engine.vars);
+    bool absolute_path = pathname[0] == '/';
+    std::string filepath = "";
+    // Get filepath
+    if (absolute_path)
+    {
+        filepath = pathname;
+    }
+    else
+    {
+        if (dirfd == AT_FDCWD) // Relative to current dir
+        {
+            filepath = engine.env->fs.path_from_relative_path(pathname, engine.process->pwd);
+        }
+        else // Relative to dirfd
+        {
+            throw env_exception("Emulated openat(): not supported for arbitrary dirfd");
+        }
+    }
+    return linux_generic_open(engine, filepath, flags);
+}
+
 // ================= Build the syscall maps =================
 syscall_func_map_t linux_x86_syscall_map()
 {
@@ -640,6 +710,7 @@ syscall_func_map_t linux_x86_syscall_map()
     {
         {3, Function("sys_read", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_read))},
         {4, Function("sys_write", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_write))},
+        {5, Function("sys_open", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_open))},
         {6, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {18, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {28, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
@@ -647,7 +718,12 @@ syscall_func_map_t linux_x86_syscall_map()
         {45, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
         {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {125, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
-        {180, Function("sys_pread", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))}
+        {146, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
+        {180, Function("sys_pread", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
+        {192, Function("sys_mmap2", FunctionCallback({env::abi::auto_argsize, 4, 4, 4, 4, 4}, sys_linux_mmap2))},
+        {195, Function("sys_stat64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
+        {197, Function("sys_fstat64", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))}, 
+        {295, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))}
     };
     return res;
 }
@@ -658,6 +734,7 @@ syscall_func_map_t linux_x64_syscall_map()
     {
         {0, Function("sys_read", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_read))},
         {1, Function("sys_write", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_write))},
+        {2, Function("sys_open", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_open))},
         {3, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {4, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {5, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
@@ -665,6 +742,7 @@ syscall_func_map_t linux_x64_syscall_map()
         {10, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {12, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
         {17, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
+        {20, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
         {21, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
         {63, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},

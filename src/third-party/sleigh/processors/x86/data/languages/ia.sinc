@@ -2737,9 +2737,10 @@ enterFrames: low5 is low5 { tmp:1 = low5; export tmp; }
 :INSD^rep^reptail eseDI4,DX is vexMode=0 & rep & reptail & opsize=1 & byte=0x6d & eseDI4 & DX   { eseDI4 = in(DX); }
 :INSD^rep^reptail eseDI4,DX is vexMode=0 & rep & reptail & opsize=2 & byte=0x6d & eseDI4 & DX   { eseDI4 = in(DX); }
 
-:INT1           is vexMode=0 & byte=0xf1                            { tmp:1 = 0x1; intloc:$(SIZE) = swi(tmp); call [intloc]; return [0:1]; }
-:INT3           is vexMode=0 & byte=0xcc                            { tmp:1 = 0x3; intloc:$(SIZE) = swi(tmp); call [intloc]; return [0:1]; }
-:INT imm8       is vexMode=0 & byte=0xcd; imm8                      { tmp:1 = imm8; intloc:$(SIZE) = swi(tmp); call [intloc]; }
+# Removed the call [intloc]; from INT* instructions to make callother processing easier
+:INT1           is vexMode=0 & byte=0xf1                            { tmp:1 = 0x1; intloc:$(SIZE) = swi(tmp); return [0:1]; }
+:INT3           is vexMode=0 & byte=0xcc                            { tmp:1 = 0x3; intloc:$(SIZE) = swi(tmp); return [0:1]; }
+:INT imm8       is vexMode=0 & byte=0xcd; imm8                      { tmp:1 = imm8; intloc:$(SIZE) = swi(tmp); }
 :INTO           is vexMode=0 & byte=0xce & bit64=0
 {
   tmp:1 = 0x4;
@@ -3155,8 +3156,11 @@ define pcodeop swap_bytes;
 :NEG rm64      is vexMode=0 & opsize=2 & byte=0xf7; rm64 & reg_opcode=3 ... { negflags(rm64); rm64 = -rm64; resultflags(rm64); }
 @endif
 
-:NOP            is vexMode=0 & opsize=0 & byte=0x90                        { }
-:NOP            is vexMode=0 & opsize=1 & byte=0x90                        { }
+# For simple NOPs rexprefix=0 is necessary to avoid the XCHG R8D, EAX and
+# XCHG R8W, AX instructions to be wrongly interpreted as REX-prefixed NOPs
+ 
+:NOP            is vexMode=0 & opsize=0 & byte=0x90 & rexprefix=0         { }
+:NOP            is vexMode=0 & opsize=1 & byte=0x90 &  rexprefix=0         { }
 :NOP rm16       is vexMode=0 & mandover & opsize=0 & byte=0x0f; high5=3; rm16  ...    { }
 :NOP rm32       is vexMode=0 & mandover & opsize=1 & byte=0x0f; high5=3; rm32  ...    { }
 :NOP^"/reserved" rm16 is vexMode=0 & mandover & opsize=0 & byte=0x0f; byte=0x18; rm16 & reg_opcode_hb=1 ...    { }
@@ -3906,6 +3910,8 @@ define pcodeop xend;
 @ifdef IA64
 :XCHG  RAX,Rmr64   is vexMode=0 & opsize=2 & row = 9 & page = 0 & RAX & Rmr64       { local tmp = RAX;   RAX = Rmr64;     Rmr64 = tmp; }
 @endif
+
+
 
 :XCHG  rm8,Reg8        is vexMode=0 & byte=0x86; rm8 & Reg8  ...                { local tmp = rm8;   rm8 = Reg8;   Reg8 = tmp; }
 :XCHG rm16,Reg16   is vexMode=0 & opsize=0 & byte=0x87; rm16 & Reg16 ...        { local tmp = rm16; rm16 = Reg16; Reg16 = tmp; }

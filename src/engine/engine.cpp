@@ -704,22 +704,6 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
             ),
             nullptr
         )
-        // If callback changed the loaded value, update it
-        loaded = info.mem_access->value;
-        // Sanity checks
-        if (loaded == nullptr)
-        {
-            log.error("Memory read event callback changed the read value to a null pointer ");
-            return nullptr;
-        }
-        else if (loaded->size != param.size())
-        {
-            log.error(
-                "Memory read event callback changed the read value expression size, expected ",
-                (int)param.size(), " bits but got ", (int)loaded->size
-            );
-            return nullptr;
-        }
         // Reset info
         info.reset();
     }
@@ -871,14 +855,6 @@ bool MaatEngine::process_store(
             ),
             false
         )
-        // If callback changed the stored value, update it
-        to_store = info.mem_access->value;
-        // Sanity checks
-        if (to_store == nullptr)
-        {
-            log.error("Memory write event callback changed the value to store to a null pointer");
-            return false;
-        }
 
         if (do_abstract_store)
         {
