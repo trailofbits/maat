@@ -703,6 +703,38 @@ FunctionCallback::return_t sys_linux_openat(
     return linux_generic_open(engine, filepath, flags);
 }
 
+// ssize_t readlink(const char *path, char *buf, size_t bufsiz);
+FunctionCallback::return_t sys_linux_readlink(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    addr_t path = args[0]->as_uint(*engine.vars);
+    addr_t buf = args[1]->as_uint(*engine.vars);
+    size_t bufsiz = args[2]->as_uint(*engine.vars);
+    cst_t res;
+
+    // Get file
+    std::string filepath = engine.mem->read_string(path);
+    env::node_status_t status = engine.env->fs.get_node_status(filepath);
+    if (not env::node::check_is_symlink(status))
+    {
+        // Not a symbolic link, return error
+        engine.log.warning("Emulated readlink(): called on '", filepath, "' which isn't a symbolic link");
+        return -1;
+    }
+    std::string pointed_file = engine.env->fs.pointed_path_from_symlink(filepath);
+
+    // Write pointed file to buffer
+    res = pointed_file.size(); // not +1 because readlink() doesn't append null byte to buffer
+    if (res > bufsiz)
+        res = bufsiz;
+    engine.mem->write_buffer(buf, (uint8_t*)pointed_file.c_str(), res);
+
+    // Return number of bytes written
+    return res;
+}
+
 // ================= Build the syscall maps =================
 syscall_func_map_t linux_x86_syscall_map()
 {
@@ -716,6 +748,7 @@ syscall_func_map_t linux_x86_syscall_map()
         {28, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
         {33, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
         {45, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {85, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {125, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {146, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
@@ -745,6 +778,7 @@ syscall_func_map_t linux_x64_syscall_map()
         {20, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
         {21, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
         {63, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
+        {89, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
         {257, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))}
     

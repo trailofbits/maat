@@ -1119,8 +1119,8 @@ void MemEngine::new_segment(addr_t start, addr_t end, mem_flag_t flags, const st
     if( !is_free(start, end))
         throw mem_exception("Trying to create a segment that overlaps with another segment");
 
+    // Else create entire new segment
     std::shared_ptr<MemSegment> seg = std::make_shared<MemSegment>(start, end, name, is_special);
-
     // Find where to insert new segment
     // TODO: std::lower_bound won't f**** compile and I can't figure out why
     for (it = _segments.begin(); it != _segments.end(); it++)
@@ -1692,7 +1692,7 @@ void MemEngine::write_buffer(addr_t addr, uint8_t* src, int nb_bytes, bool ignor
     /* If breakpoints enabled record the write */
     record_mem_write(addr, nb_bytes);
 
-    for( auto& segment : _segments)
+    for (auto& segment : _segments)
     {
         if( segment->contains(addr) )
         {
@@ -1704,17 +1704,34 @@ void MemEngine::write_buffer(addr_t addr, uint8_t* src, int nb_bytes, bool ignor
                 throw mem_exception(Fmt() << "Writing at address 0x" << std::hex << addr << " in page that doesn't have W flag set" << std::dec >> Fmt::to_str);
             }
 
+            // If buffer exceeds segment size, adjust the number of bytes to write
+            int tmp_nb_bytes = nb_bytes;
+            if (addr + nb_bytes > segment->end)
+                tmp_nb_bytes = segment->end - addr+1;
+
+            // FIXME: should check for the whole range, not just 'addr'
             if( page_manager.was_once_executable(addr))
             {
                 pending_x_mem_overwrites.push_back(
                     std::make_pair(
                         addr,
-                        addr-1+nb_bytes
+                        addr-1+tmp_nb_bytes
                     )
                 );
             }
-            segment->write(addr, src, nb_bytes);
-            return;
+            segment->write(addr, src, tmp_nb_bytes);
+            
+            // If the buffer exceeded segment size, update buffer and #bytes
+            // and go back in the loop
+            if (tmp_nb_bytes != nb_bytes)
+            {
+                nb_bytes -= tmp_nb_bytes;
+                addr += tmp_nb_bytes;
+                src += tmp_nb_bytes;
+            }
+            // Else stop (whole buffer written)
+            else
+                return;
         }
     }
     /* If addr isn't in any segment, throw exception */

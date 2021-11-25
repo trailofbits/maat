@@ -357,6 +357,7 @@ void init_engine(PyObject* module)
     PyDict_SetItemString(stop_enum, "UNSUPPORTED_INST", PyLong_FromLong((int)info::Stop::UNSUPPORTED_INST));
     PyDict_SetItemString(stop_enum, "ARITHMETIC_ERROR", PyLong_FromLong((int)info::Stop::ARITHMETIC_ERROR));
     PyDict_SetItemString(stop_enum, "ERROR", PyLong_FromLong((int)info::Stop::ERROR));
+    PyDict_SetItemString(stop_enum, "FATAL", PyLong_FromLong((int)info::Stop::FATAL));
     PyDict_SetItemString(stop_enum, "NONE", PyLong_FromLong((int)info::Stop::NONE));
     PyObject* stop_class = create_class(PyUnicode_FromString("STOP"), PyTuple_New(0), stop_enum);
     PyModule_AddObject(module, "STOP", stop_class);

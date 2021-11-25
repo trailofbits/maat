@@ -350,6 +350,12 @@ info::Stop MaatEngine::run(int max_inst)
                 )
             }
 
+            // If instruction result is concrete expression, make it a concrete value
+            if (pinst.res.is_abstract() and pinst.res.expr->is_concrete(*vars))
+            {
+                pinst.res = pinst.res.expr->as_number(*vars);
+            }
+
             // Simplify abstract expressions
             if (settings.force_simplify)
             {
