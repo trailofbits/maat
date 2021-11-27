@@ -382,12 +382,13 @@ static void Info_dealloc(PyObject* self){
 
 static PyObject* Info_str(PyObject* self) {
     std::stringstream res;
-    res << *((Info_Object*) self)->info;
+    as_info_object(self).info->print(res, *as_info_object(self).arch);
     return PyUnicode_FromString(res.str().c_str());
 }
 
 static int Info_print(PyObject* self, void * io, int s){
-    std::cout << *((Info_Object*)self)->info << std::flush;
+    as_info_object(self).info->print(std::cout, *as_info_object(self).arch);
+    std::cout << std::flush;
     return 0;
 }
 

@@ -44,7 +44,7 @@ typedef struct
     Expr new_value; ///< Value of the register after access (for reads it is the same as 'value')
     bool written; ///< If the register is written
     bool read; ///< If the register is read
-    
+
     /// Print register access info to a stream
     void print(std::ostream& os, const Arch& arch)
     {
@@ -130,10 +130,65 @@ public:
         // bp_id = std::nullopt;
     };
 
-    friend std::ostream& operator<<(std::ostream& os, const Info& info)
+    void print(std::ostream& os, const Arch& arch)
     {
-        // TODO
-        return os;
+        os << "\n";
+        if (stop == Stop::NONE)
+        {
+            // If NONE don't print info
+            os << "No info currently set" << std::endl;
+            return;
+        }
+
+        // Print stop reason
+        os << "Stop:       ";
+        switch (stop)
+        {
+            case Stop::HOOK:
+                os << "hook halted execution\n";
+                break;
+            case Stop::MISSING_FUNCTION:
+                os << "missing function emulation\n";
+                break;
+            case Stop::MISSING_SYSCALL:
+                os << "missing syscall emulation\n";
+                break;
+            case Stop::INST_COUNT:
+                os << "reached max instruction count\n";
+                break;
+            case Stop::EXIT:
+                os << "program exited\n";
+                if (exit_status.has_value())
+                    os << "Status:     " << *exit_status << "\n";
+                break;
+            case Stop::ERROR:
+                os << "error in emulated code\n";
+                break;
+            case Stop::FATAL:
+                os << "fatal error in Maat\n";
+                break;
+            case Stop::SYMBOLIC_PC:
+                os << "program counter in symbolic\n";
+                break;
+            case Stop::SYMBOLIC_CODE:
+                os << "code to execute is symbolic\n";
+                break;
+            default:
+                os << "<unknown>";
+                break;
+        }
+       
+        if (addr.has_value())
+            os << "Addr:       0x" << std::hex << *addr << "\n";
+        
+        if (branch.has_value())
+            os << *branch << "\n";
+
+        if (mem_access.has_value())
+            os << *mem_access << "\n";
+
+        if (reg_access.has_value())
+            reg_access->print(os, arch);
     };
 };
 
