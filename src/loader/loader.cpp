@@ -100,7 +100,6 @@ void Loader::load_emulated_libs(MaatEngine* engine)
         for (const auto& func : lib.functions())
         {
             std::string symbol_name = func.name();
-            std::cout << "DEBUG EMULATOR  adding function " << symbol_name << std::endl;
             if (func.type() == env::Function::Type::CALLBACK)
             {
                 engine->symbols->add_symbol(Symbol(

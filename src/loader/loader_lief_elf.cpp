@@ -38,7 +38,6 @@ addr_t end_of_segment(MemEngine& mem, const std::string& name)
     addr_t res = 0;
     for (auto& segment : mem.segments())
     {
-        std::cout << "debug" << segment->name << std::endl;
         if (segment->name == name and res < segment->end)
             res = segment->end + 1;
     }
@@ -809,8 +808,6 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
                     engine->log.warning("Missing function: ", symbol_name);
                     // Add missing import
                     S = emu + unsupported_idx++;
-                    std::cout << "DEBUG, addr of symbol is " << std::hex << S << std::endl;
-                    std::cout << "DEBUG, reloc addr " << std::hex << reloc_addr << std::endl;
                     engine->symbols->add_symbol(Symbol(
                         Symbol::FunctionStatus::MISSING,
                         S,
@@ -878,7 +875,6 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
         else if(reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_JUMP_SLOT
                 or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_JUMP_SLOT)
         {
-            std::cout << "DEBUG, jump slot S = 0x" << std::hex << S << std::endl;
             reloc_new_value =  S;
             engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
         }
