@@ -146,7 +146,7 @@ PyObject* PyCPU_FromCPUAndArchAndVarContext(
     ir::CPU<ir::max_cpu_regs>* cpu,
     bool is_ref,
     Arch* arch,
-    std::shared_ptr<VarContext> varctx
+    std::shared_ptr<VarContext>& varctx
 );
 #define as_cpu_object(x) (*((CPU_Object*)x))
 

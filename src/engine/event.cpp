@@ -156,7 +156,11 @@ Action EventCallback::execute(MaatEngine& engine) const
             Py_DECREF(argslist);
             if (result != NULL)
             {
-                if (PyLong_Check(result))
+                if (result == Py_None)
+                {
+                    res = Action::CONTINUE;
+                }
+                else if (PyLong_Check(result))
                 {
                     int int_res = PyLong_AsLong(result);
                     if (not is_valid_action(int_res))

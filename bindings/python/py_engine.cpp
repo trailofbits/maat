@@ -107,7 +107,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
     char* keywd[] = {"", "", "base", "args", "envp", "libdirs", "ignore_libs", "virtual_path", "load_interp", NULL};
 
     if( !PyArg_ParseTupleAndKeywords(
-            args, keywords, "si|KOOOsp", keywd,
+            args, keywords, "si|KOOOOsp", keywd,
             &name, &bin_type, &base, 
             &py_cmdline_args, &py_envp,
             &py_libs, &py_ignore_libs,
