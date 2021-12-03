@@ -188,8 +188,10 @@ FunctionCallback::return_t libc_exit_callback(
     {
         case Arch::Type::X86:
             status = engine.cpu.ctx().get(X86::EAX);
+            break;
         case Arch::Type::X64:
             status = engine.cpu.ctx().get(X64::RAX);
+            break;
         default:
             throw env_exception("Emulated __libc_exit(): not supported for this architecture");
     }
