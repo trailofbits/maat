@@ -124,7 +124,6 @@ info::Stop MaatEngine::run(int max_inst)
         // Check if program already exited
         if (process->terminated)
         {
-            log.warning("Trying to run a process that already terminated");
             info.stop = info::Stop::EXIT;
             return info.stop;
         }
