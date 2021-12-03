@@ -1,6 +1,6 @@
 #include "env/library.hpp"
 #include "engine.hpp"
-#include "env/library.hpp"
+#include <cstdlib>
 
 namespace maat
 {
@@ -9,6 +9,173 @@ namespace env
 namespace emulated
 {
 
+// ================= Utils ===================
+/* Read a concrete C string into buffer 
+   - addr is the address of the string
+   - max_len is the length of 'buffer' where to put the concrete string
+   - len is set to the length of the string 
+   The function throws an env_exception on error
+ */
+void _mem_read_c_string(MaatEngine& engine, addr_t addr, char* buffer, int& len, unsigned int max_len)
+{
+    Expr e;
+    char c = 0xff;
+    len = 0;
+    while (c != 0 && len < max_len )
+    {
+        e = engine.mem->read(addr+len, 1);
+        if (e->is_symbolic(*engine.vars))
+        {
+            throw env_exception("_mem_read_c_string(): tries to read concrete C string but got symbolic data");
+        }
+        c = (uint8_t)(e->as_uint(*engine.vars));
+        buffer[len++] = c;
+    }
+    if (len == max_len)
+    {
+        throw env_exception("_mem_read_c_string(): C string is too long to fit into buffer !");
+    }
+}
+
+// Supported format specifiers
+static constexpr int SPEC_NONE = 0;
+static constexpr int SPEC_UNSUPPORTED = 1;
+static constexpr int SPEC_INT32 = 2;
+static constexpr int SPEC_STRING = 3;
+static constexpr int SPEC_CHAR = 4;
+static constexpr int SPEC_HEX32 = 5; // Int on hex format
+
+
+/* input: size of expressions must be 8 (a byte) */
+bool _is_whitespace(char c)
+{
+    return  c == 0x20 ||
+            c == 0x9 ||
+            c == 0xa ||
+            c == 0xb ||
+            c == 0xc ||
+            c == 0xd ||
+            c == 0;
+}
+
+bool _is_terminating(char c)
+{
+    return  c == 0 ||
+            c == '\n';
+}
+
+/* Tries to parse a format specifier in string format at index 'index'.
+ * If successful, index is modified to the last char of the specifier
+ */
+int _get_specifier(char* format, int format_len, int& index, char* spec, int spec_max_len ){
+    int i = index;
+    int res;
+    // % marker
+    if( format[i] != '%' )
+        return SPEC_NONE;
+    spec[i-index] = format[i];
+    // width
+    for( i = i +1; i < format_len; i++){
+        if( i > spec_max_len-3 )
+            return SPEC_UNSUPPORTED;
+        // Check if number
+        if( format[i] >= '0' && format[i] <= '9' )
+            spec[i-index] = format[i];
+        else
+            break;
+    }
+    if( i ==  format_len )
+        return false;
+
+    // Precision 
+    if( format[i] == '.' ){
+        spec[i-index] = format[i];
+        for( i = i +1; i < format_len; i++){
+            if( i > spec_max_len-3 )
+                return SPEC_UNSUPPORTED;
+            // Check if number
+            if( format[i] >= '0' && format[i] <= '9' )
+                spec[i-index] = format[i];
+            else
+                break;
+        }
+    }
+    
+    // specifier
+    spec[i-index] = format[i];
+    if(     format[i] == 'd' || format[i] == 'u' ){
+        res = SPEC_INT32; 
+    }else if( format[i] == 'x' ){
+        res = SPEC_HEX32;
+    }else if( format[i] == 's' ){
+        res = SPEC_STRING;
+    }else if( format[i] == 'c' ){
+        res = SPEC_CHAR;
+    }else{
+        res = SPEC_UNSUPPORTED;
+    }
+    // Check res
+    if( res != SPEC_UNSUPPORTED ){
+        spec[i-index+1] = '\0';
+        index = i;
+    }
+    return res;
+}
+
+
+// from_arg: marks the first argument that starts the varargs, for example in 
+// printf(char* format, ...) from_arg must be 1
+void _get_format_string(MaatEngine& engine, char* format, int len, std::string& res, int from_arg=0){
+    int vararg_cnt = from_arg;
+    std::stringstream ss;
+    Expr e;
+    int val;
+    addr_t addr;
+    char buffer[2048], specifier[128], formatted_arg[256];
+    int buffer_len;
+    const maat::env::abi::ABI& abi = engine.env->default_abi;
+    size_t arg_size = engine.arch->octets();
+
+    int spec;
+    for( int i = 0; i < len; i++ ){
+        spec = _get_specifier(format, len, i, specifier, sizeof(specifier));
+        if (spec ==  SPEC_INT32 || spec == SPEC_HEX32)
+        {
+            val = (int)abi.get_arg(engine, vararg_cnt++, arg_size)->as_uint(*engine.vars);
+            // Use snprintf that does the formatting for us :)
+            snprintf(formatted_arg, sizeof(formatted_arg), specifier, val);
+            ss << std::string(formatted_arg);
+        }
+        else if( spec == SPEC_STRING )
+        {
+            addr = (addr_t)abi.get_arg(engine, vararg_cnt++, arg_size)->as_uint(*engine.vars);
+            _mem_read_c_string(engine,  addr, buffer, buffer_len, sizeof(buffer)); // Ignore if we exceed sizeof(buffer)
+            ss << std::string(buffer, buffer_len);
+        }
+        else if( spec == SPEC_CHAR)
+        {
+            val = (char)abi.get_arg(engine, vararg_cnt++, arg_size)->as_uint(*engine.vars);
+            // Use snprintf that does the formatting for us :)
+            snprintf(formatted_arg, sizeof(formatted_arg), specifier, (char)val);
+            ss << std::string(formatted_arg);
+        }
+        else if( spec == SPEC_UNSUPPORTED)
+        {
+            engine.log.fatal(
+                "Error in emulation callback: _get_format_string():", 
+                " Unsupported format: ", std::string(specifier), " in ", std::string(format)
+            );
+            throw env_exception("Error in emulation callback: couldn't process format string");
+        }
+        else
+        {
+            ss << format[i];
+        }
+    }
+    res = ss.str();
+}
+
+// ================= Emulated functions ================
 // __libc_exit
 FunctionCallback::return_t libc_exit_callback(
     MaatEngine& engine, 
@@ -223,12 +390,16 @@ FunctionCallback::return_t libc_fopen_callback(MaatEngine& engine, const std::ve
             )
             {
                 // Write, return stdout
-                return engine.env->fs.new_fa("#stdout");
+                return engine.env->fs.new_fa(
+                    engine.env->fs.get_stdout_for_pid(engine.process->pid)
+                );
             }
             else if (mode.find("r") != std::string::npos)
             {
                 // Read, return stdin
-                return engine.env->fs.new_fa("#stdin");
+                return engine.env->fs.new_fa(
+                    engine.env->fs.get_stdin_for_pid(engine.process->pid)
+                );
             }
             else
             {
@@ -291,6 +462,40 @@ FunctionCallback::return_t libc_fwrite_callback(MaatEngine& engine, const std::v
 
     // Return number of elements written
     return res;
+}
+
+
+// int printf ( const char * format, ... );
+FunctionCallback::return_t libc_printf_callback(MaatEngine& engine, const std::vector<Expr>& args)
+{
+    addr_t format = args[0]->as_uint(*engine.vars);
+    char str[2048];
+    int len;
+    std::string to_print;
+
+    try
+    {
+        // Read first argument (format string) into a buffer
+        _mem_read_c_string(engine, format, str, len, sizeof(str));
+        
+        // Try to interpret the format and get the correct string
+        _get_format_string(engine, str, len, to_print, 1);
+        
+        // Print to stdout
+        addr_t offset = 0;
+        env::physical_file_t out = engine.env->fs.get_file(
+            engine.env->fs.get_stdout_for_pid(engine.process->pid)
+        );
+        out->write_buffer((uint8_t*)to_print.c_str(), offset, to_print.size()+1); // +1 for terminating null byte
+    }
+    catch(const env_exception& e)
+    {
+        engine.log.fatal("Emulated printf(): ", e.what());
+        throw env_exception("Emulated printf(): fatal error during emulation");
+    }
+
+    // Return value is the number of bytes written
+    return (cst_t)to_print.size(); 
 }
 
 // =============== Arch specific functions ====================
@@ -405,6 +610,7 @@ std::vector<Function> libc_common_functions
     Function("fflush", FunctionCallback({env::abi::auto_argsize}, libc_fflush_callback)),
     Function("fopen", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, libc_fopen_callback)),
     Function("fwrite", FunctionCallback({env::abi::auto_argsize, 2, 2, env::abi::auto_argsize}, libc_fwrite_callback)),
+    Function("printf", FunctionCallback({env::abi::auto_argsize}, libc_printf_callback)),
     Function("__libc_exit", FunctionCallback({}, libc_exit_callback))
 };
 
