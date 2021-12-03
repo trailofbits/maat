@@ -7,6 +7,7 @@
 #include "info.hpp"
 #include "memory_page.hpp"
 #include "path.hpp"
+#include "process.hpp"
 
 namespace maat
 {
@@ -58,6 +59,8 @@ public:
     PathManager::path_snapshot_t path;
     /// Engine info snapshot
     info::Info info;
+    /// Process info snapshot
+    std::shared_ptr<ProcessInfo> process;
     /// Environment
     int env;
 public:

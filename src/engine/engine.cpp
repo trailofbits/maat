@@ -118,14 +118,19 @@ info::Stop MaatEngine::run(int max_inst)
     // no longer valid
     handle_pending_x_mem_overwrites();
 
-    // TODO: check if program already exited
-
     /* Execute forever while there is a block to execute */
     while (next_block)
     {
+        // Check if program already exited
+        if (process->terminated)
+        {
+            log.warning("Trying to run a process that already terminated");
+            info.stop = info::Stop::EXIT;
+            return info.stop;
+        }
+
         next_block = false; // We don't have a next block to execute yet
         automodifying_block = false;
-
         
         addr_t to_execute = -1; 
         if (not cpu.ctx().get(arch->pc())->is_symbolic(*vars))
@@ -1044,6 +1049,7 @@ MaatEngine::snapshot_t MaatEngine::take_snapshot()
     snapshot.symbolic_mem = mem->symbolic_mem_engine.take_snapshot();
     snapshot.pending_ir_state = pending_ir_state;
     snapshot.info = info;
+    snapshot.process = process;
     snapshot.page_permissions = mem->page_manager.regions();
     snapshot.path = path.take_snapshot();
     snapshot.env = env->fs.take_snapshot();
@@ -1085,6 +1091,7 @@ void MaatEngine::restore_last_snapshot(bool remove)
     mem->symbolic_mem_engine.restore_snapshot(snapshot.symbolic_mem);
     pending_ir_state.swap(snapshot.pending_ir_state);
     info = snapshot.info;
+    process = snapshot.process;
     mem->page_manager.set_regions(std::move(snapshot.page_permissions));
     path.restore_snapshot(snapshot.path);
     env->fs.restore_snapshot(snapshot.env);
@@ -1121,6 +1128,13 @@ void MaatEngine::restore_last_snapshot(bool remove)
         snapshots->pop_back();
 }
 
+
+void MaatEngine::terminate_process(Expr status)
+{
+    info.stop = info::Stop::EXIT;
+    info.exit_status = status;
+    process->terminated = true;
+}
 
 // Return the mean of min/max by taking stride into account
 ucst_t _mean_with_stride(ucst_t min, ucst_t max, ucst_t stride, bool round_upper=false)

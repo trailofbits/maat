@@ -112,6 +112,8 @@ public:
     /** \brief Lift and execute a single instruction located at virtual address 'addr',
      *  'raw_inst' points to the raw assembly of the instruction to be lifted */
     info::Stop run_inst(addr_t addr, uint8_t* raw_inst, size_t raw_instr_size);
+    /** \brief Terminate the process emulated by the engine */
+    void terminate_process(Expr status);
 public:
     using snapshot_t = int;
     /// Take a snapshot of the current engine state

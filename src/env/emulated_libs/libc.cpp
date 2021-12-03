@@ -182,16 +182,20 @@ FunctionCallback::return_t libc_exit_callback(
     const std::vector<Expr>& args
 )
 {
-    // TODO set exit in engine
+    
+    Expr status = nullptr;
     switch (engine.arch->type)
     {
         case Arch::Type::X86:
-            return engine.cpu.ctx().get(X86::EAX);
+            status = engine.cpu.ctx().get(X86::EAX);
         case Arch::Type::X64:
-            return engine.cpu.ctx().get(X64::RAX);
+            status = engine.cpu.ctx().get(X64::RAX);
         default:
             throw env_exception("Emulated __libc_exit(): not supported for this architecture");
     }
+    // Exit process in the engine
+    engine.terminate_process(status);
+    return status;
 }
 
 // ============ atoi =============== 
