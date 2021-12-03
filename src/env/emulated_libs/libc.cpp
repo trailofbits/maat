@@ -594,11 +594,11 @@ FunctionCallback::return_t linux_x64_libc_start_main_callback_part2(
     engine.cpu.ctx().set(X64::RSI, argv);
 
     // Push return address after main
-    engine.cpu.ctx().set(X64::RSP, stack-8);
     engine.mem->write(stack-8, engine.symbols->addr("__libc_exit"), 8);
 
-    // Set program counter to main and return (because ABI none)
-    engine.cpu.ctx().set(X64::RIP, main);
+    // Push main address
+    engine.mem->write(stack-16, main);
+    engine.cpu.ctx().set(X64::RSP, stack-16);
 
     return std::monostate();
 }
