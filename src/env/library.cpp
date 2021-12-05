@@ -137,16 +137,53 @@ const bool Function::has_name(const std::string& name) const
 }
 
 
+
+Data::Data(std::string name, const std::vector<uint8_t>& data):
+_data(data), _names{name}
+{}
+
+const std::vector<std::string>& Data::names() const
+{
+    return _names;
+}
+
+const std::vector<uint8_t>& Data::data() const
+{
+    return _data;
+}
+
+const std::string& Data::name() const
+{
+    return _names.at(0); // at() will check for OOB access
+}
+
+const bool Data::has_name(const std::string& name) const
+{
+    for (const auto& n : _names)
+        if (n == name)
+            return true;
+    return false;
+}
+
+
+
+
+
 Library::Library(const std::string& name): _name(name) {}
 
-Library::Library(const std::string& name, const std::vector<Function>& functions)
-: _name(name), _functions(functions)
+Library::Library(
+    const std::string& name,
+    const std::vector<Function>& functions,
+    const std::vector<Data>& exported_data
+)
+: _name(name), _functions(functions), _data(exported_data)
 {}
 
 Library::Library(Library&& other)
 {
     _name = other._name;
     _functions = std::move(other._functions);
+    _data = std::move(other._data);
 }
 
 const std::string& Library::name() const
@@ -163,6 +200,17 @@ void Library::add_function(const Function& function)
             return;
         }
     _functions.push_back(function);
+}
+
+void Library::add_data(const Data& data)
+{
+    for (auto& d : _data)
+        if (d.has_name(data.name()))
+        {
+            d = data;
+            return;
+        }
+    _data.push_back(data);
 }
 
 const Function& Library::get_function_by_name(const std::string& name) const
@@ -188,6 +236,32 @@ const Function& Library::get_function_by_num(int num) const
 const std::vector<Function>& Library::functions() const
 {
     return _functions;
+}
+
+const std::vector<Data>& Library::data() const
+{
+    return _data;
+}
+
+const Data& Library::get_data_by_name(const std::string& name) const
+{
+    for (auto& d : _data)
+        if (d.has_name(name))
+        {
+            return d;
+        }
+    throw env_exception(
+        Fmt() << "Library::get_data_by_name(): no exported data named " << name
+        >> Fmt::to_str
+    );
+}
+
+size_t Library::total_data_size() const
+{
+    size_t res = 0;
+    for (auto& d : _data)
+        res += d.data().size();
+    return res;
 }
 
 } // namespace env

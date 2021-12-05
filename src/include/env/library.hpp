@@ -299,7 +299,6 @@ public:
 } // namespace ABI
 
 
-// TODO for exit() emulation, have a function  engine.exit_process() that mark it as exited ^^
 /// Emulated function
 class Function
 {
@@ -340,7 +339,25 @@ public:
 public:
     const std::vector<std::string>& names() const; ///< Return the name and aliases of the function
     const std::string& name() const; ///< Return the main name of the function
-    const bool has_name(const std::string& name) const;
+    const bool has_name(const std::string& name) const; ///< Return True if function has name 'name'
+};
+
+/// Emulated external data (in a library)
+class Data
+{
+public:
+    using names_t = std::vector<std::string>; ///< Name of the data (and potential aliases)
+private:
+    std::vector<uint8_t> _data;
+    names_t _names;
+public:
+    Data() = default;
+    Data(std::string name, const std::vector<uint8_t>& data);
+public:
+    const std::vector<uint8_t>& data() const; ///< Return the raw data content
+    const std::vector<std::string>& names() const; ///< Return the name and aliases of the data
+    const std::string& name() const; ///< Return the main name of the data
+    const bool has_name(const std::string& name) const; ///< Return True if data has name 'name'
 };
 
 /// Emulated external library
@@ -348,11 +365,11 @@ class Library
 {
 private:
     std::vector<Function> _functions;
+    std::vector<Data> _data;
     std::string _name;
-    // TODO data
 public:
     Library(const std::string& name);
-    Library(const std::string& name, const std::vector<Function>& functions);
+    Library(const std::string& name, const std::vector<Function>& functions, const std::vector<Data>& exported_data);
     Library(const Library& other) = delete;
     Library(Library&& other);
     Library& operator=(const Library& other) = delete;
@@ -368,6 +385,15 @@ public:
     const Function& get_function_by_name(const std::string& name) const;
     /// Get function by num. Raise an exception if the number doesn't correspond to a function
     const Function& get_function_by_num(int num) const;
+public:
+    /// Get all exported data
+    const std::vector<Data>& data() const;
+    /// Add exported data to the library
+    void add_data(const Data& data);
+    /// Get exported data by name. Raise an exception if the data doesn't exist in this library
+    const Data& get_data_by_name(const std::string& name) const;
+    /// Return the total size of exported data in bytes
+    size_t total_data_size() const;
 };
 
 

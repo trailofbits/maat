@@ -84,19 +84,21 @@ void Loader::load(
 
 void Loader::load_emulated_libs(MaatEngine* engine)
 {
-    Symbol symbol;
-    // Create segment for emulated libs
-    addr_t emu = engine->mem->allocate_segment(
-        0xaaaa0000, 0x1000, 0x1000,
-        maat::mem_flag_r,
-        "Emulated functions",
-        true // is_special_segment
-    );
-    addr_t idx = 0;
     int lib_idx = 0;
+    addr_t offset = 0;
     for (const auto& lib : engine->env->libraries())
     {
         int func_idx = 0;
+        // Create segment for emulated lib
+        int lib_size = lib.functions().size() + lib.total_data_size();
+        // Align on 0x100
+        addr_t emu = engine->mem->allocate_segment(
+            0xaaaa0000, lib_size, 0x1000,
+            maat::mem_flag_rw,
+            "Emulated " + lib.name(),
+            true // is_special_segment
+        );
+        // Add functions
         for (const auto& func : lib.functions())
         {
             std::string symbol_name = func.name();
@@ -104,7 +106,7 @@ void Loader::load_emulated_libs(MaatEngine* engine)
             {
                 engine->symbols->add_symbol(Symbol(
                     Symbol::FunctionStatus::EMULATED_CALLBACK,
-                    emu + (idx++), // address
+                    emu + (offset++), // address
                     symbol_name,
                     func.callback().args_spec,
                     lib_idx,
@@ -122,6 +124,19 @@ void Loader::load_emulated_libs(MaatEngine* engine)
                 );
             }
             func_idx++;
+        }
+        // Add exported data
+        for (const auto& data : lib.data())
+        {
+            std::string symbol_name = data.name();
+            engine->symbols->add_symbol(Symbol(
+                Symbol::DataStatus::EMULATED,
+                emu + offset, // address
+                symbol_name,
+                data.data().size()
+            ));
+            engine->mem->write_buffer(emu+offset, (uint8_t*)data.data().data(), data.data().size());
+            offset += data.data().size();
         }
         lib_idx++;
     }

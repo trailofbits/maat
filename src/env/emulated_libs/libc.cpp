@@ -176,6 +176,15 @@ void _get_format_string(MaatEngine& engine, char* format, int len, std::string& 
 }
 
 // ================= Emulated functions ================
+// Callback that does nothing
+FunctionCallback::return_t do_nothing_callback(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    return std::monostate();
+}
+
 // __libc_exit
 FunctionCallback::return_t libc_exit_callback(
     MaatEngine& engine, 
@@ -620,10 +629,16 @@ std::vector<Function> libc_common_functions
     Function("__libc_exit", FunctionCallback({}, libc_exit_callback))
 };
 
+// All common libc exported data (cross platform)
+std::vector<Data> libc_common_data
+{
+    Data("__gmon_start__", std::vector<uint8_t>{8, 0}) // On 8 bytes so it works for both 32 and 64 bit platforms
+};
+
 // For Linux X86
 Library linux_x86_libc()
 {
-    Library lib("libc", libc_common_functions);
+    Library lib("libc", libc_common_functions, libc_common_data);
     // Arch specific functions...
     lib.add_function(Function("__libc_start_main",
         FunctionCallback({4,4,4,4,4,4,4}, linux_x86_libc_start_main_callback)
@@ -634,7 +649,7 @@ Library linux_x86_libc()
 // For Linux X64
 Library linux_x64_libc()
 {
-    Library lib("libc", libc_common_functions);
+    Library lib("libc", libc_common_functions, libc_common_data);
     // Arch specific functions...
     lib.add_function(Function("__libc_start_main",
         FunctionCallback({8,8,8,8,8,8,8}, linux_x64_libc_start_main_callback_part1)

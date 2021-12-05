@@ -275,11 +275,33 @@ void LoaderLIEF::load_elf_binary(
     // Perform relocations
     perform_elf_relocations(engine, base);
 
+    // Special processing
+    elf_additional_processing(engine, base);
+
     // Setup initial stack frame
     elf_setup_stack(engine, base, args, envp);
     
     // Point PC to program entrypoint
     engine->cpu.ctx().set(reg_pc, _elf->entrypoint() + base);
+}
+
+void LoaderLIEF::force_relocation(MaatEngine* engine, addr_t base, const std::string& rel_name, addr_t value)
+{
+    for (auto& rel : _elf->relocations())
+    {
+        if (rel.has_symbol() and rel.symbol().name() == rel_name)
+        {
+            engine->mem->write(base + rel.address(), value, engine->arch->octets(), true); // ignore perms
+            return;
+        }
+    }
+}
+
+void LoaderLIEF::elf_additional_processing(MaatEngine* engine, addr_t base)
+{
+    // Special relocations
+    // Force gmon_start to be zero so it's not called
+    force_relocation(engine, base, "__gmon_start__", 0x0);
 }
 
 void LoaderLIEF::elf_setup_stack(
@@ -794,7 +816,6 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
         // Check if the symbol is imported
         if (reloc.has_symbol() and reloc.symbol().is_imported())
         {
-            // std::cout << "DEBUG imported function " << symbol_name << std::endl;
             // Check if function
             if (reloc.symbol().is_function())
             {
@@ -805,7 +826,7 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
                 }
                 catch (const symbol_exception& e)
                 {
-                    engine->log.warning("Missing function: ", symbol_name);
+                    engine->log.warning("Missing imported function: ", symbol_name);
                     // Add missing import
                     S = emu + unsupported_idx++;
                     engine->symbols->add_symbol(Symbol(
@@ -815,7 +836,20 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
                     ));
                 }
             }
-            // TODO check and import if data
+            // Imported data
+            else
+            {
+                try
+                {
+                    const Symbol& sym = engine->symbols->get_by_name(symbol_name);
+                    S = sym.addr; // Update symbol address for relocation
+                }
+                catch (const symbol_exception& e)
+                {
+                    engine->log.warning("Missing imported data: ", symbol_name, " (skipping relocation)");
+                    continue; // Skip relocation
+                }
+            }
         }
 
 

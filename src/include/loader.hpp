@@ -214,14 +214,20 @@ private:
         addr_t argv_0
     );
     void perform_elf_relocations(MaatEngine*engine, addr_t base);
+    void add_elf_symbols(MaatEngine* engine, uint64_t base);
     void load_cmdline_args(
         MaatEngine*engine,
         const std::vector<CmdlineArg>& args,
         int& argc,
         std::vector<addr_t>& argv_addresses
     );
-    /// Add internal symbols to the engine symbol manager
-    void add_elf_symbols(MaatEngine* engine, uint64_t base);
+    void force_relocation(
+        MaatEngine* engine,
+        addr_t base,
+        const std::string& rel_name,
+        addr_t value
+    );
+    void elf_additional_processing(MaatEngine* engine, addr_t base);
 };
 
 // util function

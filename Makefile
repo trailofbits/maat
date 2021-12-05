@@ -17,8 +17,7 @@ LDLIBS +=  -lgmp
 ## Flags for LIEF backend
 LIEF ?= 1
 ifeq ($(LIEF), 1)
-    # USE CXX11 ABI = 0 if we use LIEF (otherwise linking problems :( with std::string and basic_string<> )
-	CXXFLAGS += -DLIEF_BACKEND=1 -D_GLIBCXX_USE_CXX11_ABI=0
+	CXXFLAGS += -DLIEF_BACKEND=1 -D_GLIBCXX_USE_CXX11_ABI=1
 	CXXFLAGS += -DHAS_LOADER_BACKEND=1
 	LDLIBS += -lLIEF
 endif
