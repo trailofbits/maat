@@ -121,7 +121,7 @@ static PyObject* Expr_as_uint(PyObject* self, PyObject* args)
             return PyLong_FromString(ss.str().c_str(), NULL, 16);
         }
     }
-    catch(const var_context_exception& e)
+    catch(const expression_exception& e)
     {
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
@@ -163,7 +163,7 @@ static PyObject* Expr_as_int(PyObject* self, PyObject* args)
             return PyLong_FromString(ss.str().c_str(), NULL, 16);
         }
     }
-    catch(const var_context_exception& e)
+    catch(const expression_exception& e)
     {
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
@@ -195,7 +195,7 @@ static PyObject* Expr_as_float(PyObject* self, PyObject* args)
             return PyErr_Format(PyExc_RuntimeError, "as_float() not supported for expressions bigger than 64 bits");
         }
     }
-    catch(const var_context_exception& e)
+    catch(const expression_exception& e)
     {
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
@@ -649,18 +649,23 @@ static PyObject* VarContext_get_as_string(PyObject* self, PyObject* args)
     std::string s;
     PyObject* res;
 
-    if( !PyArg_ParseTuple(args, "s", &name)){
+    if( !PyArg_ParseTuple(args, "s", &name))
+    {
         return NULL;
     }
 
-    try{
+    try
+    {
         s = as_varctx_object(self).ctx->get_as_string(std::string(name));
-    }catch(var_context_exception& e){
+    }
+    catch(std::exception& e)
+    {
         return PyErr_Format(PyExc_ValueError, e.what());
     }
 
     res = PyUnicode_FromFormat("%s", s.c_str());
-    if( res == nullptr ){
+    if (res == nullptr)
+    {
         return NULL;
     }
 
