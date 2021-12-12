@@ -38,7 +38,7 @@ ifeq ($(BINDINGS), 1)
 	BINDINGS_SRCS = $(wildcard $(BINDINGS_DIR)/*.cpp)
 	BINDINGS_OBJS = $(BINDINGS_SRCS:.cpp=.o)
 	BINDINGS_RULE = bindings
-	LDLIBS += `$(PY3CONFIG) --libs` `$(PY3CONFIG) --ldflags`
+	LDLIBS += `$(PY3CONFIG) --libs --embed` `$(PY3CONFIG) --ldflags`
 
 else
 	BINDINGS_RULE = 
