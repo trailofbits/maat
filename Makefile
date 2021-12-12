@@ -164,13 +164,13 @@ bindings: $(BINDINGS_OBJS) $(OBJS) $(DEPOBJS)
 
 # generic 
 %.o : %.cpp
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@ 
 
 %.o : %.cc
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c $< -o $@
 
 %.o : %.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -c $< -o $@ $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -c $< -o $@
 
 %.sla: %.slaspec
 	@echo "sleigh  $@"

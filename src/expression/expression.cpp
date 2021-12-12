@@ -987,7 +987,7 @@ try : ExprObject(ExprType::EXTRACT, (ucst_t)higher->cst() - (ucst_t)lower->cst()
     args.push_back(higher);
     args.push_back(lower);
 }
-catch(expression_exception& e)
+catch(const expression_exception& e)
 {
     throw expression_exception(Fmt()
         << "Error while creating Extract expression: "

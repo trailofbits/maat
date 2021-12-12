@@ -55,7 +55,7 @@ void TmpContext::set(ir::tmp_t tmp, const Number& value)
         tmps_n[idx] = value;
         tmps_e[idx] = nullptr;
     }
-    catch(std::out_of_range)
+    catch(const std::out_of_range&)
     {
         throw ir_exception(Fmt()
             << "TmpContext: Trying to set temporary " << std::dec << idx
@@ -81,7 +81,7 @@ Expr TmpContext::get(ir::tmp_t tmp)
                 << " which doesn't exist in current context"
             );
     }
-    catch(std::out_of_range)
+    catch(const std::out_of_range&)
     {
         throw ir_exception(Fmt()
                 << "CPUContext::get() Trying to get temporary " << std::dec << idx

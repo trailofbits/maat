@@ -74,7 +74,7 @@ public:
                 set(reg, value->as_number());
             }
         }
-        catch(std::out_of_range)
+        catch(const std::out_of_range&)
         {
             throw ir_exception(Fmt()
                     << "CPUContext: Trying to set register " << std::dec << idx
@@ -92,7 +92,7 @@ public:
             regs_e.at(idx) = nullptr;
             regs_n.at(idx).set_cst(value);
         }
-        catch(std::out_of_range)
+        catch(const std::out_of_range&)
         {
             throw ir_exception(Fmt()
                     << "CPUContext: Trying to set register " << std::dec << idx
@@ -110,7 +110,7 @@ public:
             regs_e.at(idx) = nullptr;
             regs_n.at(idx) = value;
         }
-        catch(std::out_of_range)
+        catch(const std::out_of_range&)
         {
             throw ir_exception(Fmt()
                     << "CPUContext: Trying to set register " << std::dec << idx
@@ -128,7 +128,7 @@ public:
             regs_e.at(idx) = nullptr;
             regs_n.at(idx) = value;
         }
-        catch(std::out_of_range)
+        catch(const std::out_of_range&)
         {
             throw ir_exception(Fmt()
                     << "CPUContext: Trying to set register " << std::dec << idx
@@ -154,7 +154,7 @@ public:
         {
             return regs_e.at(idx);
         }
-        catch(std::out_of_range)
+        catch(const std::out_of_range&)
         {
             throw ir_exception(Fmt()
                     << "CPUContext: Trying to get register " << std::dec << idx
@@ -183,7 +183,7 @@ public:
         {
             return regs_e.at(idx) == nullptr;
         }
-        catch(std::out_of_range)
+        catch(const std::out_of_range&)
         {
             throw ir_exception(Fmt()
                     << "CPUContext: Trying to check register " << std::dec << idx
