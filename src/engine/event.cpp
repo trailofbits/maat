@@ -330,7 +330,7 @@ std::ostream& operator<<(std::ostream& os, const EventHook& h)
         default:
             throw runtime_exception("operator<<: got unexpected Event enum value");
     }
-    
+
     if (h.filter.is_active())
     {
         if (not h.filter.addr_max.has_value())
@@ -412,7 +412,7 @@ std::ostream& operator<<(std::ostream& os, const EventManager& m)
 {
     for (auto& hook : m.all_hooks)
     {
-        os << hook << "\n";
+        os << *hook << "\n";
     }
 }
 

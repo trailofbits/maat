@@ -423,7 +423,7 @@ info::Stop MaatEngine::run_from(addr_t addr, unsigned int max_inst)
     // Reset pending IR state
     pending_ir_state.reset();
 
-    // Run! 
+    // Run!
     return run(max_inst);
 }
 

@@ -32,8 +32,12 @@ static PyObject* RegAccess_repr(PyObject* self) {
 }
 
 
-static PyObject* RegAccess_get_reg(PyObject* self, void* closure){
-    return PyLong_FromLong(as_regaccess_object(self).access->reg);
+static PyObject* RegAccess_get_reg(PyObject* self, void* closure)
+{
+    if (as_regaccess_object(self).arch == nullptr)
+        return PyErr_Format(PyExc_RuntimeError, "Can not get RegAccess.reg because object was created without a reference to Arch");
+    std::string reg_name = as_regaccess_object(self).arch->reg_name(as_regaccess_object(self).access->reg);
+    return PyUnicode_FromString(reg_name.c_str());
 }
 
 static PyObject* RegAccess_get_value(PyObject* self, void* closure){
