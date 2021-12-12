@@ -58,9 +58,9 @@ typedef struct
             os << "Register read & written: ";
 
         os << "\n" << space << "Reg: " << arch.reg_name(reg) << "\n";
-        os << space << "Curr. value: " << value << "\n";
+        os << space << "Curr value: " << value << "\n";
         if (written)
-            os << space << "New value " << new_value << "\n";
+            os << space << "New value: " << new_value << "\n";
     }
 
 } RegAccess;

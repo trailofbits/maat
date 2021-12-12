@@ -245,6 +245,7 @@ Action EventHook::trigger(MaatEngine& engine)
     // Hook has callbacks, execute them
     for (const EventCallback& cb : _callbacks)
     {
+        engine.info.stop = info::Stop::HOOK;
         switch (cb.execute(engine))
         {
             case Action::CONTINUE:
