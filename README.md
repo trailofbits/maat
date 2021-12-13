@@ -28,11 +28,12 @@ Key features:
 # Getting started
 - [Installation](https://maat.re/install.html)
 - [Tutorials](https://maat.re/tutorials.html)
-     - TODO
-- Documentation
+     - [Getting started](https://maat.re/tutorials/get_started.html)
+     - [Event hooking](https://maat.re/tutorials/events.html)
+- [Documentation](https://maat.re/python_api/index.html)
      - [Python API](https://maat.re/python_api/index.html)
      - [C++ API](https://maat.re/cpp_api/index.html)
-- [Example](#Example)
+- [Example](#example)
 - [Contact](#contact)
 - [Licence](#licence)
 
@@ -45,32 +46,32 @@ from maat import *
 engine = MaatEngine(ARCH.X86, OS.LINUX)
 
 # Load a binary with one command line argument
-engine.load("./test_binary", BIN.ELF32, args=[Arg("password", 20)])
+engine.load("./some_binary", BIN.ELF32, args=[Arg("password", 20)])
 
-# Print current eax value
-print(engine.cpu.eax)
+# Get current eax value
+engine.cpu.eax
 
-# Print 4 bytes at the top of the stack
-print(engine.mem.read(engine.cpu.esp, 4))
+# Read 4 bytes at the top of the stack
+engine.mem.read(engine.cpu.esp, 4)
 
-# Set a callback displaying every memory access
+# Set a callback displaying every memory read
 def show_mem_access(engine):
-    print(engine.info.mem_access)
-    return True
+    mem_access = engine.info.mem_access
+    print(f"Instruction at {engine.info.addr} reads {mem_access.size} bytes at {mem_access.addr}")
 
-engine.bp.add(EVENT.MEM_RW, callbacks=[show_mem_access])
+engine.hooks.add(EVENT.MEM_R, WHEN.BEFORE, callbacks=[show_mem_access])
 
 # Take and restore snapshots
 snap = engine.take_snapshot()
 engine.restore_snapshot(snap)
 
-# Run the loaded binary
-maat.run()
+# Run the binary
+maat.run() 
 ```
 
 # Contact
 
-**Boyan MILANOV** - boyan (dot) milanov (at) trailofbits (dot) com
+**Boyan MILANOV** - boyan.milanov@trailofbits.com
 
 # Licence
 TODO
