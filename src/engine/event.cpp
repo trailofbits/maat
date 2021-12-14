@@ -305,7 +305,7 @@ std::ostream& operator<<(std::ostream& os, const EventHook& h)
 {
     os << std::dec << h._id;
     if (not h.name.empty())
-        os << "/" << h.name;
+        os << "/'" << h.name << "'";
     os << ": ";
 
     switch (h.event)
@@ -415,6 +415,7 @@ std::ostream& operator<<(std::ostream& os, const EventManager& m)
     {
         os << *hook << "\n";
     }
+    return os;
 }
 
 EventManager::hook_t EventManager::get_by_name(const std::string& name)

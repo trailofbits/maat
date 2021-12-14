@@ -37,7 +37,7 @@ enum class Stop
 };
 
 /// Struct holding information about a register access
-typedef struct
+struct  RegAccess
 {
     ir::reg_t reg; ///< Register that is accessed
     Expr value; ///< Current value of the register
@@ -63,31 +63,31 @@ typedef struct
             os << space << "New value: " << new_value << "\n";
     }
 
-} RegAccess;
+};
 
 
 /// Struct holding information about a memory access
-typedef struct
+struct MemAccess
 {
     Expr addr; ///< Address where memory is accessed
     size_t size; ///< Number of bytes accessed
     Expr value; ///< Value read/written from/to memory
     bool written; ///< If the memory is written
     bool read; ///< If the memory is read
-} MemAccess;
+};
 
 /// Print memory access info to a stream
 std::ostream& operator<<(std::ostream& os, const MemAccess& mem_access);
 
 // TODO: next could be a simple addr_t
 /// Struct holding information about a regular or conditional branch operation
-typedef struct
+struct Branch
 {
     std::optional<bool> taken = std::nullopt; ///< Boolean indicating if the branch is taken or not (it has no value for purely symbolic conditions)
     Constraint cond; ///< Condition for the branch. The branch is taken if the constraint evaluates to True (**warning**: null for unconditional branches)
     Expr target; ///< Target address if the branch is taken (**warning**: null for IR internal branches)
     Expr next; ///< Next instruction if the branch is not taken (**warning**: null for regular branch operation)
-} Branch;
+};
 
 /// Print branch info to a stream
 std::ostream& operator<<(std::ostream& os, const Branch& branch);

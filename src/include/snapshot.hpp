@@ -22,13 +22,13 @@ typedef std::vector<std::pair<Expr, uint8_t>> abstract_mem_chunk_t;
 typedef unsigned int symbolic_mem_snapshot_t;
  
 /// Struct used by snapshots to record previous contents of an overwritten memory area
-typedef struct 
+struct  SavedMemState
 {
     size_t size;
     addr_t addr;
     cst_t concrete_content;
     abstract_mem_chunk_t abstract_content;
-} SavedMemState;
+};
 
  
 /** \brief Data container class used by the engine for snapshoting.
