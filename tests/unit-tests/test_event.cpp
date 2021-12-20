@@ -45,7 +45,7 @@ namespace events
 
         auto callback1 = [](MaatEngine& engine)
         {
-            _assert(engine.info.stop == info::Stop::NONE, "MaatEngine: event hook failed");
+            _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
             _assert(engine.cpu.ctx().get(0)->as_uint() == 0xf0, "MaatEngine: event hook failed");
             _assert(engine.cpu.ctx().get(1)->as_uint() == 0xf1, "MaatEngine: event hook failed");
             _assert(*engine.info.addr == 0, "MaatEngine: event hook failed");
@@ -59,7 +59,7 @@ namespace events
 
         auto callback2 = [](MaatEngine& engine)
         {
-            _assert(engine.info.stop == info::Stop::NONE, "MaatEngine: event hook failed");
+            _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
             _assert(engine.cpu.ctx().get(0)->as_uint() == 0x0, "MaatEngine: event hook failed");
             _assert(engine.cpu.ctx().get(1)->as_uint() == 0xf1, "MaatEngine: event hook failed");
             _assert(*engine.info.addr == 0, "MaatEngine: event hook failed");
@@ -97,7 +97,7 @@ namespace events
         {
             _assert(engine.cpu.ctx().get(0)->as_uint() == 0x0, "MaatEngine: event hook failed");
             _assert(engine.cpu.ctx().get(3)->as_uint() == 0xf3, "MaatEngine: event hook failed");
-            _assert(engine.info.stop == info::Stop::NONE, "MaatEngine: event hook failed");
+            _assert(engine.info.stop == info::Stop::HOOK, "MaatEngine: event hook failed");
             _assert(*engine.info.addr == 0x101, "MaatEngine: event hook failed");
             _assert(engine.info.reg_access->reg == 2, "MaatEngine: event hook failed");
             _assert(engine.info.reg_access->written == false, "MaatEngine: event hook failed");

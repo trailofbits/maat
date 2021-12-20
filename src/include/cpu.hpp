@@ -379,10 +379,16 @@ private:
         {
             if (trigger_events)
             {
-                CPU_HANDLE_EVENT_ACTION(
-                    get_engine_events(engine).before_reg_read(engine, inst, param.reg()),
-                    action
-                )
+                if (get_engine_events(engine).has_hooks(
+                    {event::Event::REG_R, event::Event::REG_RW},
+                    event::When::BEFORE
+                ))
+                {
+                    CPU_HANDLE_EVENT_ACTION(
+                        get_engine_events(engine).before_reg_read(engine, inst, param.reg()),
+                        action
+                    )
+                }
             }
             Expr res = _cpu_ctx.get(param.reg());
             if (get_full_register)
@@ -397,10 +403,16 @@ private:
             }
             if (trigger_events)
             {
-                CPU_HANDLE_EVENT_ACTION(
-                    get_engine_events(engine).after_reg_read(engine, inst, param.reg(), dest),
-                    action
-                )
+                if (get_engine_events(engine).has_hooks(
+                    {event::Event::REG_R, event::Event::REG_RW},
+                    event::When::AFTER
+                ))
+                {
+                    CPU_HANDLE_EVENT_ACTION(
+                        get_engine_events(engine).after_reg_read(engine, inst, param.reg(), dest),
+                        action
+                    )
+                }
             }
         }
         else
@@ -829,10 +841,16 @@ private:
         {
             if (trigger_events)
             {
-                CPU_HANDLE_EVENT_ACTION(
-                    get_engine_events(engine).before_reg_read(engine, inst, param.reg()),
-                    action
-                )
+                if (get_engine_events(engine).has_hooks(
+                    {event::Event::REG_R, event::Event::REG_RW},
+                    event::When::BEFORE
+                ))
+                {
+                    CPU_HANDLE_EVENT_ACTION(
+                        get_engine_events(engine).before_reg_read(engine, inst, param.reg()),
+                        action
+                    )
+                }
             }
             res = _cpu_ctx.get_concrete(param.reg());
             if (!get_full_register)
@@ -842,10 +860,16 @@ private:
             dest = res;
             if (trigger_events)
             {
-                CPU_HANDLE_EVENT_ACTION(
-                    get_engine_events(engine).after_reg_read(engine, inst, param.reg(), dest),
-                    action
-                )
+                if (get_engine_events(engine).has_hooks(
+                    {event::Event::REG_R, event::Event::REG_RW},
+                    event::When::AFTER
+                ))
+                {
+                    CPU_HANDLE_EVENT_ACTION(
+                        get_engine_events(engine).after_reg_read(engine, inst, param.reg(), dest),
+                        action
+                    )
+                }
             }
         }
         else
@@ -1201,24 +1225,36 @@ public:
             if (inst.out.is_reg())
             {
                 // TODO: handle errors ??? How ??
-                CPU_HANDLE_EVENT_ACTION(
-                    get_engine_events(engine).before_reg_write(
-                        engine,
-                        inst,
-                        inst.out.reg(),
-                        pinst.res
-                    ),
-                    action
-                )
+                if (get_engine_events(engine).has_hooks(
+                    {event::Event::REG_W, event::Event::REG_RW},
+                    event::When::BEFORE
+                ))
+                {
+                    CPU_HANDLE_EVENT_ACTION(
+                        get_engine_events(engine).before_reg_write(
+                            engine,
+                            inst,
+                            inst.out.reg(),
+                            pinst.res
+                        ),
+                        action
+                    )
+                }
                 _cpu_ctx.set(inst.out.reg(), pinst.res);
-                CPU_HANDLE_EVENT_ACTION(
-                    get_engine_events(engine).after_reg_write(
-                        engine,
-                        inst,
-                        inst.out.reg()
-                    ),
-                    action
-                )
+                if (get_engine_events(engine).has_hooks(
+                    {event::Event::REG_W, event::Event::REG_RW},
+                    event::When::AFTER
+                ))
+                {
+                    CPU_HANDLE_EVENT_ACTION(
+                        get_engine_events(engine).after_reg_write(
+                            engine,
+                            inst,
+                            inst.out.reg()
+                        ),
+                        action
+                    )
+                }
             }
             else if (inst.out.is_tmp())
             {
