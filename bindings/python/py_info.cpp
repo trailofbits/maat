@@ -175,6 +175,8 @@ static PyObject* MemAccess_get_addr(PyObject* self, void* closure){
     return PyExpr_FromExpr(as_memaccess_object(self).access->addr);
 }
 
+
+
 static PyObject* MemAccess_get_size(PyObject* self, void* closure){
     return PyLong_FromLong(as_memaccess_object(self).access->size);
 }
@@ -411,6 +413,11 @@ static PyObject* Info_get_addr(PyObject* self, void* closure){
     return PyLong_FromUnsignedLongLong(as_info_object(self).info->addr.value());
 }
 
+static int Info_set_addr(PyObject* self, PyObject* val, void* closure){
+    as_info_object(self).info->addr = PyLong_AsUnsignedLongLong(val);
+    return 0;
+}
+
 static PyObject* Info_get_exit_status(PyObject* self, void* closure){
     if( not as_info_object(self).info->exit_status.has_value()){
         return PyErr_Format(PyExc_AttributeError, "'exit_status' property is not set currently");
@@ -445,7 +452,7 @@ static PyObject* Info_get_reg_access(PyObject* self, void* closure){
 
 static PyGetSetDef Info_getset[] = {
     {"stop", Info_get_stop, NULL, "Reason why emulation stopped", NULL},
-    {"addr", Info_get_addr, NULL, "Address of the instruction where the engine stopped", NULL},
+    {"addr", Info_get_addr, Info_set_addr, "Address of the instruction where the engine stopped", NULL},
     {"exit_status", Info_get_exit_status, NULL, "Exit value of the program", NULL},
     {"branch", Info_get_branch, NULL, "Branch operation info", NULL},
     {"reg_access", Info_get_reg_access, NULL, "Register access info", NULL},

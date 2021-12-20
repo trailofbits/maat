@@ -5,6 +5,8 @@
 namespace maat
 {
     
+using namespace maat::event;
+
 MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
 {
     switch (_arch)
@@ -244,7 +246,10 @@ info::Stop MaatEngine::run(int max_inst)
                 }
 
                 // EXEC event
-                HANDLE_EVENT_ACTION(hooks.before_exec(*this, current_inst_addr))
+                if (hooks.has_hooks(Event::EXEC, When::BEFORE))
+                {
+                    HANDLE_EVENT_ACTION(hooks.before_exec(*this, current_inst_addr))
+                }
                 // If we already halted before executing this instruction, don't halt
                 // again, neither before not after the instruction
                 if (_previous_halt_before_exec == current_inst_addr)
@@ -407,8 +412,11 @@ info::Stop MaatEngine::run(int max_inst)
             // just loop again
 
             // Event EXEC
-            HANDLE_EVENT_ACTION(hooks.after_exec(*this, current_inst_addr))
-            info.reset();
+            if (hooks.has_hooks(Event::EXEC, When::BEFORE))
+            {
+                HANDLE_EVENT_ACTION(hooks.after_exec(*this, current_inst_addr))
+                info.reset();
+            }
         }
     }
 
@@ -504,23 +512,35 @@ bool MaatEngine::process_branch(
             }
             else // address, branch to it
             {
-                SUB_HANDLE_EVENT_ACTION(hooks.before_branch(*this, inst, in0, next), false)
+                if (hooks.has_hooks(Event::BRANCH, When::BEFORE))
+                {
+                    SUB_HANDLE_EVENT_ACTION(hooks.before_branch(*this, inst, in0, next), false)
+                }
                 // TODO handle branch to same instruction !
                 // find to which IR inst id we have to loop back !
                 cpu.ctx().set(arch->pc(), in0);
                 branch_type = MaatEngine::branch_native;
-                SUB_HANDLE_EVENT_ACTION(hooks.after_branch(*this, inst, in0, next), false)
+                if (hooks.has_hooks(Event::BRANCH, When::AFTER))
+                {
+                    SUB_HANDLE_EVENT_ACTION(hooks.after_branch(*this, inst, in0, next), false)
+                }
                 info.reset();
             }
             break;
         case ir::Op::RETURN: // Equivalent to branchind
         case ir::Op::CALLIND: // Equivalent to branchind
         case ir::Op::BRANCHIND:
-            SUB_HANDLE_EVENT_ACTION(hooks.before_branch(*this, inst, in0, next), false)
+            if (hooks.has_hooks(Event::BRANCH, When::BEFORE))
+            {
+                SUB_HANDLE_EVENT_ACTION(hooks.before_branch(*this, inst, in0, next), false)
+            }
             // Branch to in0
             cpu.ctx().set(arch->pc(), in0);
             branch_type = MaatEngine::branch_native;
-            SUB_HANDLE_EVENT_ACTION(hooks.after_branch(*this, inst, in0, next), false)
+            if (hooks.has_hooks(Event::BRANCH, When::AFTER))
+            {
+                SUB_HANDLE_EVENT_ACTION(hooks.after_branch(*this, inst, in0, next), false)
+            }
             info.reset();
             break;
         case ir::Op::CBRANCH:
@@ -539,16 +559,25 @@ bool MaatEngine::process_branch(
 
             // TODO: indicate that the branch is pcode relative if it's the case
             // probably add a info.branch.type field
-            SUB_HANDLE_EVENT_ACTION(
-                hooks.before_branch(
-                    *this,
-                    inst, 
-                    pcode_rela? nullptr : in0,
-                    next,
-                    in1 != 0, // cond,
-                    opt_taken
-                ), false
+            if (
+                hooks.has_hooks(Event::BRANCH, When::BEFORE) or
+                (
+                 (not in1->is_concrete(*vars)) and
+                  hooks.has_hooks(Event::PATH, When::BEFORE)
+                )
             )
+            {
+                SUB_HANDLE_EVENT_ACTION(
+                    hooks.before_branch(
+                        *this,
+                        inst, 
+                        pcode_rela? nullptr : in0,
+                        next,
+                        in1 != 0, // cond,
+                        opt_taken
+                    ), false
+                )
+            }
 
             // Resolve the branch again to account for potential changes made by
             // user callbacks
@@ -613,17 +642,25 @@ bool MaatEngine::process_branch(
                     path.add(in1 == 0);
                 }
             }
-
-            SUB_HANDLE_EVENT_ACTION(
-                hooks.after_branch(
-                    *this,
-                    inst, 
-                    pcode_rela? nullptr : in0,
-                    next,
-                    in1 != 0, // cond
-                    taken
-                ), false
+            if (
+                hooks.has_hooks(Event::BRANCH, When::AFTER) or
+                (
+                 (not in1->is_concrete(*vars)) and
+                  hooks.has_hooks(Event::PATH, When::AFTER)
+                )
             )
+            {
+                SUB_HANDLE_EVENT_ACTION(
+                    hooks.after_branch(
+                        *this,
+                        inst, 
+                        pcode_rela? nullptr : in0,
+                        next,
+                        in1 != 0, // cond
+                        taken
+                    ), false
+                )
+            }
             info.reset();
             break;
         default:
@@ -672,15 +709,18 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
     try
     {
         // Memory read event
-        SUB_HANDLE_EVENT_ACTION(
-            hooks.before_mem_read(
-                *this,
-                inst,
-                addr.auxilliary, // addr
-                load_size // size in bytes
-            ),
-            nullptr
-        )
+        if (hooks.has_hooks({Event::MEM_R, Event::MEM_RW}, When::BEFORE))
+        {
+            SUB_HANDLE_EVENT_ACTION(
+                hooks.before_mem_read(
+                    *this,
+                    inst,
+                    addr.auxilliary, // addr
+                    load_size // size in bytes
+                ),
+                nullptr
+            )
+        }
 
         if (do_abstract_load)
         {
@@ -705,15 +745,18 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
         }
 
         // Mem read event
-        SUB_HANDLE_EVENT_ACTION(
-            hooks.after_mem_read(
-                *this,
-                inst,
-                addr.auxilliary, // addr
-                loaded // value
-            ),
-            nullptr
-        )
+        if (hooks.has_hooks({Event::MEM_R, Event::MEM_RW}, When::AFTER))
+        {
+            SUB_HANDLE_EVENT_ACTION(
+                hooks.after_mem_read(
+                    *this,
+                    inst,
+                    addr.auxilliary, // addr
+                    loaded // value
+                ),
+                nullptr
+            )
+        }
         // Reset info
         info.reset();
     }
@@ -855,16 +898,19 @@ bool MaatEngine::process_store(
     // Perform the memory store
     try
     {
-        // Mem read event
-        SUB_HANDLE_EVENT_ACTION(
-            hooks.before_mem_write(
-                *this,
-                inst,
-                store_addr, // addr
-                to_store // value
-            ),
-            false
-        )
+        // Mem write event
+        if (hooks.has_hooks({Event::MEM_W, Event::MEM_RW}, When::BEFORE))
+        {
+            SUB_HANDLE_EVENT_ACTION(
+                hooks.before_mem_write(
+                    *this,
+                    inst,
+                    store_addr, // addr
+                    to_store // value
+                ),
+                false
+            )
+        }
 
         if (do_abstract_store)
         {
@@ -881,15 +927,18 @@ bool MaatEngine::process_store(
             mem->write(store_addr->as_uint(*vars), to_store, &mem_alert, true);
         }
         // Mem write event
-        SUB_HANDLE_EVENT_ACTION(
-            hooks.after_mem_write(
-                *this,
-                inst,
-                store_addr, // addr
-                to_store // value
-            ),
-            false
-        )
+        if (hooks.has_hooks({Event::MEM_W, Event::MEM_RW}, When::AFTER))
+        {
+            SUB_HANDLE_EVENT_ACTION(
+                hooks.after_mem_write(
+                    *this,
+                    inst,
+                    store_addr, // addr
+                    to_store // value
+                ),
+                false
+            )
+        }
         info.reset(); // Reset info after event callbacks
     }
     catch(mem_exception& e)

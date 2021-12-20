@@ -371,10 +371,12 @@ private:
         When when,
         MaatEngine& engine
     ) __attribute__((always_inline));
-    inline bool has_hooks(
+public: 
+    bool has_hooks(
         const std::vector<Event>& events,
         When when
-    ) __attribute__((always_inline));
+    );
+    bool has_hooks(Event event, When when);
 };
 
 /** \} */ // doxygen hooks group

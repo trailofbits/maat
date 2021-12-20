@@ -137,7 +137,7 @@ Action EventCallback::execute(MaatEngine& engine) const
         }
         catch (const std::exception& e)
         {
-            engine.log.error("Caught exception is event callback: ", e.what());
+            engine.log.error("Caught exception in event callback: ", e.what());
             return Action::ERROR;
         }
     }
@@ -532,9 +532,6 @@ std::vector<Event> exec_events = {Event::EXEC};
 
 Action EventManager::before_reg_read(MaatEngine& engine, const ir::Inst& inst, reg_t reg)
 {
-    if (not has_hooks(reg_read_events, When::BEFORE))
-        return Action::CONTINUE;
-
     engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
@@ -553,9 +550,6 @@ Action EventManager::after_reg_read(
     const ir::ProcessedInst::Param& value
 )
 {
-    if (not has_hooks(reg_read_events, When::AFTER))
-        return Action::CONTINUE;
-
     engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
@@ -574,9 +568,6 @@ Action EventManager::before_reg_write(
     const ir::ProcessedInst::Param& new_value
 )
 {
-    if (not has_hooks(reg_write_events, When::BEFORE))
-        return Action::CONTINUE;
-
     engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
@@ -590,9 +581,6 @@ Action EventManager::before_reg_write(
 
 Action EventManager::after_reg_write(MaatEngine& engine, const ir::Inst& inst, reg_t reg)
 {
-    if (not has_hooks(reg_write_events, When::AFTER))
-        return Action::CONTINUE;
-
     engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
@@ -611,9 +599,6 @@ Action EventManager::before_mem_read(
     size_t nb_bytes
 )
 {
-    if (not has_hooks(mem_read_events, When::BEFORE))
-        return Action::CONTINUE;
-
     engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
@@ -632,9 +617,6 @@ Action EventManager::after_mem_read(
     Expr& value
 )
 {
-    if (not has_hooks(mem_read_events, When::AFTER))
-        return Action::CONTINUE;
-
     engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
@@ -653,9 +635,6 @@ Action EventManager::before_mem_write(
     Expr& new_value
 )
 {
-    if (not has_hooks(mem_write_events, When::BEFORE))
-        return Action::CONTINUE;
-
     engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
@@ -674,9 +653,6 @@ Action EventManager::after_mem_write(
     Expr& new_value
 )
 {
-    if (not has_hooks(mem_write_events, When::AFTER))
-        return Action::CONTINUE;
-
     engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
@@ -738,18 +714,12 @@ Action EventManager::after_branch(
 
 Action EventManager::before_exec(MaatEngine& engine, addr_t addr)
 {
-    if (not has_hooks(exec_events, When::BEFORE))
-        return Action::CONTINUE;
-
     engine.info.addr = addr;
     return _trigger_hooks(Event::EXEC, When::BEFORE, engine);
 }
 
 Action EventManager::after_exec(MaatEngine& engine, addr_t addr)
 {
-    if (not has_hooks(exec_events, When::AFTER))
-        return Action::CONTINUE;
-
     engine.info.addr = addr;
     return _trigger_hooks(Event::EXEC, When::AFTER, engine);
 }
@@ -794,6 +764,11 @@ bool EventManager::has_hooks(const std::vector<Event>& events, When when)
         if (not hook_map[e][when].empty())
             return true;
     return false;       
+}
+
+bool EventManager::has_hooks(Event event, When when)
+{
+    return not hook_map[event][when].empty();
 }
 
 } // namespace event

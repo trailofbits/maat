@@ -168,13 +168,13 @@ mem_flag_t get_segment_flags(LIEF::ELF::Segment& segment)
 {
     mem_flag_t flags = 0;
     if( segment.has(LIEF::ELF::ELF_SEGMENT_FLAGS::PF_R) ){
-        flags |= mem_flag_r;
+        flags |= maat::mem_flag_r;
     }
     if( segment.has(LIEF::ELF::ELF_SEGMENT_FLAGS::PF_W) ){
-        flags |= mem_flag_w;
+        flags |= maat::mem_flag_w;
     }
     if( segment.has(LIEF::ELF::ELF_SEGMENT_FLAGS::PF_X) ){
-        flags |= mem_flag_x;
+        flags |= maat::mem_flag_x;
     }
     return flags;
 }
