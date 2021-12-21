@@ -18,8 +18,6 @@ class Settings
 {
 public:
     // Symbolic execution
-    /// Run dead-variable optimisations on lifted IR blocks
-    bool optimise_ir;
     /// Systematically simplify abstract expressions during execution
     bool force_simplify;
     // Environment

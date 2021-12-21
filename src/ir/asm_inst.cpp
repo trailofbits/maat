@@ -5,6 +5,8 @@
 namespace maat{
 namespace ir{
 
+AsmInst::AsmInst(): _addr(0), _tmp_cnt(0), _raw_size(0) {}
+
 AsmInst::AsmInst(uint64_t address, unsigned int size)
 :   _addr(address),
     _tmp_cnt(0),
@@ -13,7 +15,7 @@ AsmInst::AsmInst(uint64_t address, unsigned int size)
 
 AsmInst& AsmInst::operator=(const AsmInst& other)
 {
-    _addr = other._addr
+    _addr = other._addr;
     _tmp_cnt = other._tmp_cnt;
     _raw_size = other._raw_size;
     _instructions = other._instructions;
@@ -22,7 +24,7 @@ AsmInst& AsmInst::operator=(const AsmInst& other)
 
 AsmInst& AsmInst::operator=(AsmInst&& other)
 {
-    _addr = other._addr
+    _addr = other._addr;
     _tmp_cnt = other._tmp_cnt;
     _raw_size = other._raw_size;
     _instructions = std::move(other._instructions);
@@ -32,6 +34,11 @@ AsmInst& AsmInst::operator=(AsmInst&& other)
 uint64_t AsmInst::addr() const
 {
     return _addr;
+}
+
+unsigned int AsmInst::raw_size() const
+{
+    return _raw_size;
 }
 
 size_t AsmInst::nb_ir_inst() const
@@ -61,6 +68,11 @@ AsmInst::inst_id AsmInst::add_insts(AsmInst::inst_list_t&& insts)
 {
     _instructions.insert(_instructions.end(), insts.begin(), insts.end());
     return _instructions.size()-1;
+}
+
+AsmInst::inst_list_t& AsmInst::instructions()
+{
+    return _instructions;
 }
 
 const AsmInst::inst_list_t& AsmInst::instructions() const
@@ -157,9 +169,9 @@ void IRMap::remove_insts_containing(uint64_t start, uint64_t end)
     // millions of asm insts in a run and since self-modifying code
     // is very rare we prefer using unordered_map.
  
-    for (uint64_t addr = start; i <= end; i++)
+    for (uint64_t addr = start; addr <= end; addr++)
     {
-        asm_insts.erase(addr)
+        asm_insts.erase(addr);
     }
 }
 

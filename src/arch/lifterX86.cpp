@@ -49,7 +49,8 @@ LifterX86::LifterX86(int m): mode(m)
     }
 }
 
-std::shared_ptr<ir::Block> LifterX86::lift_block(
+bool LifterX86::lift_block(
+    ir::IRMap& ir_map,
     uintptr_t addr,
     code_t code,
     size_t code_size,
@@ -60,30 +61,26 @@ std::shared_ptr<ir::Block> LifterX86::lift_block(
 )
 {
     // TODO: check memory mappings
-    // Create block
-    std::shared_ptr<ir::Block> block = nullptr;
     try
     {
-        block = sleigh_translate(
-                    sleigh_ctx,
-                    code,
-                    code_size,
-                    addr,
-                    nb_inst, 
-                    true
-                );
+        sleigh_translate(
+            sleigh_ctx,
+            ir_map,
+            code,
+            code_size,
+            addr,
+            nb_inst, 
+            true
+        );
     }
     catch(std::exception& e)
     {
         // TODO: log error properly (need ref to Logger)
         std::cout << "FATAL: Error in sleigh translate(): " << e.what() << std::endl;
-        return nullptr;
+        return false;
     }
 
-    // DEBUG, print block
-    // std::cout << "DEBUG LIFTER \n" << *block << std::endl;
-
-    return block;
+    return true;
 }
 
 const std::string& LifterX86::get_inst_asm(addr_t addr, code_t inst)

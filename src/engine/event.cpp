@@ -530,9 +530,8 @@ std::vector<Event> mem_read_events = {Event::MEM_R, Event::MEM_RW};
 std::vector<Event> mem_write_events = {Event::MEM_W, Event::MEM_RW};
 std::vector<Event> exec_events = {Event::EXEC};
 
-Action EventManager::before_reg_read(MaatEngine& engine, const ir::Inst& inst, reg_t reg)
+Action EventManager::before_reg_read(MaatEngine& engine, reg_t reg)
 {
-    engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
         engine.cpu.ctx().get(reg), // value
@@ -545,12 +544,10 @@ Action EventManager::before_reg_read(MaatEngine& engine, const ir::Inst& inst, r
 
 Action EventManager::after_reg_read(
     MaatEngine& engine,
-    const ir::Inst& inst,
     reg_t reg,
     const ir::ProcessedInst::Param& value
 )
 {
-    engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
         engine.cpu.ctx().get(reg), // value
@@ -563,12 +560,10 @@ Action EventManager::after_reg_read(
 
 Action EventManager::before_reg_write(
     MaatEngine& engine,
-    const ir::Inst& inst,
     reg_t reg,
     const ir::ProcessedInst::Param& new_value
 )
 {
-    engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
         engine.cpu.ctx().get(reg), //value
@@ -579,9 +574,11 @@ Action EventManager::before_reg_write(
     return _trigger_hooks(reg_write_events, When::BEFORE, engine);
 }
 
-Action EventManager::after_reg_write(MaatEngine& engine, const ir::Inst& inst, reg_t reg)
+Action EventManager::after_reg_write(
+    MaatEngine& engine,
+    reg_t reg
+)
 {
-    engine.info.addr = inst.addr;
     engine.info.reg_access = info::RegAccess{
         reg, // reg
         engine.cpu.ctx().get(reg), // value
@@ -594,12 +591,10 @@ Action EventManager::after_reg_write(MaatEngine& engine, const ir::Inst& inst, r
 
 Action EventManager::before_mem_read(
     MaatEngine& engine,
-    const ir::Inst& inst,
     Expr& addr,
     size_t nb_bytes
 )
 {
-    engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
         nb_bytes, // size
@@ -612,12 +607,10 @@ Action EventManager::before_mem_read(
 
 Action EventManager::after_mem_read(
     MaatEngine& engine,
-    const ir::Inst& inst,
     Expr& addr,
     Expr& value
 )
 {
-    engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
         value->size/8, // size
@@ -630,12 +623,10 @@ Action EventManager::after_mem_read(
 
 Action EventManager::before_mem_write(
     MaatEngine& engine,
-    const ir::Inst& inst,
     Expr& addr,
     Expr& new_value
 )
 {
-    engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
         new_value->size/8, // size
@@ -648,12 +639,10 @@ Action EventManager::before_mem_write(
 
 Action EventManager::after_mem_write(
     MaatEngine& engine,
-    const ir::Inst& inst,
     Expr& addr,
     Expr& new_value
 )
 {
-    engine.info.addr = inst.addr;
     engine.info.mem_access = info::MemAccess{
         addr, // addr
         new_value->size/8, // size
@@ -666,7 +655,6 @@ Action EventManager::after_mem_write(
 
 Action EventManager::before_branch(
     MaatEngine& engine,
-    const ir::Inst& inst,
     Expr target,
     addr_t next,
     Constraint cond,
@@ -674,7 +662,6 @@ Action EventManager::before_branch(
 )
 {
     Action res = Action::CONTINUE;
-    engine.info.addr = inst.addr;
     engine.info.branch = info::Branch{
         taken, // taken
         cond, // cond
@@ -690,7 +677,6 @@ Action EventManager::before_branch(
 
 Action EventManager::after_branch(
     MaatEngine& engine,
-    const ir::Inst& inst,
     Expr target,
     addr_t next,
     Constraint cond,
@@ -698,7 +684,6 @@ Action EventManager::after_branch(
 )
 {
     Action res = Action::CONTINUE;
-    engine.info.addr = inst.addr;
     engine.info.branch = info::Branch{
         taken, // taken
         cond, // cond

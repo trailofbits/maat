@@ -188,8 +188,6 @@ namespace hash
             
     unsigned int _x86_assert_md5(MaatEngine& engine, char*in, uint32_t out0, uint32_t out1, uint32_t out2, uint32_t out3)
     {
-        // engine.settings.optimise_ir = true;
-
         // Init stack
         engine.cpu.ctx().set(X86::ESP, exprcst(32, 0xffffd15c));
         engine.cpu.ctx().set(X86::EBP, exprcst(32, 0xffffd15c));

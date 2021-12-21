@@ -317,7 +317,7 @@ private:
     std::vector<std::string> _names; ///< Name of the function and alternative aliases
     Type _type; ///< Type of emulated function
     std::optional<FunctionCallback> _callback; ///< Emulation callback, for *NATIVE_CB* and *PYTHON_CB* functions
-    std::optional<std::shared_ptr<ir::Block>> _ir_block; ///< IR block, for *IR* functions
+    std::optional<std::shared_ptr<ir::AsmInst>> _ir_block; ///< IR block, for *IR* functions
     std::optional<std::vector<uint8_t>> _raw; ///< Raw assembly, for *RAW* functions
 public:
     Function();
@@ -325,8 +325,8 @@ public:
     Function(const std::string& name, const FunctionCallback& callback);
     /// Create an emulated function from a callback
     Function(const names_t& names, const FunctionCallback& callback);
-    // TODO python callbacks
-    Function(const names_t& names, std::shared_ptr<ir::Block> block); ///< Create an emulated function from an IR block
+    // TODO: python callbacks
+    Function(const names_t& names, std::shared_ptr<ir::AsmInst> block); ///< Create an emulated function from an IR block
     Function(const names_t& names, const std::vector<uint8_t>& raw); ///< Create an emulated function from raw assembly
     Function(const Function& other);
     Function& operator=(const Function& other);
@@ -335,7 +335,7 @@ public:
 public:
     Type type() const; ///< Type of emulated function
     const FunctionCallback& callback() const; ///< Return the function callback if it exists, otherwise raise an exception
-    const std::shared_ptr<ir::Block>& ir() const; ///< Return the function IR block if it exists, otherwise raise an exception
+    const std::shared_ptr<ir::AsmInst>& ir() const; ///< Return the function IR block if it exists, otherwise raise an exception
 public:
     const std::vector<std::string>& names() const; ///< Return the name and aliases of the function
     const std::string& name() const; ///< Return the main name of the function

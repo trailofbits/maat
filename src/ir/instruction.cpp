@@ -221,22 +221,19 @@ const Param& Param::None()
 }
 
 Inst::Inst():
-    addr(0),
     op(maat::ir::Op::NONE),
     out(Param::None()),
     in{Param::None(), Param::None(), Param::None()},
-    size(0),
     callother_id(callother::Id::UNSUPPORTED)
 {}
 
-Inst::Inst(   uint64_t _addr,
+Inst::Inst(
         Op _op,
         const std::optional<Param>& _out,
         const std::optional<Param>& _in0,
         const std::optional<Param>& _in1,
-        const std::optional<Param>& _in2,
-        size_t _size
-):  addr(_addr), op(_op), size(_size),
+        const std::optional<Param>& _in2
+):  op(_op),
     callother_id(callother::Id::UNSUPPORTED)
 {
     out = _out ? _out.value() : Param::None();
@@ -397,7 +394,6 @@ void Inst::get_written_tmps(Inst::param_list_t& res) const
 
 std::ostream& operator<<(std::ostream& os, const Inst& inst)
 {
-    os << "(0x" << std::hex << inst.addr << ")";
     os << " " << std::setw(12) << std::left << inst.op;
     if (!inst.out.is_none())
         os << "    " << inst.out;

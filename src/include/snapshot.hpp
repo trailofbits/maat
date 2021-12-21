@@ -52,7 +52,7 @@ public:
     /// List of segments created since snapshot
     std::list<addr_t> created_segments;
     /// Pending IR state (optional, used if snapshoting in the middle of native instructions)
-    std::optional<ir::BlockMap::InstLocation> pending_ir_state;
+    std::optional<ir::IRMap::InstLocation> pending_ir_state;
     /// Page permissions snapshot
     std::list<PageSet> page_permissions;
     /// Path constraints

@@ -212,8 +212,6 @@ class Inst
 public:
     using param_list_t = std::vector<std::reference_wrapper<const Param>>;
 public:
-    uint64_t addr; ///< Address of the corresponding ASM instruction
-    size_t size; ///< Size of the corresponding ASM instruction
     Op op; ///< Operation
     Param out; ///< Output parameter
     Param in[3]; ///< Input parameters 
@@ -223,13 +221,11 @@ public:
     Inst();
     /// Basic constructor
     Inst(
-        uint64_t addr,
         Op op,
         const std::optional<Param>& out = std::nullopt,
         const std::optional<Param>& in0 = std::nullopt,
         const std::optional<Param>& in1 = std::nullopt,
-        const std::optional<Param>& in2 = std::nullopt,
-        size_t size = 1
+        const std::optional<Param>& in2 = std::nullopt
     );
     /// Copy constructor
     Inst(const Inst& other) = default;
@@ -274,15 +270,18 @@ public:
     std::string name; ///< Optional name of the basic block
 
 public:
+    AsmInst();
     AsmInst(uint64_t addr, unsigned int raw_size); ///< Constructor
     AsmInst& operator=(const AsmInst& other); ///< Copy assignment
     AsmInst& operator=(AsmInst&& other); ///< Move assignment
 public:
     /// Address of the first instruction in the block
     uint64_t addr() const;
+    /// Size of the instruction in bytes
+    unsigned int raw_size() const;
     /// Return the number of IR instructions of the AsmInst
     size_t nb_ir_inst() const;
-    bool AsmInst::contains(addr_t start, addr_t end)
+    bool contains(addr_t start, addr_t end);
     /// Append the IR instruction 'inst' to the AsmInst and return the id for this instruction
     AsmInst::inst_id add_inst(const Inst& instr);
     /// Append the IR instruction 'inst' to the AsmInst and return the id for this instruction
@@ -292,6 +291,7 @@ public:
     /// Append the IR instructions to the AsmInst and return the id of the last added instruction
     AsmInst::inst_id add_insts(inst_list_t&& insts);
     tmp_t new_tmp(); ///< Return a free temporary register
+    AsmInst::inst_list_t& instructions(); ///< Get the list of instructions composing this AsmInst
     const AsmInst::inst_list_t& instructions() const; ///< Get the list of instructions composing this AsmInst
 public:
     friend std::ostream& operator<<(std::ostream& os, const AsmInst& inst);

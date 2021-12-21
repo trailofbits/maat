@@ -4,7 +4,6 @@ namespace maat
 {
 
 Settings::Settings():
-    optimise_ir(false),
     force_simplify(true),
     ignore_missing_imports(false),
     ignore_missing_syscalls(false),
@@ -27,7 +26,6 @@ std::string bool_to_string(bool val)
 
 std::ostream& operator<<(std::ostream& os, const Settings& s)
 {
-    os << "optimise_ir: " << bool_to_string(s.optimise_ir) << "\n";
     os << "force_simplify: " << bool_to_string(s.force_simplify) << "\n";
     os << "ignore_missing_imports: " << bool_to_string(s.ignore_missing_imports) << "\n";
     os << "ignore_missing_syscalls: " << bool_to_string(s.ignore_missing_syscalls) << "\n";
