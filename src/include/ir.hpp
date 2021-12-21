@@ -4,6 +4,7 @@
 #include <vector>
 #include <optional>
 #include <functional>
+#include <unordered_map>
 #include "expression.hpp"
 #include "callother.hpp"
 
@@ -202,22 +203,6 @@ Param Tmp(tmp_t tmp, size_t size);
  * to hb included from the tmp register) of size 'hb-lb+1' bits */
 Param Tmp(tmp_t tmp, size_t hb, size_t lb);
 
-// TODO: remove this if not needed ?
-/** \brief Conditions for If-Then-Else instructions */
-class Cond
-{
-public:
-    Param left;
-    Param right;
-    ITECond cmp;
-    Cond(){};
-    Cond(Param& l, ITECond op, Param& r):
-        left(l),
-        right(r),
-        cmp(op)
-    {};
-};
-
 /** \brief Maat IR instructions. \n
  * An IR instruction is made of an operation followed by one or several
  * parameters 
@@ -227,8 +212,6 @@ class Inst
 public:
     using param_list_t = std::vector<std::reference_wrapper<const Param>>;
 public:
-    uint64_t addr; ///< Address of the corresponding ASM instruction
-    size_t size; ///< Size of the corresponding ASM instruction
     Op op; ///< Operation
     Param out; ///< Output parameter
     Param in[3]; ///< Input parameters 
@@ -238,13 +221,11 @@ public:
     Inst();
     /// Basic constructor
     Inst(
-        uint64_t addr,
         Op op,
         const std::optional<Param>& out = std::nullopt,
         const std::optional<Param>& in0 = std::nullopt,
         const std::optional<Param>& in1 = std::nullopt,
-        const std::optional<Param>& in2 = std::nullopt,
-        size_t size = 1
+        const std::optional<Param>& in2 = std::nullopt
     );
     /// Copy constructor
     Inst(const Inst& other) = default;
@@ -269,110 +250,85 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Inst& inst);
 };
 
-/** \brief Basic block of IR instructions.
- * 
- * In Maat, an IR block is used to represent an assembly *basic block*, 
- * that means a sequence of contiguous assembly instructions that are
- * executed sequentially  with no branchement instruction in between. 
- *
- * An IR block holds a 'start address' and an 'end address' which represent
- * the memory area containing the native assembly instructions that were
- * lifted into the block.
-*/
-// TODO add ASM to blocks !!!
-class Block
+/** \brief A native instruction lifted into a sequence of IR/PCODE instructions. */
+class AsmInst
 {
 public:
     using inst_id = int; 
     using inst_list_t = std::vector<Inst>;
 
 private:
-    inst_list_t _instructions; ///< Sequence of instructions composing this block
-    unsigned int _tmp_cnt; ///< Number of tmp regs used in the block
-    unsigned int _raw_size; ///< ...
-
+    inst_list_t _instructions; ///< Sequence of IR instructions for this instructions
+    unsigned int _tmp_cnt; ///< Number of tmp regs used in the inst
 protected:
-    uint64_t _start_addr;
-    uint64_t _end_addr;
+    /// Size of the instruction in bytes
+    unsigned int _raw_size;
+    /// Address of the instruction in memory
+    uint64_t _addr;
 
 public:
     std::string name; ///< Optional name of the basic block
 
 public:
-    Block(const std::string& name, uint64_t start_addr=0, uint64_t end_addr=0); ///< Constructor
-    Block(std::string&& name = "", uint64_t start_addr=0, uint64_t end_addr=0); ///< Constructor
-    Block& operator=(const Block& other); ///< Copy assignment
-    Block& operator=(Block&& other); ///< Move assignment
+    AsmInst();
+    AsmInst(uint64_t addr, unsigned int raw_size); ///< Constructor
+    AsmInst& operator=(const AsmInst& other); ///< Copy assignment
+    AsmInst& operator=(AsmInst&& other); ///< Move assignment
 public:
     /// Address of the first instruction in the block
-    uint64_t start_addr() const;
-    /// Address of the last instruction in the block
-    uint64_t end_addr() const; 
-    /// Return true if the block ends on a conditional jump to two possible targets
-    bool is_multibranch() const; 
-    /// Return the number of IR instructions contained in the block
+    uint64_t addr() const;
+    /// Size of the instruction in bytes
+    unsigned int raw_size() const;
+    /// Return the number of IR instructions of the AsmInst
     size_t nb_ir_inst() const;
-    /// Append the IR instruction 'inst' to the block and return the id for this instruction
-    Block::inst_id add_inst(const Inst& instr);
-    /// Append the IR instruction 'inst' to the block and return the id for this instruction
-    Block::inst_id add_inst(Inst&& instr);
-    /// Append the IR instructions to the block and return the id of the last added instruction
-    Block::inst_id add_insts(const inst_list_t& insts);
-    /// Append the IR instructions to the block and return the id of the last added instruction
-    Block::inst_id add_insts(inst_list_t&& insts);
+    bool contains(addr_t start, addr_t end);
+    /// Append the IR instruction 'inst' to the AsmInst and return the id for this instruction
+    AsmInst::inst_id add_inst(const Inst& instr);
+    /// Append the IR instruction 'inst' to the AsmInst and return the id for this instruction
+    AsmInst::inst_id add_inst(Inst&& instr);
+    /// Append the IR instructions to the AsmInst and return the id of the last added instruction
+    AsmInst::inst_id add_insts(const inst_list_t& insts);
+    /// Append the IR instructions to the AsmInst and return the id of the last added instruction
+    AsmInst::inst_id add_insts(inst_list_t&& insts);
     tmp_t new_tmp(); ///< Return a free temporary register
-    const Block::inst_list_t& instructions() const; ///< Get the list of instructions composing this block
+    AsmInst::inst_list_t& instructions(); ///< Get the list of instructions composing this AsmInst
+    const AsmInst::inst_list_t& instructions() const; ///< Get the list of instructions composing this AsmInst
 public:
-    /// Perform dead-variable trimming optimisation to the block
-    void optimise(int nb_regs=128);
-    /// Perform dead-variable trimming optimisation to the block but doesn't optimise CPU registers specified in *ignore_regs*
-    void optimise(const std::vector<reg_t>& ignore_regs, int nb_regs=128);
-public:
-    /** \brief Return true if the block contains an address between 'start_addr'
-     * (included) and 'end_addr' (included) */
-    bool contains(addr_t start_addr, addr_t end_addr);
-public:
-    friend std::ostream& operator<<(std::ostream& os, Block& block);
+    friend std::ostream& operator<<(std::ostream& os, const AsmInst& inst);
 };
 
-
-/** A simple class that maps addresses to IR basic blocks. Each IR block
- * corresponds to one start address, and one start address corresponds
- * to only one block in the map. */ 
-class BlockMap
+/** A simple class that maps addresses to lifted assembly instructions */ 
+class IRMap
 {
 public:
-    // Use a map because we have to use lower_bound to do efficient searches
-    using block_map_t = std::map<uint64_t /**block start address*/, std::shared_ptr<Block>>;
+    // Use unordered_map since the map won't change much once populated
+    using inst_map_t = std::unordered_map<uint64_t /** inst address */, AsmInst>;
 public:
     /** \brief The location of a given IR instruction, it is made of an IR block and the id of
      * the instruction within the block */
     struct InstLocation
     {
-        InstLocation(std::shared_ptr<Block> b, Block::inst_id id): block(b), inst_id(id){};
-        std::shared_ptr<Block> block; ///< The ir block where the instruction is
-        Block::inst_id inst_id; ///< The instruction id within the IR block
+        InstLocation(uint64_t address, AsmInst::inst_id id): addr(address), inst_id(id){};
+        uint64_t addr; ///< Address of the asm instruction
+        AsmInst::inst_id inst_id; ///< The instruction id within the AsmInst at 'addr'
     };
 
 private:
-     block_map_t blocks;
+    inst_map_t asm_insts;
 public:
-    /// Add a block to the map and return the start address of this block
-    uint64_t add(std::shared_ptr<Block> block);
-    /// Returns block that starts at address 'addr'. Return a null pointer if no block corresponds
-    std::shared_ptr<Block> get_block_at(uint64_t addr);
-    /// Return a block whose start and end addresses encompass address 'addr'
-    std::vector<std::shared_ptr<Block>> get_blocks_containing(uint64_t addr);
-    /** \brief Return a block whose start and end addresses encompass at least on address 
-     * in the range 'start_addr' to 'end_addr' (included) */
-    std::vector<std::shared_ptr<Block>> get_blocks_containing(uint64_t start_addr, uint64_t end_addr);
-    /// Get location of the IR instruction at address 'addr'
-    std::optional<InstLocation> get_inst_at(uint64_t addr);
-    /** \brief Remove the blocks containing an instruction at an address located
-     * between 'start_addr' and 'end_addr' (included) */ 
-    void remove_blocks_containing(uint64_t start, uint64_t end);
-    /// Remove block that starts at address 'addr'
-    void remove_block_at(uint64_t addr);
+    /// Add an AsmInst to the map and return the start address of this AsmInst
+    uint64_t add(const AsmInst& inst);
+    /// Add an AsmInst to the map and return the start address of this AsmInst
+    uint64_t add(AsmInst&& inst);
+    /// Returns AsmInst at address 'addr'. Raises an exception if the AsmInst is missing 
+    AsmInst& get_inst_at(uint64_t addr);
+    /// Returns true if the map contains the AsmInst for address 'addr'
+    bool contains_inst_at(uint64_t addr);
+    /** \brief Remove the AsmInsts whose raw bytes location overlaps
+     * with ['start_addr','end_addr'] (included) */ 
+    void remove_insts_containing(uint64_t start, uint64_t end);
+    /// Remove instruction at address 'addr'
+    void remove_inst_at(uint64_t addr);
 };
 
 

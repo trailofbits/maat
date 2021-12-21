@@ -27,6 +27,7 @@ public:
     virtual ~Lifter();
     /** \brief Disassemble instructions until next branch instruction.
      * 
+     *  @param ir_map The IR cache where to add lifted instructions
      *  @param addr Address of the first instruction to disassemble 
      *  @param code Raw pointer to the code to disassemble 
      *  @param code_size Max size of the code region to disassemble in memory
@@ -34,8 +35,11 @@ public:
      *  @param is_symbolic Set to **true** if disassembled code is symbolic/concolic
      *  @param is_tainted Set to **true** if disassembled code is tainted
      *  @param check_mappings If enabled, the method will throw an exception if disassembled code is located in a memory area that doesn't have the RX flags set 
+     *
+     *  @returns True on success and false on failure
      */
-    virtual std::shared_ptr<ir::Block> lift_block(
+    virtual bool lift_block(
+        ir::IRMap& ir_map,
         uintptr_t addr,
         code_t code,
         size_t code_size=0xffffffff,
@@ -62,7 +66,8 @@ private:
 public:
     LifterX86(int mode=32);
     ~LifterX86() = default;
-    virtual std::shared_ptr<ir::Block> lift_block(
+    virtual bool lift_block(
+        ir::IRMap& ir_map,
         uintptr_t addr,
         code_t code,
         size_t code_size=0xffffffff,
@@ -80,7 +85,8 @@ class LifterARM64: public Lifter
 public:
     LifterARM64();
     ~LifterARM64();
-    virtual std::shared_ptr<ir::Block> lift_block(
+    virtual bool lift_block(
+        ir::IRMap& ir_map,
         uintptr_t addr,
         code_t code,
         size_t code_size=0xffffffff,

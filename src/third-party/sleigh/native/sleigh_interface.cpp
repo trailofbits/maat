@@ -201,12 +201,11 @@ public:
     uintm m_uniq;
     std::vector<maat::ir::Inst> m_insts;
     TranslationContext* translation_ctx;
-    int inst_size = 0;
 
     PcodeEmitCacher() : m_uniq(0), translation_ctx(nullptr)
     {}
 
-    PcodeEmitCacher(TranslationContext* ctx, int is) : m_uniq(0), translation_ctx(ctx), inst_size(is)
+    PcodeEmitCacher(TranslationContext* ctx) : m_uniq(0), translation_ctx(ctx)
     {}
 
     void dump(const Address &addr, OpCode opc, VarnodeData *outvar,
@@ -216,8 +215,7 @@ public:
 
         m_insts.emplace_back();
         maat::ir::Inst& inst = m_insts.back();
-        inst.addr = addr.getOffset();
-        inst.size = inst_size;
+        // TODO remove addr and size in header also
         inst.op = translate_pcode_op(opc);
 
         if (outvar)
@@ -229,6 +227,16 @@ public:
         {
             inst.in[i] = translate_pcode_param(translation_ctx, &vars[i]);
         }
+    }
+
+    std::vector<ir::Inst>&& get_pcode_instructions()
+    {
+        return std::move(m_insts);
+    }
+
+    void clear()
+    {
+        m_insts.clear();
     }
 };
 
@@ -362,7 +370,8 @@ public:
         return asm_cache.get_asm(address);
     }
 
-    std::shared_ptr<maat::ir::Block> translate(
+    void translate(
+        ir::IRMap& ir_map,
         const unsigned char *bytes,
         unsigned int num_bytes,
         uintb address,
@@ -373,10 +382,8 @@ public:
         unsigned int    inst_count = 0;
         int4            offset = 0;
         bool            end_bb = false;
-        
-        tmp_cache.clear();
 
-        vector<PcodeEmitCacher>    m_pcodes;
+        PcodeEmitCacher    m_pcode(this);
         AssemblyEmitCacher tmp_cacher;
 
         // Reset state
@@ -399,19 +406,24 @@ public:
                 int4 ilen = m_sleigh->instructionLength(addr);
 
                 // Process pcode for this instruction
-                m_pcodes.emplace_back(this, ilen);
-                m_sleigh->oneInstruction(m_pcodes.back(), addr);
+                tmp_cache.clear();
+                m_pcode.clear();
+                m_sleigh->oneInstruction(m_pcode, addr);
+
+                // Create AsmInst
+                ir::AsmInst asm_inst(address+offset, ilen);
+                asm_inst.add_insts(m_pcode.get_pcode_instructions());
 
                 // Increment offset to point to next instruction
                 offset += ilen;
-                
-                // for (auto& inst : m_pcodes.back().m_insts)
+
+                // for (auto& inst : asm_inst.instructions())
                 // {
                 //     std::cout << "DEBUG " << inst << "\n";
                 // }
 
-                for (auto& inst : m_pcodes.back().m_insts)
-                {  
+                for (ir::Inst& inst : asm_inst.instructions())
+                {
                     // Check for CALLOTHER, we need dedicated handlers to support them
                     if (inst.op == maat::ir::Op::CALLOTHER)
                     {
@@ -449,7 +461,7 @@ public:
                         )
                         {
                             if (
-                                (inst.in[0].is_addr() and inst.in[0].addr() != inst.addr)
+                                (inst.in[0].is_addr() and inst.in[0].addr() != asm_inst.addr())
                                 or inst.in[0].is_tmp() 
                                 or inst.in[0].is_reg()
                             )
@@ -469,11 +481,15 @@ public:
                         }
                     }
                 }
+                // Add AsmInst to the IR map
+                ir_map.add(std::move(asm_inst));
+
             } catch (UnimplError &e) {
                 throw maat::lifter_exception(
                     Fmt() << "Sleigh raised an unimplemented exception: " << e.explain
                     >> Fmt::to_str
                 );
+
             } catch (BadDataError &e) {
                 throw maat::lifter_exception(
                     Fmt() << "Sleigh raised a bad data exception: " << e.explain
@@ -481,17 +497,6 @@ public:
                 );
             }
         }
-
-        // Create ir block and fill it
-        std::shared_ptr<maat::ir::Block> block = std::make_shared<maat::ir::Block>("", address, address+offset-1);
-        for (int i = 0; i < inst_count; i++)
-        {
-            // Add IR instructions
-            block->add_insts(m_pcodes[i].m_insts);
-            // TODO add asm info in bblock directly
-        }
-
-        return block;
     }
 
     const std::string getRegisterName(AddrSpace* as, uintb off, int4 size)
@@ -1583,8 +1588,9 @@ std::shared_ptr<TranslationContext> new_sleigh_ctx(
     return std::make_shared<TranslationContext>(arch, slafile, pspecfile);
 }
 
-std::shared_ptr<maat::ir::Block> sleigh_translate(
+void sleigh_translate(
     std::shared_ptr<TranslationContext> ctx,
+    ir::IRMap& ir_map,
     const unsigned char *bytes,
     unsigned int num_bytes,
     uintptr_t address,
@@ -1592,6 +1598,7 @@ std::shared_ptr<maat::ir::Block> sleigh_translate(
     bool bb_terminating
 ){
     return ctx->translate(
+        ir_map,
         bytes,
         num_bytes,
         address,

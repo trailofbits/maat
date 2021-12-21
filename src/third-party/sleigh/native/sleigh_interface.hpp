@@ -19,8 +19,9 @@ namespace maat
         const std::string& pspecfile
     );
 
-    std::shared_ptr<maat::ir::Block> sleigh_translate(
+    void sleigh_translate(
         std::shared_ptr<TranslationContext> ctx,
+        ir::IRMap& ir_map,
         const unsigned char *bytes,
         unsigned int num_bytes,
         uintptr_t address,

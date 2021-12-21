@@ -70,7 +70,7 @@ Function::Function(const Function::names_t& n, const FunctionCallback& callback)
 _ir_block(std::nullopt), _raw(std::nullopt)
 {}
 
-Function::Function(const Function::names_t& n, std::shared_ptr<ir::Block> block)
+Function::Function(const Function::names_t& n, std::shared_ptr<ir::AsmInst> block)
 :_type(Function::Type::IR), _ir_block(block), _names(n),
 _callback(std::nullopt), _raw(std::nullopt)
 {}
@@ -113,7 +113,7 @@ const FunctionCallback& Function::callback() const
         throw env_exception("Function::callback() called on function that has no callback!");
 }
 
-const std::shared_ptr<ir::Block>& Function::ir() const
+const std::shared_ptr<ir::AsmInst>& Function::ir() const
 {
     if (_type == Function::Type::IR and _ir_block.has_value())
         return _ir_block.value();

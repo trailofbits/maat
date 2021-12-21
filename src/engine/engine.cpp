@@ -45,7 +45,7 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
     vars = std::make_shared<VarContext>();
     snapshots = std::make_shared<SnapshotManager<Snapshot>>();
     mem = std::make_shared<MemEngine>(vars, arch->bits(), snapshots);
-    ir_blocks = std::make_shared<ir::BlockMap>();
+    ir_map = std::make_shared<ir::IRMap>();
     process = std::make_shared<ProcessInfo>();
     simplifier = NewDefaultExprSimplifier();
     callother_handlers = callother::default_handler_map();
@@ -101,28 +101,25 @@ if (statement != true)\
 
 info::Stop MaatEngine::run(int max_inst)
 {
-    bool next_block = true;
-    bool automodifying_block = false;
+    bool next_inst = true;
     // True if max_instr argument was specified (!= 0)
     bool check_max_inst = (max_inst != 0); 
-    ir::Block::inst_id ir_inst_id = 0;
-    std::shared_ptr<ir::Block> block = nullptr;
-    addr_t current_inst_addr = 0;
+    ir::AsmInst::inst_id ir_inst_id = 0;
+    addr_t to_execute = -1;
     MaatEngine::branch_type_t branch_type = MaatEngine::branch_none;
 
     // Reset info field
     info.reset();
     _halt_after_inst = false;
 
-    // Handle potential pending X memory overwrites: if a user callback
-    // or a user script did mess with the memory, make sure that any lifted
-    // basic block that was overwritten gets its IR deleted since it is
-    // no longer valid
-    handle_pending_x_mem_overwrites();
-
-    /* Execute forever while there is a block to execute */
-    while (next_block)
+    /* Execute forever while there is an instruction to execute */
+    while (next_inst)
     {
+        // Handle potential pending X memory overwrites: if a user callback
+        // or a user script did mess with the memory, make sure that any lifted
+        // instructions that were overwritten gets their cached IR deleted
+        handle_pending_x_mem_overwrites();
+
         // Check if program already exited
         if (process->terminated)
         {
@@ -130,25 +127,24 @@ info::Stop MaatEngine::run(int max_inst)
             return info.stop;
         }
 
-        next_block = false; // We don't have a next block to execute yet
-        automodifying_block = false;
-        
-        addr_t to_execute = -1; 
-        if (not cpu.ctx().get(arch->pc())->is_symbolic(*vars))
+        // Get next instruction to execute
+        if (pending_ir_state)
+        {
+            to_execute = pending_ir_state->addr;
+            ir_inst_id = pending_ir_state->inst_id;
+            pending_ir_state.reset();
+        }
+        else if (not cpu.ctx().get(arch->pc())->is_symbolic(*vars))
         {
             to_execute = cpu.ctx().get(arch->pc())->as_uint(*vars);
+            ir_inst_id = 0;
+            // Reset temporaries in CPU for new instruction
+            cpu.reset_temporaries();
         }
-
-        // TODO: *IMPORTANT* this check is also done later but it is duplicated
-        // here to avoid calling get_location() on uninitialised memory when executing
-        // event unit-tests... 
-        // --> This will disappear once I rework how IR blocks are managed, which will
-        // make the logic of this main execution loop significantly cleaner
-        if (_halt_after_inst)
+        else
         {
-            info.stop = info::Stop::HOOK;
-            info.addr = current_inst_addr;
-            return info.stop;
+            this->info.stop = info::Stop::SYMBOLIC_PC;
+            return this->info.stop;
         }
 
         // If the target to execute is a function emulated with a callback,
@@ -159,7 +155,6 @@ info::Stop MaatEngine::run(int max_inst)
             if (!process_callback_emulated_function(to_execute))
                 return info.stop;
             // Jump to next block after executing callback
-            next_block = true;
             continue;
         }
         else if (symbols->is_missing_function(to_execute))
@@ -170,46 +165,69 @@ info::Stop MaatEngine::run(int max_inst)
             return info.stop;
         }
 
-        // Initialize the IR state to execute IR code
-        // Find the IR instruction to execute, it can be either 
-        // - a pending state
-        // - or more likely the instruction pointer by the instruction pointer
-        std::optional<ir::BlockMap::InstLocation> location = std::nullopt;
-        if (pending_ir_state)
+        // Check if max_instr limit has been reached
+        if (check_max_inst and max_inst <= 0)
         {
-            location.swap(pending_ir_state);
-            // Note: we don't reset temporaries when we have a pending IR state...
+            info.stop = info::Stop::INST_COUNT;
+            info.addr = to_execute;
+            return info.stop;
         }
-        else
+
+        // EXEC event
+        if (hooks.has_hooks(Event::EXEC, When::BEFORE))
         {
-            // Reset temporaries in CPU
-            cpu.reset_temporaries();
-            // Get the program counter
-            if (cpu.ctx().get(arch->pc())->is_symbolic(*vars))
+            HANDLE_EVENT_ACTION(hooks.before_exec(*this, to_execute))
+            // If we already halted before executing this instruction, don't halt
+            // again, neither before nor after the instruction
+            if (_previous_halt_before_exec == to_execute)
+                _halt_after_inst = false;
+            // For EXEC::BEFORE events, if a hook halts execution then we actually stop
+            // right now, not after the instruction
+            if (_halt_after_inst)
             {
-                this->info.stop = info::Stop::SYMBOLIC_PC;
-                return this->info.stop;
+                info.stop = info::Stop::HOOK;
+                _previous_halt_before_exec = to_execute;
+                return info.stop;
             }
-            location = get_location(to_execute);
+            // If user callback changed the address to execute, exit the loop
+            if (info.addr.has_value() and *info.addr != to_execute)
+            {
+                cpu.ctx().set(arch->pc(), *info.addr);
+                info.reset();
+                continue;
+            }
+            info.reset();
+        }
+        _previous_halt_before_exec = -1;
+
+        // TODO: periodically increment tsc() ?
+        // TODO: increment stats with instr count
+
+        // Get the PCODE IR
+        const ir::AsmInst* asm_inst = nullptr;
+        try
+        {
+            asm_inst = &(get_asm_inst(to_execute));
+        }
+        catch (const lifter_exception& e)
+        {
+            return info.stop;
         }
 
-        if (!location)
+        // Print current asm instruction if option is set
+        if (settings.log_insts)
         {
-            return this->info.stop;
+            log.info("Run 0x", std::hex, asm_inst->addr(), ": ", get_inst_asm(asm_inst->addr()));
         }
 
-        // Unpack values 
-        ir_inst_id = location->inst_id;
-        block = location->block;
-        // Set the current instruction address to -1. It will be set to the proper
-        // address in the while() loop below. Setting it to -1 enables to treat the
-        // first instruction executed after a branch as a new instruction
-        current_inst_addr = -1;
-        // Execute the IR block
-        while (ir_inst_id < block->nb_ir_inst())
+        // Update max_instructions count
+        max_inst--;
+
+        // Execute the PCODE instructions for the current Asm instruction
+        while (ir_inst_id < asm_inst->nb_ir_inst())
         {
-            // Check if inst_id is valid
-            if (ir_inst_id < 0 or ir_inst_id >= block->nb_ir_inst())
+            // Sanity checks
+            if (ir_inst_id < 0 or ir_inst_id >= asm_inst->nb_ir_inst())
             {
                 info.stop = info::Stop::FATAL;
                 log.fatal("MaatEngine::run(): got wrong inst_id. Should not happen!");
@@ -217,77 +235,7 @@ info::Stop MaatEngine::run(int max_inst)
             }
 
             // Get IR instruction to execute
-            const ir::Inst& inst = block->instructions()[ir_inst_id];
-
-            // Actions to do everytime we change ASM instruction
-            if (current_inst_addr != inst.addr)
-            {
-                // Update instruction pointer:
-                cpu.ctx().set(arch->pc(), inst.addr);
-
-                // If halt was triggered on the previous instruction, halt now
-                if (_halt_after_inst)
-                {
-                    info.stop = info::Stop::HOOK;
-                    info.addr = current_inst_addr;
-                    return info.stop;
-                }
-
-                // Update current_inst_addr
-                current_inst_addr = inst.addr;
-                // TODO: periodically increment tsc() ?
-                // TODO: increment stats with instr count
-                // Check if max_instr limit has been reached
-                if (check_max_inst and max_inst <= 0)
-                {
-                    info.stop = info::Stop::INST_COUNT;
-                    info.addr = current_inst_addr;
-                    return info.stop;
-                }
-
-                // EXEC event
-                if (hooks.has_hooks(Event::EXEC, When::BEFORE))
-                {
-                    HANDLE_EVENT_ACTION(hooks.before_exec(*this, current_inst_addr))
-                }
-                // If we already halted before executing this instruction, don't halt
-                // again, neither before not after the instruction
-                if (_previous_halt_before_exec == current_inst_addr)
-                    _halt_after_inst = false;
-                // For EXEC event, if a hook halts execution then we stop directly
-                if (_halt_after_inst)
-                {
-                    info.stop = info::Stop::HOOK;
-                    _previous_halt_before_exec = current_inst_addr;
-                    return info.stop;
-                }
-                _previous_halt_before_exec = -1;
-                // If user callback changed the address to execute, exit the loop
-                if (info.addr.has_value() and *info.addr != current_inst_addr)
-                {
-                    next_block = true;
-                    cpu.ctx().set(arch->pc(), *info.addr);
-                    info.reset();
-                    break;
-                }
-                info.reset();
-
-                // Print current asm instruction if option is set
-                if (settings.log_insts)
-                {
-                    log.info("Run 0x", std::hex, current_inst_addr, ": ", get_inst_asm(current_inst_addr));
-                }
-
-                // Update max_instructions count
-                max_inst--;
-                // If block modified itself, stop executing the current block
-                // to re-lift it
-                if (automodifying_block)
-                {
-                    next_block = true; // Tell that we want to continue executing
-                    break;
-                }
-            }
+            const ir::Inst& inst = asm_inst->instructions()[ir_inst_id];            
 
             // TODO: add settings.log_ir option
             // if settings.log_ir:
@@ -296,12 +244,13 @@ info::Stop MaatEngine::run(int max_inst)
 
             // Pre-process IR instruction
             event::Action tmp_action = event::Action::CONTINUE;
+            info.addr = asm_inst->addr();
             ir::ProcessedInst& pinst = cpu.pre_process_inst(inst, tmp_action, *this);
             // Check event results on register read
             if (tmp_action == event::Action::ERROR)
             {
                 log.error("Error in event callback when processing instruction");
-                info.addr = current_inst_addr;
+                info.addr = asm_inst->addr();
                 info.stop = info::Stop::FATAL;
                 return info.stop;
             }
@@ -312,6 +261,7 @@ info::Stop MaatEngine::run(int max_inst)
             info.reset(); // Reset info here because the CPU can not do it
 
             // Process Addr parameters and load them from memory
+            info.addr = asm_inst->addr();
             ASSERT_SUCCESS(process_addr_params(inst, pinst))
 
             // Post-process IR instruction once Addr params are resolved
@@ -326,36 +276,30 @@ info::Stop MaatEngine::run(int max_inst)
             // If LOAD, do the load (!= process_addr_params)
             if (inst.op == ir::Op::LOAD)
             {
+                info.addr = asm_inst->addr();
                 ASSERT_SUCCESS(process_load(inst, pinst))
             }
 
             // If branch instruction, update control flow now
             // This will also add potential path constraints to the path manager
+            // This will potentially update PC
             if (ir::is_branch_op(inst.op))
             {
-                // next_block will be set to true if we jump to another instruction
-                process_branch(inst, pinst, branch_type, ir_inst_id);
+                process_branch(*asm_inst, inst, pinst, branch_type, ir_inst_id);
             }
             else
             {
                 branch_type = MaatEngine::branch_none;
             }
 
-            // Update program counter/instruction pointer
-            update_pc_if_needed(*block, ir_inst_id, branch_type);
-
-            // If STORE, apply the store
-            // NOTE: if overwriting code in memory, this will
-            // remove the corresponding basic(s) block(s) from the block map
-            // *including* the current one. But we can still use it until we 
-            // finish the current ASM instruction and then break 
             if (
                 inst.op == ir::Op::STORE 
                 or (inst.out.is_addr() and ir::is_assignment_op(inst.op))
             )
             {
+                info.addr = asm_inst->addr();
                 ASSERT_SUCCESS(
-                    process_store(inst, pinst, block, automodifying_block)
+                    process_store(inst, pinst)
                 )
             }
 
@@ -380,44 +324,56 @@ info::Stop MaatEngine::run(int max_inst)
             }
 
             // Apply semantics to the IR CPU
+            info.addr = asm_inst->addr();
             HANDLE_EVENT_ACTION(
                 cpu.apply_semantics(inst, pinst, *this)
             )
             info.reset(); // Reset info here because the CPU can not do it
 
-            handle_pending_x_mem_overwrites();
-
-            // Manage branching and IR instruction ID update in the end
+            // Manage branching
             if (branch_type == MaatEngine::branch_native)
             {
-                next_block = true;
+                // NOTE: PC was already updated by process_branch() IFF the branch
+                // was taken!
                 break;
             }
             else if (branch_type == MaatEngine::branch_none)
             {
                 // No branch, go to next instruction
-                if (ir_inst_id == block->nb_ir_inst()-1)
+                if (ir_inst_id == asm_inst->nb_ir_inst()-1)
                 {
-                    // That was the last IR inst of this IR block, exit and go to next IR block
-                    // This case occurs when the last instruction of the block has a CBRANCH
-                    // in the middle of its IR and CBRANCH is not taken
-                    next_block = true;
+                    // That was the last IR inst of this AsmInst,
+                    // update PC, exit and go to next AsmInst
+                    cpu.ctx().set(arch->pc(), asm_inst->addr() + asm_inst->raw_size());
                     break;
                 }
-                else
+                else // Just go to the next PCODE instruction
                     ir_inst_id += 1;
             }
             // else: pcode relative branching, ir_inst_id has already
             // been updated by process_branch(), so do nothing and 
             // just loop again
-
-            // Event EXEC
-            if (hooks.has_hooks(Event::EXEC, When::BEFORE))
-            {
-                HANDLE_EVENT_ACTION(hooks.after_exec(*this, current_inst_addr))
-                info.reset();
-            }
         }
+
+        // Update PC for NOPs....
+        if (asm_inst->instructions().empty())
+        {
+            cpu.ctx().set(arch->pc(), asm_inst->addr()+asm_inst->raw_size());
+        }
+
+        // Event EXEC
+        if (hooks.has_hooks(Event::EXEC, When::AFTER))
+        {
+            HANDLE_EVENT_ACTION(hooks.after_exec(*this, asm_inst->addr()))
+            info.reset();
+        }
+        if (_halt_after_inst)
+        {
+            info.stop = info::Stop::HOOK;
+            info.addr = asm_inst->addr();
+            return info.stop;
+        }
+
     }
 
     this->info.stop = info::Stop::NONE;
@@ -436,55 +392,19 @@ info::Stop MaatEngine::run_from(addr_t addr, unsigned int max_inst)
 }
 
 
-bool MaatEngine::update_pc_if_needed(
-    const ir::Block& curr_block,
-    ir::Block::inst_id curr_inst_id,
-    MaatEngine::branch_type_t branch_type
-)
-{
-    // - if branch is pcode-relative, the instruction address doesn't change
-    // - if branch is native-branch, pc has already been updated by 'process_branch'
-
-    // If branch is none, update according to next IR instruction in the block
-    if (branch_type == MaatEngine::branch_none)
-    {
-        // Check if next IR inst is at another address and update PC
-        if (
-            curr_inst_id + 1 < curr_block.nb_ir_inst()
-            and curr_block.instructions()[curr_inst_id].addr != curr_block.instructions()[curr_inst_id+1].addr
-        )
-        {
-            cpu.ctx().set(
-                arch->pc(),
-                curr_block.instructions()[curr_inst_id+1].addr
-            );
-        }
-        // If this IR inst was the last of the block, increment PC by the 
-        // instruction size...
-        else if (curr_inst_id == curr_block.nb_ir_inst()-1)
-        {
-            cpu.ctx().set(
-                arch->pc(),
-                curr_block.instructions()[curr_inst_id].addr +
-                curr_block.instructions()[curr_inst_id].size
-            );
-        }
-    }
-    return true;
-}
-
 bool MaatEngine::process_branch(
+    const ir::AsmInst& asm_inst,
     const ir::Inst& inst, 
     ir::ProcessedInst& pinst,
     MaatEngine::branch_type_t& branch_type,
-    ir::Block::inst_id& inst_id
+    ir::AsmInst::inst_id& inst_id
 )
 {
     if (!ir::is_branch_op(inst.op))
         throw runtime_exception("MaatEngine::process_branch(): called with non-branching instruction!");
     
     Expr in0, in1;
-    addr_t next = inst.addr + inst.size;
+    addr_t next = asm_inst.addr() + asm_inst.raw_size();
     bool taken = false;
     std::optional<bool> opt_taken;
     bool pcode_rela = inst.in[0].is_cst();
@@ -514,7 +434,8 @@ bool MaatEngine::process_branch(
             {
                 if (hooks.has_hooks(Event::BRANCH, When::BEFORE))
                 {
-                    SUB_HANDLE_EVENT_ACTION(hooks.before_branch(*this, inst, in0, next), false)
+                    info.addr = asm_inst.addr();
+                    SUB_HANDLE_EVENT_ACTION(hooks.before_branch(*this, in0, next), false)
                 }
                 // TODO handle branch to same instruction !
                 // find to which IR inst id we have to loop back !
@@ -522,7 +443,8 @@ bool MaatEngine::process_branch(
                 branch_type = MaatEngine::branch_native;
                 if (hooks.has_hooks(Event::BRANCH, When::AFTER))
                 {
-                    SUB_HANDLE_EVENT_ACTION(hooks.after_branch(*this, inst, in0, next), false)
+                    info.addr = asm_inst.addr();
+                    SUB_HANDLE_EVENT_ACTION(hooks.after_branch(*this, in0, next), false)
                 }
                 info.reset();
             }
@@ -532,14 +454,16 @@ bool MaatEngine::process_branch(
         case ir::Op::BRANCHIND:
             if (hooks.has_hooks(Event::BRANCH, When::BEFORE))
             {
-                SUB_HANDLE_EVENT_ACTION(hooks.before_branch(*this, inst, in0, next), false)
+                info.addr = asm_inst.addr();
+                SUB_HANDLE_EVENT_ACTION(hooks.before_branch(*this, in0, next), false)
             }
             // Branch to in0
             cpu.ctx().set(arch->pc(), in0);
             branch_type = MaatEngine::branch_native;
             if (hooks.has_hooks(Event::BRANCH, When::AFTER))
             {
-                SUB_HANDLE_EVENT_ACTION(hooks.after_branch(*this, inst, in0, next), false)
+                info.addr = asm_inst.addr();
+                SUB_HANDLE_EVENT_ACTION(hooks.after_branch(*this, in0, next), false)
             }
             info.reset();
             break;
@@ -567,10 +491,10 @@ bool MaatEngine::process_branch(
                 )
             )
             {
+                info.addr = asm_inst.addr();
                 SUB_HANDLE_EVENT_ACTION(
                     hooks.before_branch(
                         *this,
-                        inst, 
                         pcode_rela? nullptr : in0,
                         next,
                         in1 != 0, // cond,
@@ -593,7 +517,7 @@ bool MaatEngine::process_branch(
                     log.error("Purely symbolic branch condition");
                     // TODO: have Stop::SYMBOLIC_BRANCH ?
                     info.stop = info::Stop::ERROR;
-                    info.addr = inst.addr;
+                    info.addr = asm_inst.addr();
                     return false;
                 }
             }
@@ -650,10 +574,10 @@ bool MaatEngine::process_branch(
                 )
             )
             {
+                info.addr = asm_inst.addr();
                 SUB_HANDLE_EVENT_ACTION(
                     hooks.after_branch(
-                        *this,
-                        inst, 
+                        *this, 
                         pcode_rela? nullptr : in0,
                         next,
                         in1 != 0, // cond
@@ -674,7 +598,7 @@ bool MaatEngine::process_branch(
 }
 
 
-Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param, ir::ProcessedInst::param_t& addr)
+Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::param_t& addr)
 {
     Expr loaded;
     bool do_abstract_load = true;
@@ -714,7 +638,6 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
             SUB_HANDLE_EVENT_ACTION(
                 hooks.before_mem_read(
                     *this,
-                    inst,
                     addr.auxilliary, // addr
                     load_size // size in bytes
                 ),
@@ -750,15 +673,16 @@ Expr MaatEngine::resolve_addr_param(const ir::Inst& inst, const ir::Param& param
             SUB_HANDLE_EVENT_ACTION(
                 hooks.after_mem_read(
                     *this,
-                    inst,
                     addr.auxilliary, // addr
                     loaded // value
                 ),
                 nullptr
             )
         }
-        // Reset info
+        // Reset info (but save addr)
+        auto tmp_addr = info.addr;
         info.reset();
+        info.addr = tmp_addr;
     }
     catch (const mem_exception& e)
     {
@@ -787,8 +711,8 @@ bool MaatEngine::process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pi
         return true;
 
     if (
-        (inst.in[0].is_addr() and !resolve_addr_param(inst, inst.in[0], pinst.in0))
-        or (inst.in[1].is_addr() and !resolve_addr_param(inst, inst.in[1], pinst.in1))
+        (inst.in[0].is_addr() and !resolve_addr_param(inst.in[0], pinst.in0))
+        or (inst.in[1].is_addr() and !resolve_addr_param(inst.in[1], pinst.in1))
     )
     {
         log.error("MaatEngine::process_addr_params(): failed to process IR inst: ", inst);
@@ -802,7 +726,7 @@ bool MaatEngine::process_load(const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     Expr loaded;
 
-    if ((loaded = resolve_addr_param(inst, inst.out, pinst.in1)) == nullptr)
+    if ((loaded = resolve_addr_param(inst.out, pinst.in1)) == nullptr)
     {
         log.error("MaatEngine::process_load(): failed to resolve address parameter");
         return false;
@@ -847,9 +771,7 @@ bool MaatEngine::process_load(const ir::Inst& inst, ir::ProcessedInst& pinst)
 
 bool MaatEngine::process_store(
     const ir::Inst& inst,
-    ir::ProcessedInst& pinst,
-    std::shared_ptr<ir::Block> current_block,
-    bool& automodifying_block
+    ir::ProcessedInst& pinst
 )
 {
     mem_alert_t mem_alert = maat::mem_alert_none;
@@ -904,7 +826,6 @@ bool MaatEngine::process_store(
             SUB_HANDLE_EVENT_ACTION(
                 hooks.before_mem_write(
                     *this,
-                    inst,
                     store_addr, // addr
                     to_store // value
                 ),
@@ -932,7 +853,6 @@ bool MaatEngine::process_store(
             SUB_HANDLE_EVENT_ACTION(
                 hooks.after_mem_write(
                     *this,
-                    inst,
                     store_addr, // addr
                     to_store // value
                 ),
@@ -944,22 +864,8 @@ bool MaatEngine::process_store(
     catch(mem_exception& e)
     {
         info.stop = info::Stop::ERROR;
-        info.addr = inst.addr;
         log.error("MaatEngine::process_store(): Caught memory exception: ", e.what());
         return false;
-    }
-
-    // Check if we overwrote memory that was previously lifter to IR
-    if(
-        (mem_alert & mem_alert_x_overwrite) and
-        !do_abstract_store
-    )
-    {
-        addr_t concrete_addr = store_addr->as_uint(*vars);
-        addr_t end_addr = concrete_addr-1+(to_store->size/8);
-        if (current_block->contains(concrete_addr, end_addr))
-            automodifying_block = true;
-        ir_blocks->remove_blocks_containing(concrete_addr, end_addr);
     }
 
     return true;
@@ -974,8 +880,7 @@ bool MaatEngine::process_callother(const ir::Inst& inst, ir::ProcessedInst& pins
     }
     if (not callother_handlers.has_handler(inst.callother_id))
     {
-        log.error("Instruction at 0x", std::hex, inst.addr, 
-            " can not be emulated (missing CALLOTHER handler)");
+        log.error("Instruction can not be emulated (missing CALLOTHER handler)");
         return false;
     }
     callother::handler_t handler = callother_handlers.get_handler(inst.callother_id);
@@ -1031,60 +936,50 @@ bool MaatEngine::process_callback_emulated_function(addr_t addr)
 }
 
 
-std::optional<ir::BlockMap::InstLocation> MaatEngine::get_location(addr_t addr)
+const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
 {
-    std::shared_ptr<ir::Block> block;
-    ir::Block::inst_id ir_inst_id = 0;
-    std::optional<ir::BlockMap::InstLocation> location = ir_blocks->get_inst_at(addr);
-    if (location.has_value())
-        return location;
+    if (ir_map->contains_inst_at(addr))
+        return ir_map->get_inst_at(addr);
 
     // The code hasn't been lifted yet so we disassemble it
     try
     {
-        block = lifters[_current_cpu_mode]->lift_block(
-            addr,
-            mem->raw_mem_at(addr),
-            0xfffffff,
-            0xffffffff,
-            nullptr, // is_symbolic
-            nullptr, // is_tainted
-            true
-        );
-        
-        if (block == nullptr)
-        {
-            throw lifter_exception("MaatEngine::run(): lifter returned NULL IR Block");
+        // TODO: check if code region is symbolic
+        if (
+            not lifters[_current_cpu_mode]->lift_block(
+                *ir_map,
+                addr,
+                mem->raw_mem_at(addr),
+                0xfffffff,
+                0xffffffff,
+                nullptr, // is_symbolic
+                nullptr, // is_tainted
+                true
+            )
+        ){
+            throw lifter_exception("MaatEngine::run(): failed to lift instructions");
         }
-        ir_inst_id = 0;
+        return ir_map->get_inst_at(addr);
     }
     catch(unsupported_instruction_exception& e)
     {
         this->info.stop = info::Stop::UNSUPPORTED_INST;
         log.error("Lifter error: ", e.what());
-        return std::nullopt;
+        throw lifter_exception("MaatEngine::get_asm_inst(): lifter error");
     }
     catch(lifter_exception& e)
     {
         log.fatal("Lifter error: ", e.what());
         this->info.stop = info::Stop::FATAL;
-        return std::nullopt;;
+        throw lifter_exception("MaatEngine::get_asm_inst(): lifter error");
     }
-        // TODO: check if symbolic
-        // TODO: check if optimize IR
-
-    // Add new block to IR block map
-    ir_blocks->add(block);
-
-    // return location
-    return std::make_optional<ir::BlockMap::InstLocation>(block, ir_inst_id);
 }
 
 void MaatEngine::handle_pending_x_mem_overwrites()
 {
     for (auto& mem_access : mem->_get_pending_x_mem_overwrites())
     {
-        ir_blocks->remove_blocks_containing(mem_access.first, mem_access.second);
+        ir_map->remove_insts_containing(mem_access.first, mem_access.second);
     }
     mem->_clear_pending_x_mem_overwrites();
 }
