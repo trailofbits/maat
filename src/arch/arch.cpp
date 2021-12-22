@@ -292,6 +292,14 @@ namespace X64
             {"zmm5", ZMM5},
             {"zmm6", ZMM6},
             {"zmm7", ZMM7},
+            {"zmm8", ZMM8},
+            {"zmm9", ZMM9},
+            {"zmm10", ZMM10},
+            {"zmm11", ZMM11},
+            {"zmm12", ZMM12},
+            {"zmm13", ZMM13},
+            {"zmm14", ZMM14},
+            {"zmm15", ZMM15},
             {"xcr0", XCR0},
             {"fpucw", FPUCW},
             {"fpusw", FPUSW},
@@ -388,6 +396,14 @@ namespace X64
             case ZMM5:
             case ZMM6:
             case ZMM7:
+            case ZMM8:
+            case ZMM9:
+            case ZMM10:
+            case ZMM11:
+            case ZMM12:
+            case ZMM13:
+            case ZMM14:
+            case ZMM15:
                 return 512;
             case XCR0:
                 return 64;

@@ -260,6 +260,14 @@ namespace X64
     static constexpr reg_t ZMM5 = 54; ///< AVX register
     static constexpr reg_t ZMM6 = 55; ///< AVX register
     static constexpr reg_t ZMM7 = 56; ///< AVX register
+    static constexpr reg_t ZMM8 = 79; ///< AVX register
+    static constexpr reg_t ZMM9 = 80; ///< AVX register
+    static constexpr reg_t ZMM10 = 81; ///< AVX register
+    static constexpr reg_t ZMM11 = 82; ///< AVX register
+    static constexpr reg_t ZMM12 = 83; ///< AVX register
+    static constexpr reg_t ZMM13 = 84; ///< AVX register
+    static constexpr reg_t ZMM14 = 85; ///< AVX register
+    static constexpr reg_t ZMM15 = 86; ///< AVX register
     /* Control registers */
     static constexpr reg_t XCR0 = 57;
     static constexpr reg_t CR0 = 58;
@@ -286,7 +294,7 @@ namespace X64
     static constexpr reg_t ST5 = 76;
     static constexpr reg_t ST6 = 77;
     static constexpr reg_t ST7 = 78;
-    static constexpr reg_t NB_REGS = 79;
+    static constexpr reg_t NB_REGS = 87;
 
     /** \addtogroup arch
      * \{ */
