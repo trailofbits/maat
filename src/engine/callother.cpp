@@ -8,12 +8,14 @@ namespace callother{
 
 Id mnemonic_to_id(const std::string& mnemonic, const std::string& arch)
 {
+    std::cout << "DEBUG mnem '" << mnemonic << "'\n"; 
     if (mnemonic == "RDTSC") return Id::X86_RDTSC;
     if (mnemonic == "SYSCALL")
         if (arch == "X64") return Id::X64_SYSCALL;
     if (mnemonic == "CPUID") return Id::X86_CPUID;
     if (mnemonic == "PMINUB") return Id::X86_PMINUB;
     if (mnemonic == "INT") return Id::X86_INT;
+    if (mnemonic == "LOCK") return Id::X86_LOCK;
     return Id::UNSUPPORTED;
 }
 
@@ -36,6 +38,12 @@ void HandlerMap::set_handler(Id id, handler_t handler)
 }
 
 // =============== Handlers ===============
+void X86_LOCK_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    // Just assume LOCK worked
+    return;
+}
+
 void X86_RDTSC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     // We put the timestamp counter in the output parameter
@@ -251,6 +259,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::X64_SYSCALL, X64_SYSCALL_handler);
     h.set_handler(Id::X86_PMINUB, X86_PMINUB_handler);
     h.set_handler(Id::X86_INT, X86_INT_handler);
+    h.set_handler(Id::X86_LOCK, X86_LOCK_handler);
     return h;
 }
 
