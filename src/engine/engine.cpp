@@ -617,7 +617,7 @@ Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
     else if (addr.is_abstract() and addr.expr->is_concolic(*vars) and not settings.symptr_read)
     {
         do_abstract_load = false;
-        addr.auxilliary = addr.expr;
+        addr.auxilliary = exprcst(addr.expr->as_number(*vars));
     }
     else if (addr.is_abstract() and addr.expr->is_symbolic(*vars) and not settings.symptr_read)
     {
