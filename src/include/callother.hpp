@@ -29,7 +29,8 @@ enum class Id
     X86_CPUID, ///< CPUID on X86/X64
     X64_SYSCALL, ///< System call on X64
     X86_PMINUB, ///< PMINUB on X86/X64
-    X86_INT, /// INT on X86
+    X86_INT, ///< INT on X86
+    X86_LOCK, ///< LOCK on X86/X64
     UNSUPPORTED
 };
 
