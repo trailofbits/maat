@@ -381,7 +381,7 @@ static PyObject* File_write_buffer(PyObject* self, PyObject *args)
     
     try
     {
-        if (PyArg_ParseTuple(args, "O!K", &buf, &PyList_Type, &offset))
+        if (PyArg_ParseTuple(args, "O!K", &PyList_Type, &buf, &offset))
         {
             // Buffer = list of expressions
             for (int i = 0; i < PyList_Size(buf); i++)
