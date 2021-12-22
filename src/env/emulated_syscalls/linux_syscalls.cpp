@@ -215,7 +215,8 @@ FunctionCallback::return_t _stat(
 
     return 0; // Success
 }
-// int stat(const char *restrict pathname,struct stat *restrict statbuf);
+
+// int stat(const char *restrict pathname, struct stat *restrict statbuf);
 FunctionCallback::return_t sys_linux_stat(
     MaatEngine& engine,
     const std::vector<Expr>& args
@@ -265,6 +266,47 @@ FunctionCallback::return_t sys_linux_fstat(
     addr_t statbuf = args[1]->as_uint(*engine.vars);
 
     env::physical_file_t file = engine.env->fs.get_file_by_handle(fd);
+    return _stat(engine, file, statbuf);
+}
+
+
+// int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags);
+FunctionCallback::return_t sys_linux_fstatat(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    cst_t AT_FDCWD = -100;
+    cst_t AT_EMPTY_PATH = 0x1000;
+    std::string pathname = engine.mem->read_string(args[1]);
+    addr_t statbuf = args[2]->as_uint(*engine.vars);
+    int dirfd = args[0]->as_int(*engine.vars);
+    int flags = args[3]->as_int(*engine.vars);
+    bool absolute_path = pathname[0] == '/';
+    std::string filepath = "";
+    physical_file_t file = nullptr;
+
+    // Get filepath
+    if (absolute_path)
+    {
+        filepath = pathname;
+    }
+    else
+    {
+        if (dirfd == AT_FDCWD) // Relative to current dir
+        {
+            filepath = engine.env->fs.path_from_relative_path(pathname, engine.process->pwd);
+            file = engine.env->fs.get_file(filepath);
+        }
+        else if (flags & AT_EMPTY_PATH) // dirfd points to the file, ignore pathname
+        {
+            file = engine.env->fs.get_file_by_handle(dirfd);
+        }
+        else // Relative to dirfd
+        {
+            throw env_exception("Emulated fstatat(): not supported for arbitrary dirfd");
+        }
+    }
     return _stat(engine, file, statbuf);
 }
 
@@ -341,15 +383,17 @@ FunctionCallback::return_t sys_linux_mmap(
         for (auto& seg : engine.mem->segments())
         {
             // Check if there is a space between both segments
-            if(prev_end < seg->start-1)
+            if(prev_end+1 < seg->start)
             {
                 // Check if space between segments are contained in the requested mapping
                 if( addr <= prev_end+1 && map_end_addr >= seg->start-1)
                     // Space contained in mapping, fill it completely
                     to_create.push_back(std::make_tuple(prev_end+1, seg->start-1, mflags));
                 else if( addr >= prev_end+1 && map_end_addr <= seg->start-1)
+                {
                     // Space contains mapping
                     to_create.push_back(std::make_tuple(addr, map_end_addr, mflags));
+                }
                 else if( addr <= prev_end+1 && map_end_addr >= prev_end+1)
                     // Overlap low part of space between segments
                     to_create.push_back(std::make_tuple(prev_end+1, map_end_addr, mflags));
@@ -623,11 +667,11 @@ FunctionCallback::return_t linux_generic_open(MaatEngine& engine, const std::str
     int O_TRUNC = 00001000;
 
     if (flags & O_EXCL)
-        throw env_exception("Emulated openat(): O_EXCL flag not supported");
+        throw env_exception("Emulated open(): O_EXCL flag not supported");
     if (flags & O_TRUNC)
-        throw env_exception("Emulated openat(): O_TRUNC flag not supported");
+        throw env_exception("Emulated open(): O_TRUNC flag not supported");
     if (flags & O_APPEND)
-        throw env_exception("Emulated openat(): O_APPEND flag not supported");
+        throw env_exception("Emulated open(): O_APPEND flag not supported");
 
     try
     {
@@ -645,7 +689,7 @@ FunctionCallback::return_t linux_generic_open(MaatEngine& engine, const std::str
     catch(const env_exception& e)
     {
         // If file doesn't exist, we just emit a warning and emulate syscall failure
-        engine.log.warning("Emulated openat() failed: ", e.what());
+        engine.log.warning("Emulated open() failed: ", e.what());
         return -1; // Failure
     }
 }
@@ -780,8 +824,8 @@ syscall_func_map_t linux_x64_syscall_map()
         {63, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {89, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
-        {257, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))}
-    
+        {257, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
+        {262, Function("sys_newfstatat", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize, 4}, sys_linux_fstatat))}
     };
     return res;
 }
