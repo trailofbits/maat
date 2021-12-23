@@ -796,7 +796,7 @@ bool MaatEngine::process_store(
         else if (addr.is_abstract() and addr.expr->is_concolic(*vars) and not settings.symptr_write)
         {
             do_abstract_store = false;
-            store_addr = addr.expr;
+            store_addr = exprcst(addr.expr->as_number(*vars));
         }
         else if (addr.is_abstract() and addr.expr->is_symbolic(*vars) and not settings.symptr_write)
         {

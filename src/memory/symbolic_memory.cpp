@@ -187,12 +187,11 @@ bool SymbolicMemEngine::contains_symbolic_write(addr_t start, addr_t end)
 
 // Return the expression result of the fact that 'expr' is
 // written over 'prev' starting from byte 'index'
-// !! This function assumes little endian
+// WARNING!!!! This function assumes little endian
 Expr _mem_expr_overwrite(Expr prev, Expr expr, int index)
 {
-    if( index < 0 )
+    if( index < 0 ) // Overwrite before first byte
     {
-        // Overwrite before first byte
         if( (index*8) + expr->size == prev->size)
         {
             // Write was bigger than prev and finishes exactly 
@@ -211,9 +210,8 @@ Expr _mem_expr_overwrite(Expr prev, Expr expr, int index)
                         extract(expr, expr->size-1, -1*(index*8)));
         }
     }
-    else if( index == 0 )
+    else if( index == 0 ) // Overwrite from first byte
     {
-        // Overwrite from first byte
         if( prev->size == expr->size ){
             return expr;
         }
@@ -223,19 +221,17 @@ Expr _mem_expr_overwrite(Expr prev, Expr expr, int index)
         }
         else
         {
-            return concat(expr, extract(prev, prev->size-1,  expr->size));
+            return concat(extract(prev, prev->size-1,  expr->size), expr);
         }
-    // Index > 0
     }
-    else if( prev->size <= expr->size + (index*8))
+    // Index > 0
+    else if( prev->size <= expr->size + (index*8)) // Overwrite to last byte
     {
-        // Overwrite to last byte
         return concat(extract(expr, (prev->size - (index*8))-1, 0),
                       extract(prev, (index*8)-1, 0));
     }
-    else
+    else // Overwrite in the middle
     {
-        // Overwrite in the middle
         return concat(extract(prev, prev->size-1, expr->size+(index*8)),
                 concat(expr, extract(prev, (index*8)-1, 0))
                 );

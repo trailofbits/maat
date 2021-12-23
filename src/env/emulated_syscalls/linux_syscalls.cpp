@@ -16,7 +16,6 @@ FunctionCallback::return_t sys_linux_read(
 {
     int fd = args[0]->as_uint(*engine.vars);
     size_t count = args[2]->as_uint(*engine.vars);
-
     // Get file accessor and read file
     env::FileAccessor& fa = engine.env->fs.get_fa_by_handle(fd);
     std::vector<Expr> content;

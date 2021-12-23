@@ -1583,7 +1583,7 @@ void MemEngine::symbolic_ptr_write(Expr addr, const ValueSet& range, Expr e, con
     // Check if we have to limit the pointer range
     if( 
         settings.symptr_limit_range and
-        (range.max - range.min +1) > settings.symptr_max_range and
+        (range.max - range.min) > settings.symptr_max_range and
         addr->is_concolic(*_varctx)
     )
     {
