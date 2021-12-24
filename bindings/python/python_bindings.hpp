@@ -91,7 +91,7 @@ typedef struct{
     PyObject* info;
     PyObject* path;
     PyObject* env;
-    PyObject* stats;
+    // PyObject* stats;
     PyObject* settings;
     PyObject* process;
 } MaatEngine_Object;
