@@ -677,26 +677,70 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
     const char * name;
     std::vector<cst_t> concrete_buffer;
     PyObject* py_concrete_buffer;
-    int nb_elems, elem_size =1;
+    const char* bytes;
+    int bytes_len=0;
+    int nb_elems = -1, elem_size =1;
     int null_terminated=0;
-    
+
     static char* kwlist[] = {"", "", "", "elem_size", "null_terminated", NULL};
 
-    if( !PyArg_ParseTupleAndKeywords(args, keywords, "sO!i|ip", kwlist, &name, &PyList_Type, 
+    if( PyArg_ParseTupleAndKeywords(args, keywords, "sO!|iip", kwlist, &name, &PyList_Type, 
         &py_concrete_buffer , &nb_elems, &elem_size, &null_terminated))
     {
-        return NULL;
-    }
-
-    // Buffer = list of concrete vals
-    for (int i = 0; i < PyList_Size(py_concrete_buffer) and i < nb_elems; i++)
-    {
-        PyObject* val = PyList_GetItem(py_concrete_buffer, i);
-        if (not PyLong_Check(val))
+        size_t list_len = PyList_Size(py_concrete_buffer);
+        // Buffer = list of concrete vals
+        if (nb_elems == -1)
         {
-            return PyErr_Format(PyExc_TypeError, "Buffer element %d is not an integer", i);
+            nb_elems = PyList_Size(py_concrete_buffer);
         }
-        concrete_buffer.push_back(PyLong_AsLongLong(val));
+        else if (nb_elems > list_len)
+        {
+            return PyErr_Format(PyExc_TypeError, "Buffer length (%d) exceeds 'nb_elems' (%d)", list_len, nb_elems);
+        }
+
+        for (int i = 0; i < list_len and i < nb_elems; i++)
+        {
+            PyObject* val = PyList_GetItem(py_concrete_buffer, i);
+            if (not PyLong_Check(val))
+            {
+                return PyErr_Format(PyExc_TypeError, "Buffer element %d is not an integer", i);
+            }
+            concrete_buffer.push_back(PyLong_AsLongLong(val));
+        }
+    }
+    else if (PyArg_ParseTupleAndKeywords(args, keywords, "ss#|iip", kwlist, &name, &bytes, 
+        &bytes_len, &nb_elems, &elem_size, &null_terminated))
+    {
+        PyErr_Clear();
+        if (nb_elems == -1)
+        {
+            if (bytes_len % elem_size != 0)
+                return PyErr_Format(PyExc_ValueError, "Buffer size (%d) isn't a multiple of the element size (%d)", bytes_len, elem_size);
+            nb_elems = bytes_len / elem_size;
+        }
+        // Buffer = concrete bytes
+        if (
+            bytes_len % elem_size != 0
+            and nb_elems*elem_size >= bytes_len
+        )
+        {
+            return PyErr_Format(PyExc_ValueError, "Buffer size (%d) isn't a multiple of the element size (%d)", bytes_len, elem_size);
+        }
+
+        // NOTE: this assumes little endian!! (inverting the bytes to build the values)
+        for (int i = 0; i < bytes_len and i < nb_elems; i += 1)
+        {
+            cst_t val = 0;
+            for (int j = elem_size-1; j >= 0; j--)
+            {
+                val = (val << 8) | ((cst_t)(bytes[i*elem_size+j]) & 0xff);
+            }
+            concrete_buffer.push_back(val);
+        }
+    }
+    else
+    {
+        return PyErr_Format(PyExc_TypeError, "Buffer must be str, bytes, or list[int]");
     }
 
     std::vector<Expr> res;

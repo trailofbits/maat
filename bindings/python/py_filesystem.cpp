@@ -212,6 +212,30 @@ static void FileAccessor_dealloc(PyObject* self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 };
 
+// buf must be list, returns NULL on success
+PyObject* generic_buffer_translate(std::vector<Expr>& native_buf, PyObject* buf)
+{
+    size_t expr_size_hint = 8; // Size hint in bits for int values, to allow mixing Expr and int
+    for (int i = 0; i < PyList_Size(buf); i++)
+    {
+        PyObject* expr = PyList_GetItem(buf, i);
+        if (PyObject_TypeCheck(expr, (PyTypeObject*)get_Expr_Type()))
+        {
+            native_buf.push_back(*as_expr_object(expr).expr);
+            expr_size_hint = (*as_expr_object(expr).expr)->size;
+        }
+        else if (PyLong_Check(expr))
+        {
+            native_buf.push_back(exprcst(expr_size_hint, PyLong_AsLongLong(expr)));
+        }
+        else
+        {
+            return PyErr_Format(PyExc_TypeError, "Buffer element %d is not an Expr not an int", i);
+        }
+    }
+    return NULL;
+}
+
 
 static PyObject* FileAccessor_write_buffer(PyObject* self, PyObject *args)
 {
@@ -231,24 +255,9 @@ static PyObject* FileAccessor_write_buffer(PyObject* self, PyObject *args)
         else if (PyArg_ParseTuple(args, "O!", &PyList_Type, &buf))
         {
             PyErr_Clear();
-            // Buffer = list of expressions
-            for (int i = 0; i < PyList_Size(buf); i++)
-            {
-                PyObject* expr = PyList_GetItem(buf, i);
-                if (PyObject_TypeCheck(expr, (PyTypeObject*)get_Expr_Type()))
-                {
-                    native_buf.push_back(*as_expr_object(expr).expr);
-                    expr_size_hint = (*as_expr_object(expr).expr)->size;
-                }
-                else if (PyLong_Check(expr))
-                {
-                    native_buf.push_back(exprcst(expr_size_hint, PyLong_AsLongLong(expr)));
-                }
-                else
-                {
-                    return PyErr_Format(PyExc_TypeError, "Buffer element %d is not an Expr not an int", i);
-                }
-            }
+            PyObject* error = generic_buffer_translate(native_buf, buf);
+            if (error != NULL)
+                return error;
             return PyLong_FromLong(as_fileaccessor_object(self).fa->write_buffer(native_buf));
         }
         else
@@ -378,25 +387,19 @@ static PyObject* File_write_buffer(PyObject* self, PyObject *args)
     addr_t offset = 0;
     const char* bytes;
     int bytes_len=0, len=-1;
-    
+
     try
     {
         if (PyArg_ParseTuple(args, "O!K", &PyList_Type, &buf, &offset))
         {
-            // Buffer = list of expressions
-            for (int i = 0; i < PyList_Size(buf); i++)
-            {
-                PyObject* expr = PyList_GetItem(buf, i);
-                if (not PyObject_TypeCheck(expr, (PyTypeObject*)get_Expr_Type()))
-                {
-                    return PyErr_Format(PyExc_TypeError, "Buffer element %d is not an Expr object", i);
-                }
-                native_buf.push_back(*as_expr_object(expr).expr);
-            }
+            PyObject* error = generic_buffer_translate(native_buf, buf);
+            if (error != NULL)
+                return error;
             return PyLong_FromLong(as_file_object(self).file->write_buffer(native_buf, offset));
         }
         else if (PyArg_ParseTuple(args, "s#K|i", &bytes, &bytes_len, &offset, &len))
         {
+            PyErr_Clear();
             len = (len < 0)? bytes_len : len;
             return PyLong_FromLong(as_file_object(self).file->write_buffer((uint8_t*)bytes, offset, len));
         }
