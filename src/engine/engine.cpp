@@ -285,7 +285,9 @@ info::Stop MaatEngine::run(int max_inst)
             // This will potentially update PC
             if (ir::is_branch_op(inst.op))
             {
-                process_branch(*asm_inst, inst, pinst, branch_type, ir_inst_id);
+                ASSERT_SUCCESS(
+                    process_branch(*asm_inst, inst, pinst, branch_type, ir_inst_id)
+                )
             }
             else
             {
