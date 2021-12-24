@@ -608,10 +608,19 @@ static PyObject* VarContext_get(PyObject* self, PyObject* args)
     if( !PyArg_ParseTuple(args, "s", &name)){
         return NULL;
     }
-    if( !as_varctx_object(self).ctx->contains(std::string(name))){
-        return PyErr_Format(PyExc_KeyError, "Variable %s unknown in this context");
+    std::string sname(name);
+
+    if( !as_varctx_object(self).ctx->contains(sname)){
+        return PyErr_Format(PyExc_KeyError, "Variable %s unknown in this context", name);
     }
-    return PyLong_FromUnsignedLongLong(as_varctx_object(self).ctx->get(std::string(name)));
+    try
+    {
+        return PyLong_FromUnsignedLongLong(as_varctx_object(self).ctx->get(sname));
+    }
+    catch(const var_context_exception& e)
+    {
+        return PyErr_Format(PyExc_ValueError, e.what());
+    }
 }
 
 static PyObject* VarContext_get_as_buffer(PyObject* self, PyObject* args)
