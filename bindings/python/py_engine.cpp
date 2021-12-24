@@ -242,8 +242,9 @@ static PyMemberDef MaatEngine_members[] = {
     {"info", T_OBJECT_EX, offsetof(MaatEngine_Object, info), READONLY, "Symbolic Engine Info"},
     {"path", T_OBJECT_EX, offsetof(MaatEngine_Object, path), READONLY, "Path Manager"},
     {"env", T_OBJECT_EX, offsetof(MaatEngine_Object, env), READONLY, "Environment Manager"},
-    {"stats", T_OBJECT_EX, offsetof(MaatEngine_Object, stats), READONLY, "Runtime statistics"},
+    //{"stats", T_OBJECT_EX, offsetof(MaatEngine_Object, stats), READONLY, "Runtime statistics"},
     {"settings", T_OBJECT_EX, offsetof(MaatEngine_Object, settings), READONLY, "Symbolic Engine Settings"},
+    {"process", T_OBJECT_EX, offsetof(MaatEngine_Object, process), READONLY, "Process Info"},
     {NULL}
 };
 
