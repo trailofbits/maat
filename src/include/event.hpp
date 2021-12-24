@@ -234,7 +234,7 @@ public:
     /// Pretty print to stream
     friend std::ostream& operator<<(std::ostream& os, const EventHook& hook);
 private:
-    /// Return true if the filter allows the hook to be triggered
+    /// Return true if the filter allows the hook to be triggered. Also returns true if the filter isn't active
     bool check_filter(MaatEngine& engine);
 };
 
