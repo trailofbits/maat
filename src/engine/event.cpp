@@ -211,6 +211,9 @@ int EventHook::id()
 
 bool EventHook::check_filter(MaatEngine& engine)
 {
+    if (not filter.is_active())
+        return true; // If filter not set, we monitor all addresses by default!
+
     if (is_mem_event(event))
     {
         if (engine.info.mem_access->addr->is_symbolic(*engine.vars))
