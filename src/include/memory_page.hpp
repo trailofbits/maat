@@ -14,6 +14,7 @@ namespace maat
  * \brief Permission flags for memory pages */
 typedef uint8_t mem_flag_t;
 
+static constexpr mem_flag_t mem_flag_none = 0U;
 static constexpr mem_flag_t mem_flag_r = 1U;
 static constexpr mem_flag_t mem_flag_w = 2U;
 static constexpr mem_flag_t mem_flag_rw = 3U;
@@ -32,7 +33,7 @@ public:
     bool was_once_executable;
 
     PageSet(addr_t start, addr_t end, mem_flag_t f, bool was_once_executable=false);
-    bool intersects_with_range(addr_t min, addr_t max);
+    bool intersects_with_range(addr_t min, addr_t max) const;
     bool contains(addr_t addr);
 };
 
@@ -56,6 +57,11 @@ public:
      * so that the IR is re-generated upon runtime modification of the
      * opcodes in the page */
     bool was_once_executable(addr_t addr);
+public:
+    /// Return 'true' if all addresses in the range have at least one R/W/X permission flag
+    bool is_mapped(addr_t start, addr_t end);
+    /// Return 'true' if all addresses in the range have no permission flag
+    bool is_unmapped(addr_t start, addr_t end);
 public:
     const std::list<PageSet>& regions();
     void set_regions(std::list<PageSet>&& regions);

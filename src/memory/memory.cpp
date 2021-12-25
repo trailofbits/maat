@@ -14,7 +14,7 @@ PageSet::PageSet(addr_t s, addr_t e, mem_flag_t f, bool was_once_exec):
     was_once_executable = was_once_exec | ( f & maat::mem_flag_x );
 }
 
-bool PageSet::intersects_with_range(addr_t min, addr_t max)
+bool PageSet::intersects_with_range(addr_t min, addr_t max) const
 {
     return start <= max && end >= min;
 }
@@ -34,6 +34,27 @@ MemPageManager::MemPageManager(size_t ps): _page_size(ps)
 size_t MemPageManager::page_size()
 {
     return _page_size;
+}
+
+
+bool MemPageManager::is_mapped(addr_t start, addr_t end)
+{
+    for (const auto& r : _regions)
+    {
+        if (r.intersects_with_range(start, end) and r.flags == mem_flag_none)
+            return false;
+    }
+    return true;
+}
+
+bool MemPageManager::is_unmapped(addr_t start, addr_t end)
+{
+    for (const auto& r : _regions)
+    {
+        if (r.intersects_with_range(start, end) and r.flags != mem_flag_none)
+            return false;
+    }
+    return true;
 }
 
 void MemPageManager::set_flags(addr_t start, addr_t end, mem_flag_t flags)
@@ -1138,6 +1159,87 @@ void MemEngine::new_segment(addr_t start, addr_t end, mem_flag_t flags, const st
     }
 }
 
+void MemEngine::map(addr_t start, addr_t end, mem_flag_t mflags, const std::string& map_name)
+{
+    addr_t prev_end = 0;
+    std::vector<std::tuple<addr_t, addr_t, mem_flag_t>> to_create;
+    
+    if (start > end)
+        throw mem_exception("MemEngine::map(): 'start' must be lower than 'end'");
+
+    
+    for (auto& seg : segments())
+    {
+        // Check if there is a space between both segments
+        if(prev_end+1 < seg->start)
+        {
+            // Check if space between segments are contained in the requested mapping
+            if (start <= prev_end+1 && end >= seg->start-1)
+                // Space contained in mapping, fill it completely
+                to_create.push_back(std::make_tuple(prev_end+1, seg->start-1, mflags));
+            else if (start >= prev_end+1 && end <= seg->start-1)
+            {
+                // Space contains mapping
+                to_create.push_back(std::make_tuple(start, end, mflags));
+            }
+            else if( start <= prev_end+1 && end >= prev_end+1)
+                // Overlap low part of space between segments
+                to_create.push_back(std::make_tuple(prev_end+1, end, mflags));
+            else if( start <= seg->start-1 && end >= seg->start-1)
+                // Overlap high part of space between segments
+                to_create.push_back(std::make_tuple(start, seg->start-1, mflags));
+            //else
+                // No overlap at all, do nothing
+
+        }
+        prev_end = seg->end;
+        if (seg->start > end)
+            break;
+    }
+
+    for (auto& t : to_create)
+    {
+        new_segment(std::get<0>(t), std::get<1>(t), std::get<2>(t), map_name);
+    }
+
+    // Change memory mapping flags
+    page_manager.set_flags(start, end, mflags);
+    
+}
+
+addr_t MemEngine::allocate(
+    addr_t init_base, addr_t size, addr_t align,
+    mem_flag_t flags, const std::string& name
+)
+{
+    addr_t base = init_base;
+    addr_t max_addr = 0xffffffffffffffff >> ((_arch_bits-64)*-1);
+
+    // Adjust size to alignment
+    if( size % align != 0 )
+        size += align - (size % align);
+
+    while (base <= max_addr-size+1)
+    {
+        if (page_manager.is_unmapped(base, base+size-1))
+        {
+            map(base, base+size-1, flags, name);
+            return base;
+        }
+        base += align;
+    }
+    throw mem_exception("MemEngine::allocate(): Failed to allocate requested map");
+}
+
+void MemEngine::unmap(addr_t start, addr_t end)
+{
+    if (start > end)
+        throw mem_exception("MemEngine::unmap(): 'start' must be lower than 'end'");
+
+    int len = end-start+1;
+    page_manager.set_flags(start, end, mem_flag_none);
+}
+
 std::shared_ptr<MemSegment> MemEngine::get_segment_containing(addr_t addr)
 {
     for( auto& it : _segments)
@@ -1297,7 +1399,7 @@ Expr MemEngine::read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, boo
 
     // Else do a read in the "sure" memory
     // Find the segment we read from
-    for( auto& segment : _segments)
+    for (auto& segment : _segments)
     {
         if (segment->intersects_with_range(addr, addr+nb_bytes-1))
         {
@@ -1306,7 +1408,7 @@ Expr MemEngine::read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, boo
             {
                 throw mem_exception(Fmt() << "Reading at address 0x" << std::hex << addr << " in segment that doesn't have R flag set" << std::dec >> Fmt::to_str);
             }
-    
+
             // Check if read exceeds segment
             if( addr + nb_bytes-1 > segment->end)
                 // Read overlaps two segments
@@ -1326,6 +1428,7 @@ Expr MemEngine::read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, boo
                 return res;
         }
     }
+
     /* If addr isn't in any segment, throw exception */
     throw mem_exception(Fmt()
         << "Trying to read " << std::dec << save_nb_bytes
