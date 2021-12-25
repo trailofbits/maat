@@ -176,8 +176,7 @@ be used transparently to write and read both abstract and concrete values.
 To do so, it uses a concrete buffer, an abstract buffer, and a memory status
 bitmap to keep track of what is abstract and what is concrete 
 */
-
-class MemSegment
+class MemSegment:
 {
 private:
     MemStatusBitmap _bitmap;
@@ -375,6 +374,18 @@ public:
     MemEngine(std::shared_ptr<VarContext> varctx=nullptr, size_t arch_bits=64, std::shared_ptr<SnapshotManager<Snapshot>> snap=nullptr);
     ~MemEngine();
 
+    /** \brief Map memory from 'start' to 'end' (included), with permissions 'mflags'. 
+    Necessary segments are created in order to fill the map. The map is NOT initialised with zeros */
+    void map(addr_t start, addr_t end, mem_flag_t mflags, const std::string& map_name);
+    /** \brief Allocate a new memory map of 'size' bytes. The map will
+     * be aligned according to the 'align' value. Returns the start address of the map */
+    addr_t allocate(
+        addr_t init_base, addr_t size, addr_t align,
+        mem_flag_t flags, const std::string& name
+    );
+    /// Unmap memory from 'start' to 'end'. Memory is NOT reset to zeros
+    void unmap(addr_t start, addr_t end);
+public:
     /// Create a new memory segment from addresses 'start' to 'end' (included)
     void new_segment(
         addr_t start, addr_t end,
@@ -392,12 +403,11 @@ public:
     );
     /// Delete segment starting at address 'start'
     void delete_segment(addr_t start);
-
 public:
     std::list<std::shared_ptr<MemSegment>>& segments();
     std::shared_ptr<MemSegment> get_segment_containing(addr_t addr);
     std::shared_ptr<MemSegment> get_segment_by_name(const std::string& name);
-    /// Return free if no memory is allocated between 'start' and 'end'
+    /// Return free if no segment exists between 'start' and 'end'
     bool is_free(addr_t start, addr_t end);
 
 // Read/Write to abstract address

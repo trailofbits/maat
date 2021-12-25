@@ -378,43 +378,7 @@ FunctionCallback::return_t sys_linux_mmap(
         // Find where to allocate new memory
         addr_t prev_end = 0;
         addr_t map_end_addr = addr + aligned_length -1;
-        std::vector<std::tuple<addr_t, addr_t, mem_flag_t>> to_create;
-        for (auto& seg : engine.mem->segments())
-        {
-            // Check if there is a space between both segments
-            if(prev_end+1 < seg->start)
-            {
-                // Check if space between segments are contained in the requested mapping
-                if( addr <= prev_end+1 && map_end_addr >= seg->start-1)
-                    // Space contained in mapping, fill it completely
-                    to_create.push_back(std::make_tuple(prev_end+1, seg->start-1, mflags));
-                else if( addr >= prev_end+1 && map_end_addr <= seg->start-1)
-                {
-                    // Space contains mapping
-                    to_create.push_back(std::make_tuple(addr, map_end_addr, mflags));
-                }
-                else if( addr <= prev_end+1 && map_end_addr >= prev_end+1)
-                    // Overlap low part of space between segments
-                    to_create.push_back(std::make_tuple(prev_end+1, map_end_addr, mflags));
-                else if( addr <= seg->start-1 && map_end_addr >= seg->start-1)
-                    // Overlap high part of space between segments
-                    to_create.push_back(std::make_tuple(addr, seg->start-1, mflags));
-                //else
-                    // No overlap at all, do nothing
-
-            }
-            prev_end = seg->end;
-            if (seg->start > map_end_addr)
-                break;
-        }
-
-        for (auto& t : to_create)
-        {
-            engine.mem->new_segment(std::get<0>(t), std::get<1>(t), std::get<2>(t), "mmap");
-        }
-        
-        // Change memory mapping flags
-        engine.mem->page_manager.set_flags(addr, map_end_addr, mflags);
+        engine.mem->map(addr, map_end_addr, mflags, "mmap");
         res = addr;
     }
     else
@@ -422,7 +386,7 @@ FunctionCallback::return_t sys_linux_mmap(
         // Try to allocate memory wherever possible
         try
         {
-            res = engine.mem->allocate_segment(addr == 0 ? 0x4000000: addr, aligned_length, 0x1000, mflags, "mmap"); 
+            res = engine.mem->allocate(addr == 0 ? 0x4000000: addr, aligned_length, 0x1000, mflags, "mmap");
         }
         catch(const mem_exception& e)
         {
