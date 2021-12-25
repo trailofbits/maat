@@ -430,6 +430,25 @@ FunctionCallback::return_t sys_linux_mmap2(
     return sys_linux_mmap(engine, new_args);
 }
 
+
+FunctionCallback::return_t sys_linux_munmap(
+    MaatEngine& engine,
+    const std::vector<Expr>& args
+)
+{
+    addr_t addr = args[0]->as_uint(*engine.vars);
+    cst_t length = args[1]->as_uint(*engine.vars);
+
+    // Adjust addr and length
+    if (addr % 0x1000 != 0)
+        addr = addr + (0x1000 - (addr % 0x1000));
+    // Adjust length to be a multiple 
+    if( length % 0x1000 != 0)
+        length = length + (0x1000 - (length % 0x1000));
+    engine.mem->unmap(addr, addr+length-1);
+    return 0;
+}
+
 // int mprotect(void *addr, size_t len, int prot);
 FunctionCallback::return_t sys_linux_mprotect(
     MaatEngine& engine,
@@ -756,6 +775,7 @@ syscall_func_map_t linux_x86_syscall_map()
         {33, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
         {45, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
         {85, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
+        {91, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
         {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {125, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {146, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
@@ -779,6 +799,7 @@ syscall_func_map_t linux_x64_syscall_map()
         {4, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {5, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
         {9, Function("sys_mmap", FunctionCallback({env::abi::auto_argsize, 4, 4, 4, 4, 4}, sys_linux_mmap))},
+        {11, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
         {10, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {12, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
         {17, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},

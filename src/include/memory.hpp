@@ -176,7 +176,7 @@ be used transparently to write and read both abstract and concrete values.
 To do so, it uses a concrete buffer, an abstract buffer, and a memory status
 bitmap to keep track of what is abstract and what is concrete 
 */
-class MemSegment:
+class MemSegment
 {
 private:
     MemStatusBitmap _bitmap;
