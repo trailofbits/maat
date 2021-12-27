@@ -620,7 +620,7 @@ void Number::set_overwrite(const Number& n1, const Number& n2, int lb)
     }
 }
 
-bool Number::sless_than(const Number& other)
+bool Number::sless_than(const Number& other) const
 {
     if (size <= 64)
     {
@@ -634,7 +634,7 @@ bool Number::sless_than(const Number& other)
     }
 }
 
-bool Number::slessequal_than(const Number& other)
+bool Number::slessequal_than(const Number& other) const
 {
     if (size <= 64)
     {
@@ -648,7 +648,7 @@ bool Number::slessequal_than(const Number& other)
     }
 }
 
-bool Number::less_than(const Number& other)
+bool Number::less_than(const Number& other) const
 {
     if (size <= 64)
     {
@@ -688,7 +688,7 @@ bool Number::less_than(const Number& other)
     }
 }
 
-bool Number::lessequal_than(const Number& other)
+bool Number::lessequal_than(const Number& other) const
 {
     if (size <= 64)
     {
@@ -729,7 +729,7 @@ bool Number::lessequal_than(const Number& other)
 }
 
 
-bool Number::equal_to(const Number& other)
+bool Number::equal_to(const Number& other) const
 {
     if (size <= 64)
     {
