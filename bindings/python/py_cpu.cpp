@@ -93,7 +93,7 @@ PyObject* CPU_get_attro(PyObject *self, PyObject *attr)
     try
     {
         ir::reg_t reg = as_cpu_object(self).arch->reg_num(name);
-        return PyExpr_FromExprAndVarContext(as_cpu_object(self).cpu->ctx().get(reg), *(as_cpu_object(self).varctx));
+        return PyExpr_FromExprAndVarContext(as_cpu_object(self).cpu->ctx().get(reg).as_expr(), *(as_cpu_object(self).varctx));
     }
     catch(const ir_exception& e)
     {

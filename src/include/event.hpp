@@ -272,11 +272,11 @@ public:
     // Reg events
     Action before_reg_read(MaatEngine& engine, reg_t reg);
     Action after_reg_read(MaatEngine& engine, reg_t reg, const ir::ProcessedInst::Param& value);
-    Action before_reg_write(MaatEngine& engine, reg_t reg, const ir::ProcessedInst::Param& new_value);
+    Action before_reg_write(MaatEngine& engine, reg_t reg, const Value& new_value);
     Action after_reg_write(MaatEngine& engine, reg_t reg);
     // Mem events
-    Action before_mem_read(MaatEngine& engine, Expr& addr, size_t nb_bytes);
-    Action after_mem_read(MaatEngine& engine, Expr& addr, Expr& value);
+    Action before_mem_read(MaatEngine& engine, const Value& addr, size_t nb_bytes);
+    Action after_mem_read(MaatEngine& engine, const Value& addr, Expr& value);
     Action before_mem_write(MaatEngine& engine, Expr& addr, Expr& new_value);
     Action after_mem_write(MaatEngine& engine, Expr& addr, Expr& new_value);
     // Branch

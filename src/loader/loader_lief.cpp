@@ -197,7 +197,7 @@ void LoaderLIEF::load_cmdline_args(
         argc++;
     }
 
-    mem_arg_addr = engine->cpu.ctx().get(engine->arch->sp())->as_uint() - args_total_size - 0x100;
+    mem_arg_addr = engine->cpu.ctx().get(engine->arch->sp()).as_uint() - args_total_size - 0x100;
     // Adjust SP so it points after the program args and env variables
     engine->cpu.ctx().set(engine->arch->sp(), mem_arg_addr);
     // Write args in memory

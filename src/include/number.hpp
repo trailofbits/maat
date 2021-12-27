@@ -38,6 +38,7 @@ public:
     /// Copy constructor
     Number(const Number& x) = default;
     /// Assignement
+    // TODO don't copy mpz if size is < 64 bits !!!
     Number& operator=(const Number& x) = default;
     /// Move Assignement
     Number& operator=(Number&& x) = default;

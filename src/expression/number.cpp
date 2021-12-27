@@ -29,12 +29,6 @@ Number::Number(): size(0), cst_(-1), mpz_(0){}
 
 Number::Number(size_t bits): size(bits), cst_(0), mpz_(0){}
 
-Number::Number(size_t bits, cst_t value): size(bits), cst_(value)
-{
-    if (bits > 64)
-        set_mpz(value);
-}
-
 Number::~Number(){}
 
 void Number::adjust_mpz()
@@ -91,6 +85,14 @@ cst_t __number_cst_sign_extend(size_t size, cst_t val)
         val = ((((ucst_t)1<<size)-1) & val);
     }
     return val;
+}
+
+Number::Number(size_t bits, cst_t value): size(bits)
+{
+    if (bits > 64)
+        set_mpz(value);
+    else
+        cst_ = __number_cst_sign_extend(size, value);
 }
 
 /// Set the number to simple value 'val'

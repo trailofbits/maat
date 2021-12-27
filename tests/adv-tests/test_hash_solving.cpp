@@ -34,7 +34,7 @@ namespace solve_hash{
         engine.cpu.ctx().set(X86::ESP, 0x9000);
         engine.cpu.ctx().set(X86::EBP, 0x9000);
         // Set input at esp + 0x4
-        engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+4, exprcst(32, in));
+        engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint()+4, exprcst(32, in));
 
         engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x597));
         // Execute
@@ -42,7 +42,7 @@ namespace solve_hash{
         engine.hooks.disable_all();
 
         // Check res in eax
-        return _assert((uint32_t)engine.cpu.ctx().get(X86::EAX)->as_uint() == out, "Hash solving: simple_algo_2: failed");
+        return _assert((uint32_t)engine.cpu.ctx().get(X86::EAX).as_uint() == out, "Hash solving: simple_algo_2: failed");
     }
 
     uint32_t _x86_revert_hash_algo_2(MaatEngine& engine, uint32_t out)
@@ -60,7 +60,7 @@ namespace solve_hash{
 
         // Check res in eax
         std::unique_ptr<solver::Solver> sol = solver::new_solver();
-        sol->add(engine.cpu.ctx().get(X86::EAX) == exprcst(32, out)  &&
+        sol->add(engine.cpu.ctx().get(X86::EAX).as_expr() == exprcst(32, out)  &&
                 exprvar(32, "input") > exprcst(32, 0));
         _assert(sol->check(), "x86_revert_hash: didn't find model for computed hash");
         auto model = sol->get_model();

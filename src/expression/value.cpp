@@ -68,6 +68,11 @@ bool Value::is_concolic(const VarContext& ctx) const
     return is_abstract() and _expr->is_concolic(ctx);
 }
 
+bool Value::is_concrete(const VarContext& ctx) const
+{
+    return not is_abstract() or _expr->is_concrete(ctx);
+}
+
 Expr Value::as_expr() const
 {
     return is_abstract()? _expr : exprcst(_number);
@@ -103,7 +108,7 @@ const Number& Value::as_number(const VarContext& ctx) const
     return is_abstract()? _expr->as_number(ctx) : _number;
 }
 
-Expr& Value::expr()
+const Expr& Value::expr() const
 {
     return _expr;
 }
@@ -113,7 +118,7 @@ const Number& Value::number() const
     return _number;
 }
 
-void Value::set_neg(Value& n)
+void Value::set_neg(const Value& n)
 {
     if (n.is_abstract())
         *this = -n.expr();
@@ -124,7 +129,7 @@ void Value::set_neg(Value& n)
     }
 }
 
-void Value::set_not(Value& n)
+void Value::set_not(const Value& n)
 {
     if (n.is_abstract())
         *this = ~n.expr();
@@ -135,7 +140,7 @@ void Value::set_not(Value& n)
     }
 }
 
-void Value::set_add(Value& n1, Value& n2)
+void Value::set_add(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -148,7 +153,7 @@ void Value::set_add(Value& n1, Value& n2)
     }
 }
 
-void Value::set_sub(Value& n1, Value& n2)
+void Value::set_sub(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -161,7 +166,7 @@ void Value::set_sub(Value& n1, Value& n2)
     }
 }
 
-void Value::set_mul(Value& n1, Value& n2)
+void Value::set_mul(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -174,7 +179,7 @@ void Value::set_mul(Value& n1, Value& n2)
     }
 }
 
-void Value::set_xor(Value& n1, Value& n2)
+void Value::set_xor(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -187,7 +192,7 @@ void Value::set_xor(Value& n1, Value& n2)
     }
 }
 
-void Value::set_shl(Value& n1, Value& n2)
+void Value::set_shl(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -200,7 +205,7 @@ void Value::set_shl(Value& n1, Value& n2)
     }
 }
 
-void Value::set_shr(Value& n1, Value& n2)
+void Value::set_shr(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -213,7 +218,7 @@ void Value::set_shr(Value& n1, Value& n2)
     }
 }
 
-void Value::set_sar(Value& n1, Value& n2)
+void Value::set_sar(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -226,7 +231,7 @@ void Value::set_sar(Value& n1, Value& n2)
     }
 }
 
-void Value::set_and(Value& n1, Value& n2)
+void Value::set_and(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -239,7 +244,7 @@ void Value::set_and(Value& n1, Value& n2)
     }
 }
 
-void Value::set_or(Value& n1, Value& n2)
+void Value::set_or(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -252,7 +257,7 @@ void Value::set_or(Value& n1, Value& n2)
     }
 }
 
-void Value::set_sdiv(Value& n1, Value& n2)
+void Value::set_sdiv(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -265,7 +270,7 @@ void Value::set_sdiv(Value& n1, Value& n2)
     }
 }
 
-void Value::set_div(Value& n1, Value& n2)
+void Value::set_div(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -278,7 +283,7 @@ void Value::set_div(Value& n1, Value& n2)
     }
 }
 
-void Value::set_extract(Value& n, unsigned int high, unsigned int low)
+void Value::set_extract(const Value& n, unsigned int high, unsigned int low)
 {
     if (n.is_abstract())
     {
@@ -291,7 +296,7 @@ void Value::set_extract(Value& n, unsigned int high, unsigned int low)
     }
 }
 
-void Value::set_concat(Value& n1, Value& n2)
+void Value::set_concat(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -304,7 +309,7 @@ void Value::set_concat(Value& n1, Value& n2)
     }
 }
 
-void Value::set_rem(Value& n1, Value& n2)
+void Value::set_rem(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -317,7 +322,7 @@ void Value::set_rem(Value& n1, Value& n2)
     }
 }
 
-void Value::set_srem(Value& n1, Value& n2)
+void Value::set_srem(const Value& n1, const Value& n2)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -331,7 +336,7 @@ void Value::set_srem(Value& n1, Value& n2)
 }
 
 // Write n2 over n1 starting from lowest byte 'lb'
-void Value::set_overwrite(Value& n1, Value& n2, int lb)
+void Value::set_overwrite(const Value& n1, const Value& n2, int lb)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -345,7 +350,7 @@ void Value::set_overwrite(Value& n1, Value& n2, int lb)
     }
 }
 
-void Value::set_popcount(int dest_size, Value& n)
+void Value::set_popcount(int dest_size, const Value& n)
 {
     if (n.is_abstract())
     {
@@ -365,7 +370,7 @@ void Value::set_popcount(int dest_size, Value& n)
     }
 }
 
-void Value::set_zext(int ext_size, Value& n)
+void Value::set_zext(int ext_size, const Value& n)
 {
     if (n.is_abstract())
     {
@@ -381,7 +386,7 @@ void Value::set_zext(int ext_size, Value& n)
     }
 }
 
-void Value::set_sext(int ext_size, Value& n)
+void Value::set_sext(int ext_size, const Value& n)
 {
     if (n.is_abstract())
     {
@@ -390,13 +395,13 @@ void Value::set_sext(int ext_size, Value& n)
         if (ext_size > 64)
         {
             // Need number
-            Number num(ext_size);
-            num.set_mask(ext_size);
+            Number num(ext_size-n.size());
+            num.set_mask(num.size);
             tmp = exprcst(num);
         }
         else
         {
-            tmp = exprcst(ext_size, cst_mask(ext_size));
+            tmp = exprcst(ext_size-n.size(), cst_mask(ext_size));
         }
 
         *this = ITE(
@@ -404,7 +409,7 @@ void Value::set_sext(int ext_size, Value& n)
             ITECond::EQ,
             exprcst(1,0),
             concat(
-                exprcst(ext_size, 0),
+                exprcst(ext_size-n.size(), 0),
                 n.expr()
             ),
             concat(
@@ -419,7 +424,8 @@ void Value::set_sext(int ext_size, Value& n)
         type = Value::Type::CONCRETE;
     }
 }
-void Value::set_less_than(Value& n1, Value& n2, size_t size)
+
+void Value::set_less_than(const Value& n1, const Value& n2, size_t size)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -435,7 +441,7 @@ void Value::set_less_than(Value& n1, Value& n2, size_t size)
     }
 }
 
-void Value::set_lessequal_than(Value& n1, Value& n2, size_t size)
+void Value::set_lessequal_than(const Value& n1, const Value& n2, size_t size)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -451,7 +457,7 @@ void Value::set_lessequal_than(Value& n1, Value& n2, size_t size)
     }
 }
 
-void Value::set_sless_than(Value& n1, Value& n2, size_t size)
+void Value::set_sless_than(const Value& n1, const Value& n2, size_t size)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -467,7 +473,7 @@ void Value::set_sless_than(Value& n1, Value& n2, size_t size)
     }
 }
 
-void Value::set_slessequal_than(Value& n1, Value& n2, size_t size)
+void Value::set_slessequal_than(const Value& n1, const Value& n2, size_t size)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -483,7 +489,7 @@ void Value::set_slessequal_than(Value& n1, Value& n2, size_t size)
     }
 }
 
-void Value::set_equal_to(Value& n1, Value& n2, size_t size)
+void Value::set_equal_to(const Value& n1, const Value& n2, size_t size)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -499,7 +505,7 @@ void Value::set_equal_to(Value& n1, Value& n2, size_t size)
     }
 }
 
-void Value::set_notequal_to(Value& n1, Value& n2, size_t size)
+void Value::set_notequal_to(const Value& n1, const Value& n2, size_t size)
 {
     if (n1.is_abstract() or n2.is_abstract())
     {
@@ -515,5 +521,383 @@ void Value::set_notequal_to(Value& n1, Value& n2, size_t size)
     }
 }
 
+void Value::set_carry(const Value& n1, const Value& n2, size_t size)
+{
+    if (n1.is_abstract() or n2.is_abstract())
+    {
+        // carry is set if result is smaller than one of the operand
+        Expr    in0 = n1.as_expr(),
+                in1 = n2.as_expr();
+        Expr tmp = in0 + in1;
+        *this = ITE(
+            tmp, 
+            ITECond::LT,
+            in0,
+            exprcst(size, 1),
+            ITE(
+                tmp,
+                ITECond::LT,
+                in1,
+                exprcst(size, 1),
+                exprcst(size, 0)
+            )
+        );
+    }
+    else
+    {
+        Number tmp(n1.size());
+        _number.size = size;
+        const Number&   in0 = n1.as_number(),
+                        in1 = n2.as_number();
+        tmp.set_add(in0, in1);
+        if (tmp.less_than(in0) or tmp.less_than(in1))
+            _number.set_cst(1);
+        else
+            _number.set_cst(0);
+        type = Value::Type::CONCRETE;
+    }
+}
+
+void Value::set_scarry(const Value& n1, const Value& n2, size_t size)
+{
+    if (n1.is_abstract() or n2.is_abstract())
+    {
+        // signed carry (i.e overflow) is set if:
+        // - (1) both operands are positive and result negative
+        // - (2) both operands are negative and result postive
+        Expr    in0 = n1.as_expr(),
+                in1 = n2.as_expr();
+        Expr tmp = in0 + in1;
+        Expr zero = exprcst(in0->size, 0);
+        *this = ITE(in0, ITECond::SLT, zero,
+                    ITE(in1, ITECond::SLT, zero,
+                        ITE(zero, ITECond::SLE, tmp,
+                            exprcst(size, 1), // case (2)
+                            exprcst(size, 0)
+                        ),
+                        exprcst(size, 0)
+                    ),
+                    ITE(zero, ITECond::SLE, in1,
+                        ITE(tmp, ITECond::SLT, zero,
+                            exprcst(size, 1), // case (1)
+                            exprcst(size, 0)
+                        ),
+                        exprcst(size, 0)
+                    )
+                );
+    }
+    else
+    {
+        Number tmp(n1.size());
+        _number.size = size;
+        const Number&   in0 = n1.as_number(),
+                        in1 = n2.as_number();
+        tmp.set_add(in0, in1);
+        Number zero(in0.size, 0);
+        if (
+            zero.slessequal_than(in0) and
+            zero.slessequal_than(in1) and
+            tmp.sless_than(zero)
+        )
+        {
+            _number.set_cst(1);
+        }
+        else if (
+            in0.sless_than(zero) and
+            in1.sless_than(zero) and
+            zero.slessequal_than(tmp)
+        )
+        {
+            _number.set_cst(1);
+        }
+        else
+        {
+            _number.set_cst(0);
+        }
+        type = Value::Type::CONCRETE;
+    }
+}
+
+void Value::set_sborrow(const Value& n1, const Value& n2, size_t size)
+{
+    if (n1.is_abstract() or n2.is_abstract())
+    {
+        // signed borrow (i.e overflow) is set when the MSB of
+        // both operands is different and result's MSB is the 
+        // same as the one of the second operand
+        Expr    in0 = n1.as_expr(),
+                in1 = n2.as_expr();
+        Expr tmp = in0 - in1;
+        Expr zero = exprcst(in0->size, 0);
+        *this = ITE(
+                    in0, 
+                    ITECond::SLT, 
+                    zero,
+                    ITE(
+                        in1, 
+                        ITECond::SLT,
+                        zero,
+                        exprcst(size, 0),
+                        ITE(tmp, ITECond::SLT, zero,
+                            exprcst(size,0),
+                            exprcst(size,1) // in0 < 0, in1 >= 0, tmp >= 0
+                        )
+                    ),
+                    ITE(
+                        in1,
+                        ITECond::SLT,
+                        zero,
+                        ITE(tmp, ITECond::SLT, zero,
+                            exprcst(size,1), // in0 >= 0, in1 < 0, tmp < 0
+                            exprcst(size,0)
+                        ),
+                        exprcst(size, 0)
+                    )
+                );
+    }
+    else
+    {
+        Number tmp;
+        _number.size = size;
+        const Number&   in0 = n1.as_number(),
+                        in1 = n2.as_number();
+        tmp.set_sub(in0, in1);
+        Number zero(in0.size, 0);
+        if (
+            zero.slessequal_than(in0) and
+            in1.sless_than(zero) and
+            tmp.sless_than(zero)
+        )
+        {
+            _number.set_cst(1);
+        }
+        else if (
+            in0.sless_than(zero) and
+            zero.slessequal_than(in1) and
+            zero.slessequal_than(tmp)
+        )
+        {
+            _number.set_cst(1);
+        }
+        else
+        {
+            _number.set_cst(0);
+        }
+        type = Value::Type::CONCRETE;
+    }
+}
+
+void Value::set_subpiece(const Value& n1, const Value& n2, size_t size)
+{
+    if (n1.is_abstract() or n2.is_abstract())
+    {
+        Expr    in0 = n1.as_expr(),
+                in1 = n2.as_expr();
+        int trunc = in1->as_uint()*8; // Number of bits to truncate
+
+        if (size < (in0->size - trunc))
+        {
+            *this = extract(
+                in0,
+                trunc + size-1,
+                trunc
+            );
+        }
+        else if (size == (in0->size - trunc))
+        {
+            *this = extract(in0, in0->size-1, trunc);
+        }
+        else
+        {
+            *this = concat(
+                exprcst(size - in0->size + trunc, 0),
+                extract(
+                    in0,
+                    in0->size-1,
+                    trunc
+                )
+            );
+        }
+    }
+    else
+    {
+        const Number&   in0 = n1.as_number(),
+                        in1 = n2.as_number();
+        int trunc = in1.get_cst()*8; // Number of bits to truncate
+        if (size < (in0.size - trunc))
+        {
+            _number.set_extract(
+                in0,
+                trunc + size-1,
+                trunc
+            );
+        }
+        else if (size == (in0.size - trunc))
+        {
+            _number.set_extract(
+                in0,
+                in0.size-1,
+                trunc
+            );
+        }
+        else
+        {
+            _number.set_extract(
+                in0,
+                in0.size-1,
+                trunc
+            );
+            Number zero(size - _number.size, 0);
+            _number.set_concat(
+                zero,
+                _number // Note: passing _number to _number method might crash??
+            );
+        }
+        type = Value::Type::CONCRETE;
+    }
+}
+
+void Value::set_bool_negate(const Value& n, size_t size)
+{
+    if (n.is_abstract())
+    {
+        *this = ITE(
+                    n.expr(), 
+                    ITECond::EQ,
+                    exprcst(n.size(), 0),
+                    exprcst(size, 1),
+                    exprcst(size, 0)
+                );
+    }
+    else
+    {
+        Number zero(n.size(), 0);
+        _number.size = size;
+        if (n.number().equal_to(zero))
+            _number.set(1);
+        else
+            _number.set(0);
+        type = Value::Type::CONCRETE;
+    }
+}
+
+void Value::set_bool_and(const Value& n1, const Value& n2, size_t size)
+{
+    if (n1.is_abstract() or n2.is_abstract())
+    {
+        *this = ITE(
+                    n1.as_expr(), 
+                    ITECond::EQ,
+                    exprcst(n1.size(), 0),
+                    exprcst(size, 0),
+                    ITE(
+                        n2.as_expr(),
+                        ITECond::EQ,
+                        exprcst(n2.size(), 0),
+                        exprcst(size, 0),
+                        exprcst(size, 1)
+                    )
+                );
+    }
+    else
+    {
+        Number zero(n1.size(), 0);
+        Number zero1(n2.size(), 0);
+        _number.size = size;
+        if (
+            n1.as_number().equal_to(zero)
+            or n2.as_number().equal_to(zero1)
+        )
+            _number.set(0);
+        else
+            _number.set(1);
+        type = Value::Type::CONCRETE;
+    }
+}
+
+void Value::set_bool_or(const Value& n1, const Value& n2, size_t size)
+{
+    if (n1.is_abstract() or n2.is_abstract())
+    {
+        *this = ITE(
+                    n1.as_expr(), 
+                    ITECond::EQ,
+                    exprcst(n1.size(), 0),
+                    ITE(
+                        n2.as_expr(),
+                        ITECond::EQ,
+                        exprcst(n2.size(), 0),
+                        exprcst(size, 0),
+                        exprcst(size, 1)
+                    ),
+                    exprcst(size, 1)
+                );
+    }
+    else
+    {
+        Number zero(n1.size(), 0);
+        Number zero1(n2.size(), 0);
+        _number.size = size;
+        if (
+            !n1.as_number().equal_to(zero)
+            or !n2.as_number().equal_to(zero1)
+        )
+            _number.set(1);
+        else
+            _number.set(0);
+        type = Value::Type::CONCRETE;
+    }
+}
+
+void Value::set_bool_xor(const Value& n1, const Value& n2, size_t size)
+{
+    if (n1.is_abstract() or n2.is_abstract())
+    {
+        *this = ITE(
+                    n1.as_expr(), 
+                    ITECond::EQ,
+                    exprcst(n1.size(), 0),
+                    ITE(
+                        n2.as_expr(),
+                        ITECond::EQ,
+                        exprcst(n2.size(), 0),
+                        exprcst(size, 0),
+                        exprcst(size, 1)
+                    ),
+                    ITE(
+                        n2.as_expr(),
+                        ITECond::EQ,
+                        exprcst(n2.size(), 0),
+                        exprcst(size, 1),
+                        exprcst(size, 0)
+                    )
+                );
+    }
+    else
+    {
+        Number zero(n1.size(), 0);
+        Number zero1(n2.size(), 0);
+        _number.size = size;
+        if (
+            (!n1.as_number().equal_to(zero) and n2.as_number().equal_to(zero1))
+            or (n1.as_number().equal_to(zero) and !n2.as_number().equal_to(zero1))
+        )
+            _number.set(1);
+        else
+            _number.set(0);
+        type = Value::Type::CONCRETE;
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, const Value& val)
+{
+    if (val.is_none())
+        os << "<NONE>";
+    else if (val.is_abstract())
+        os << val._expr;
+    else
+        os << val._number;
+    return os;
+}
 
 } // namespace maat

@@ -36,7 +36,7 @@ namespace hash
         engine.cpu.ctx().set(X86::ESP, 0x9000);
         engine.cpu.ctx().set(X86::EBP, 0x9000);
         /* Set input at esp + 0x4 */
-        engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+4, exprcst(32, in));
+        engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint()+4, exprcst(32, in));
 
         engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x5a6));
         // Execute
@@ -44,7 +44,7 @@ namespace hash
         engine.hooks.disable_all();
         
         // Check res in eax
-        return _assert(engine.cpu.ctx().get(X86::EAX)->as_uint() == out, "Hash emulation test: X86: simple_algo_1: failed");
+        return _assert(engine.cpu.ctx().get(X86::EAX).as_uint() == out, "Hash emulation test: X86: simple_algo_1: failed");
     }
     
     
@@ -193,8 +193,8 @@ namespace hash
         engine.cpu.ctx().set(X86::EBP, exprcst(32, 0xffffd15c));
         // Set input string at esp+4 and length at esp+8
         engine.mem->write_buffer(0x11000, (uint8_t*)in, strlen(in));
-        engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+4, exprcst(32, 0x11000));
-        engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+8, exprcst(32, strlen(in)));
+        engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint()+4, exprcst(32, 0x11000));
+        engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint()+8, exprcst(32, strlen(in)));
 
         engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x8048b81));
         // Execute

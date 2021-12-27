@@ -41,7 +41,7 @@ public:
     Value& operator=(Number&& n); ///< Build Value from number
     void set_cst(size_t size, cst_t val); ///< Build Value from constant and size in bits
 public:
-    Expr& expr();
+    const Expr& expr() const;
     const Number& number() const;
     size_t size() const;
 public:
@@ -50,6 +50,7 @@ public:
 public:
     bool is_symbolic(const VarContext&) const;
     bool is_concolic(const VarContext&) const;
+    bool is_concrete(const VarContext&) const;
 public:
     Expr as_expr() const; ///< Return the value as an abstract expression
     cst_t as_int() const; ///< Return the value as a concrete signed value
@@ -61,34 +62,44 @@ public:
 // In-place operators
 public:
     // TODO: doc
-    void set_neg(Value& n);
-    void set_not(Value& n);
-    void set_add(Value& n1, Value& n2);
-    void set_sub(Value& n1, Value& n2);
-    void set_mul(Value& n1, Value& n2);
-    void set_xor(Value& n1, Value& n2);
-    void set_shl(Value& n1, Value& n2);
-    void set_shr(Value& n1, Value& n2);
-    void set_sar(Value& n1, Value& n2);
-    void set_and(Value& n1, Value& n2);
-    void set_or(Value& n1, Value& n2);
-    void set_sdiv(Value& n1, Value& n2);
-    void set_div(Value& n1, Value& n2);
-    void set_extract(Value& n, unsigned int high, unsigned int low);
-    void set_concat(Value& n1, Value& n2);
+    void set_neg(const Value& n);
+    void set_not(const Value& n);
+    void set_add(const Value& n1, const Value& n2);
+    void set_sub(const Value& n1, const Value& n2);
+    void set_mul(const Value& n1, const Value& n2);
+    void set_xor(const Value& n1, const Value& n2);
+    void set_shl(const Value& n1, const Value& n2);
+    void set_shr(const Value& n1, const Value& n2);
+    void set_sar(const Value& n1, const Value& n2);
+    void set_and(const Value& n1, const Value& n2);
+    void set_or(const Value& n1, const Value& n2);
+    void set_sdiv(const Value& n1, const Value& n2);
+    void set_div(const Value& n1, const Value& n2);
+    void set_extract(const Value& n, unsigned int high, unsigned int low);
+    void set_concat(const Value& n1, const Value& n2);
     // Write n2 over n1 starting from lowest byte 'lb'
-    void set_overwrite(Value& n1, Value& n2, int lb);
-    void set_popcount(int dest_size, Value& n);
-    void set_zext(int ext_size, Value& n);
-    void set_sext(int ext_size, Value& n);
-    void set_rem(Value& n1, Value& n2);
-    void set_srem(Value& n1, Value& n2);
-    void set_less_than(Value& n1, Value& n2, size_t size);
-    void set_lessequal_than(Value& n1, Value& n2, size_t size);
-    void set_sless_than(Value& n1, Value& n2, size_t size);
-    void set_slessequal_than(Value& n1, Value& n2, size_t size);
-    void set_equal_to(Value& n1, Value& n2, size_t size);
-    void set_notequal_to(Value& n1, Value& n2, size_t size);
+    void set_overwrite(const Value& n1, const Value& n2, int lb);
+    void set_popcount(int dest_size, const Value& n);
+    void set_zext(int ext_size, const Value& n);
+    void set_sext(int ext_size, const Value& n);
+    void set_rem(const Value& n1, const Value& n2);
+    void set_srem(const Value& n1, const Value& n2);
+    void set_less_than(const Value& n1, const Value& n2, size_t size);
+    void set_lessequal_than(const Value& n1, const Value& n2, size_t size);
+    void set_sless_than(const Value& n1, const Value& n2, size_t size);
+    void set_slessequal_than(const Value& n1, const Value& n2, size_t size);
+    void set_equal_to(const Value& n1, const Value& n2, size_t size);
+    void set_notequal_to(const Value& n1, const Value& n2, size_t size);
+    void set_carry(const Value& n1, const Value& n2, size_t size);
+    void set_scarry(const Value& n1, const Value& n2, size_t size);
+    void set_sborrow(const Value& n1, const Value& n2, size_t size);
+    void set_subpiece(const Value& n1, const Value& n2, size_t size);
+    void set_bool_negate(const Value& n, size_t size);
+    void set_bool_and(const Value& n1, const Value& n2, size_t size);
+    void set_bool_or(const Value& n1, const Value& n2, size_t size);
+    void set_bool_xor(const Value& n1, const Value& n2, size_t size);
+
+    friend std::ostream& operator<<(std::ostream& os, const Value& val);
 };
 
 // TODO: overloaded native operators

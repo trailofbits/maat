@@ -1,6 +1,8 @@
 #ifndef MAAT_PINST_H
 #define MAAT_PINST_H
 
+#include "value.hpp"
+
 namespace maat
 {
 namespace ir
@@ -21,6 +23,7 @@ namespace ir
 class ProcessedInst
 {
 public:
+    using value_ptr = const Value*;
     /** \brief A processed parameter, it can hold either an abstract value,
      * a concrete value, or no value at all */
     class Param
@@ -28,19 +31,19 @@ public:
     public:
         enum class Type
         {
-            NONE,
-            ABSTRACT,
-            CONCRETE
+            INPLACE,
+            PTR,
+            NONE
         };
-    
-        Expr expr;
-        Number number;
-        ProcessedInst::Param::Type type;
+    public:
+        ProcessedInst::value_ptr val_ptr; // For IN params
+        Value val; // For OUT param (need to compute result in place)
         /** \brief Optional auxilliary value, used to store the original address 
          * expression when processing a parameter that is a memory address
          * (the original parameter 'expr' gets replaced by the loaded expression 
          * */
-        Expr auxilliary;
+        Value auxilliary;
+        Type type;
     public:
         Param();
         Param(const Param& other);
@@ -48,37 +51,34 @@ public:
         Param& operator=(Param&& other) = delete;
         ~Param() = default;
     public:
-        bool is_abstract() const;
-        bool is_concrete() const;
-        bool is_none() const;
-    public:
-        Expr as_expr() const;
-    public:
-        Param& operator=(const Expr& e);
-        Param& operator=(Expr&& e);
-        Param& operator=(const Number& c);
+        Param& operator=(const Value& val);
+        Param& operator=(Value&& val);
+        void set_cst(size_t size, cst_t val);
         void set_none();
+    public:
+        const Value& value() const;
+    public:
+        bool is_none() const;
+        bool is_abstract() const;
     };
+
     /** \typedef param_t
      * Parameter of an processed instruction */
     using param_t = Param;
 public:
-    bool is_concrete;
-public:
-    ProcessedInst() = default ;
+    ProcessedInst() = default;
     ProcessedInst(const ProcessedInst& other) = default;
     ProcessedInst& operator=(const ProcessedInst& other) = default;
+    ProcessedInst& operator=(ProcessedInst&& other) = delete;
     ~ProcessedInst() = default;
 public:
-    Param res; ///< Result of the operation to be assigned to destination operand (if applicable)
+    Value res; ///< Result of the operation to be assigned to destination operand (if applicable)
     Param out; ///< Value of output variable
     Param in0; ///< Value of first input parameter
-    Param in1; ///< Value fo second input parameter
+    Param in1; ///< Value of second input parameter
     Param in2; ///< Value of third input parameter
 public:
-    const Param& in(int i) const; ///< Return processed parameter 'i'
-public:
-    void reset(); ///< Empty the contents of the processed instruction
+    void reset();
 };
 
 } // namespace ir

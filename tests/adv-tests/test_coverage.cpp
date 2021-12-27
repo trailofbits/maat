@@ -64,7 +64,7 @@ namespace code_coverage{
                 sol.reset();
                 for (auto c : engine.path.constraints())
                     sol.add(c);
-                sol.add(engine.cpu.ctx().get(X86::EAX) != 0);
+                sol.add(engine.cpu.ctx().get(X86::EAX).as_expr() != 0);
                 if (sol.check())
                 {
                     success = true;

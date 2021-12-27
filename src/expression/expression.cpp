@@ -366,11 +366,11 @@ ExprCst::ExprCst(const Number& value): ExprObject(ExprType::CST, value.size, tru
 
 hash_t ExprCst::hash()
 {
-    unsigned char hash_in[MAXLEN_HASH_IN]; 
+    unsigned char hash_in[MAXLEN_HASH_IN];
     if (!_hashed)
     {
         if (size <= 64)
-            _hash = exprhash(hash_in, prepare_hash_with_i64(hash_in, _concrete.get_cst()), size);
+            _hash = exprhash(hash_in, prepare_hash_with_i64(hash_in, _concrete.get_ucst()), size);
         else
         {
             char _cst_string[500];  // Enough to store the string representation
@@ -433,6 +433,7 @@ ExprVar::ExprVar(size_t s, std::string n, Taint t): ExprObject(ExprType::VAR, s,
 hash_t ExprVar::hash()
 {
     unsigned char hash_in[MAXLEN_HASH_IN]; 
+
     if( !_hashed )
     {
         _hash = exprhash(hash_in, prepare_hash_with_str(hash_in, _name), size); 
@@ -998,7 +999,7 @@ catch(const expression_exception& e)
 hash_t ExprExtract::hash()
 {
     unsigned char hash_in[MAXLEN_HASH_IN];
-    if( !_hashed ){
+    if(!_hashed){
         _hash = exprhash(hash_in, prepare_hash_with_i32(hash_in, args[2]->hash(),
                     prepare_hash_with_i32(hash_in, args[1]->hash(),
                     prepare_hash_with_i32(hash_in, args[0]->hash()))), size);

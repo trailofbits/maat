@@ -537,8 +537,8 @@ Action EventManager::before_reg_read(MaatEngine& engine, reg_t reg)
 {
     engine.info.reg_access = info::RegAccess{
         reg, // reg
-        engine.cpu.ctx().get(reg), // value
-        engine.cpu.ctx().get(reg), // new_value
+        engine.cpu.ctx().get(reg).as_expr(), // value
+        engine.cpu.ctx().get(reg).as_expr(), // new_value
         false, // written
         true // read
     };
@@ -553,8 +553,8 @@ Action EventManager::after_reg_read(
 {
     engine.info.reg_access = info::RegAccess{
         reg, // reg
-        engine.cpu.ctx().get(reg), // value
-        engine.cpu.ctx().get(reg), // new_value
+        engine.cpu.ctx().get(reg).as_expr(), // value
+        engine.cpu.ctx().get(reg).as_expr(), // new_value
         false, // written
         true // read
     };
@@ -564,12 +564,12 @@ Action EventManager::after_reg_read(
 Action EventManager::before_reg_write(
     MaatEngine& engine,
     reg_t reg,
-    const ir::ProcessedInst::Param& new_value
+    const Value& new_value
 )
 {
     engine.info.reg_access = info::RegAccess{
         reg, // reg
-        engine.cpu.ctx().get(reg), //value
+        engine.cpu.ctx().get(reg).as_expr(), //value
         new_value.as_expr(), // new_value
         true, // written
         false // read
@@ -584,8 +584,8 @@ Action EventManager::after_reg_write(
 {
     engine.info.reg_access = info::RegAccess{
         reg, // reg
-        engine.cpu.ctx().get(reg), // value
-        engine.cpu.ctx().get(reg), // new_value
+        engine.cpu.ctx().get(reg).as_expr(), // value
+        engine.cpu.ctx().get(reg).as_expr(), // new_value
         true, // written
         false // read
     };
@@ -594,12 +594,12 @@ Action EventManager::after_reg_write(
 
 Action EventManager::before_mem_read(
     MaatEngine& engine,
-    Expr& addr,
+    const Value& addr,
     size_t nb_bytes
 )
 {
     engine.info.mem_access = info::MemAccess{
-        addr, // addr
+        addr.as_expr(), // addr
         nb_bytes, // size
         nullptr, // value
         false, // written
@@ -610,12 +610,12 @@ Action EventManager::before_mem_read(
 
 Action EventManager::after_mem_read(
     MaatEngine& engine,
-    Expr& addr,
+    const Value& addr,
     Expr& value
 )
 {
     engine.info.mem_access = info::MemAccess{
-        addr, // addr
+        addr.as_expr(), // addr
         value->size/8, // size
         value, // value
         false, // written

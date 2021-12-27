@@ -196,10 +196,10 @@ FunctionCallback::return_t libc_exit_callback(
     switch (engine.arch->type)
     {
         case Arch::Type::X86:
-            status = engine.cpu.ctx().get(X86::EAX);
+            status = engine.cpu.ctx().get(X86::EAX).as_expr();
             break;
         case Arch::Type::X64:
-            status = engine.cpu.ctx().get(X64::RAX);
+            status = engine.cpu.ctx().get(X64::RAX).as_expr();
             break;
         default:
             throw env_exception("Emulated __libc_exit(): not supported for this architecture");
@@ -531,7 +531,7 @@ FunctionCallback::return_t linux_x86_libc_start_main_callback(
     //addr_t rtld_fini = (args[5]->as_uint(*engine.vars));
     //addr_t end_stack = (args[6]->as_uint(engine.vars));
 
-    addr_t stack = engine.cpu.ctx().get(X86::ESP)->as_uint(*engine.vars);
+    addr_t stack = engine.cpu.ctx().get(X86::ESP).as_uint(*engine.vars);
 
     // Push argc, argv
     stack -= 4;
@@ -576,7 +576,7 @@ FunctionCallback::return_t linux_x64_libc_start_main_callback_part1(
     //addr_t end_stack = (args[6]->as_unsigned(engine.vars));
 
     // Push (main, argc, argv) as args to part2
-    addr_t stack = engine.cpu.ctx().get(X64::RSP)->as_uint() - 24;
+    addr_t stack = engine.cpu.ctx().get(X64::RSP).as_uint() - 24;
     engine.mem->write(stack, main, 8);
     engine.mem->write(stack+8, argc, 8);
     engine.mem->write(stack+16, argv, 8);
@@ -599,7 +599,7 @@ FunctionCallback::return_t linux_x64_libc_start_main_callback_part2(
 )
 {
     // Get args manually on stack, cdecl-style
-    Expr stack = engine.cpu.ctx().get(X64::RSP);
+    Expr stack = engine.cpu.ctx().get(X64::RSP).as_expr();
     Expr main = engine.mem->read(stack, 8);
     Expr argc = engine.mem->read(stack+8, 8);
     Expr argv = engine.mem->read(stack+16, 8);
