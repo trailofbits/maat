@@ -31,6 +31,9 @@ private:
 public:
     Value(); ///< Empty value
     Value(const Value& other) = default; ///< Copy constructor
+    Value(const Expr& expr); ///< Build value from abstract expression
+    Value(const Number& number); ///< Build value from concrete number
+    Value(size_t size, cst_t val); ///< Build value from concrete value
     Value& operator=(const Value& other) = default; ///< Copy assignment
     Value& operator=(Value&& other) = default; ///< Move assignment
     ~Value() = default;
@@ -40,6 +43,7 @@ public:
     Value& operator=(const Number& n); ///< Build Value from number
     Value& operator=(Number&& n); ///< Build Value from number
     void set_cst(size_t size, cst_t val); ///< Build Value from constant and size in bits
+    void set_none(); // Set to NONE (no value)
 public:
     const Expr& expr() const;
     const Number& number() const;
@@ -102,7 +106,13 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Value& val);
 };
 
-// TODO: overloaded native operators
+// Overloaded native operators
+// TODO: rest of operators
+Value operator+(const Value& left, const Value& right); ///< Add two values
+Value operator+(const Value& left, cst_t right); ///< Add two values
+Value operator+(cst_t left, const Value& right); ///< Add two values
+
+Value extract(const Value& arg, unsigned long higher, unsigned long lower); ///< Extract bitfield from value
 
 /** }/ */ // doxygen expression group
 

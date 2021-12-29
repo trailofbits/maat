@@ -276,9 +276,9 @@ public:
     Action after_reg_write(MaatEngine& engine, reg_t reg);
     // Mem events
     Action before_mem_read(MaatEngine& engine, const Value& addr, size_t nb_bytes);
-    Action after_mem_read(MaatEngine& engine, const Value& addr, Expr& value);
-    Action before_mem_write(MaatEngine& engine, Expr& addr, Expr& new_value);
-    Action after_mem_write(MaatEngine& engine, Expr& addr, Expr& new_value);
+    Action after_mem_read(MaatEngine& engine, const Value& addr, const Value& value);
+    Action before_mem_write(MaatEngine& engine, const Value& addr, const Value& new_value);
+    Action after_mem_write(MaatEngine& engine, const Value& addr, const Value& new_value);
     // Branch
     Action before_branch(MaatEngine& engine, Expr target, addr_t next, Constraint cond=nullptr, std::optional<bool> taken=true);
     Action after_branch(MaatEngine& engine, Expr target, addr_t next, Constraint cond=nullptr, bool taken=true);

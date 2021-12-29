@@ -750,18 +750,19 @@ addr_t MemSegment::size()
     return end - start + 1;
 }
 
-Expr MemSegment::symbolic_ptr_read(const Expr& addr, ValueSet& addr_value_set, unsigned int nb_bytes, const Expr& base)
+void MemSegment::symbolic_ptr_read(Value& result, const Expr& addr, ValueSet& addr_value_set, unsigned int nb_bytes, const Expr& base)
 {
     Expr res = base;
     Expr byte;
     addr_t a2;
-
     addr_t a = addr_value_set.min;
+
     // Check if value_set doesn't intersect this segment
     if ((addr_value_set.min + nb_bytes -1 > end)
         || (addr_value_set.max < start))
     {
-        return res;
+        result = res;
+        return;
     }
     
     if( a < start )
@@ -770,7 +771,7 @@ Expr MemSegment::symbolic_ptr_read(const Expr& addr, ValueSet& addr_value_set, u
     // If base is null, put first possible read in it and increment address
     if( base == nullptr )
     {
-        res = read(a, nb_bytes);
+        res = read(a, nb_bytes).as_expr();
         a++;
     }
 
@@ -786,7 +787,7 @@ Expr MemSegment::symbolic_ptr_read(const Expr& addr, ValueSet& addr_value_set, u
                 // Identical memory region bigger than single read so
                 // use interval instead
                 // Same value for addr >= a
-                Expr v = read(a, nb_bytes);
+                Expr v = read(a, nb_bytes).as_expr();
                 if( !(v->eq(res)) )
                 {
                     // Combine with ITE only if new possible value is different than the 
@@ -799,26 +800,35 @@ Expr MemSegment::symbolic_ptr_read(const Expr& addr, ValueSet& addr_value_set, u
             else
             {
                 /* Add possible concrete value to ITE switch :) */
-                res = ITE(addr, ITECond::EQ, exprcst(addr->size, a), read(a, nb_bytes), res);
+                res = ITE(addr, ITECond::EQ, exprcst(addr->size, a), read(a, nb_bytes).as_expr(), res);
             }
         }
         else
         {
             /* Add possible concrete value to ITE switch :) */
-            res = ITE(addr, ITECond::EQ, exprcst(addr->size, a), read(a, nb_bytes), res);
+            res = ITE(addr, ITECond::EQ, exprcst(addr->size, a), read(a, nb_bytes).as_expr(), res);
         }
     }
-    // Return res
-    return res;
+
+    result = res;
+    return;
 }
 
+Value MemSegment::read(addr_t addr, unsigned int nb_bytes)
+{
+    Value val;
+    read(val, addr, nb_bytes);
+    return val;
+}
 
-Expr MemSegment::read(addr_t addr, unsigned int nb_bytes)
+void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
 {
     offset_t off = addr - start;
     offset_t from = off, to, bytes_to_read;
-    Expr tmp = nullptr, tmp2;
-    Number number, n1, n2;
+    Value tmp2;
+    Value n1, n2;
+
+    res.set_none();
 
     if( addr+nb_bytes-1 > end )
     {
@@ -841,69 +851,61 @@ Expr MemSegment::read(addr_t addr, unsigned int nb_bytes)
             /* Read */
             switch(bytes_to_read)
             {
-                case 1: tmp2 = exprcst(8, _concrete.read_i8(from)); break;
-                case 2: tmp2 = exprcst(16, _concrete.read_i16(from)); break;
-                case 3: tmp2 = exprcst(24, _concrete.read_i32(from) & 0x00ffffff); break; // Assumes little endian
-                case 4: tmp2 = exprcst(32, _concrete.read_i32(from)); break;
-                case 5: tmp2 = exprcst(40, _concrete.read_i64(from) & 0x000000ffffffffff); break; // Assumes little endian
-                case 6: tmp2 = exprcst(48, _concrete.read_i64(from) & 0x0000ffffffffffff); break; // Assumes little endian
-                case 7: tmp2 = exprcst(56, _concrete.read_i64(from) & 0x00ffffffffffffff); break;// Assumes little endian
-                case 8: tmp2 = exprcst(64, _concrete.read_i64(from)); break;
-                case 9: 
-                    n1 = Number(64, _concrete.read_i64(from));
-                    n2 = Number(8, _concrete.read_i8(from+8));
-                    number.set_concat(n2, n1);
-                    tmp2 = exprcst(number);
+                case 1: tmp2.set_cst(8, _concrete.read_i8(from)); break;
+                case 2: tmp2.set_cst(16, _concrete.read_i16(from)); break;
+                case 3: tmp2.set_cst(24, _concrete.read_i32(from) & 0x00ffffff); break; // Assumes little endian
+                case 4: tmp2.set_cst(32, _concrete.read_i32(from)); break;
+                case 5: tmp2.set_cst(40, _concrete.read_i64(from) & 0x000000ffffffffff); break; // Assumes little endian
+                case 6: tmp2.set_cst(48, _concrete.read_i64(from) & 0x0000ffffffffffff); break; // Assumes little endian
+                case 7: tmp2.set_cst(56, _concrete.read_i64(from) & 0x00ffffffffffffff); break;// Assumes little endian
+                case 8: tmp2.set_cst(64, _concrete.read_i64(from)); break;
+                case 9:
+                    n1.set_cst(64, _concrete.read_i64(from));
+                    n2.set_cst(8, _concrete.read_i8(from+8));
+                    tmp2.set_concat(n2, n1);
                     break;
                 case 10: 
-                    n1 = Number(64, _concrete.read_i64(from));
-                    n2 = Number(16, _concrete.read_i16(from+8));
-                    number.set_concat(n2, n1);
-                    tmp2 = exprcst(number);
+                    n1.set_cst(64, _concrete.read_i64(from));
+                    n2.set_cst(16, _concrete.read_i16(from+8));
+                    tmp2.set_concat(n2, n1);
                     break;
                 case 11:
-                    n1 = Number(64, _concrete.read_i64(from));
-                    n2 = Number(24, _concrete.read_i32(from+8) & 0x00ffffff);
-                    number.set_concat(n2, n1);
-                    tmp2 = exprcst(number);
+                    n1.set_cst(64, _concrete.read_i64(from));
+                    n2.set_cst(24, _concrete.read_i32(from+8) & 0x00ffffff);
+                    tmp2.set_concat(n2, n1);
                     break;
                 case 12:
-                    n1 = Number(64, _concrete.read_i64(from));
-                    n2 = Number(32, _concrete.read_i32(from+8));
-                    number.set_concat(n2, n1);
-                    tmp2 = exprcst(number);
+                    n1.set_cst(64, _concrete.read_i64(from));
+                    n2.set_cst(32, _concrete.read_i32(from+8));
+                    tmp2.set_concat(n2, n1);
                     break;
                 case 13:
-                    n1 = Number(64, _concrete.read_i64(from));
-                    n2 = Number(40, _concrete.read_i64(from+8) & 0xffffffffff);
-                    number.set_concat(n2, n1);
-                    tmp2 = exprcst(number);
+                    n1.set_cst(64, _concrete.read_i64(from));
+                    n2.set_cst(40, _concrete.read_i64(from+8) & 0xffffffffff);
+                    tmp2.set_concat(n2, n1);
                     break;
                 case 14:
-                    n1 = Number(64, _concrete.read_i64(from));
-                    n2 = Number(48, _concrete.read_i64(from+8) & 0xffffffffffff);
-                    number.set_concat(n2, n1);
-                    tmp2 = exprcst(number);
+                    n1.set_cst(64, _concrete.read_i64(from));
+                    n2.set_cst(48, _concrete.read_i64(from+8) & 0xffffffffffff);
+                    tmp2.set_concat(n2, n1);
                     break;
                 case 15:
-                    n1 = Number(64, _concrete.read_i64(from));
-                    n2 = Number(56, _concrete.read_i64(from+8) & 0xffffffffffffff);
-                    number.set_concat(n2, n1);
-                    tmp2 = exprcst(number);
+                    n1.set_cst(64, _concrete.read_i64(from));
+                    n2.set_cst(56, _concrete.read_i64(from+8) & 0xffffffffffffff);
+                    tmp2.set_concat(n2, n1);
                     break;
                 case 16:
-                    n1 = Number(64, _concrete.read_i64(from));
-                    n2 = Number(64, _concrete.read_i64(from+8));
-                    number.set_concat(n2, n1);
-                    tmp2 = exprcst(number);
+                    n1.set_cst(64, _concrete.read_i64(from));
+                    n2.set_cst(64, _concrete.read_i64(from+8));
+                    tmp2.set_concat(n2, n1);
                     break;
                 default: throw mem_exception("MemSegment: should not be reading more than 16 bytes at a time!");
             }
             /* Update result */
-            if( tmp == nullptr )
-                tmp = tmp2;
+            if (res.is_none())
+                res = tmp2;
             else
-                tmp = concat(tmp2, tmp); // Assumes little endian
+                res.set_concat(tmp2, res); // Assumes little endian
         }
         else
         {
@@ -918,14 +920,13 @@ Expr MemSegment::read(addr_t addr, unsigned int nb_bytes)
             /* Read */
             tmp2 = _abstract.read(from, bytes_to_read);
             /* Update result */
-            if( tmp == nullptr )
-                tmp = tmp2;
+            if (res.is_none())
+                res = tmp2;
             else
-                tmp = concat(tmp2, tmp); // Assumes little endian
+                res.set_concat(tmp2, res); // Assumes little endian
         }
         from += bytes_to_read;
     } while(nb_bytes > 0);
-    return tmp;
 }
 
 cst_t MemSegment::concrete_snapshot(addr_t& addr, int& nb_bytes)
@@ -994,43 +995,51 @@ void MemSegment::abstract_snapshot(addr_t& addr, int& nb_bytes, abstract_mem_chu
     addr += i;
 }
 
-void MemSegment::write(addr_t addr, const Expr& e, VarContext& ctx)
+void MemSegment::write(addr_t addr, const Value& val, VarContext& ctx)
 {
     offset_t off = addr - start;
-    if( (!e->is_concrete(ctx)) || e->is_tainted())
+    const Expr& e = val.expr();
+    if (val.is_abstract())
     {
-        /* Add symbolic value */
-        _abstract.write(off, e);
-        /* Update the bitmap */
-        _bitmap.mark_as_abstract(off, off+(e->size/8)-1);
+        if( (!e->is_concrete(ctx)) || e->is_tainted())
+        {
+            /* Add symbolic value */
+            _abstract.write(off, e);
+            /* Update the bitmap */
+            _bitmap.mark_as_abstract(off, off+(e->size/8)-1);
+        }
+        else
+        {
+            // expression is actually concrete
+            _bitmap.mark_as_concrete(off, off+(e->size/8)-1);
+        }
     }
     else
     {
-        /* Update the bitmap */
-        _bitmap.mark_as_concrete(off, off+(e->size/8)-1);
+        _bitmap.mark_as_concrete(off, off+(val.size()/8)-1);
     }
 
     /* ALWAYS Add concrete value if possible (even if its tainted
-     * in case it is code that'll be disassembled, but DON'T update
-     * the bitmap */
-    if( ! e->is_symbolic(ctx))
+    * in case it is code that'll be disassembled, but DON'T update
+    * the bitmap */
+    if (not val.is_symbolic(ctx))
     {
-        const Number& concrete = e->as_number(ctx);
-        _concrete.write(off, concrete, e->size/8);
+        const Number& concrete = val.as_number(ctx);
+        _concrete.write(off, concrete, val.size()/8);
     }
 }
 
-void MemSegment::write(addr_t addr, const std::vector<Expr>& buf, VarContext& ctx)
+void MemSegment::write(addr_t addr, const std::vector<Value>& buf, VarContext& ctx)
 {
     offset_t off = addr-start;
 
-    for (Expr e : buf)
+    for (const Value& val : buf)
     {
-        if (addr + e->size/8 -1 > end)
+        if (addr + val.size()/8 -1 > end)
             throw mem_exception("MemSegment: buffer copy: nb_bytes exceeds segment");
-        write(addr, e, ctx);
-        addr += e->size/8;
-        off += e->size/8;
+        write(addr, val, ctx);
+        addr += val.size()/8;
+        off += val.size()/8;
     }
 }
 
@@ -1049,6 +1058,7 @@ void MemSegment::write(addr_t addr, cst_t val, unsigned int nb_bytes)
 {
     offset_t off = addr - start;
     _concrete.write(off, val, nb_bytes);
+    _bitmap.mark_as_concrete(off, off+nb_bytes-1);
 }
 
 void MemSegment::write_from_concrete_snapshot(addr_t addr, cst_t val, int nb_bytes)
@@ -1236,7 +1246,6 @@ void MemEngine::unmap(addr_t start, addr_t end)
     if (start > end)
         throw mem_exception("MemEngine::unmap(): 'start' must be lower than 'end'");
 
-    int len = end-start+1;
     page_manager.set_flags(start, end, mem_flag_none);
 }
 
@@ -1337,43 +1346,43 @@ bool MemEngine::is_free(addr_t start, addr_t end)
     return true;
 }
 
-// Generic read function
-// This function is never called by the engine but can be called by the user
-Expr MemEngine::read(Expr addr, unsigned int nb_bytes)
+Value MemEngine::read(const Value& addr, unsigned int nb_bytes, bool ignore_flags)
 {
-    // Do the read
-    if( ! addr->is_concrete(*_varctx))
+    Value res;
+    if( ! addr.is_concrete(*_varctx))
     {
         Settings tmp_settings;
-        return symbolic_ptr_read(addr, addr->value_set(), nb_bytes, tmp_settings);
+        symbolic_ptr_read(res, addr.expr(), addr.expr()->value_set(), nb_bytes, tmp_settings);
     }
     else
     {
-        return read(addr->as_uint(*_varctx), nb_bytes);
+        read(res, addr.as_uint(*_varctx), nb_bytes, nullptr, ignore_flags);
     }
+    return res;
 }
 
 
-
-std::string MemEngine::read_string(Expr addr, unsigned int len)
+std::string MemEngine::read_string(const Value& addr, unsigned int len)
 {
     // Do the read
-    if( addr->is_symbolic(*_varctx))
+    if( addr.is_symbolic(*_varctx))
     {
         throw mem_exception("MemEngine::read_string(): doesn't support symbolic expression as address");
     }
     else
     {
-        return read_string(addr->as_uint(*_varctx), len);
+        return read_string(addr.as_uint(*_varctx), len);
     }
 }
 
 // force_concrete_read makes the read concrete even though the memory area has been affected 
 // by symbolic pointers write
-Expr MemEngine::read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, bool force_concrete_read)
+void MemEngine::read(Value& res, addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, bool force_concrete_read)
 {
-    Expr res=nullptr, tmp;
+    Value tmp;
     unsigned int save_nb_bytes = nb_bytes;
+
+    res.set_none();
 
     if( alert != nullptr )
     {
@@ -1388,13 +1397,14 @@ Expr MemEngine::read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, boo
     {
         // base_expr is the value if we read from 'normal' memory and
         // assume it hasn't been modified by symbolic writes
-        Expr base_expr = read(addr, nb_bytes, alert, true);
+        Value base_expr;
+        read(base_expr, addr, nb_bytes, alert, true);
         res = symbolic_mem_engine.concrete_ptr_read(
                 exprcst(_arch_bits, addr),
                 nb_bytes,
-                base_expr
+                base_expr.as_expr()
               );
-        return res;
+        return;
     }
 
     // Else do a read in the "sure" memory
@@ -1412,20 +1422,20 @@ Expr MemEngine::read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, boo
             // Check if read exceeds segment
             if( addr + nb_bytes-1 > segment->end)
                 // Read overlaps two segments
-                tmp = segment->read(addr, segment->end - addr+1);
+                segment->read(tmp, addr, segment->end - addr+1);
             else
-                tmp = segment->read(addr, nb_bytes);
+                segment->read(tmp, addr, nb_bytes);
 
             // Assign read to result
-            if( !res )
+            if (res.is_none())
                 res = tmp;
             else
-                res = concat(tmp, res);
+                res.set_concat(tmp, res); // Assumes little endian
 
-            nb_bytes -= tmp->size/8;
-            addr += tmp->size/8;
+            nb_bytes -= tmp.size()/8;
+            addr += tmp.size()/8;
             if( nb_bytes == 0 )
-                return res;
+                return;
         }
     }
 
@@ -1437,6 +1447,22 @@ Expr MemEngine::read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, boo
         >> Fmt::to_str
     );
 }
+
+// Not performant at all, legacy method! 
+Expr MemEngine::read(Expr addr, unsigned int nb_bytes)
+{
+    Value addr_val = addr;
+    return read(addr_val, nb_bytes).as_expr();
+}
+
+// Legacy method
+Value MemEngine::read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, bool force_concrete_read)
+{
+    Value res;
+    read(res, addr, nb_bytes, alert, force_concrete_read);
+    return res;
+}
+
 
 ValueSet MemEngine::limit_symptr_range(Expr addr, const ValueSet& range, const Settings& settings)
 {
@@ -1465,10 +1491,10 @@ ValueSet MemEngine::limit_symptr_range(Expr addr, const ValueSet& range, const S
 }
 
 
-Expr MemEngine::symbolic_ptr_read(Expr addr, const ValueSet& range, unsigned int nb_bytes, const Settings& settings)
+void MemEngine::symbolic_ptr_read(Value& res, Expr addr, const ValueSet& range, unsigned int nb_bytes, const Settings& settings)
 {
-    Expr res = nullptr;
     ValueSet addr_value_set(range.size);
+    res.set_none();
 
     // Check if we have to limit the pointer range
     if(
@@ -1505,34 +1531,34 @@ Expr MemEngine::symbolic_ptr_read(Expr addr, const ValueSet& range, unsigned int
             break;
         else if (segment->end < addr_value_set.min)
             continue;
-        else
-            res = segment->symbolic_ptr_read(addr, addr_value_set, nb_bytes, res);
+        else{
+            segment->symbolic_ptr_read(res, addr, addr_value_set, nb_bytes, nullptr);
+        }
     }
 
-    if( res == nullptr )
+    if( res.is_none() )
         throw runtime_exception("Got NULL as base value for symbolic pointer read!");
 
     if( symbolic_mem_engine.contains_symbolic_write(addr_value_set.min, addr_value_set.max+nb_bytes-1) )
     {
-        res = symbolic_mem_engine.symbolic_ptr_read(addr, addr_value_set, nb_bytes, res);
+        res = symbolic_mem_engine.symbolic_ptr_read(addr, addr_value_set, nb_bytes, res.as_expr());
     }
-
-    return res;
 }
 
-std::vector<Expr> MemEngine::read_buffer(addr_t addr, unsigned int nb_elems, unsigned int elem_size)
+std::vector<Value> MemEngine::read_buffer(addr_t addr, unsigned int nb_elems, unsigned int elem_size)
 {
-    return read_buffer(exprcst(_arch_bits, addr), nb_elems, elem_size);
+    Value addr_val(_arch_bits, addr);
+    return read_buffer(addr_val, nb_elems, elem_size);
 }
 
-std::vector<Expr> MemEngine::read_buffer(Expr addr, unsigned int nb_elems, unsigned int elem_size)
+std::vector<Value> MemEngine::read_buffer(const Value& addr, unsigned int nb_elems, unsigned int elem_size)
 {
-    std::vector<Expr> res;
+    std::vector<Value> res;
     read_buffer(res, addr, nb_elems, elem_size);
     return res;
 }
 
-void MemEngine::read_buffer(std::vector<Expr>& buffer, Expr addr, unsigned int nb_elems, unsigned int elem_size)
+void MemEngine::read_buffer(std::vector<Value>& buffer, const Value& addr, unsigned int nb_elems, unsigned int elem_size)
 {
     if (elem_size > 16)
     {
@@ -1546,9 +1572,10 @@ void MemEngine::read_buffer(std::vector<Expr>& buffer, Expr addr, unsigned int n
     }
 }
 
-void MemEngine::read_buffer(std::vector<Expr>& buffer, addr_t addr, unsigned int nb_elems, unsigned int elem_size)
+void MemEngine::read_buffer(std::vector<Value>& buffer, addr_t addr, unsigned int nb_elems, unsigned int elem_size)
 {
-    return read_buffer(buffer, exprcst(_arch_bits, addr), nb_elems, elem_size);
+    Value addr_val(_arch_bits, addr);
+    return read_buffer(buffer, addr_val, nb_elems, elem_size);
 }
 
 /* Read a string of size len 
@@ -1556,17 +1583,17 @@ void MemEngine::read_buffer(std::vector<Expr>& buffer, addr_t addr, unsigned int
 std::string MemEngine::read_string(addr_t addr, unsigned int len)
 {
     std::string res;
-    Expr e;
+    Value val;
     char c;
 
     for( int i = 0; len == 0 || i < len; i++)
     {
-        e = read(addr+i, 1);
-        if( e->is_symbolic(*_varctx))
+        read(val, addr+i, 1);
+        if( val.is_symbolic(*_varctx))
         {
             throw mem_exception("Got purely symbolic char while reading concrete string");
         }
-        c = (char)(e->as_uint(*_varctx));
+        c = (char)(val.as_uint(*_varctx));
         if( c == 0 && len == 0 )
         {
             return res;
@@ -1576,24 +1603,24 @@ std::string MemEngine::read_string(addr_t addr, unsigned int len)
     return res;
 }
 
-void MemEngine::write(Expr addr, Expr e, bool ignore_flags)
+void MemEngine::write(const Value& addr, const Value& val, bool ignore_flags)
 {
-    if (addr->is_concrete(*_varctx))
+    if (addr.is_concrete(*_varctx))
     {
-        return write(addr->as_uint(*_varctx), e, nullptr, false, ignore_flags);
+        return write(addr.as_uint(*_varctx), val, nullptr, false, ignore_flags);
     }
     else
     {
         Settings settings; // Dummy settings because symbolic_ptr_write needs it
-        return symbolic_ptr_write(addr, addr->value_set(), e, settings);
+        return symbolic_ptr_write(addr.expr(), addr.expr()->value_set(), val, settings);
     }
 }
 
-void MemEngine::write(addr_t addr, Expr e, mem_alert_t* alert, bool called_by_engine, bool ignore_flags)
+void MemEngine::write(addr_t addr, const Value& val, mem_alert_t* alert, bool called_by_engine, bool ignore_flags)
 {
     std::list<std::shared_ptr<MemSegment>>::iterator it;
     bool finish = false;
-    Expr tmp_e = e;
+    Value tmp_val = val;
     addr_t tmp_addr = addr;
     int bytes_to_write = 0;
 
@@ -1605,7 +1632,7 @@ void MemEngine::write(addr_t addr, Expr e, mem_alert_t* alert, bool called_by_en
     /* Find the segment we write to */
     for( it = _segments.begin(); it != _segments.end() && !finish; it++)
     {
-        if( (*it)->intersects_with_range(tmp_addr, tmp_addr+(tmp_e->size/8)-1) )
+        if( (*it)->intersects_with_range(tmp_addr, tmp_addr+(tmp_val.size()/8)-1) )
         {
             // Check flags
             if( 
@@ -1635,30 +1662,31 @@ void MemEngine::write(addr_t addr, Expr e, mem_alert_t* alert, bool called_by_en
                     pending_x_mem_overwrites.push_back(
                         std::make_pair(
                             tmp_addr,
-                            tmp_addr-1+(tmp_e->size/8)
+                            tmp_addr-1+(tmp_val.size()/8)
                         )
                     );
                 }
 
             }
             /* Perform write*/
-            if( tmp_addr + tmp_e->size/8 -1 > (*it)->end )
+            if (tmp_addr + tmp_val.size()/8 -1 > (*it)->end)
             {
                 bytes_to_write = (*it)->end-tmp_addr+1;
                 // Record write for snapshots
                 record_mem_write(tmp_addr, bytes_to_write);
                 // Write
-                (*it)->write(tmp_addr, extract(tmp_e, (bytes_to_write*8)-1, 0) , *_varctx); // Just write lower bytes
+                Value extracted = extract(tmp_val, (bytes_to_write*8)-1, 0);
+                (*it)->write(tmp_addr, extracted, *_varctx); // Just write lower bytes
                 tmp_addr += bytes_to_write;
-                tmp_e = extract(tmp_e, tmp_e->size-1, bytes_to_write*8);
+                tmp_val.set_extract(tmp_val, tmp_val.size()-1, bytes_to_write*8);
             }
             else
             {
-                bytes_to_write = tmp_e->size/8;
+                bytes_to_write = tmp_val.size()/8;
                 // Record write for snapshots
                 record_mem_write(tmp_addr, bytes_to_write);
                 // Write
-                (*it)->write(tmp_addr, tmp_e, *_varctx);
+                (*it)->write(tmp_addr, tmp_val, *_varctx);
                 finish = true;
             }
         }
@@ -1668,18 +1696,18 @@ void MemEngine::write(addr_t addr, Expr e, mem_alert_t* alert, bool called_by_en
     {
         // Success
         // Record write in symbolic memory engine if needed
-        symbolic_mem_engine.concrete_ptr_write(exprcst(_arch_bits, addr), e);
+        symbolic_mem_engine.concrete_ptr_write(exprcst(_arch_bits,addr), val);
         return;
     }
     /* If addr isn't in any segment, throw exception */
     throw mem_exception(Fmt()
-        << "Trying to write " << std::dec << e->size/8
+        << "Trying to write " << std::dec << val.size()/8
         << " bytes at address 0x" << std::hex << addr
         << " causes access to non-mapped memory"
         >> Fmt::to_str);
 }
 
-void MemEngine::symbolic_ptr_write(Expr addr, const ValueSet& range, Expr e, const Settings& settings, mem_alert_t* alert, bool _called_by_sym)
+void MemEngine::symbolic_ptr_write(Expr addr, const ValueSet& range, const Value& val, const Settings& settings, mem_alert_t* alert, bool _called_by_sym)
 {
     addr_t addr_min, addr_max;
 
@@ -1740,50 +1768,57 @@ void MemEngine::symbolic_ptr_write(Expr addr, const ValueSet& range, Expr e, con
     }
 
     // Record the symbolic write
-    symbolic_mem_engine.symbolic_ptr_write(addr, e, addr_min, addr_max);
+    symbolic_mem_engine.symbolic_ptr_write(addr, val, addr_min, addr_max);
 }
 
-void MemEngine::write(Expr addr, cst_t val, int nb_bytes, bool ignore_flags)
+// Convenience function, shouldn't be used by the engine!!!
+void MemEngine::write(const Value& addr, cst_t val, int nb_bytes, bool ignore_flags)
 {
-    if (addr->is_concrete(*_varctx))
+    if (addr.is_concrete(*_varctx))
     {
-        return write(addr->as_uint(*_varctx), val, nb_bytes, ignore_flags);
+        return write(addr.as_uint(*_varctx), val, nb_bytes, ignore_flags);
     }
     else
     {
         Settings settings; // Dummy settings because symbolic_ptr_write needs it
-        return symbolic_ptr_write(addr, addr->value_set(), exprcst(nb_bytes*8, val), settings);
+        return symbolic_ptr_write(addr.expr(), addr.expr()->value_set(), exprcst(nb_bytes*8, val), settings);
     }
+}
+
+void MemEngine::write(addr_t addr, Expr e)
+{
+    Value val = e;
+    return write(addr, val);
 }
 
 void MemEngine::write(
-    addr_t addr, cst_t val, int nb_bytes, bool ignore_mem_permissions,
-    mem_alert_t* alert, bool called_by_engine
+    addr_t addr, cst_t val, int nb_bytes, bool ignore_mem_permissions
 )
 {
-    return write(addr, exprcst(nb_bytes*8, val), alert, called_by_engine, ignore_mem_permissions);
+    Value as_value = Number(nb_bytes*8, val);
+    return write(addr, as_value, nullptr, false, ignore_mem_permissions);
 }
 
-void MemEngine::write_buffer(Expr addr, uint8_t* src, int nb_bytes, bool ignore_flags)
+void MemEngine::write_buffer(const Value& addr, uint8_t* src, int nb_bytes, bool ignore_flags)
 {
-    if( addr->is_symbolic(*_varctx))
+    if( addr.is_symbolic(*_varctx))
     {
         throw mem_exception("MemEngine::write_buffer(): doesn't support symbolic expressions as address");
     }
     else
     {
-        return write_buffer(addr->as_uint(*_varctx), src, nb_bytes, ignore_flags);
+        return write_buffer(addr.as_uint(*_varctx), src, nb_bytes, ignore_flags);
     }
 }
 
-void MemEngine::write_buffer(Expr addr, const std::vector<Expr>& src, bool ignore_flags){
-    if( addr->is_symbolic(*_varctx))
+void MemEngine::write_buffer(const Value& addr, const std::vector<Value>& src, bool ignore_flags){
+    if( addr.is_symbolic(*_varctx))
     {
         throw mem_exception("MemEngine::write_buffer(): doesn't support symbolic expressions as address");
     }
     else
     {
-        return write_buffer(addr->as_uint(*_varctx), src, ignore_flags);
+        return write_buffer(addr.as_uint(*_varctx), src, ignore_flags);
     }
 }
 
@@ -1845,12 +1880,12 @@ void MemEngine::write_buffer(addr_t addr, uint8_t* src, int nb_bytes, bool ignor
     );
 }
 
-void MemEngine::write_buffer(addr_t addr, const std::vector<Expr>& buf, bool ignore_flags)
+void MemEngine::write_buffer(addr_t addr, const std::vector<Value>& buf, bool ignore_flags)
 {
     int nb_bytes = 0;
 
-    for (Expr e : buf)
-        nb_bytes += e->size/8;
+    for (const Value& val : buf)
+        nb_bytes += val.size()/8;
 
     // Record write for snapshots
     record_mem_write(addr, nb_bytes);
@@ -1875,11 +1910,12 @@ void MemEngine::write_buffer(addr_t addr, const std::vector<Expr>& buf, bool ign
                     )
                 );
             }
-                
+
             segment->write(addr, buf, *_varctx);
             return;
         }
     }
+
     /* If addr isn't in any segment, throw exception */
     throw mem_exception(Fmt()
         << "Trying to write at address 0x" << std::hex << addr
@@ -1926,8 +1962,9 @@ std::string MemEngine::make_concolic(addr_t addr, unsigned int nb_elems, unsigne
 {
     std::stringstream ss;
     std::vector<std::string> res;
-    Expr prev_expr;
-    
+    Value prev_expr;
+    Value addr_val(_arch_bits, addr);
+
     if( nb_elems == 0 )
         return "";
 
@@ -1951,13 +1988,13 @@ std::string MemEngine::make_concolic(addr_t addr, unsigned int nb_elems, unsigne
     {
         ss.str(""); ss.clear();
         ss << new_name << "_" << std::dec << i;
-        prev_expr = read(addr + i*elem_size, elem_size);
-        if (prev_expr->is_symbolic(*_varctx))
+        prev_expr = read(addr_val + i*elem_size, elem_size);
+        if (prev_expr.is_symbolic(*_varctx))
         {
             throw mem_exception("MemEngine::make_concolic(): can not be called on memory region that contains full symbolic expressions");
         }
-        _varctx->set(ss.str(), prev_expr->as_uint(*_varctx));
-        write(addr + i*elem_size, exprvar(elem_size*8, ss.str()));
+        _varctx->set(ss.str(), prev_expr.as_uint(*_varctx));
+        write(addr_val + i*elem_size, exprvar(elem_size*8, ss.str()));
     }
     return new_name;
 }
@@ -1979,6 +2016,7 @@ void MemEngine::make_tainted_no_var(addr_t addr, unsigned int nb_elems, unsigned
 {
     Expr e;
     std::vector<std::string> res;
+    Value addr_val(_arch_bits, addr);
 
     if( _varctx == nullptr )
     {
@@ -1995,9 +2033,9 @@ void MemEngine::make_tainted_no_var(addr_t addr, unsigned int nb_elems, unsigned
     }
     for( unsigned int i = 0; i < nb_elems; i++)
     {
-        e = read(addr + i*elem_size, elem_size);
+        e = read(addr_val + i*elem_size, elem_size).as_expr();
         e->make_tainted();
-        write(addr + i*elem_size, e);
+        write(addr_val + i*elem_size, e);
     }
 }
 
@@ -2006,7 +2044,7 @@ std::string MemEngine::make_tainted_var(addr_t addr, unsigned int nb_elems, unsi
     Expr e;
     std::stringstream ss;
     std::vector<std::string> res;
-    
+    Value addr_val(_arch_bits, addr);
 
     if( _varctx == nullptr )
     {
@@ -2029,11 +2067,11 @@ std::string MemEngine::make_tainted_var(addr_t addr, unsigned int nb_elems, unsi
     {
         ss.str(""); ss.clear();
         ss << new_name << "_" << std::dec << i;
-        e = read(addr + i*elem_size, elem_size);
+        e = read(addr_val + i*elem_size, elem_size).as_expr();
         _varctx->set(ss.str(), e->as_int(*_varctx)); // Save the concrete value
-        write(addr + i*elem_size, exprvar(elem_size*8, ss.str(), Taint::TAINTED)); // Write the new exprvar
+        write(addr_val + i*elem_size, exprvar(elem_size*8, ss.str(), Taint::TAINTED)); // Write the new exprvar
     }
-    
+
     return new_name;
 }
 
@@ -2178,7 +2216,7 @@ void MemEngine::check_status(addr_t start, addr_t end, bool& is_symbolic, bool& 
 
     is_symbolic = false;
     is_tainted = false;
-    Expr e;
+    Value val;
     addr_t start_sym = start;
     /* Find the segment */
     for (auto& segment : _segments)
@@ -2190,10 +2228,10 @@ void MemEngine::check_status(addr_t start, addr_t end, bool& is_symbolic, bool& 
                 // If not full concrete check the not concrete bytes
                 while( start_sym <= end )
                 {
-                    e = read(start_sym, 1);
-                    if( e->is_tainted() )
+                    read(val, start_sym, 1);
+                    if( val.as_expr()->is_tainted() )
                         is_tainted = true;
-                    if( e->is_symbolic(*_varctx))
+                    if( val.is_symbolic(*_varctx))
                     {
                         is_symbolic = true;
                         return; // Break as soon as symbolic code detected

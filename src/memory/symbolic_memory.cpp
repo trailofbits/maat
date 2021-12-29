@@ -140,25 +140,25 @@ SymbolicMemEngine::SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContex
 {}
 
 // min, max : the refined value set of 'addr'
-void SymbolicMemEngine::symbolic_ptr_write(const Expr& addr, Expr val, addr_t min, addr_t max)
+void SymbolicMemEngine::symbolic_ptr_write(const Expr& addr, const Value& val, addr_t min, addr_t max)
 {
     write_count++;
     ValueSet refined_vs(addr->size);
     refined_vs.set(min, max, addr->value_set().stride);
     // If max is close to MAX_INT, arrondir à MAX_INT
-    if( cst_mask(val->size) - max + 1 < (val->size/8))
+    if( cst_mask(val.size()) - max + 1 < (val.size()/8))
     {
-        max = cst_mask(val->size);
+        max = cst_mask(val.size());
     }
     // Record the write in the interval tree
-    write_intervals.add_interval(min, max - 1 + (val->size/8), write_count);
+    write_intervals.add_interval(min, max - 1 + (val.size()/8), write_count);
     // Add write to the list of writes
     writes.push_back(SymbolicMemWrite(addr, val, refined_vs));
 }
 
-void SymbolicMemEngine::concrete_ptr_write(const Expr& addr, Expr val)
+void SymbolicMemEngine::concrete_ptr_write(Expr addr, const Value& val)
 {
-    if( write_intervals.contains_interval(addr->as_uint(*_varctx), addr->as_uint(*_varctx) -1 + (val->size/8)) )
+    if( write_intervals.contains_interval(addr->as_uint(*_varctx), addr->as_uint(*_varctx) -1 + (val.size()/8)) )
     {
         // Add writes
         writes.push_back(SymbolicMemWrite(addr, val, addr->value_set()));
@@ -166,14 +166,15 @@ void SymbolicMemEngine::concrete_ptr_write(const Expr& addr, Expr val)
     }
 }
 
-void SymbolicMemEngine::concrete_ptr_write_buffer(addr_t addr, uint8_t* src, int nb_bytes, size_t arch_bits)
+void SymbolicMemEngine::concrete_ptr_write_buffer(Expr addr, uint8_t* src, int nb_bytes, size_t arch_bits)
 {
+    addr_t concrete_addr = addr->as_uint(*_varctx);
     for( int i = 0; i < nb_bytes; i++ )
     {
-        if( write_intervals.contains_addr(addr+i) )
+        if( write_intervals.contains_addr(concrete_addr+i))
         {
             // Add write
-            writes.push_back(SymbolicMemWrite(addr, arch_bits, exprcst(8, src[i])));
+            writes.push_back(SymbolicMemWrite(concrete_addr, arch_bits, exprcst(8, src[i])));
             write_count++;
         }
     }
@@ -238,7 +239,7 @@ Expr _mem_expr_overwrite(Expr prev, Expr expr, int index)
     }
 }
 
-Expr SymbolicMemEngine::concrete_ptr_read(const Expr& addr, int nb_bytes, Expr base_expr)
+Expr SymbolicMemEngine::concrete_ptr_read(Expr addr, int nb_bytes, Expr base_expr)
 {
     int i = 0;
     addr_t addr_min = addr->as_uint(*_varctx);
@@ -252,25 +253,25 @@ Expr SymbolicMemEngine::concrete_ptr_read(const Expr& addr, int nb_bytes, Expr b
         {
             // Only update value if concrete write falls into the range of the read
             if(
-                write.refined_value_set.min > addr_min - write.value->size/8 and
+                write.refined_value_set.min > addr_min - write.value.size()/8 and
                 write.refined_value_set.min < addr_min + nb_bytes
             )
             {
                 // Concrete ptr write recorded, we are sure
-                res = _mem_expr_overwrite(res, write.value, write.refined_value_set.min - addr_min);
+                res = _mem_expr_overwrite(res, write.value.as_expr(), write.refined_value_set.min - addr_min);
             }
         }
         else
         {
             // Symbolic ptr write -> set all possibilities
             // Change the possible values depending on possible overlaps
-            i = 1 - write.value->size/8; // Byte offset counter (we start a negative because a value
+            i = 1 - write.value.size()/8; // Byte offset counter (we start a negative because a value
                                          // written before the read can still overwrite the read
             tmp_res = res;
             while (i < nb_bytes)
             {
                 // Check if aligned (if option is enabled)
-                if( symptr_force_aligned and (i%(write.value->size/8) != 0))
+                if( symptr_force_aligned and (i%(write.value.size()/8) != 0))
                 {
                     i++;
                     continue;
@@ -285,17 +286,16 @@ Expr SymbolicMemEngine::concrete_ptr_read(const Expr& addr, int nb_bytes, Expr b
                 // byte 'i'
                 else
                 {
-                    res = ITE(write.addr, ITECond::EQ, addr+i, _mem_expr_overwrite(tmp_res, write.value, i), res);
+                    res = ITE(write.addr, ITECond::EQ, addr+i, _mem_expr_overwrite(tmp_res, write.value.as_expr(), i), res);
                 }
                 i++;
             }
         }
     }
     return res;
-    
 }
 
-Expr SymbolicMemEngine::symbolic_ptr_read(const Expr& addr, ValueSet& addr_value_set, int nb_bytes, Expr base_expr)
+Expr SymbolicMemEngine::symbolic_ptr_read(Expr& addr, ValueSet& addr_value_set, int nb_bytes, Expr base_expr)
 {
     int i;
     int step;
@@ -307,11 +307,11 @@ Expr SymbolicMemEngine::symbolic_ptr_read(const Expr& addr, ValueSet& addr_value
     for (int count = 0; count < write_count; count++)
     {
         SymbolicMemWrite& write = writes[count];
-        i = 1 - write.value->size/8;
+        i = 1 - write.value.size()/8;
         tmp_res = res;
-        if( write.value->size/8 <= nb_bytes )
+        if( write.value.size()/8 <= nb_bytes )
         {
-            step = write.value->size/8;
+            step = write.value.size()/8;
         }
         else
         {
@@ -334,7 +334,7 @@ Expr SymbolicMemEngine::symbolic_ptr_read(const Expr& addr, ValueSet& addr_value
                 and write.refined_value_set.max >= addr_min+i
             )
             {
-                res = ITE(write.addr, ITECond::EQ, addr+i, _mem_expr_overwrite(tmp_res, write.value, i), res);
+                res = ITE(write.addr, ITECond::EQ, addr+i, _mem_expr_overwrite(tmp_res, write.value.as_expr(), i), res);
             }
             i++;
         }

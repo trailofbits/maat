@@ -103,9 +103,15 @@ ProcessedInst::Param& ProcessedInst::Param::operator=(const ProcessedInst::Param
 
 ProcessedInst::Param& ProcessedInst::Param::operator=(const Value& v)
 {
+    val = v;
+    type = ProcessedInst::Param::Type::INPLACE;
+    return *this;
+}
+
+void ProcessedInst::Param::set_value_by_ref(const Value& v)
+{
     val_ptr = &v;
     type = ProcessedInst::Param::Type::PTR;
-    return *this;
 }
 
 ProcessedInst::Param& ProcessedInst::Param::operator=(Value&& v)

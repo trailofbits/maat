@@ -51,8 +51,9 @@ public:
         Param& operator=(Param&& other) = delete;
         ~Param() = default;
     public:
-        Param& operator=(const Value& val);
+        Param& operator=(const Value& val); ///< Not performant
         Param& operator=(Value&& val);
+        void set_value_by_ref(const Value& val); ///< Performant, 'val' reference needs to stay valid!!
         void set_cst(size_t size, cst_t val);
         void set_none();
     public:

@@ -856,53 +856,53 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
         if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_32
             or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_64)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes).as_uint();
             reloc_new_value +=  S + A;
             engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_32
             or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_32S)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint(); 
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4).as_uint(); 
             reloc_new_value += S + A;
             engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC64)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 8)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 8).as_uint();
             reloc_new_value +=  S + A - P;
             engine->mem->write(reloc_addr, reloc_new_value, 8, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_PC32
                 or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC32)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4).as_uint();
             reloc_new_value +=  S + A - P;
             engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC16)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 2)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 2).as_uint();
             reloc_new_value +=  S + A - P;
             engine->mem->write(reloc_addr, reloc_new_value, 2, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_PC8)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 1)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 1).as_uint();
             reloc_new_value +=  S + A - P;
             engine->mem->write(reloc_addr, reloc_new_value, 1, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_GLOB_DAT
                 or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_GLOB_DAT)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes).as_uint();
             reloc_new_value +=  S;
             engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_RELATIVE
                 or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_RELATIVE)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, arch_bytes).as_uint();
             reloc_new_value +=  B + A;
             engine->mem->write(reloc_addr, reloc_new_value, arch_bytes, true); // Ignore memory flags
         }
@@ -923,31 +923,31 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
                 or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_IRELATIVE)
         {
             //reloc_new_value = _call_ifunc_resolver(sym, (uint32_t)engine->mem->read(reloc_addr, 4)->concretize() + B + A);
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4).as_uint();
             reloc_new_value +=  B + A;
             engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_16)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 2)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 2).as_uint();
             reloc_new_value +=  S + A;
             engine->mem->write(reloc_addr, reloc_new_value, 2, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_8)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 1)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 1).as_uint();
             reloc_new_value +=  S + A;
             engine->mem->write(reloc_addr, reloc_new_value, 1, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_SIZE32)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 4).as_uint();
             reloc_new_value +=  symbol_size + A;
             engine->mem->write(reloc_addr, reloc_new_value, 4, true); // Ignore memory flags
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_SIZE64)
         {
-            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 8)->as_uint();
+            reloc_new_value = reloc.is_rela()? 0 : engine->mem->read(reloc_addr, 8).as_uint();
             reloc_new_value +=  symbol_size + A;
             engine->mem->write(reloc_addr, reloc_new_value, 8, true); // Ignore memory flags
         }

@@ -510,7 +510,7 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
 // Translate a pcode varnode into an parameter and add it to inst
 maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
 {
-    assert(var->space != NULL);
+    assert(v->space != NULL);
 
     // Check if constant
     Address addr(v->space, v->offset);

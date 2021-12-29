@@ -5,6 +5,21 @@ namespace maat
 
 Value::Value(): _expr(nullptr), type(Value::Type::NONE){}
 
+Value::Value(const Expr& expr)
+{
+    *this = expr;
+}
+
+Value::Value(const Number& number)
+{
+    *this = number;
+}
+
+Value::Value(size_t size, cst_t val)
+{
+    set_cst(size, val);
+}
+
 Value& Value::operator=(const Expr& e)
 {
     _expr = e;
@@ -37,6 +52,11 @@ void Value::set_cst(size_t size, cst_t val)
 {
     _number = Number(size, val);
     type = Value::Type::CONCRETE;
+}
+
+void Value::set_none()
+{
+    type = Value::Type::NONE;
 }
 
 size_t Value::size() const
@@ -899,5 +919,36 @@ std::ostream& operator<<(std::ostream& os, const Value& val)
         os << val._number;
     return os;
 }
+
+
+// Operators
+Value operator+(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = left.expr()+right;
+    else
+    {
+        Number n(left.size(), right);
+        n.set_add(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value extract(const Value& arg, unsigned long higher, unsigned long lower)
+{
+    Value res;
+    if (arg.is_abstract())
+        res = extract(arg.expr(), higher, lower);
+    else
+    {
+        Number n;
+        n.set_extract(arg.as_number(), higher, lower);
+        res = n;
+    }
+    return res;
+}
+
 
 } // namespace maat

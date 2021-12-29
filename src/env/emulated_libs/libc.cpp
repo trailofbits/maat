@@ -18,17 +18,17 @@ namespace emulated
  */
 void _mem_read_c_string(MaatEngine& engine, addr_t addr, char* buffer, int& len, unsigned int max_len)
 {
-    Expr e;
+    Value val;
     char c = 0xff;
     len = 0;
     while (c != 0 && len < max_len )
     {
-        e = engine.mem->read(addr+len, 1);
-        if (e->is_symbolic(*engine.vars))
+        val = engine.mem->read(addr+len, 1);
+        if (val.is_symbolic(*engine.vars))
         {
             throw env_exception("_mem_read_c_string(): tries to read concrete C string but got symbolic data");
         }
-        c = (uint8_t)(e->as_uint(*engine.vars));
+        c = (uint8_t)(val.as_uint(*engine.vars));
         buffer[len++] = c;
     }
     if (len == max_len)
@@ -227,7 +227,7 @@ Expr _atoi_parse_digits(MaatEngine& engine, addr_t addr)
     for (i = 0; i < 11; i++)
     { // 11 because nb_digits of MAX_INT is 10
         // Read next char
-        c = engine.mem->read(addr++, 1);
+        c = engine.mem->read(addr++, 1).as_expr();
         char_was_enginebolic[i] = not c->is_concrete(*engine.vars);
         char_expressions[i] = c;
         if (i == 10){ // Check the eleventh char
@@ -310,14 +310,14 @@ FunctionCallback::return_t libc_atoi_callback(MaatEngine& engine, const std::vec
     bool enginebolic_sign = false;
 
     // Skip whitespaces
-    c = engine.mem->read(str, 1);
+    c = engine.mem->read(str, 1).as_expr();
     while( c->is_concrete(*engine.vars) and c->as_uint(*engine.vars) != 0)
     {
         if(!isspace((char)(c->as_uint(*engine.vars))))
         {
             break;
         }else{
-            c = engine.mem->read(++str, 1);
+            c = engine.mem->read(++str, 1).as_expr();
         }
     }
 
@@ -328,12 +328,12 @@ FunctionCallback::return_t libc_atoi_callback(MaatEngine& engine, const std::vec
         if (c->as_uint() == 0x2b) // 0x2b == '+'
         { 
             sign = exprcst(engine.arch->bits(), 1);
-            c = engine.mem->read(++str, 1);
+            c = engine.mem->read(++str, 1).as_expr();
         }
         else if (c->as_uint() == 0x2d)
         {
             sign = exprcst(engine.arch->bits(), -1);
-            c = engine.mem->read(++str, 1);
+            c = engine.mem->read(++str, 1).as_expr();
         }
         else
         {
@@ -466,7 +466,7 @@ FunctionCallback::return_t libc_fwrite_callback(MaatEngine& engine, const std::v
     size_t count = args[2]->as_uint(*engine.vars);
     size_t total_size =  size * count;
     int res=0;
-    std::vector<Expr> buffer;
+    std::vector<Value> buffer;
 
     FileAccessor& fa = engine.env->fs.get_fa_by_handle(handle);
     // Read buffer of bytes

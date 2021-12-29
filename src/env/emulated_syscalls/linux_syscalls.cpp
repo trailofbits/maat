@@ -18,7 +18,7 @@ FunctionCallback::return_t sys_linux_read(
     size_t count = args[2]->as_uint(*engine.vars);
     // Get file accessor and read file
     env::FileAccessor& fa = engine.env->fs.get_fa_by_handle(fd);
-    std::vector<Expr> content;
+    std::vector<Value> content;
     cst_t res = fa.read_buffer(content, count, 1);
     // Write to buffer in memory
     engine.mem->write_buffer(args[1], content);
@@ -40,7 +40,7 @@ FunctionCallback::return_t sys_linux_pread(
     // doesn't change the offset, so directly read from the
     // PhysicalFile
     physical_file_t file = engine.env->fs.get_file_by_handle(fd);
-    std::vector<Expr> content;
+    std::vector<Value> content;
     cst_t res = file->read_buffer(content, offset, count, 1);
     // Write to buffer in memory
     engine.mem->write_buffer(args[1], content);
@@ -63,7 +63,7 @@ FunctionCallback::return_t sys_linux_write(
     {
         env::FileAccessor& fa = engine.env->fs.get_fa_by_handle(fd);
         // Read buffer of bytes
-        std::vector<Expr> buffer;
+        std::vector<Value> buffer;
         engine.mem->read_buffer(buffer, buf, count, 1);
         // Write it to file
         res = fa.write_buffer(buffer);
@@ -99,8 +99,8 @@ FunctionCallback::return_t sys_linux_writev(
     for (cst_t i = 0; i < count; i++)
     {
         // Read iovec struct
-        iov_base = engine.mem->read(iov->as_uint(*engine.vars) + i*struct_size, ptr_size);
-        iov_len = engine.mem->read(iov->as_uint(*engine.vars) + i*struct_size + ptr_size, ptr_size);
+        iov_base = engine.mem->read(iov->as_uint(*engine.vars) + i*struct_size, ptr_size).as_expr();
+        iov_len = engine.mem->read(iov->as_uint(*engine.vars) + i*struct_size + ptr_size, ptr_size).as_expr();
         res += iov_len->as_uint(*engine.vars);
         // Perform write() syscall
         std::vector<Expr> write_args = {args[0], iov_base, iov_len};
@@ -409,7 +409,7 @@ FunctionCallback::return_t sys_linux_mmap(
             // If requesting too many bytes, adjust to real file size
             length = file->size() - offset;
         }
-        std::vector<Expr> content;
+        std::vector<Value> content;
         file->read_buffer(content, offset, length, 1); // Read file content into buffer
         // Write the file content in allocated memory
         engine.mem->write_buffer(res, content, true); // Ignore flags when mapping file

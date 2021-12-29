@@ -42,11 +42,11 @@ public:
     /// Create a new file 
     FileAccessor(physical_file_t physical_file, filehandle_t handle);
     /// Write abstract buffer to the file. Return the number of bytes written
-    unsigned int write_buffer(const std::vector<Expr>& buffer);
+    unsigned int write_buffer(const std::vector<Value>& buffer);
     /// Write concrete buffer to the file. Return the number of bytes written
     unsigned int write_buffer(uint8_t* buffer, int len);
     /// Read abstract buffer from the file. Return the number of bytes read
-    unsigned int read_buffer(std::vector<Expr>& buffer, unsigned int nb_elems, unsigned int elem_size);
+    unsigned int read_buffer(std::vector<Value>& buffer, unsigned int nb_elems, unsigned int elem_size);
 public:
     filehandle_t handle() const;
 };
@@ -130,11 +130,11 @@ public:
     /// Create a new physical file
     PhysicalFile(SnapshotManager<env::Snapshot>* snapshots, Type type = Type::REGULAR);
     /// Write abstract buffer to the file. Return the number of bytes written
-    unsigned int write_buffer(const std::vector<Expr>& buffer, addr_t& offset);
+    unsigned int write_buffer(const std::vector<Value>& buffer, addr_t& offset);
     /// Write concrete buffer to the file. Return the number of bytes written
     unsigned int write_buffer(uint8_t* buffer, addr_t& offset, int len);
     /// Read abstract buffer from file. Return the number of elements read
-    unsigned int read_buffer(std::vector<Expr>& buffer, addr_t& offset, unsigned int nb_elems, unsigned int elem_size);
+    unsigned int read_buffer(std::vector<Value>& buffer, addr_t& offset, unsigned int nb_elems, unsigned int elem_size);
     /// Return the total size of the physical file content in bytes
     unsigned int size();
     /// Fill the emulated file with concrete content from a real file. Return the size of 'filename'

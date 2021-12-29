@@ -600,36 +600,33 @@ bool MaatEngine::process_branch(
 }
 
 
-Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::param_t& addr)
+bool MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::param_t& addr_param)
 {
-    Expr loaded;
+    const Value& addr = addr_param.value();
+    Value loaded;
     bool do_abstract_load = true;
     int load_size = param.size()%8 == 0 ? param.size()/8 : (param.size()/8) + 1;
 
-    if (not addr.is_abstract())
+    if (
+        addr.is_concrete(*vars)
+        or (
+            addr.is_concolic(*vars) and
+            not settings.symptr_read
+        )
+    )
     {
         do_abstract_load = false;
-        addr.auxilliary = exprcst(addr.value().number());
+        addr_param.auxilliary = addr.as_number(*vars);
     }
-    else if (addr.is_abstract() and addr.value().expr()->is_concrete(*vars))
-    {
-        do_abstract_load = false;
-        addr.auxilliary = addr.value().expr();
-    }
-    else if (addr.is_abstract() and addr.value().expr()->is_concolic(*vars) and not settings.symptr_read)
-    {
-        do_abstract_load = false;
-        addr.auxilliary = exprcst(addr.value().expr()->as_number(*vars));
-    }
-    else if (addr.is_abstract() and addr.value().expr()->is_symbolic(*vars) and not settings.symptr_read)
+    else if (addr.is_symbolic(*vars) and not settings.symptr_read)
     {
         info.stop = info::Stop::FATAL;
         log.fatal("MaatEngine::resolve_addr_param(): trying to read from symbolic pointer, but symptr_read option is disabled");
-        return nullptr;
+        return false;
     }
     else
     {
-        addr.auxilliary = addr.value();
+        addr_param.auxilliary = addr;
     }
 
     try
@@ -640,7 +637,7 @@ Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
             SUB_HANDLE_EVENT_ACTION(
                 hooks.before_mem_read(
                     *this,
-                    addr.auxilliary, // addr
+                    addr_param.auxilliary, // addr
                     load_size // size in bytes
                 ),
                 nullptr
@@ -650,24 +647,24 @@ Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
         // TODO: shouldn't use as_expr everywhere here....
         if (do_abstract_load)
         {
-            simplifier->simplify(addr.auxilliary.as_expr());
-            ValueSet range = addr.auxilliary.as_expr()->value_set();
+            Expr load_addr = simplifier->simplify(addr_param.auxilliary.as_expr());
+            ValueSet range = load_addr->value_set();
             if (settings.symptr_refine_range)
             {
-                range = refine_value_set(addr.auxilliary.as_expr());
+                range = refine_value_set(load_addr);
             }
-            loaded = mem->symbolic_ptr_read(addr.auxilliary.as_expr(), range, load_size, settings);
+            mem->symbolic_ptr_read(loaded, load_addr, range, load_size, settings);
         }
         else
         {
-            loaded = mem->read(addr.auxilliary.as_expr(), load_size);
+            mem->read(loaded, addr_param.auxilliary.as_uint(*vars), load_size);
         }
         // P-code can load a number of bits that's not a multiple of 8.
         // If that's the case, readjust the loaded value size by trimming
         // the extra bits
-        if (loaded->size > param.size())
+        if (loaded.size() > param.size())
         {
-            loaded = extract(loaded, param.size()-1, 0);
+            loaded.set_extract(loaded, param.size()-1, 0);
         }
 
         // Mem read event
@@ -676,7 +673,7 @@ Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
             SUB_HANDLE_EVENT_ACTION(
                 hooks.after_mem_read(
                     *this,
-                    addr.auxilliary, // addr
+                    addr_param.auxilliary, // addr
                     loaded // value
                 ),
                 nullptr
@@ -695,18 +692,15 @@ Expr MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
             "MaatEngine::resolve_addr_param(): Memory exception when resolving IR address parameter: ",
             e.what()
         );
-        return nullptr;
+        return false;
     }
 
     // Update processed parameter (auxiliary already set at the 
     // beginning of the method). Here we can just re-assign 'addr'
     // to an abstract value because Address parameters are expected 
     // to always trigger abstract processing in the CPU
-    // TODO: this is ugly, 'loaded' should become a value too...
-    Value tmp;
-    tmp = loaded;
-    addr = std::move(tmp);
-    return loaded;
+    addr_param = loaded;
+    return not addr_param.value().is_none();
 }
 
 bool MaatEngine::process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pinst)
@@ -730,46 +724,22 @@ bool MaatEngine::process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pi
 
 bool MaatEngine::process_load(const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    Expr loaded;
-
-    if ((loaded = resolve_addr_param(inst.out, pinst.in1)) == nullptr)
+    if (not resolve_addr_param(inst.out, pinst.in1))
     {
         log.error("MaatEngine::process_load(): failed to resolve address parameter");
         return false;
     }
 
-    // TODO: should use Value here instead of Expr/concrete, .....
+    const Value& loaded = pinst.in1.value();
+
     // Write load result to processed inst
-    if (pinst.out.is_none())
+    if (pinst.out.is_none() or pinst.out.value().size() == loaded.size())
     {
         pinst.res = loaded;
     }
-    else if (pinst.out.is_abstract())
-    {
-        // dest is abstract anyways so keep loaded as a constant
-        pinst.res = maat::overwrite_expr_bits(pinst.out.value().expr(), loaded, inst.out.hb);
-    }
-    else if (not pinst.out.is_none()) // TODO: this test so uglyyy
-    {
-        if (loaded->is_concrete(*vars))
-        {
-            // dest and loaded have concrete values:
-            // translate loaded to number and assign to dest
-            Number tmp;
-            tmp.set_overwrite(pinst.out.value().number(), loaded->as_number(), inst.out.lb);
-            pinst.res = tmp;
-        }
-        else
-        {
-            // dest is concrete but loaded not concrete.
-            // translate dest to Expr to assign loaded
-            Expr out_expr = exprcst(pinst.out.value().as_number());
-            pinst.res = maat::overwrite_expr_bits(out_expr, loaded, inst.out.hb);
-        }
-    }
     else
     {
-        throw runtime_exception("MaatEngine::process_load(): this should never be reached!");
+        pinst.res.set_overwrite(pinst.out.value(), loaded, inst.out.lb);
     }
 
     // Success
@@ -782,30 +752,27 @@ bool MaatEngine::process_store(
 )
 {
     mem_alert_t mem_alert = maat::mem_alert_none;
-    ir::ProcessedInst::param_t& addr = pinst.in1;
+    const Value& addr = pinst.in1.value();
     bool do_abstract_store = true;
-    Expr store_addr = nullptr;
-    Expr to_store = nullptr;
+    addr_t concrete_store_addr = 0;
+    Expr abstract_store_addr = nullptr;
+    Value to_store = pinst.in2.value();
 
     // Get address and value to store
     if (inst.op == ir::Op::STORE)
     {
-        if (not addr.is_abstract())
+        if (
+            addr.is_concrete(*vars)
+            or (
+                addr.is_concolic(*vars) and
+                not settings.symptr_write
+            )
+        )
         {
             do_abstract_store = false;
-            store_addr = exprcst(arch->bits(), addr.value().number().get_ucst());
+            concrete_store_addr = addr.as_uint(*vars);
         }
-        else if (addr.is_abstract() and addr.value().expr()->is_concrete(*vars))
-        {
-            do_abstract_store = false;
-            store_addr = addr.value().expr();
-        }
-        else if (addr.is_abstract() and addr.value().expr()->is_concolic(*vars) and not settings.symptr_write)
-        {
-            do_abstract_store = false;
-            store_addr = exprcst(addr.value().expr()->as_number(*vars));
-        }
-        else if (addr.is_abstract() and addr.value().expr()->is_symbolic(*vars) and not settings.symptr_write)
+        else if (addr.is_symbolic(*vars) and not settings.symptr_write)
         {
             log.fatal("MaatEngine::process_store(): trying to write at symbolic pointer but symptr_write option is disabled");
             info.stop = info::Stop::FATAL;
@@ -813,15 +780,15 @@ bool MaatEngine::process_store(
         }
         else // symbolic address and symbolic writes enabled
         {
-            store_addr = addr.value().expr();
+            abstract_store_addr = addr.as_expr();
         }
-        to_store = pinst.in2.is_abstract() ? pinst.in2.value().expr() : exprcst(pinst.in2.value().number());
+        to_store = pinst.in2.value();
     }
     else // out parameter is a constant address and operation is an assignment operation
     {
         do_abstract_store = false;
-        store_addr = exprcst(arch->bits(), inst.out.addr());
-        to_store = pinst.res.is_abstract() ? pinst.res.expr() : exprcst(pinst.res.number());
+        concrete_store_addr = inst.out.addr();
+        to_store = pinst.res;
     }
 
     // Perform the memory store
@@ -833,7 +800,7 @@ bool MaatEngine::process_store(
             SUB_HANDLE_EVENT_ACTION(
                 hooks.before_mem_write(
                     *this,
-                    store_addr, // addr
+                    addr, // addr
                     to_store // value
                 ),
                 false
@@ -842,17 +809,17 @@ bool MaatEngine::process_store(
 
         if (do_abstract_store)
         {
-            store_addr = simplifier->simplify(store_addr);
-            ValueSet range = store_addr->value_set();
+            abstract_store_addr = simplifier->simplify(abstract_store_addr);
+            ValueSet range = abstract_store_addr->value_set();
             if (settings.symptr_refine_range)
             {
-                range = refine_value_set(store_addr);
+                range = refine_value_set(abstract_store_addr);
             }
-            mem->symbolic_ptr_write(store_addr, range, to_store, settings, &mem_alert, true);
+            mem->symbolic_ptr_write(abstract_store_addr, range, to_store, settings, &mem_alert, true);
         }
         else
         {
-            mem->write(store_addr->as_uint(*vars), to_store, &mem_alert, true);
+            mem->write(concrete_store_addr, to_store, &mem_alert, true);
         }
         // Mem write event
         if (hooks.has_hooks({Event::MEM_W, Event::MEM_RW}, When::AFTER))
@@ -860,7 +827,7 @@ bool MaatEngine::process_store(
             SUB_HANDLE_EVENT_ACTION(
                 hooks.after_mem_write(
                     *this,
-                    store_addr, // addr
+                    addr, // addr
                     to_store // value
                 ),
                 false

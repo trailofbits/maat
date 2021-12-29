@@ -288,7 +288,7 @@ private:
                 }
                 else
                 {
-                    dest = res;
+                    dest.set_value_by_ref(res);
                 }
             }
             else
@@ -322,7 +322,7 @@ private:
             }
             else
             {
-                dest = res;
+                dest.set_value_by_ref(res);
             }
 
             if (trigger_events)

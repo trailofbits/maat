@@ -611,13 +611,13 @@ Action EventManager::before_mem_read(
 Action EventManager::after_mem_read(
     MaatEngine& engine,
     const Value& addr,
-    Expr& value
+    const Value& value
 )
 {
     engine.info.mem_access = info::MemAccess{
         addr.as_expr(), // addr
-        value->size/8, // size
-        value, // value
+        value.size()/8, // size
+        value.as_expr(), // value
         false, // written
         true // read
     };
@@ -626,14 +626,14 @@ Action EventManager::after_mem_read(
 
 Action EventManager::before_mem_write(
     MaatEngine& engine,
-    Expr& addr,
-    Expr& new_value
+    const Value& addr,
+    const Value& new_value
 )
 {
     engine.info.mem_access = info::MemAccess{
-        addr, // addr
-        new_value->size/8, // size
-        new_value, // value
+        addr.as_expr(), // addr
+        new_value.size()/8, // size
+        new_value.as_expr(), // value
         true, // written
         false // read
     };
@@ -642,14 +642,14 @@ Action EventManager::before_mem_write(
 
 Action EventManager::after_mem_write(
     MaatEngine& engine,
-    Expr& addr,
-    Expr& new_value
+    const Value& addr,
+    const Value& new_value
 )
 {
     engine.info.mem_access = info::MemAccess{
-        addr, // addr
-        new_value->size/8, // size
-        new_value, // value
+        addr.as_expr(), // addr
+        new_value.size()/8, // size
+        new_value.as_expr(), // value
         true, // written
         false // read
     };

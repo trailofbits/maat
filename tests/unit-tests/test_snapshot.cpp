@@ -51,7 +51,7 @@ namespace test
             engine.mem->new_segment(0x5000, 0x5fff);
             engine.restore_snapshot(s1);
             // Rewind
-            nb += _assert(engine.mem->read(0x21b4, 8)->eq(e2), "SnapshotManager rewind failed to reset engine.memory correctly"); 
+            nb += _assert(engine.mem->read(0x21b4, 8).as_expr()->eq(e2), "SnapshotManager rewind failed to reset engine.memory correctly"); 
             nb += _assert(engine.mem->segments().size() == nb_segments, "SnapshotManager rewind failed to reset segments correctly"); 
 
             // Write and snapshot two times
@@ -67,15 +67,15 @@ namespace test
             engine.mem->write(0x2207, e2);
 
             engine.restore_snapshot(s2, true);
-            nb += _assert(engine.mem->read(0x2204, 8)->eq(c1), "SnapshotManager: rewind failed for two consecutive snapshots");
-            nb += _assert(engine.mem->read(0x2200, 8)->eq(exprcst(64, 0xc0c0babec0c0babe)), "SnapshotManager: rewind failed for two consecutive snapshots");
+            nb += _assert(engine.mem->read(0x2204, 8).as_expr()->eq(c1), "SnapshotManager: rewind failed for two consecutive snapshots");
+            nb += _assert(engine.mem->read(0x2200, 8).as_expr()->eq(exprcst(64, 0xc0c0babec0c0babe)), "SnapshotManager: rewind failed for two consecutive snapshots");
             nb += _assert(engine.cpu.ctx().get(0).as_expr()->eq( e1+e1), "SnapshotManager: rewind failed for two consecutive snapshots");
             nb += _assert(engine.cpu.ctx().get(1).as_expr()->eq(c1+e2), "SnapshotManager: rewind failed for two consecutive snapshots");
             
             engine.restore_snapshot(s1, true);
             nb += _assert(engine.cpu.ctx().get(0).as_expr()->eq(e1), "SnapshotManager: rewind failed for two consecutive snapshots");
             nb += _assert(engine.cpu.ctx().get(1).as_expr()->eq(e2), "SnapshotManager: rewind failed for two consecutive snapshots");
-            nb += _assert(engine.mem->read(0x2200, 8)->eq(c1), "SnapshotManager: rewind failed for two consecutive snapshots");
+            nb += _assert(engine.mem->read(0x2200, 8).as_expr()->eq(c1), "SnapshotManager: rewind failed for two consecutive snapshots");
 
             // Rewind on mixed symbolic and concrete engine.memory writes
             engine.mem->write(0x2300, c1);
@@ -90,8 +90,8 @@ namespace test
 
             engine.restore_snapshot(s1);
 
-            nb += _assert(engine.mem->read(0x2300, 2)->eq(extract(e2, 63, 48)), "SnapshotManager: restore failed for mixed symbolic and concrete writes");
-            nb += _assert(engine.mem->read(0x2300, 8)->eq(concat( exprcst(16, 0x1234), concat(e1, extract(e2, 63, 48)))), "SnapshotManager: rewind failed for mixed symbolic and concrete writes");
+            nb += _assert(engine.mem->read(0x2300, 2).as_expr()->eq(extract(e2, 63, 48)), "SnapshotManager: restore failed for mixed symbolic and concrete writes");
+            nb += _assert(engine.mem->read(0x2300, 8).as_expr()->eq(concat( exprcst(16, 0x1234), concat(e1, extract(e2, 63, 48)))), "SnapshotManager: rewind failed for mixed symbolic and concrete writes");
             
             //  Create some segments to test snapshot on overlapping memory accesses
             engine.mem->new_segment(0x3000, 0x3fff);
@@ -101,7 +101,7 @@ namespace test
             engine.mem->write(0x3ffc, e2);
             engine.restore_last_snapshot();
 
-            nb += _assert(engine.mem->read(0x3ffd, 8)->as_uint() == 0xabcdef11deadbeef, "SnapshotManager: restore failed for symbolic write overlapping between segments");
+            nb += _assert(engine.mem->read(0x3ffd, 8).as_uint() == 0xabcdef11deadbeef, "SnapshotManager: restore failed for symbolic write overlapping between segments");
 
             return nb;
         }
@@ -159,8 +159,8 @@ namespace test
             nb += _assert(engine.cpu.ctx().get(X86::EBX).as_int() != 2, "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::ECX).as_int() != 3, "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::EDX).as_int() != 4, "Snapshot X86: unexpected state");
-            nb += _assert((uint32_t)engine.mem->read(0x2000, 4)->as_uint() == 4, "Snapshot X86: unexpected state");
-            nb += _assert((uint32_t)engine.mem->read(0x3000, 4)->as_uint() == 0x8765431d, "Snapshot X86: unexpected state");
+            nb += _assert((uint32_t)engine.mem->read(0x2000, 4).as_uint() == 4, "Snapshot X86: unexpected state");
+            nb += _assert((uint32_t)engine.mem->read(0x3000, 4).as_uint() == 0x8765431d, "Snapshot X86: unexpected state");
 
             /* Restore last */
             engine.restore_snapshot(s3, true);
@@ -168,8 +168,8 @@ namespace test
             nb += _assert(engine.cpu.ctx().get(X86::EAX).as_int() != 1, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::EBX).as_int() != 2, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::ECX).as_int() != 3, "Snapshot X86: failed to restore snapshot");
-            nb += _assert(engine.mem->read(0x2000, 4)->as_uint(*engine.vars) != 0x12345678, "Snapshot X86: failed to restore snapshot");
-            nb += _assert(engine.mem->read(0x3000, 4)->as_uint(*engine.vars) != 0x87654321, "Snapshot X86: failed to restore snapshot");
+            nb += _assert(engine.mem->read(0x2000, 4).as_uint(*engine.vars) != 0x12345678, "Snapshot X86: failed to restore snapshot");
+            nb += _assert(engine.mem->read(0x3000, 4).as_uint(*engine.vars) != 0x87654321, "Snapshot X86: failed to restore snapshot");
 
             /* Restore again */
             engine.restore_last_snapshot();
@@ -177,8 +177,8 @@ namespace test
             nb += _assert(engine.cpu.ctx().get(X86::EAX).as_int() == 2, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::EBX).as_int() == 2, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::ECX).as_int() == 7, "Snapshot X86: failed to restore snapshot");
-            nb += _assert(engine.mem->read(0x2000, 4)->as_uint(*engine.vars) == 4, "Snapshot X86: failed to restore snapshot");
-            nb += _assert(engine.mem->read(0x3000, 4)->as_uint(*engine.vars) == 0x87654321, "Snapshot X86: failed to restore snapshot");
+            nb += _assert(engine.mem->read(0x2000, 4).as_uint(*engine.vars) == 4, "Snapshot X86: failed to restore snapshot");
+            nb += _assert(engine.mem->read(0x3000, 4).as_uint(*engine.vars) == 0x87654321, "Snapshot X86: failed to restore snapshot");
 
             /* Restore to first */
             engine.restore_snapshot(s1, true);
@@ -186,8 +186,8 @@ namespace test
             nb += _assert(engine.cpu.ctx().get(X86::EAX).as_int() == 1, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::EBX).as_int() == 2, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::ECX).as_int() == 3, "Snapshot X86: failed to restore snapshot");
-            nb += _assert(engine.mem->read(0x2000, 4)->as_uint(*engine.vars) == 0x12345678, "Snapshot X86: failed to restore snapshot");
-            nb += _assert(engine.mem->read(0x3000, 4)->as_uint(*engine.vars) == 0x87654321, "Snapshot X86: failed to restore snapshot");
+            nb += _assert(engine.mem->read(0x2000, 4).as_uint(*engine.vars) == 0x12345678, "Snapshot X86: failed to restore snapshot");
+            nb += _assert(engine.mem->read(0x3000, 4).as_uint(*engine.vars) == 0x87654321, "Snapshot X86: failed to restore snapshot");
 
             /* ====== same code with some symbolic registers */
             engine.cpu.ctx().set(X86::EAX, exprcst(32, 1));
@@ -211,25 +211,25 @@ namespace test
             nb += _assert(engine.cpu.ctx().get(X86::ECX).is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::EDX).is_concrete(*engine.vars), "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::EDX).as_int() == 2, "Snapshot X86: unexpected state");
-            nb += _assert(engine.mem->read(0x2000, 4)->is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
-            nb += _assert(engine.mem->read(0x3000, 4)->is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
+            nb += _assert(engine.mem->read(0x2000, 4).is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
+            nb += _assert(engine.mem->read(0x3000, 4).is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
 
             engine.restore_snapshot(s2);
             nb += _assert(!engine.cpu.ctx().get(X86::EBX).is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::EBX).as_int() == 2, "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::ECX).is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
             nb += _assert(engine.cpu.ctx().get(X86::EDX).is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
-            nb += _assert(engine.mem->read(0x2000, 4)->is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
-            nb += _assert(!engine.mem->read(0x3000, 4)->is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
-            nb += _assert(engine.mem->read(0x3000, 4)->as_uint(*engine.vars) == 0x87654321, "Snapshot X86: failed to restore snapshot");
+            nb += _assert(engine.mem->read(0x2000, 4).is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
+            nb += _assert(!engine.mem->read(0x3000, 4).is_symbolic(*engine.vars), "Snapshot X86: unexpected state");
+            nb += _assert(engine.mem->read(0x3000, 4).as_uint(*engine.vars) == 0x87654321, "Snapshot X86: failed to restore snapshot");
             
             engine.restore_snapshot(s1, true);
             nb += _assert(engine.cpu.ctx().get(X86::EDX).is_symbolic(*engine.vars), "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::EAX).as_int() == 1, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::EBX).as_int() == 2, "Snapshot X86: failed to restore snapshot");
             nb += _assert(engine.cpu.ctx().get(X86::ECX).as_int() == 3, "Snapshot X86: failed to restore snapshot");
-            nb += _assert(engine.mem->read(0x2000, 4)->as_uint(*engine.vars) == 0x12345678, "Snapshot X86: failed to restore snapshot");
-            nb += _assert(engine.mem->read(0x3000, 4)->as_uint(*engine.vars) == 0x87654321, "Snapshot X86: failed to restore snapshot");
+            nb += _assert(engine.mem->read(0x2000, 4).as_uint(*engine.vars) == 0x12345678, "Snapshot X86: failed to restore snapshot");
+            nb += _assert(engine.mem->read(0x3000, 4).as_uint(*engine.vars) == 0x87654321, "Snapshot X86: failed to restore snapshot");
 
             return nb;
         }

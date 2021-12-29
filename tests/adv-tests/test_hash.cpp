@@ -202,10 +202,10 @@ namespace hash
         engine.hooks.disable_all();
 
         // Check res at 0x80dbca4
-        return _assert( engine.mem->read(0x80dbcac, 4)->as_uint() == out0 &&
-                        engine.mem->read(0x80dbca4, 4)->as_uint() == out1 &&
-                        engine.mem->read(0x80dbca8, 4)->as_uint() == out2 &&
-                        engine.mem->read(0x80dbcb0, 4)->as_uint() == out3
+        return _assert( engine.mem->read(0x80dbcac, 4).as_uint() == out0 &&
+                        engine.mem->read(0x80dbca4, 4).as_uint() == out1 &&
+                        engine.mem->read(0x80dbca8, 4).as_uint() == out2 &&
+                        engine.mem->read(0x80dbcb0, 4).as_uint() == out3
                         , "Hash emulation test: md5: failed");
     }
 
