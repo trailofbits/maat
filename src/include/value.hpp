@@ -112,6 +112,14 @@ Value operator+(const Value& left, const Value& right); ///< Add two values
 Value operator+(const Value& left, cst_t right); ///< Add two values
 Value operator+(cst_t left, const Value& right); ///< Add two values
 
+Value operator-(const Value& left, const Value& right); ///< Subtract two values
+Value operator-(const Value& left, cst_t right); ///< Subtract two values
+Value operator-(cst_t left, const Value& right); ///< Subtract two values
+
+Value operator*(const Value& left, const Value& right); ///< Multiply two values
+Value operator*(const Value& left, cst_t right); ///< Multiply two values
+Value operator*(cst_t left, const Value& right); ///< Multiply two values
+
 Value extract(const Value& arg, unsigned long higher, unsigned long lower); ///< Extract bitfield from value
 
 /** }/ */ // doxygen expression group

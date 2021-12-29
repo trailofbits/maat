@@ -504,7 +504,7 @@ namespace test
                             "ArchX86: failed to disassembly and/or execute ADCX");
             nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADCX");
-                            
+
             // 0xffffff00 + 0x00000100
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xffffff00));

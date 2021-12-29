@@ -936,6 +936,35 @@ Value operator+(const Value& left, cst_t right)
     return res;
 }
 
+
+Value operator-(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = left.expr()-right;
+    else
+    {
+        Number n(left.size(), right);
+        n.set_sub(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value operator*(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = left.expr()*right;
+    else
+    {
+        Number n(left.size(), right);
+        n.set_mul(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
 Value extract(const Value& arg, unsigned long higher, unsigned long lower)
 {
     Value res;

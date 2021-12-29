@@ -1046,10 +1046,10 @@ void MaatEngine::restore_last_snapshot(bool remove)
 }
 
 
-void MaatEngine::terminate_process(Expr status)
+void MaatEngine::terminate_process(Value status)
 {
     info.stop = info::Stop::EXIT;
-    info.exit_status = status;
+    info.exit_status = status.as_expr(); // TODO make exit_status a Value
     process->terminated = true;
 }
 

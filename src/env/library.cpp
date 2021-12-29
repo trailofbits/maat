@@ -30,7 +30,7 @@ Action FunctionCallback::execute(MaatEngine& engine, const abi::ABI& abi) const
 
 Action FunctionCallback::_execute_native(MaatEngine& engine, const abi::ABI& abi) const
 {
-    std::vector<Expr> args;
+    std::vector<Value> args;
     try
     {
         abi.get_args(engine, args_spec, args);

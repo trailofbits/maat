@@ -128,7 +128,6 @@ int _get_specifier(char* format, int format_len, int& index, char* spec, int spe
 void _get_format_string(MaatEngine& engine, char* format, int len, std::string& res, int from_arg=0){
     int vararg_cnt = from_arg;
     std::stringstream ss;
-    Expr e;
     int val;
     addr_t addr;
     char buffer[2048], specifier[128], formatted_arg[256];
@@ -141,20 +140,20 @@ void _get_format_string(MaatEngine& engine, char* format, int len, std::string& 
         spec = _get_specifier(format, len, i, specifier, sizeof(specifier));
         if (spec ==  SPEC_INT32 || spec == SPEC_HEX32)
         {
-            val = (int)abi.get_arg(engine, vararg_cnt++, arg_size)->as_uint(*engine.vars);
+            val = (int)abi.get_arg(engine, vararg_cnt++, arg_size).as_uint(*engine.vars);
             // Use snprintf that does the formatting for us :)
             snprintf(formatted_arg, sizeof(formatted_arg), specifier, val);
             ss << std::string(formatted_arg);
         }
         else if( spec == SPEC_STRING )
         {
-            addr = (addr_t)abi.get_arg(engine, vararg_cnt++, arg_size)->as_uint(*engine.vars);
+            addr = (addr_t)abi.get_arg(engine, vararg_cnt++, arg_size).as_uint(*engine.vars);
             _mem_read_c_string(engine,  addr, buffer, buffer_len, sizeof(buffer)); // Ignore if we exceed sizeof(buffer)
             ss << std::string(buffer, buffer_len);
         }
         else if( spec == SPEC_CHAR)
         {
-            val = (char)abi.get_arg(engine, vararg_cnt++, arg_size)->as_uint(*engine.vars);
+            val = (char)abi.get_arg(engine, vararg_cnt++, arg_size).as_uint(*engine.vars);
             // Use snprintf that does the formatting for us :)
             snprintf(formatted_arg, sizeof(formatted_arg), specifier, (char)val);
             ss << std::string(formatted_arg);
@@ -179,7 +178,7 @@ void _get_format_string(MaatEngine& engine, char* format, int len, std::string& 
 // Callback that does nothing
 FunctionCallback::return_t do_nothing_callback(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     return std::monostate();
@@ -188,18 +187,18 @@ FunctionCallback::return_t do_nothing_callback(
 // __libc_exit
 FunctionCallback::return_t libc_exit_callback(
     MaatEngine& engine, 
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     
-    Expr status = nullptr;
+    Value status;
     switch (engine.arch->type)
     {
         case Arch::Type::X86:
-            status = engine.cpu.ctx().get(X86::EAX).as_expr();
+            status = engine.cpu.ctx().get(X86::EAX);
             break;
         case Arch::Type::X64:
-            status = engine.cpu.ctx().get(X64::RAX).as_expr();
+            status = engine.cpu.ctx().get(X64::RAX);
             break;
         default:
             throw env_exception("Emulated __libc_exit(): not supported for this architecture");
@@ -298,9 +297,9 @@ Expr _atoi_parse_digits(MaatEngine& engine, addr_t addr)
     return res;
 }
 
-FunctionCallback::return_t libc_atoi_callback(MaatEngine& engine, const std::vector<Expr>& args)
+FunctionCallback::return_t libc_atoi_callback(MaatEngine& engine, const std::vector<Value>& args)
 {
-    addr_t str = args[0]->as_uint(*engine.vars);
+    addr_t str = args[0].as_uint(*engine.vars);
     Expr c;
     Expr    sign = nullptr,
             res = nullptr,
@@ -363,11 +362,11 @@ FunctionCallback::return_t libc_atoi_callback(MaatEngine& engine, const std::vec
         res = sign * int_from_first_char;
     }
 
-    return res; 
+    return Value(res); 
 }
 
 // int fflush ( FILE * stream );
-FunctionCallback::return_t libc_fflush_callback(MaatEngine& engine, const std::vector<Expr>& args)
+FunctionCallback::return_t libc_fflush_callback(MaatEngine& engine, const std::vector<Value>& args)
 {
     // We don't need to flush because emulated functions don't do buffering...
     // Return zero for success
@@ -377,7 +376,7 @@ FunctionCallback::return_t libc_fflush_callback(MaatEngine& engine, const std::v
 
 // FILE * fopen ( const char * filename, const char * mode );
 // We return the FILE* as an opaque filehandle_t in the emulated file system
-FunctionCallback::return_t libc_fopen_callback(MaatEngine& engine, const std::vector<Expr>& args)
+FunctionCallback::return_t libc_fopen_callback(MaatEngine& engine, const std::vector<Value>& args)
 {
     std::string mode; 
     std::string filename;
@@ -385,8 +384,8 @@ FunctionCallback::return_t libc_fopen_callback(MaatEngine& engine, const std::ve
     // Get args
     try
     {
-        mode = engine.mem->read_string(args[1]->as_uint(*engine.vars));
-        filename = engine.mem->read_string(args[0]->as_uint(*engine.vars));
+        mode = engine.mem->read_string(args[1].as_uint(*engine.vars));
+        filename = engine.mem->read_string(args[0].as_uint(*engine.vars));
     }
     catch (std::exception& e)
     {
@@ -458,12 +457,12 @@ FunctionCallback::return_t libc_fopen_callback(MaatEngine& engine, const std::ve
 
 
 // size_t fwrite (const void * ptr, size_t size, size_t count, FILE * stream);
-FunctionCallback::return_t libc_fwrite_callback(MaatEngine& engine, const std::vector<Expr>& args)
+FunctionCallback::return_t libc_fwrite_callback(MaatEngine& engine, const std::vector<Value>& args)
 {
-    filehandle_t handle = args[3]->as_uint(*engine.vars);
-    Expr buf = args[0]; // It can be enginebolic
-    size_t size = args[1]->as_uint(*engine.vars);
-    size_t count = args[2]->as_uint(*engine.vars);
+    filehandle_t handle = args[3].as_uint(*engine.vars);
+    Value buf = args[0]; // It can be enginebolic
+    size_t size = args[1].as_uint(*engine.vars);
+    size_t count = args[2].as_uint(*engine.vars);
     size_t total_size =  size * count;
     int res=0;
     std::vector<Value> buffer;
@@ -481,9 +480,9 @@ FunctionCallback::return_t libc_fwrite_callback(MaatEngine& engine, const std::v
 
 
 // int printf ( const char * format, ... );
-FunctionCallback::return_t libc_printf_callback(MaatEngine& engine, const std::vector<Expr>& args)
+FunctionCallback::return_t libc_printf_callback(MaatEngine& engine, const std::vector<Value>& args)
 {
-    addr_t format = args[0]->as_uint(*engine.vars);
+    addr_t format = args[0].as_uint(*engine.vars);
     char str[2048];
     int len;
     std::string to_print;
@@ -519,17 +518,17 @@ FunctionCallback::return_t libc_printf_callback(MaatEngine& engine, const std::v
 //                       void (*rtld_fini) (void), void (* stack_end));
 FunctionCallback::return_t linux_x86_libc_start_main_callback(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     // With cdecl ABI
-    addr_t main = (args[0]->as_uint(*engine.vars));
-    addr_t argc = (args[1]->as_uint(*engine.vars));
-    addr_t argv = (args[2]->as_uint(*engine.vars));
-    addr_t init = (args[3]->as_uint(*engine.vars)); // pointer to __libc_csu_init
-    //addr_t fini = (args[4]->as_uint(*engine.vars)); // 
-    //addr_t rtld_fini = (args[5]->as_uint(*engine.vars));
-    //addr_t end_stack = (args[6]->as_uint(engine.vars));
+    addr_t main = (args[0].as_uint(*engine.vars));
+    addr_t argc = (args[1].as_uint(*engine.vars));
+    addr_t argv = (args[2].as_uint(*engine.vars));
+    addr_t init = (args[3].as_uint(*engine.vars)); // pointer to __libc_csu_init
+    //addr_t fini = (args[4].as_uint(*engine.vars)); // 
+    //addr_t rtld_fini = (args[5].as_uint(*engine.vars));
+    //addr_t end_stack = (args[6].as_uint(engine.vars));
 
     addr_t stack = engine.cpu.ctx().get(X86::ESP).as_uint(*engine.vars);
 
@@ -563,14 +562,14 @@ FunctionCallback::return_t linux_x86_libc_start_main_callback(
 // First part of __libc_start_main: call init() then go to second part
 FunctionCallback::return_t linux_x64_libc_start_main_callback_part1(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     // With system V ABI
-    addr_t main = (args[0]->as_uint());
-    addr_t argc = (args[1]->as_uint());
-    addr_t argv = (args[2]->as_uint());
-    addr_t init = (args[3]->as_uint());
+    addr_t main = (args[0].as_uint());
+    addr_t argc = (args[1].as_uint());
+    addr_t argv = (args[2].as_uint());
+    addr_t init = (args[3].as_uint());
     //addr_t fini = (args[4]->as_unsigned(engine.vars));
     //addr_t rtld_fini = (args[5]->as_unsigned(engine.vars));
     //addr_t end_stack = (args[6]->as_unsigned(engine.vars));
@@ -595,14 +594,14 @@ FunctionCallback::return_t linux_x64_libc_start_main_callback_part1(
 // Part2 of __libc_start_main, executed after init(), it just calls main()
 FunctionCallback::return_t linux_x64_libc_start_main_callback_part2(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     // Get args manually on stack, cdecl-style
-    Expr stack = engine.cpu.ctx().get(X64::RSP).as_expr();
-    Expr main = engine.mem->read(stack, 8);
-    Expr argc = engine.mem->read(stack+8, 8);
-    Expr argv = engine.mem->read(stack+16, 8);
+    Value stack = engine.cpu.ctx().get(X64::RSP);
+    Value main = engine.mem->read(stack, 8);
+    Value argc = engine.mem->read(stack+8, 8);
+    Value argv = engine.mem->read(stack+16, 8);
 
     // Set argc, argv
     engine.cpu.ctx().set(X64::RDI, argc);
