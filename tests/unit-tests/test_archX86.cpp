@@ -1,4 +1,5 @@
 #include "arch.hpp"
+#include "varcontext.hpp"
 #include "engine.hpp"
 #include "exception.hpp"
 #include <cassert>

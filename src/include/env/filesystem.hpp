@@ -5,6 +5,7 @@
 #include "memory.hpp"
 #include "env/os.hpp"
 #include "snapshot.hpp"
+#include "varcontext.hpp"
 
 namespace maat
 {

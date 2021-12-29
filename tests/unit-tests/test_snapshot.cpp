@@ -1,4 +1,5 @@
 #include "expression.hpp"
+#include "varcontext.hpp"
 #include "snapshot.hpp"
 #include "engine.hpp"
 #include "exception.hpp"

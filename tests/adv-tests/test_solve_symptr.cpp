@@ -3,6 +3,7 @@
 #include "exception.hpp"
 #include "solver.hpp"
 #include "loader.hpp"
+#include "varcontext.hpp"
 #include <cassert>
 #include <iostream>
 #include <string>

@@ -1,4 +1,5 @@
 #include "engine.hpp"
+#include "varcontext.hpp"
 #include "exception.hpp"
 #include "solver.hpp"
 #include <cassert>

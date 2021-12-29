@@ -25,6 +25,7 @@
 #include "logger.hpp"
 #include "process.hpp"
 #include "callother.hpp"
+#include "varcontext.hpp"
 
 namespace maat
 {

@@ -1,6 +1,7 @@
 #include "event.hpp"
 #include "engine.hpp"
 #include "ir.hpp"
+#include "varcontext.hpp"
 
 
 namespace test

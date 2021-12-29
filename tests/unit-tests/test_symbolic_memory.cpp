@@ -7,6 +7,7 @@
 #include "exception.hpp"
 #include "simplification.hpp"
 #include "engine.hpp"
+#include "varcontext.hpp"
 
 using std::cout;
 using std::endl; 

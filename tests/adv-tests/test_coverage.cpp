@@ -6,6 +6,7 @@
 #include "expression.hpp"
 #include "solver.hpp"
 #include "engine.hpp"
+#include "varcontext.hpp"
 #include <fstream>
 
 using std::cout;

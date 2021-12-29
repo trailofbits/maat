@@ -1,5 +1,6 @@
 #include "memory.hpp"
 #include "exception.hpp"
+#include "varcontext.hpp"
 #include <cassert>
 #include <iostream>
 #include <sstream>
