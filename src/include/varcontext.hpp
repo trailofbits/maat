@@ -1,13 +1,17 @@
 #ifndef MAAT_VARCONTEXT_H
 #define MAAT_VARCONTEXT_H
 
-#include "expression.hpp"
+#include <map>
+#include "number.hpp"
+#include <vector>
 
 namespace maat 
 {
 
 /** \addtogroup expression
  * \{ */
+
+class Value; // Forward decl
 
 /** A context that associates concrete values to symbolic variables*/
 class VarContext
@@ -43,7 +47,7 @@ public:
      * @param elem_size Size in bytes of each variable
      * @param null_terminated Add a null value at the end of the buffer (not counted by 'nb_elems')
      */
-    std::vector<Expr> new_symbolic_buffer(
+    std::vector<Value> new_symbolic_buffer(
         const std::string& name,
         int nb_elems,
         int elem_size=1,
@@ -57,7 +61,7 @@ public:
      * @param elem_size Size in bytes of each variable 
      * @param null_terminated Add a null value at the end of the buffer (not counted by 'nb_elems')
      */
-    std::vector<Expr> new_concolic_buffer(
+    std::vector<Value> new_concolic_buffer(
         const std::string& name,
         const std::vector<cst_t>& concrete_buffer,
         int nb_elems,

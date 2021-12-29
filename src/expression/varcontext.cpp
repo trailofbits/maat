@@ -1,4 +1,6 @@
 #include "varcontext.hpp"
+#include "expression.hpp"
+#include "value.hpp"
 
 namespace maat
 {
@@ -154,27 +156,27 @@ std::string VarContext::new_name_from(const std::string& name) const
         >> Fmt::to_str);
 }
 
-std::vector<Expr> VarContext::new_symbolic_buffer(
+std::vector<Value> VarContext::new_symbolic_buffer(
     const std::string& name,
     int nb_elems,
     int elem_size,
     bool null_terminated
 )
 {
-    std::vector<Expr> res;
+    std::vector<Value> res;
     std::stringstream ss;
     for (int i = 0; i < nb_elems; i++)
     {
         ss.str("");
         ss << name << "_" << i;
-        res.push_back(exprvar(elem_size*8, ss.str()));
+        res.push_back(Value(exprvar(elem_size*8, ss.str())));
     }
     if (null_terminated)
-        res.push_back(exprcst(elem_size*8, 0));
+        res.push_back(Value(exprcst(elem_size*8, 0)));
     return res;
 }
 
-std::vector<Expr> VarContext::new_concolic_buffer(
+std::vector<Value> VarContext::new_concolic_buffer(
     const std::string& name,
     const std::vector<cst_t>& concrete_buffer,
     int nb_elems,
@@ -182,7 +184,7 @@ std::vector<Expr> VarContext::new_concolic_buffer(
     bool null_terminated
 )
 {
-    std::vector<Expr> res;
+    std::vector<Value> res;
     std::stringstream ss;
     if (nb_elems > concrete_buffer.size())
         throw var_context_exception(
@@ -201,11 +203,11 @@ std::vector<Expr> VarContext::new_concolic_buffer(
                 << var_name << " already exists! " >> Fmt::to_str
             );
         }
-        res.push_back(exprvar(elem_size*8, var_name));
+        res.push_back(Value(exprvar(elem_size*8, var_name)));
         set(var_name, concrete_buffer[i]);
     }
     if (null_terminated)
-        res.push_back(exprcst(elem_size*8, 0));
+        res.push_back(Value(exprcst(elem_size*8, 0)));
     return res;
 }
 
