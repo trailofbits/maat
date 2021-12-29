@@ -16,7 +16,7 @@ std::ostream& operator<<(std::ostream& os, const MemAccess& mem_access)
 
     os << space << "Addr: " << mem_access.addr << "\n";
     os << space << "Size: " << mem_access.size << " (bytes)\n";
-    if (mem_access.value)
+    if (not mem_access.value.is_none())
         os << space << "Value:" << mem_access.value << "\n";
 
     return os;
@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& os, const Branch& branch)
     if (branch.cond)
         os << space << "Condition: " << branch.cond << "\n";
     os << space << "Target: " << branch.target << "\n";
-    if (branch.next)
+    if (not branch.next.is_none())
         os << space << "Next: " << branch.next << "\n";
     
     return os;

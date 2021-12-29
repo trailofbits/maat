@@ -3,6 +3,7 @@
 
 #include "expression.hpp"
 #include "number.hpp"
+#include "constraint.hpp"
 
 namespace maat
 {
@@ -121,6 +122,15 @@ Value operator*(const Value& left, cst_t right); ///< Multiply two values
 Value operator*(cst_t left, const Value& right); ///< Multiply two values
 
 Value extract(const Value& arg, unsigned long higher, unsigned long lower); ///< Extract bitfield from value
+
+// Constraints
+Constraint operator==(const Value& left, const Value& right); ///< Create equality constraint 
+Constraint operator==(const Value& left, cst_t right); ///< Create equality constraint 
+Constraint operator==(cst_t left, const Value& right); ///< Create equality constraint 
+
+Constraint operator!=(const Value& left, const Value& right); ///< Create a not-equal constraint 
+Constraint operator!=(const Value& left, cst_t right); ///< Create a not-equal constraint 
+Constraint operator!=(cst_t left, const Value& right); ///< Create a not-equal constraint 
 
 /** }/ */ // doxygen expression group
 

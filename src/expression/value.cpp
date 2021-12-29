@@ -980,4 +980,14 @@ Value extract(const Value& arg, unsigned long higher, unsigned long lower)
 }
 
 
+Constraint operator==(const Value& left, cst_t right)
+{
+    return left.as_expr() == exprcst(left.size(), right);
+}
+
+Constraint operator!=(const Value& left, cst_t right)
+{
+    return left.as_expr() != exprcst(left.size(), right);
+}
+
 } // namespace maat

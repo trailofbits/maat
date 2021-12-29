@@ -216,11 +216,11 @@ bool EventHook::check_filter(MaatEngine& engine)
 
     if (is_mem_event(event))
     {
-        if (engine.info.mem_access->addr->is_symbolic(*engine.vars))
+        if (engine.info.mem_access->addr.is_symbolic(*engine.vars))
             return false;
         else
         {
-            addr_t addr = engine.info.mem_access->addr->as_uint(*engine.vars);
+            addr_t addr = engine.info.mem_access->addr.as_uint(*engine.vars);
             return filter.monitors(addr, addr+engine.info.mem_access->size-1);
         }
     }
@@ -537,8 +537,8 @@ Action EventManager::before_reg_read(MaatEngine& engine, reg_t reg)
 {
     engine.info.reg_access = info::RegAccess{
         reg, // reg
-        engine.cpu.ctx().get(reg).as_expr(), // value
-        engine.cpu.ctx().get(reg).as_expr(), // new_value
+        engine.cpu.ctx().get(reg), // value
+        engine.cpu.ctx().get(reg), // new_value
         false, // written
         true // read
     };
@@ -553,8 +553,8 @@ Action EventManager::after_reg_read(
 {
     engine.info.reg_access = info::RegAccess{
         reg, // reg
-        engine.cpu.ctx().get(reg).as_expr(), // value
-        engine.cpu.ctx().get(reg).as_expr(), // new_value
+        engine.cpu.ctx().get(reg), // value
+        engine.cpu.ctx().get(reg), // new_value
         false, // written
         true // read
     };
@@ -569,8 +569,8 @@ Action EventManager::before_reg_write(
 {
     engine.info.reg_access = info::RegAccess{
         reg, // reg
-        engine.cpu.ctx().get(reg).as_expr(), //value
-        new_value.as_expr(), // new_value
+        engine.cpu.ctx().get(reg), //value
+        new_value, // new_value
         true, // written
         false // read
     };
@@ -584,8 +584,8 @@ Action EventManager::after_reg_write(
 {
     engine.info.reg_access = info::RegAccess{
         reg, // reg
-        engine.cpu.ctx().get(reg).as_expr(), // value
-        engine.cpu.ctx().get(reg).as_expr(), // new_value
+        engine.cpu.ctx().get(reg), // value
+        engine.cpu.ctx().get(reg), // new_value
         true, // written
         false // read
     };
@@ -599,9 +599,9 @@ Action EventManager::before_mem_read(
 )
 {
     engine.info.mem_access = info::MemAccess{
-        addr.as_expr(), // addr
+        addr, // addr
         nb_bytes, // size
-        nullptr, // value
+        Value(), // value
         false, // written
         true // read
     };
@@ -615,9 +615,9 @@ Action EventManager::after_mem_read(
 )
 {
     engine.info.mem_access = info::MemAccess{
-        addr.as_expr(), // addr
+        addr, // addr
         value.size()/8, // size
-        value.as_expr(), // value
+        value, // value
         false, // written
         true // read
     };
@@ -631,9 +631,9 @@ Action EventManager::before_mem_write(
 )
 {
     engine.info.mem_access = info::MemAccess{
-        addr.as_expr(), // addr
+        addr, // addr
         new_value.size()/8, // size
-        new_value.as_expr(), // value
+        new_value, // value
         true, // written
         false // read
     };
@@ -647,9 +647,9 @@ Action EventManager::after_mem_write(
 )
 {
     engine.info.mem_access = info::MemAccess{
-        addr.as_expr(), // addr
+        addr, // addr
         new_value.size()/8, // size
-        new_value.as_expr(), // value
+        new_value, // value
         true, // written
         false // read
     };
@@ -658,8 +658,8 @@ Action EventManager::after_mem_write(
 
 Action EventManager::before_branch(
     MaatEngine& engine,
-    Expr target,
-    addr_t next,
+    Value target,
+    Value next,
     Constraint cond,
     std::optional<bool> taken
 )
@@ -669,19 +669,19 @@ Action EventManager::before_branch(
         taken, // taken
         cond, // cond
         target, // target
-        target==nullptr? nullptr : exprcst(target->size, next) // next
+        next // next
     };
     if (cond != nullptr) // engine passes condition only if it is not concrete
         res = _trigger_hooks(Event::PATH, When::BEFORE, engine);
-    if (target != nullptr) // engine passes target only if real branch (not pcode-relative)
+    if (not target.is_none()) // engine passes target only if real branch (not pcode-relative)
         res = merge_actions(res, _trigger_hooks(Event::BRANCH, When::BEFORE, engine));
     return res;
 }
 
 Action EventManager::after_branch(
     MaatEngine& engine,
-    Expr target,
-    addr_t next,
+    Value target,
+    Value next,
     Constraint cond,
     bool taken
 )
@@ -691,11 +691,11 @@ Action EventManager::after_branch(
         taken, // taken
         cond, // cond
         target, // target
-        target==nullptr? nullptr : exprcst(target->size, next) // next
+        next // next
     };
     if (cond != nullptr) // engine passes condition only if it is not concrete
         res = _trigger_hooks(Event::PATH, When::AFTER, engine);
-    if (target != nullptr) // engine passes target only if real branch (not pcode-relative)
+    if (not target.is_none()) // engine passes target only if real branch (not pcode-relative)
         res = merge_actions(res, _trigger_hooks(Event::BRANCH, When::AFTER, engine));
     return res;
 }

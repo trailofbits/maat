@@ -405,23 +405,15 @@ bool MaatEngine::process_branch(
     if (!ir::is_branch_op(inst.op))
         throw runtime_exception("MaatEngine::process_branch(): called with non-branching instruction!");
     
-    Expr in0, in1;
-    addr_t next = asm_inst.addr() + asm_inst.raw_size();
+    const Value&    in0 = pinst.in0.value(), 
+                    in1 = pinst.in1.value();
+    Value next(arch->bits(), asm_inst.addr()+asm_inst.raw_size());
     bool taken = false;
     std::optional<bool> opt_taken;
     bool pcode_rela = inst.in[0].is_cst();
 
-    if (pinst.in0.is_none())
+    if (in0.is_none())
         throw runtime_exception("MaatEngine::process_branch(): got empty input parameter!");
-    else if (pinst.in0.is_abstract())
-        in0 = pinst.in0.value().expr();
-    else
-        in0 = exprcst(arch->bits(), pinst.in0.value().number().get_cst());
-        
-    if (pinst.in1.is_abstract())
-        in1 = pinst.in1.value().expr();
-    else if (not pinst.in1.is_none())
-        in1 = pinst.in1.value().as_expr();
 
     switch (inst.op)
     {
@@ -429,7 +421,7 @@ bool MaatEngine::process_branch(
         case ir::Op::BRANCH:
             if (inst.in[0].is_cst()) // internal pcode branch
             {
-                inst_id += (int)in0->as_int();
+                inst_id += (int)in0.as_int();
                 branch_type = MaatEngine::branch_pcode;
             }
             else // address, branch to it
@@ -471,9 +463,9 @@ bool MaatEngine::process_branch(
             break;
         case ir::Op::CBRANCH:
             // Try to resolve the branch is not symbolic
-            if (not in1->is_symbolic(*vars))
+            if (not in1.is_symbolic(*vars))
             {
-                if (in1->as_uint(*vars) != 0) // branch condition is true, branch to target
+                if (in1.as_uint(*vars) != 0) // branch condition is true, branch to target
                     opt_taken = true;
                 else
                     opt_taken = false;
@@ -488,7 +480,7 @@ bool MaatEngine::process_branch(
             if (
                 hooks.has_hooks(Event::BRANCH, When::BEFORE) or
                 (
-                 (not in1->is_concrete(*vars)) and
+                 (not in1.is_concrete(*vars)) and
                   hooks.has_hooks(Event::PATH, When::BEFORE)
                 )
             )
@@ -497,7 +489,7 @@ bool MaatEngine::process_branch(
                 SUB_HANDLE_EVENT_ACTION(
                     hooks.before_branch(
                         *this,
-                        pcode_rela? nullptr : in0,
+                        pcode_rela? Value() : in0,
                         next,
                         in1 != 0, // cond,
                         opt_taken
@@ -507,7 +499,7 @@ bool MaatEngine::process_branch(
 
             // Resolve the branch again to account for potential changes made by
             // user callbacks
-            if (in1->is_symbolic(*vars))
+            if (in1.is_symbolic(*vars))
             {
                 if (info.branch->taken.has_value())
                 {
@@ -523,7 +515,7 @@ bool MaatEngine::process_branch(
                     return false;
                 }
             }
-            else if (in1->as_uint(*vars) != 0) // branch condition is true, branch to target
+            else if (in1.as_uint(*vars) != 0) // branch condition is true, branch to target
             {
                 taken = true;
             }
@@ -537,7 +529,7 @@ bool MaatEngine::process_branch(
             {
                 if (inst.in[0].is_cst()) // internal pcode branch
                 {
-                    inst_id += (int)in0->as_int();
+                    inst_id += (int)in0.as_int();
                     branch_type = MaatEngine::branch_pcode;
                 }
                 else // native asm branch
@@ -550,7 +542,7 @@ bool MaatEngine::process_branch(
                 // Add path constraint
                 if (
                     settings.record_path_constraints 
-                    and not in1->is_concrete(*vars)
+                    and not in1.is_concrete(*vars)
                 )
                 {
                     path.add(in1 != 0);
@@ -562,7 +554,7 @@ bool MaatEngine::process_branch(
                 // Add path constraint
                 if (
                     settings.record_path_constraints
-                    and not in1->is_concrete(*vars)
+                    and not in1.is_concrete(*vars)
                 )
                 {
                     path.add(in1 == 0);
@@ -571,7 +563,7 @@ bool MaatEngine::process_branch(
             if (
                 hooks.has_hooks(Event::BRANCH, When::AFTER) or
                 (
-                 (not in1->is_concrete(*vars)) and
+                 (not in1.is_concrete(*vars)) and
                   hooks.has_hooks(Event::PATH, When::AFTER)
                 )
             )
@@ -580,7 +572,7 @@ bool MaatEngine::process_branch(
                 SUB_HANDLE_EVENT_ACTION(
                     hooks.after_branch(
                         *this, 
-                        pcode_rela? nullptr : in0,
+                        pcode_rela? Value() : in0,
                         next,
                         in1 != 0, // cond
                         taken
