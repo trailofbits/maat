@@ -922,6 +922,13 @@ std::ostream& operator<<(std::ostream& os, const Value& val)
 
 
 // Operators
+Value operator+(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_add(left, right);
+    return res;
+}
+
 Value operator+(const Value& left, cst_t right)
 {
     Value res;
@@ -936,6 +943,17 @@ Value operator+(const Value& left, cst_t right)
     return res;
 }
 
+Value operator+(cst_t left, const Value& right)
+{
+    return right+left;
+}
+
+Value operator-(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_sub(left, right);
+    return res;
+}
 
 Value operator-(const Value& left, cst_t right)
 {
@@ -951,6 +969,27 @@ Value operator-(const Value& left, cst_t right)
     return res;
 }
 
+Value operator-(cst_t left, const Value& right)
+{
+    Value res;
+    if (right.is_abstract())
+        res = left - right.expr();
+    else
+    {
+        Number n(right.size(), left);
+        n.set_sub(n, right.as_number());
+        res = n;
+    }
+    return res;
+}
+
+Value operator*(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_mul(left, right);
+    return res;
+}
+
 Value operator*(const Value& left, cst_t right)
 {
     Value res;
@@ -960,6 +999,334 @@ Value operator*(const Value& left, cst_t right)
     {
         Number n(left.size(), right);
         n.set_mul(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value operator*(cst_t left, const Value& right)
+{
+    return right*left;
+}
+
+Value operator/(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_div(left, right);
+    return res;
+}
+
+Value operator/(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = left.expr()/right;
+    else
+    {
+        Number n(left.size(), right);
+        n.set_div(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value operator/(cst_t left, const Value& right)
+{
+    Value res;
+    if (right.is_abstract())
+        res = left / right.expr();
+    else
+    {
+        Number n(right.size(), left);
+        n.set_div(n, right.as_number());
+        res = n;
+    }
+    return res;
+}
+
+Value operator&(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_and(left, right);
+    return res;
+}
+
+Value operator&(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = left.expr()&right;
+    else
+    {
+        Number n(left.size(), right);
+        n.set_and(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value operator&(cst_t left, const Value& right)
+{
+    return right&left;
+}
+
+Value operator|(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_or(left, right);
+    return res;
+}
+
+Value operator|(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = left.expr() | right;
+    else
+    {
+        Number n(left.size(), right);
+        n.set_or(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value operator|(cst_t left, const Value& right)
+{
+    return right | left;
+}
+
+Value operator^(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_xor(left, right);
+    return res;
+}
+
+Value operator^(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = left.expr() ^ right;
+    else
+    {
+        Number n(left.size(), right);
+        n.set_xor(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value operator^(cst_t left, const Value& right)
+{
+    return right ^ left;
+}
+
+Value operator%(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_rem(left, right);
+    return res;
+}
+
+Value operator%(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = left.expr() % right;
+    else
+    {
+        Number n(left.size(), right);
+        n.set_rem(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value operator%(cst_t left, const Value& right)
+{
+    Value res;
+    if (right.is_abstract())
+        res = left % right.expr();
+    else
+    {
+        Number n(right.size(), left);
+        n.set_rem(n, right.as_number());
+        res = n;
+    }
+    return res;
+}
+
+Value operator>>(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_shr(left, right);
+    return res;
+}
+
+Value operator>>(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = left.expr() >> right;
+    else
+    {
+        Number n(left.size(), right);
+        n.set_shr(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value operator>>(cst_t left, const Value& right)
+{
+    Value res;
+    if (right.is_abstract())
+        res = left >> right.expr();
+    else
+    {
+        Number n(right.size(), left);
+        n.set_shr(n, right.as_number());
+        res = n;
+    }
+    return res;
+}
+
+Value operator<<(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_shl(left, right);
+    return res;
+}
+
+Value operator<<(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = left.expr() << right;
+    else
+    {
+        Number n(left.size(), right);
+        n.set_shl(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value operator<<(cst_t left, const Value& right)
+{
+    Value res;
+    if (right.is_abstract())
+        res = left << right.expr();
+    else
+    {
+        Number n(right.size(), left);
+        n.set_shl(n, right.as_number());
+        res = n;
+    }
+    return res;
+}
+
+Value sar(const Value& arg, const Value& shift)
+{
+    Value res;
+    res.set_sar(arg, shift);
+    return res;
+}
+
+Value sar(const Value& arg, cst_t shift)
+{
+    Value res;
+    if (arg.is_abstract())
+        res = sar(arg.expr(), shift);
+    else
+    {
+        Number n(arg.size(), shift);
+        n.set_sar(arg.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value sar(cst_t arg, const Value& shift)
+{
+    Value res;
+    if (shift.is_abstract())
+        res = sar(arg, shift.expr());
+    else
+    {
+        Number n(shift.size(), arg);
+        n.set_sar(n, shift.as_number());
+        res = n;
+    }
+    return res;
+}
+
+Value smod(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_srem(left, right);
+    return res;
+}
+
+Value smod(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = smod(left.expr(), right);
+    else
+    {
+        Number n(left.size(), right);
+        n.set_srem(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value smod(cst_t left, const Value& right)
+{
+    Value res;
+    if (right.is_abstract())
+        res = smod(left, right.expr());
+    else
+    {
+        Number n(right.size(), left);
+        n.set_srem(n, right.as_number());
+        res = n;
+    }
+    return res;
+}
+
+Value sdiv(const Value& left, const Value& right)
+{
+    Value res;
+    res.set_sdiv(left, right);
+    return res;
+}
+
+Value sdiv(const Value& left, cst_t right)
+{
+    Value res;
+    if (left.is_abstract())
+        res = sdiv(left.expr(), right);
+    else
+    {
+        Number n(left.size(), right);
+        n.set_sdiv(left.as_number(), n);
+        res = n;
+    }
+    return res;
+}
+
+Value sdiv(cst_t left, const Value& right)
+{
+    Value res;
+    if (right.is_abstract())
+        res = sdiv(left, right.expr());
+    else
+    {
+        Number n(right.size(), left);
+        n.set_sdiv(n, right.as_number());
         res = n;
     }
     return res;
@@ -979,15 +1346,94 @@ Value extract(const Value& arg, unsigned long higher, unsigned long lower)
     return res;
 }
 
+Constraint operator==(const Value& left, const Value& right)
+{
+    return left.as_expr() == right.as_expr();
+}
 
 Constraint operator==(const Value& left, cst_t right)
 {
     return left.as_expr() == exprcst(left.size(), right);
 }
 
+Constraint operator==(cst_t left, const Value& right)
+{
+    return exprcst(right.size(), left) == right.as_expr();
+}
+
+Constraint operator!=(const Value& left, const Value& right)
+{
+    return left.as_expr() != right.as_expr();
+}
+
 Constraint operator!=(const Value& left, cst_t right)
 {
     return left.as_expr() != exprcst(left.size(), right);
+}
+
+Constraint operator!=(cst_t left, const Value& right)
+{
+    return exprcst(right.size(), left) != right.as_expr();
+}
+
+Constraint operator<(const Value& left, const Value& right)
+{
+    return left.as_expr() < right.as_expr();
+}
+
+Constraint operator<(const Value& left, cst_t right)
+{
+    return left.as_expr() < exprcst(left.size(), right);
+}
+
+Constraint operator<(cst_t left, const Value& right)
+{
+    return exprcst(right.size(), left) < right.as_expr();
+}
+
+Constraint operator<=(const Value& left, const Value& right)
+{
+    return left.as_expr() <= right.as_expr();
+}
+
+Constraint operator<=(const Value& left, cst_t right)
+{
+    return left.as_expr() <= exprcst(left.size(), right);
+}
+
+Constraint operator<=(cst_t left, const Value& right)
+{
+    return exprcst(right.size(), left) <= right.as_expr();
+}
+
+Constraint operator>(const Value& left, const Value& right)
+{
+    return left.as_expr() > right.as_expr();
+}
+
+Constraint operator>(const Value& left, cst_t right)
+{
+    return left.as_expr() > exprcst(left.size(), right);
+}
+
+Constraint operator>(cst_t left, const Value& right)
+{
+    return exprcst(right.size(), left) > right.as_expr();
+}
+
+Constraint operator>=(const Value& left, const Value& right)
+{
+    return left.as_expr() >= right.as_expr();
+}
+
+Constraint operator>=(const Value& left, cst_t right)
+{
+    return left.as_expr() >= exprcst(left.size(), right);
+}
+
+Constraint operator>=(cst_t left, const Value& right)
+{
+    return exprcst(right.size(), left) >= right.as_expr();
 }
 
 } // namespace maat

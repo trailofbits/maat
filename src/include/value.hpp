@@ -108,7 +108,6 @@ public:
 };
 
 // Overloaded native operators
-// TODO: rest of operators
 Value operator+(const Value& left, const Value& right); ///< Add two values
 Value operator+(const Value& left, cst_t right); ///< Add two values
 Value operator+(cst_t left, const Value& right); ///< Add two values
@@ -121,16 +120,77 @@ Value operator*(const Value& left, const Value& right); ///< Multiply two values
 Value operator*(const Value& left, cst_t right); ///< Multiply two values
 Value operator*(cst_t left, const Value& right); ///< Multiply two values
 
+Value operator/(const Value& left, const Value& right); ///< Unsigned divide two values
+Value operator/(const Value& left, cst_t right); ///< Unisgned divide two values
+Value operator/(cst_t left, const Value& right); ///< Unisigned divide two values
+
+Value operator&(const Value& left, const Value& right); ///< Logical AND between two values
+Value operator&(const Value& left, cst_t right); ///< Logical AND between two values
+Value operator&(cst_t left, const Value& right); ///< Logical AND between two values
+
+Value operator|(const Value& left, const Value& right); ///< Logical OR between two values
+Value operator|(const Value& left, cst_t right); ///< Logical OR between two values
+Value operator|(cst_t left, const Value& right); ///< Logical OR between two values
+
+Value operator^(const Value& left, const Value& right); ///< Logical XOR between two values
+Value operator^(const Value& left, cst_t right); ///< Logical XOR between two values
+Value operator^(cst_t left, const Value& right); ///< Logical XOR between two values
+
+Value operator%(const Value& left, const Value& right); ///< Unsigned modulo
+Value operator%(const Value& left, cst_t right); ///< Unsigned modulo
+Value operator%(cst_t left, const Value& right); ///< Unsigned modulo
+
+Value operator>>(const Value& left, const Value& right); ///< Logical shift right
+Value operator>>(const Value& left, cst_t right); ///< Logical shift right
+Value operator>>(cst_t left, const Value& right); ///< Logical shift right
+
+Value operator<<(const Value& left, const Value& right); ///< Logical shift left
+Value operator<<(const Value& left, cst_t right); ///< Logical shift left
+Value operator<<(cst_t left, const Value& right); ///< Logical shift left
+
+Value sar(const Value& arg, const Value& shift); ///< Arithmetic shift right
+Value sar(const Value& arg, cst_t shift); ///< Arithmetic shift right
+Value sar(cst_t arg, const Value& shift); ///< Arithmetic shift right
+
+Value sdiv(const Value& left, const Value& right); ///< Signed divide two values
+Value sdiv(const Value& left, cst_t right); ///< Signed divide two values
+Value sdiv(cst_t left, const Value& right); ///< Signed divide two values
+
+Value smod(const Value& val, const Value& mod); ///< Signed modulo
+Value smod(const Value& val, cst_t mod); ///< Signed modulo
+Value smod(cst_t val, const Value& mod); ///< Signed modulo
+
+Value operator~(const Value& arg); ///< Negate an expression
+Value operator-(const Value& arg); ///< Logical invert an expression
+
 Value extract(const Value& arg, unsigned long higher, unsigned long lower); ///< Extract bitfield from value
+Value concat(const Value& upper, const Value& lower); ///< Concatenate two values
+
 
 // Constraints
-Constraint operator==(const Value& left, const Value& right); ///< Create equality constraint 
-Constraint operator==(const Value& left, cst_t right); ///< Create equality constraint 
-Constraint operator==(cst_t left, const Value& right); ///< Create equality constraint 
+Constraint operator==(const Value& left, const Value& right); ///< Equality constraint 
+Constraint operator==(const Value& left, cst_t right); ///< Equality constraint 
+Constraint operator==(cst_t left, const Value& right); ///< Equality constraint 
 
-Constraint operator!=(const Value& left, const Value& right); ///< Create a not-equal constraint 
-Constraint operator!=(const Value& left, cst_t right); ///< Create a not-equal constraint 
-Constraint operator!=(cst_t left, const Value& right); ///< Create a not-equal constraint 
+Constraint operator!=(const Value& left, const Value& right); ///< Not-equal constraint 
+Constraint operator!=(const Value& left, cst_t right); ///< Not-equal constraint 
+Constraint operator!=(cst_t left, const Value& right); ///< Not-equal constraint 
+
+Constraint operator<(const Value& left, const Value& right); ///< Less-than constraint 
+Constraint operator<(const Value& left, cst_t right); ///< Less-than constraint 
+Constraint operator<(cst_t left, const Value& right); ///< Less-than constraint 
+
+Constraint operator<=(const Value& left, const Value& right); ///< Less-or-equal constraint 
+Constraint operator<=(const Value& left, cst_t right); ///< Less-or-equal constraint 
+Constraint operator<=(cst_t left, const Value& right); ///< Less-or-equal constraint 
+
+Constraint operator>(const Value& left, const Value& right); ///< Greater-than constraint 
+Constraint operator>(const Value& left, cst_t right); ///< Greater-than constraint
+Constraint operator>(cst_t left, const Value& right); ///< Greater-than constraint
+
+Constraint operator>=(const Value& left, const Value& right); ///< Greater-or-equal constraint
+Constraint operator>=(const Value& left, cst_t right); ///< Greater-or-equal constraint
+Constraint operator>=(cst_t left, const Value& right); ///< Greater-or-equal constraint
 
 /** }/ */ // doxygen expression group
 

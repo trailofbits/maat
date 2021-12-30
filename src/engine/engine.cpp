@@ -636,7 +636,6 @@ bool MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
             )
         }
 
-        // TODO: shouldn't use as_expr everywhere here....
         if (do_abstract_load)
         {
             Expr load_addr = simplifier->simplify(addr_param.auxilliary.as_expr());
