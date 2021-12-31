@@ -118,6 +118,22 @@ ucst_t Value::as_uint(const VarContext& ctx) const
     return is_abstract()? _expr->as_uint(ctx) : _number.get_ucst();
 }
 
+fcst_t Value::as_float() const
+{
+    if (is_abstract())
+        return  _expr->as_float();
+    else
+        throw expression_exception("Value::as_float(): not implemented for concrete values");
+}
+
+fcst_t Value::as_float(const VarContext& ctx) const
+{
+    if (is_abstract())
+        return  _expr->as_float(ctx);
+    else
+        throw expression_exception("Value::as_float(): not implemented for concrete values");
+}
+
 const Number& Value::as_number() const
 {
     return is_abstract()? _expr->as_number() : _number;
@@ -1332,6 +1348,34 @@ Value sdiv(cst_t left, const Value& right)
     return res;
 }
 
+Value operator~(const Value& arg)
+{
+    Value res;
+    if (arg.is_abstract())
+        res = ~arg.expr();
+    else
+    {
+        Number n;
+        n.set_not(arg.as_number());
+        res = n;
+    }
+    return res;
+}
+
+Value operator-(const Value& arg)
+{
+    Value res;
+    if (arg.is_abstract())
+        res = -arg.expr();
+    else
+    {
+        Number n;
+        n.set_neg(arg.as_number());
+        res = n;
+    }
+    return res;
+}
+
 Value extract(const Value& arg, unsigned long higher, unsigned long lower)
 {
     Value res;
@@ -1341,6 +1385,20 @@ Value extract(const Value& arg, unsigned long higher, unsigned long lower)
     {
         Number n;
         n.set_extract(arg.as_number(), higher, lower);
+        res = n;
+    }
+    return res;
+}
+
+Value concat(const Value& upper, const Value& lower)
+{
+    Value res;
+    if (upper.is_abstract() or lower.is_abstract())
+        res = concat(upper.as_expr(), lower.as_expr());
+    else
+    {
+        Number n;
+        n.set_concat(upper.as_number(), lower.as_number());
         res = n;
     }
     return res;

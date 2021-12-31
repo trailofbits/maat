@@ -22,18 +22,18 @@ void init_expression(PyObject* module);
 
 typedef struct {
     PyObject_HEAD
-    Expr* expr;
+    Value* value;
     std::shared_ptr<VarContext>* varctx;
-} Expr_Object;
+} Value_Object;
 
 PyObject* maat_Cst(PyObject* self, PyObject* args, PyObject* keywords);
 PyObject* maat_Var(PyObject* self, PyObject* args, PyObject* keywords);
 PyObject* maat_Concat(PyObject* upper, PyObject* lower);
 PyObject* maat_Extract(PyObject* self, PyObject* args);
-PyObject* PyExpr_FromExpr(Expr e);
-PyObject* PyExpr_FromExprAndVarContext(Expr e, std::shared_ptr<VarContext> ctx);
-PyObject* get_Expr_Type();
-#define as_expr_object(x) (*((Expr_Object*)x))
+PyObject* PyValue_FromValue(const Value& val);
+PyObject* PyValue_FromValueAndVarContext(const Value& val, std::shared_ptr<VarContext> ctx);
+PyObject* get_Value_Type();
+#define as_value_object(x) (*((Value_Object*)x))
 
 typedef struct {
     PyObject_HEAD
@@ -142,6 +142,7 @@ typedef struct {
     Arch* arch; // Always ref, needed to get registers by name
     std::shared_ptr<VarContext>* varctx; // Always ref, needed to build expressions
 } CPU_Object;
+
 PyObject* PyCPU_FromCPUAndArchAndVarContext(
     ir::CPU<ir::max_cpu_regs>* cpu,
     bool is_ref,

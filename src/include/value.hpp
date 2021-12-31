@@ -59,9 +59,11 @@ public:
 public:
     Expr as_expr() const; ///< Return the value as an abstract expression
     cst_t as_int() const; ///< Return the value as a concrete signed value
-    ucst_t as_uint() const; /// Return the value as a concrete unsigned value
+    ucst_t as_uint() const; ///< Return the value as a concrete unsigned value
+    fcst_t as_float() const; ///< Return the value as a concrete floating point value
     cst_t as_int(const VarContext&) const; ///< Return the value as a concrete signed value
     ucst_t as_uint(const VarContext&) const; /// Return the value as a concrete unsigned value
+    fcst_t as_float(const VarContext&) const; ///< Return the value as a concrete floating point value
     const Number& as_number() const; ///< Return the value as a concrete number
     const Number& as_number(const VarContext&) const; ///< Return the value as a concrete number
 // In-place operators

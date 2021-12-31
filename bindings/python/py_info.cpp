@@ -41,17 +41,17 @@ static PyObject* RegAccess_get_reg(PyObject* self, void* closure)
 }
 
 static PyObject* RegAccess_get_value(PyObject* self, void* closure){
-    if( as_regaccess_object(self).access->value == nullptr ){
+    if( as_regaccess_object(self).access->value.is_none() ){
         return PyErr_Format(PyExc_AttributeError, "'value' property is not set currently");
     }
-    return PyExpr_FromExpr(as_regaccess_object(self).access->value);
+    return PyValue_FromValue(as_regaccess_object(self).access->value);
 }
 
 static PyObject* RegAccess_get_new_value(PyObject* self, void* closure){
-    if( as_regaccess_object(self).access->new_value == nullptr ){
+    if( as_regaccess_object(self).access->new_value.is_none() ){
         return PyErr_Format(PyExc_AttributeError, "'new_value' property is not set currently");
     }
-    return PyExpr_FromExpr(as_regaccess_object(self).access->new_value);
+    return PyValue_FromValue(as_regaccess_object(self).access->new_value);
 }
 
 static PyObject* RegAccess_get_read(PyObject* self, void* closure){
@@ -169,12 +169,11 @@ static PyObject* MemAccess_repr(PyObject* self) {
 
 
 static PyObject* MemAccess_get_addr(PyObject* self, void* closure){
-    if( as_memaccess_object(self).access->addr == nullptr ){
+    if( as_memaccess_object(self).access->addr.is_none() ){
         return PyErr_Format(PyExc_AttributeError, "'addr' property is not set currently");
     }
-    return PyExpr_FromExpr(as_memaccess_object(self).access->addr);
+    return PyValue_FromValue(as_memaccess_object(self).access->addr);
 }
-
 
 
 static PyObject* MemAccess_get_size(PyObject* self, void* closure){
@@ -182,10 +181,10 @@ static PyObject* MemAccess_get_size(PyObject* self, void* closure){
 }
 
 static PyObject* MemAccess_get_value(PyObject* self, void* closure){
-    if( as_memaccess_object(self).access->value == nullptr ){
+    if( as_memaccess_object(self).access->value.is_none() ){
         return PyErr_Format(PyExc_AttributeError, "'value' property is not set currently");
     }
-    return PyExpr_FromExpr(as_memaccess_object(self).access->value);
+    return PyValue_FromValue(as_memaccess_object(self).access->value);
 }
 
 static PyObject* MemAccess_get_read(PyObject* self, void* closure){
@@ -300,17 +299,17 @@ static PyObject* Branch_get_taken(PyObject* self, void* closure){
 }
 
 static PyObject* Branch_get_target(PyObject* self, void* closure){
-    if( as_branch_object(self).branch->target == nullptr ){
+    if( as_branch_object(self).branch->target.is_none() ){
         return PyErr_Format(PyExc_AttributeError, "'target' property is not set currently");
     }
-    return PyExpr_FromExpr(as_branch_object(self).branch->target);
+    return PyValue_FromValue(as_branch_object(self).branch->target);
 }
 
 static PyObject* Branch_get_next(PyObject* self, void* closure){
-    if( as_branch_object(self).branch->next == nullptr ){
+    if( as_branch_object(self).branch->next.is_none() ){
         return PyErr_Format(PyExc_AttributeError, "'next' property is not set currently");
     }
-    return PyExpr_FromExpr(as_branch_object(self).branch->next);
+    return PyValue_FromValue(as_branch_object(self).branch->next);
 }
 
 static PyGetSetDef Branch_getset[] = {
@@ -422,7 +421,7 @@ static PyObject* Info_get_exit_status(PyObject* self, void* closure){
     if( not as_info_object(self).info->exit_status.has_value()){
         return PyErr_Format(PyExc_AttributeError, "'exit_status' property is not set currently");
     }
-    return PyExpr_FromExpr(as_info_object(self).info->exit_status.value());
+    return PyValue_FromValue(as_info_object(self).info->exit_status.value());
 }
 
 static PyObject* Info_get_branch(PyObject* self, void* closure){

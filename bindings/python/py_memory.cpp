@@ -53,21 +53,21 @@ static PyObject* MemEngine_new_segment(PyObject* self, PyObject* args, PyObject*
 
 static PyObject* MemEngine_read(PyObject* self, PyObject* args) {
     unsigned int nb_bytes;
-    Expr res;
+    Value res;
     PyObject* addr = nullptr;
     
     if(PyArg_ParseTuple(args, "OI", &addr, &nb_bytes)){
-        if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Expr_Type()) ){
+        if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Value_Type()) ){
             try{
                 // Handles both symbolic and concrete addresses
-                res = as_mem_object(self).mem->read(*(as_expr_object(addr).expr), nb_bytes);
-            }catch(mem_exception e){
+                res = as_mem_object(self).mem->read(*(as_value_object(addr).value), nb_bytes);
+            }catch(const mem_exception& e){
                 return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
             }
         }else if(PyLong_Check(addr)){
             try{
-                res = as_mem_object(self).mem->read(PyLong_AsUnsignedLongLong(addr), nb_bytes);
-            }catch(mem_exception e){
+                as_mem_object(self).mem->read(res, PyLong_AsUnsignedLongLong(addr), nb_bytes);
+            }catch(const mem_exception& e){
                 return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
             }
         }else{
@@ -76,23 +76,23 @@ static PyObject* MemEngine_read(PyObject* self, PyObject* args) {
     }else{
         return NULL;
     }
-    return PyExpr_FromExpr(res);
+    return PyValue_FromValue(res);
 }
 
 
 static PyObject* MemEngine_read_buffer(PyObject* self, PyObject* args) {
     PyObject* addr;
     unsigned int nb_elems, elem_size=1;
-    std::vector<Expr> res;
+    std::vector<Value> res;
     PyObject* list;
 
     if( !PyArg_ParseTuple(args, "OI|I", &addr, &nb_elems, &elem_size)){
         return NULL;
     }
 
-    if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Expr_Type()) ){
+    if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Value_Type()) ){
         try{
-            res = as_mem_object(self).mem->read_buffer(*(as_expr_object(addr).expr), nb_elems, elem_size);
+            res = as_mem_object(self).mem->read_buffer(*(as_value_object(addr).value), nb_elems, elem_size);
         }catch(mem_exception e){
             return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
         }
@@ -111,8 +111,9 @@ static PyObject* MemEngine_read_buffer(PyObject* self, PyObject* args) {
     if( list == NULL ){
         return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
     }
-    for (Expr e : res){
-        if( PyList_Append(list, PyExpr_FromExpr(e)) == -1){
+    for (const Value& val : res)
+    {
+        if( PyList_Append(list, PyValue_FromValue(val)) == -1){
             return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
         }
     }
@@ -129,16 +130,16 @@ static PyObject* MemEngine_read_str(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Expr_Type()) ){
+    if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Value_Type()) ){
         try{
-            res = as_mem_object(self).mem->read_string(*(as_expr_object(addr).expr), len );
-        }catch(mem_exception e){
+            res = as_mem_object(self).mem->read_string(*(as_value_object(addr).value), len );
+        }catch(const mem_exception& e){
             return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
         }
     }else if(PyLong_Check(addr)){
         try{
             res = as_mem_object(self).mem->read_string(PyLong_AsUnsignedLongLong(addr), len);
-        }catch(mem_exception e){
+        }catch(const mem_exception& e){
             return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
         }
     }else{
@@ -159,7 +160,7 @@ static PyObject* MemEngine_write(PyObject* self, PyObject* args, PyObject* keywo
 {
     addr_t concrete_addr;
     PyObject* addr = nullptr;
-    Expr expr_addr = nullptr;
+    Value val_addr;
     Expr e = nullptr;
     char * data = nullptr;
     Py_ssize_t data_len;
@@ -176,8 +177,8 @@ static PyObject* MemEngine_write(PyObject* self, PyObject* args, PyObject* keywo
     // Check addr first
     if( PyLong_Check(addr)){
         concrete_addr = PyLong_AsUnsignedLongLong(addr);
-    }else if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Expr_Type())){
-        expr_addr = *(as_expr_object(addr).expr);
+    }else if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Value_Type())){
+        val_addr = *(as_value_object(addr).value);
     }else{
         return PyErr_Format(PyExc_TypeError, "MemEngine.write(): address must be 'int' or 'Expr'"); 
     }
@@ -185,16 +186,16 @@ static PyObject* MemEngine_write(PyObject* self, PyObject* args, PyObject* keywo
     try{
         // Check arguments types, function is overloaded
         // (addr, expr)
-        if( PyObject_TypeCheck(arg2, (PyTypeObject*)get_Expr_Type()) ){
-            if (expr_addr)
-                as_mem_object(self).mem->write(expr_addr, *(as_expr_object(arg2).expr), (bool)ignore_flags);
+        if( PyObject_TypeCheck(arg2, (PyTypeObject*)get_Value_Type()) ){
+            if (not val_addr.is_none())
+                as_mem_object(self).mem->write(val_addr, *(as_value_object(arg2).value), (bool)ignore_flags);
             else
-                as_mem_object(self).mem->write(concrete_addr, *(as_expr_object(arg2).expr), nullptr, false, (bool)ignore_flags);
+                as_mem_object(self).mem->write(concrete_addr, *(as_value_object(arg2).value), nullptr, false, (bool)ignore_flags);
         // (addr, cst, nb_bytes)
         }else if(arg3 != nullptr && PyLong_Check(arg2) && PyLong_Check(arg3)){
-            if (expr_addr)
+            if (not val_addr.is_none())
                 as_mem_object(self).mem->write(
-                    expr_addr,
+                    val_addr,
                     PyLong_AsLongLong(arg2),
                     PyLong_AsUnsignedLong(arg3),
                     (bool)ignore_flags
@@ -218,9 +219,9 @@ static PyObject* MemEngine_write(PyObject* self, PyObject* args, PyObject* keywo
                     data_len = PyLong_AsSsize_t(arg3);
                 }
             }
-            if (expr_addr)
+            if (not val_addr.is_none())
                 as_mem_object(self).mem->write_buffer(
-                    expr_addr,
+                    val_addr,
                     (uint8_t*)data,
                     (unsigned int)data_len,
                     (bool)ignore_flags
