@@ -632,7 +632,7 @@ bool MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
                     addr_param.auxilliary, // addr
                     load_size // size in bytes
                 ),
-                nullptr
+                false
             )
         }
 
@@ -667,7 +667,7 @@ bool MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
                     addr_param.auxilliary, // addr
                     loaded // value
                 ),
-                nullptr
+                false
             )
         }
         // Reset info (but save addr)
