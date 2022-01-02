@@ -213,20 +213,20 @@ static void FileAccessor_dealloc(PyObject* self)
 };
 
 // buf must be list, returns NULL on success
-PyObject* generic_buffer_translate(std::vector<Expr>& native_buf, PyObject* buf)
+PyObject* generic_buffer_translate(std::vector<Value>& native_buf, PyObject* buf)
 {
-    size_t expr_size_hint = 8; // Size hint in bits for int values, to allow mixing Expr and int
+    size_t val_size_hint = 8; // Size hint in bits for int values, to allow mixing Expr and int
     for (int i = 0; i < PyList_Size(buf); i++)
     {
-        PyObject* expr = PyList_GetItem(buf, i);
-        if (PyObject_TypeCheck(expr, (PyTypeObject*)get_Expr_Type()))
+        PyObject* val = PyList_GetItem(buf, i);
+        if (PyObject_TypeCheck(val, (PyTypeObject*)get_Value_Type()))
         {
-            native_buf.push_back(*as_expr_object(expr).expr);
-            expr_size_hint = (*as_expr_object(expr).expr)->size;
+            native_buf.push_back(*as_value_object(val).value);
+            val_size_hint = (*as_value_object(val).value).size();
         }
-        else if (PyLong_Check(expr))
+        else if (PyLong_Check(val))
         {
-            native_buf.push_back(exprcst(expr_size_hint, PyLong_AsLongLong(expr)));
+            native_buf.push_back(Value(val_size_hint, PyLong_AsLongLong(val)));
         }
         else
         {
@@ -240,10 +240,9 @@ PyObject* generic_buffer_translate(std::vector<Expr>& native_buf, PyObject* buf)
 static PyObject* FileAccessor_write_buffer(PyObject* self, PyObject *args)
 {
     PyObject* buf;
-    std::vector<Expr> native_buf;
+    std::vector<Value> native_buf;
     const char* bytes;
     int bytes_len=0, len=-1;
-    size_t expr_size_hint = 8; // Size hint in bits for int values, to allow mixing Expr and int
 
     try
     {
@@ -274,7 +273,7 @@ static PyObject* FileAccessor_write_buffer(PyObject* self, PyObject *args)
 static PyObject* FileAccessor_read_buffer(PyObject* self, PyObject* args)
 {
     unsigned int nb_elems, elem_size=1;
-    std::vector<Expr> res;
+    std::vector<Value> res;
     PyObject* list;
 
     if( !PyArg_ParseTuple(args, "I|I", &nb_elems, &elem_size)){
@@ -295,9 +294,9 @@ static PyObject* FileAccessor_read_buffer(PyObject* self, PyObject* args)
     if( list == NULL ){
         return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
     }
-    for (Expr e : res)
+    for (const Value& val : res)
     {
-        if( PyList_Append(list, PyExpr_FromExpr(e)) == -1)
+        if( PyList_Append(list, PyValue_FromValue(val)) == -1)
         {
             return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
         }
@@ -383,7 +382,7 @@ static void File_dealloc(PyObject* self)
 static PyObject* File_write_buffer(PyObject* self, PyObject *args)
 {
     PyObject* buf;
-    std::vector<Expr> native_buf;
+    std::vector<Value> native_buf;
     addr_t offset = 0;
     const char* bytes;
     int bytes_len=0, len=-1;
@@ -418,7 +417,7 @@ static PyObject* File_write_buffer(PyObject* self, PyObject *args)
 static PyObject* File_read_buffer(PyObject* self, PyObject* args)
 {
     unsigned int nb_elems, elem_size=1;
-    std::vector<Expr> res;
+    std::vector<Value> res;
     PyObject* list;
     addr_t offset = 0;
 
@@ -441,9 +440,9 @@ static PyObject* File_read_buffer(PyObject* self, PyObject* args)
     if( list == NULL ){
         return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
     }
-    for (Expr e : res)
+    for (const Value& val : res)
     {
-        if( PyList_Append(list, PyExpr_FromExpr(e)) == -1)
+        if( PyList_Append(list, PyValue_FromValue(val)) == -1)
         {
             return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
         }

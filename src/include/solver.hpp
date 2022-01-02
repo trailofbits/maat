@@ -2,6 +2,7 @@
 #define MAAT_SOLVER_H
 
 #include "constraint.hpp"
+#include "varcontext.hpp"
 #include <list>
 
 #ifdef Z3_BACKEND

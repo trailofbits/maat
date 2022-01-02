@@ -39,17 +39,17 @@ namespace test
                 {}
             );
 
-            nb += _assert(engine.cpu.ctx().get(X86::EIP)->as_uint() == 0x56555430, "Loader: ELF X86: instruction pointer not set correctly");
-            nb += _assert(engine.mem->read(0x565555dd, 4)->as_uint() == 0x56555680, "Loader: ELF X86: relocation failed");
-            nb += _assert(engine.mem->read(0x56556ecc, 4)->as_uint() == 0x56555560, "Loader: ELF X86: relocation failed");
-            nb += _assert(engine.mem->read(0x56556ed0, 4)->as_uint() == 0x56555510, "Loader: ELF X86: relocation failed");
-            nb += _assert(engine.mem->read(0x56556ff8, 4)->as_uint() == 0x56555598, "Loader: ELF X86: relocation failed");
-            nb += _assert(engine.mem->read(0x56557004, 4)->as_uint() == 0x56557004, "Loader: ELF X86: relocation failed");
+            nb += _assert(engine.cpu.ctx().get(X86::EIP).as_uint() == 0x56555430, "Loader: ELF X86: instruction pointer not set correctly");
+            nb += _assert(engine.mem->read(0x565555dd, 4).as_uint() == 0x56555680, "Loader: ELF X86: relocation failed");
+            nb += _assert(engine.mem->read(0x56556ecc, 4).as_uint() == 0x56555560, "Loader: ELF X86: relocation failed");
+            nb += _assert(engine.mem->read(0x56556ed0, 4).as_uint() == 0x56555510, "Loader: ELF X86: relocation failed");
+            nb += _assert(engine.mem->read(0x56556ff8, 4).as_uint() == 0x56555598, "Loader: ELF X86: relocation failed");
+            nb += _assert(engine.mem->read(0x56557004, 4).as_uint() == 0x56557004, "Loader: ELF X86: relocation failed");
             
-            nb += _assert(engine.mem->read(engine.cpu.ctx().get(X86::ESP), 4)->as_uint() == 2, "Loader: ELF X86: argc not set correctly");
-            tmp = engine.mem->read((engine.cpu.ctx().get(X86::ESP)) + 4 + 4, 4)->as_uint();
-            nb += _assert(engine.mem->read(tmp, 8)->as_uint() == 0x3837363534333231, "Loader: ELF X86: failed to setup argument in stack");
-            nb += _assert(engine.mem->read(tmp+8, 1)->as_uint() == 0, "Loader: ELF X86: failed to setup argument in stack (missing termination '\0')");
+            nb += _assert(engine.mem->read(engine.cpu.ctx().get(X86::ESP).as_uint(), 4).as_uint() == 2, "Loader: ELF X86: argc not set correctly");
+            tmp = engine.mem->read(engine.cpu.ctx().get(X86::ESP).as_uint() + 4 + 4, 4).as_uint();
+            nb += _assert(engine.mem->read(tmp, 8).as_uint() == 0x3837363534333231, "Loader: ELF X86: failed to setup argument in stack");
+            nb += _assert(engine.mem->read(tmp+8, 1).as_uint() == 0, "Loader: ELF X86: failed to setup argument in stack (missing termination '\0')");
 
             return nb;
         }

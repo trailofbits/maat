@@ -1,4 +1,5 @@
 #include "arch.hpp"
+#include "varcontext.hpp"
 #include "engine.hpp"
 #include "exception.hpp"
 #include <cassert>
@@ -26,12 +27,12 @@ namespace test
         }
         
         unsigned int _assert_bignum_eq(
-            Expr var,
+            const Value& var,
             std::string expected_value,
             std::string error_msg
         )
         {
-            const Number& number = var->as_number();
+            const Number& number = var.as_number();
             std::stringstream ss;
             ss << number;
             if (ss.str() != expected_value)
@@ -100,32 +101,32 @@ namespace test
             sym.run_from(0x1000, 1);
 
 
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0b100001101)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0b100001101)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAA");
             // AL = 7 
             sym.cpu.ctx().set(X86::AF, exprcst(32, 1)); // Set carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0b1101));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0b100000011)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0b100000011)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAA");
                             
             // AL = 3 
             sym.cpu.ctx().set(X86::AF, exprcst(32, 1)); // Set carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0b0011));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0b100001001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0b100001001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAA");
             
              /* Test when the 4 LSB are > 9 and AF not set*/
@@ -133,21 +134,21 @@ namespace test
             sym.cpu.ctx().set(X86::AF, exprcst(32, 0)); // Clear carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0b1010));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0b100000000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0b100000000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAA");
             // AL = 15 
             sym.cpu.ctx().set(X86::AF, exprcst(32, 0)); // Clear carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0b1111));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0b100000101)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0b100000101)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAA");
             
              /* Test when the 4 LSB are <= 9 and AF not set*/
@@ -155,21 +156,21 @@ namespace test
             sym.cpu.ctx().set(X86::AF, exprcst(32, 0)); // Clear carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0b11110000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAA");
             // AL = 0x59
             sym.cpu.ctx().set(X86::AF, exprcst(32, 0)); // Clear carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x59));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x09)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x09)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAA");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAA");
 
             return nb;
@@ -186,63 +187,63 @@ namespace test
             // AX = 7 
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 7));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 7)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 7)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
                             
             // AX =  0x107
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x107));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 17)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 17)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAD");
                             
             // AX =  0xd01
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xd01));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x83)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x83)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
             /* TODO: error in ghidra...
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAD");
             */
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
             
             // AX =  0x8000
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x8000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAD");
             
             // AX =  0xc88
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xc88));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAD");
             
             return nb;
@@ -259,78 +260,78 @@ namespace test
             // AX = 7
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 7));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 7)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 7)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
                             
             // AX =  0x107
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x107));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 7)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 7)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
                             
             // AX =  33
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 33));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0303)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0303)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAM");
             
             // AX =  89
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 89));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0809)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0809)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
             /* TODO - sleigh bug ? 
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAM");
             */
 
             // AX =  123
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 123));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xc03)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xc03)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAM");
                             
             // AX =  0xa
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xa));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x100)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x100)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAM");
             /* TODO sleigh bug ? 
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAM");
             */
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAM");
             /* TODO sleigh bug ?
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAM");
             */
             return nb;
@@ -350,33 +351,33 @@ namespace test
             sym.cpu.ctx().set(X86::AF, exprcst(8, 1)); // Set carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x107));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAS");
             
             // AX = 0x007 
             sym.cpu.ctx().set(X86::AF, exprcst(8, 1)); // Set carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x007));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xff01)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xff01)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAS");
                             
             // AL = 0x203 
             sym.cpu.ctx().set(X86::AF, exprcst(8, 1)); // Set carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x203));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10d)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10d)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAS");
             
              /* Test when the 4 LSB are > 9 and AF not set*/
@@ -384,21 +385,21 @@ namespace test
             sym.cpu.ctx().set(X86::AF, exprcst(8, 0)); // Clear carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x30a));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x204)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x204)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAS");
             // AL = 0x00f 
             sym.cpu.ctx().set(X86::AF, exprcst(8, 0)); // Clear carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x00f));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xff09)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xff09)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AAS");
             
              /* Test when the 4 LSB are <= 9 and AF not set*/
@@ -406,32 +407,32 @@ namespace test
             sym.cpu.ctx().set(X86::AF, exprcst(8, 0)); // Clear carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0b11110000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAS");
             // AL = 0x59
             sym.cpu.ctx().set(X86::AF, exprcst(8, 0)); // Clear carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x59));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x09)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x09)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAS");
                             
             // AX = 0x259
             sym.cpu.ctx().set(X86::AF, exprcst(8, 0)); // Clear carry flag
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x259));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x209)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x209)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAS");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AAS");
             return nb;
         }
@@ -449,9 +450,9 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x20));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x31)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x31)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADCX");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADCX");
             
             // 0x10 + 0x20 with CF cleared
@@ -459,9 +460,9 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x20));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x30)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x30)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADCX");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADCX");
             
                             
@@ -470,9 +471,9 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xffffffff));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xfffffffd));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xfffffffd)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xfffffffd)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADCX");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADCX");
                             
             // 0xffffffff + 0xfffffffd with CF cleared 
@@ -480,9 +481,9 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xffffffff));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xfffffffd));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xfffffffc)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xfffffffc)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADCX");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADCX");
             
             // 0x7fff0000 + 0x0f000000
@@ -490,9 +491,9 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x7fff0000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x0f000000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x8eff0001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x8eff0001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADCX");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADCX");
             
             // 0x8fff0000 + 0x80000001
@@ -500,19 +501,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x8fff0000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x80000001));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0fff0002)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0fff0002)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADCX");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADCX");
-                            
+
             // 0xffffff00 + 0x00000100
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xffffff00));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x00000100));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADCX");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADCX");
             return nb;
         }
@@ -533,7 +534,7 @@ namespace test
             sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
             sym.mem->write_buffer(0x1000+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->eq(exprvar(32, "eax")+exprcst(32,1)), 
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_expr()->eq(exprvar(32, "eax")+exprcst(32,1)), 
                             "ArchX86: failed to disassembly and/or execute ADD");
             
             // add bl, 0xff
@@ -541,7 +542,7 @@ namespace test
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
             sym.mem->write_buffer(0x1010+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->eq(concat(extract(exprvar(32, "ebx"), 31, 8),
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_expr()->eq(concat(extract(exprvar(32, "ebx"), 31, 8),
                                                                extract(exprvar(32, "ebx"), 7, 0)+exprcst(8,0xff))), 
                             "ArchX86: failed to disassembly and/or execute ADD");
             
@@ -550,7 +551,7 @@ namespace test
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
             sym.mem->write_buffer(0x1020+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1020, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ECX)->eq( 
+            nb += _assert(  sym.cpu.ctx().get(X86::ECX).as_expr()->eq( 
                     concat( concat( extract(exprvar(32, "ecx"), 31, 16),
                                     extract(exprvar(32, "ecx"), 15, 8)+exprcst(8,0x10)),
                             extract(exprvar(32, "ecx"), 7, 0))),
@@ -561,7 +562,7 @@ namespace test
             sym.mem->write_buffer(0x1030, (uint8_t*)code.c_str(), code.size());
             sym.mem->write_buffer(0x1030+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1030, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->eq(concat(extract(exprvar(32, "edx"), 31, 16),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_expr()->eq(concat(extract(exprvar(32, "edx"), 31, 16),
                                                                extract(exprvar(32, "edx"), 15, 0)+exprcst(16,0xffff))), 
                             "ArchX86: failed to disassembly and/or execute ADD"); 
             
@@ -576,7 +577,7 @@ namespace test
             sym.mem->write_buffer(0x1040, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1040+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->eq(concat(extract(exprvar(32, "eax"), 31, 8),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_expr()->eq(concat(extract(exprvar(32, "eax"), 31, 8),
                                                     extract(exprvar(32, "eax"), 7, 0)+extract(exprvar(32,"ebx"), 7, 0))), 
                             "ArchX86: failed to disassembly and/or execute ADD"); 
             sym.cpu.ctx().set(X86::EAX, exprvar(32, "eax")); // reset 
@@ -585,7 +586,7 @@ namespace test
             sym.mem->write_buffer(0x1050, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1050+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ECX)->eq(
+            nb += _assert(  sym.cpu.ctx().get(X86::ECX).as_expr()->eq(
                 concat( concat( extract(exprvar(32, "ecx"), 31, 16),
                                 extract(exprvar(32, "ecx"), 15, 8)+extract(exprvar(32,"edx"), 15, 8)),
                         extract(exprvar(32, "ecx"), 7, 0 ))),
@@ -596,7 +597,7 @@ namespace test
             sym.mem->write_buffer(0x1060, (uint8_t*)code.c_str(), 3);
             sym.mem->write_buffer(0x1060+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1060, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->eq(concat(extract(exprvar(32, "eax"), 31, 16),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_expr()->eq(concat(extract(exprvar(32, "eax"), 31, 16),
                                                     extract(exprvar(32, "eax"), 15, 0)+extract(exprvar(32,"ebx"), 15, 0))), 
                             "ArchX86: failed to disassembly and/or execute ADD"); 
             sym.cpu.ctx().set(X86::EAX, exprvar(32, "eax")); // reset 
@@ -605,7 +606,7 @@ namespace test
             sym.mem->write_buffer(0x1070, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1070+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1070, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ECX)->eq(exprvar(32, "ecx")+ exprvar(32,"edx")),
+            nb += _assert(  sym.cpu.ctx().get(X86::ECX).as_expr()->eq(exprvar(32, "ecx")+ exprvar(32,"edx")),
                 "ArchX86: failed to disassembly and/or execute ADD"); 
             sym.cpu.ctx().set(X86::ECX, exprvar(32, "ecx")); // reset
 
@@ -622,19 +623,19 @@ namespace test
             sym.mem->write_buffer(0x1080, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1080+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1080, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x68a, "ArchX86: failed to disassembly and/or execute ADD");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x68a, "ArchX86: failed to disassembly and/or execute ADD");
             // add bx, WORD PTR [ebx]
             code = string("\x66\x03\x1B", 3);
             sym.mem->write_buffer(0x1090, (uint8_t*)code.c_str(), 3);
             sym.mem->write_buffer(0x1090+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1090, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x5c8a, "ArchX86: failed to disassembly and/or execute ADD");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x5c8a, "ArchX86: failed to disassembly and/or execute ADD");
             // add ecx, DWORD PTR [ecx]
             code = string("\x03\x09", 2);
             sym.mem->write_buffer(0x1100, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1100+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1100, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ECX)->as_uint() == 0x12345c8a, "ArchX86: failed to disassembly and/or execute ADD");
+            nb += _assert(  sym.cpu.ctx().get(X86::ECX).as_uint() == 0x12345c8a, "ArchX86: failed to disassembly and/or execute ADD");
 
             // ADD MEM, IMM
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x2000));
@@ -647,14 +648,14 @@ namespace test
             sym.mem->write_buffer(0x1110, (uint8_t*)code.c_str(), 3);
             sym.mem->write_buffer(0x1110+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1110, 1);
-            nb += _assert(  sym.mem->read(0x2000, 1)->as_uint() == 0x42,
+            nb += _assert(  sym.mem->read(0x2000, 1).as_uint() == 0x42,
                             "ArchX86: failed to disassembly and/or execute ADD");
             // add DWORD PTR [ebx], 0xffffffff
             code = string("\x83\x03\xFF", 3);
             sym.mem->write_buffer(0x1120, (uint8_t*)code.c_str(), 3);
             sym.mem->write_buffer(0x1120+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1120, 1);
-            nb += _assert(  sym.mem->read(0x2010, 4)->eq(exprcst(32, 0xffffffff)),
+            nb += _assert(  sym.mem->read(0x2010, 4).as_expr()->eq(exprcst(32, 0xffffffff)),
                             "ArchX86: failed to disassembly and/or execute ADD");
 
 
@@ -668,7 +669,7 @@ namespace test
             sym.mem->write_buffer(0x1130, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1130+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1130, 1);
-            nb += _assert(  sym.mem->read(0x2100, 1)->eq(exprcst(8, 0x78)),
+            nb += _assert(  sym.mem->read(0x2100, 1).as_expr()->eq(exprcst(8, 0x78)),
                             "ArchX86: failed to disassembly and/or execute ADD");
             // add DWORD PTR [ebx], edi
             sym.cpu.ctx().set(X86::EDI, exprcst(32, 0x10));
@@ -677,7 +678,7 @@ namespace test
             sym.mem->write_buffer(0x1140, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1140+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1140, 1);
-            nb += _assert(  sym.mem->read(0x2110, 4)->as_uint() == 0x12345688,
+            nb += _assert(  sym.mem->read(0x2110, 4).as_uint() == 0x12345688,
                             "ArchX86: failed to disassembly and/or execute ADD");
             // 0x10 + 0x20
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10));
@@ -686,17 +687,17 @@ namespace test
             sym.mem->write_buffer(0x1150, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1150+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1150, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
             
             // -1 + -3
@@ -706,105 +707,105 @@ namespace test
             sym.mem->write_buffer(0x1160, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
 
             // 16 + 56
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 16));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 56));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
                             
             // 0x7fff0000 + 0x0f000000
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x7fff0000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x0f000000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
                             
             // 0x7fff0000 + 0x7000001f
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x7fff0000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x0f00001f));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
             
             // 0x8fff0000 + 0x80000001
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x8fff0000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x80000001));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
             
             // 0xffffffff + 0xfffffffe
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xffffffff));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xfffffffe));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
 
             // 0xffffff00 + 0x00000100
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xffffff00));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x00000100));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADD");
             
             return nb;
@@ -825,19 +826,19 @@ namespace test
             sym.mem->write_buffer(0x1150, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1150+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1150, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x31)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x31)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
             
             // -1 + -3
@@ -848,17 +849,17 @@ namespace test
             sym.mem->write_buffer(0x1160, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e").c_str(), 2);
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, -3)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, -3)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
             
             // 16 + 56
@@ -866,17 +867,17 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 16));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 56));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 73)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 73)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
             
             
@@ -885,17 +886,17 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x7fff0000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x0f000000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x8eff0001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x8eff0001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
             
             // 0x7fff0000 + 0x7000001f
@@ -903,17 +904,17 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x7fff0000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x0f00001f));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x8eff0020)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x8eff0020)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
             
             
@@ -922,17 +923,17 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x8fff0000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x80000001));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0fff0002)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0fff0002)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
             
             // 0xffffffff + 0xfffffffe
@@ -940,17 +941,17 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xffffffff));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xfffffffe));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xfffffffe)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xfffffffe)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
                             
             // 0xffffff00 + 0x00000100
@@ -958,17 +959,17 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xffffff00));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x00000100));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ADC");
 
             return nb;
@@ -988,51 +989,51 @@ namespace test
             sym.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AND");
             
             // 0xfffff000 & 0x000fffff
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xfffff000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x000fffff));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x000ff000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x000ff000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AND");
                             
             // 0x8000000 + 0x80000001
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x80000001));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x80000001));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x80000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x80000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
                             
             // On 16 bits... 
@@ -1043,34 +1044,34 @@ namespace test
             sym.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 3);
             sym.mem->write_buffer(0x1170+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xa00000f0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xa00000f0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AND");
             
             // 0xab00000f & 0xba0000f0
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xab00000f));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xba0000f0));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xab000000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xab000000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute AND");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute AND");
             return nb;
         }
@@ -1088,45 +1089,45 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xffffffff));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 678));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
             
             // 0xfffff000 n& 0x000fffff
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xfffff000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x000fffff));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x00000fff)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x00000fff)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
                             
             // 0x7ffffffe n& 0x80000001
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x7ffffffe));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x80000001));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x80000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x80000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute ANDN");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute ANDN");
             return nb;
         }
@@ -1143,57 +1144,57 @@ namespace test
             //  0x00001010
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x00001010));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
             
             // 0xffffff01
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xffffff01));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x1)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
                             
             // 0
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
                             
             // 0x80000000
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x80000000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x80000000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x80000000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSI");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSI");
             return nb;
         }
@@ -1211,60 +1212,60 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x00001010));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x00000010));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x001f)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x001f)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
             
             // 0x00001010 : 0x00100000
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x00001010));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x00100000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x001fffff)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x001fffff)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
                             
             // 0 : 0
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xffffffff)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xffffffff)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
                             
             // 0xffffffff : 0x00200000
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xffffffff));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x00200000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x003fffff)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x003fffff)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSMSK");
             return nb;
         }
@@ -1281,57 +1282,57 @@ namespace test
             //  0x000000f0
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x000000f0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xe0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xe0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
             
             // 0x00100000
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x00100000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
                             
             // 0
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
                             
             // 0xffffffff
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xffffffff));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xfffffffe)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xfffffffe)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BLSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BLSR");
             return nb;
         }
@@ -1349,27 +1350,27 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, 0);
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x00001100));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 8)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 8)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BSF");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BSF");
             // bsf 0x0
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BSF");
             // bsf 0x8000
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x8000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 15)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 15)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BSF");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BSF");
 
             // bsf 0x10000
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BSF");
             
             /* On 32 bits */
@@ -1379,24 +1380,24 @@ namespace test
             // bsf 0x1100
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x00001100));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 8)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 8)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BSF");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BSF");
                             
                             
             // bsf 0x80000000
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x80000000));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 31)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 31)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BSF");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BSF");
                             
             // bsf 0
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BSF");         
             return nb;
         }
@@ -1412,27 +1413,27 @@ namespace test
             // bsr 0x1100
             sym.cpu.ctx().set(X86::EBX, exprcst(16,0x00001100));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 12)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 12)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BSR");
             // bsr 0x0
             sym.cpu.ctx().set(X86::EBX, exprcst(16,0x0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BSR");
             // bsr 0x8000
             sym.cpu.ctx().set(X86::EBX, exprcst(16,0x8000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 15)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 15)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BSR");
             
             // bsr 0x10000
             sym.cpu.ctx().set(X86::EBX, exprcst(16,0x10000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BSR");
             
             /* On 32 bits */
@@ -1443,24 +1444,24 @@ namespace test
             // bsr 0x1100
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x00001100));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 12)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 12)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BSR");
                             
                             
             // bsr 0x80000000
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x80000000));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 31)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 31)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BSR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BSR");
                             
             // bsr 0
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BSR");         
             return nb;
         }
@@ -1478,13 +1479,13 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.run_from(0x1160, 1);
             
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x78563412)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x78563412)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BSWAP");
                             
             // bswap 0x00111100
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x00111100));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x00111100)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x00111100)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BSWAP");
              
             // On vars
@@ -1492,7 +1493,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, eax);
             sym.vars->set("eax", 0x12345678);
             sym.run_from(0x1160, 1);
-            nb += _assert( sym.cpu.ctx().get(X86::EAX)->as_uint(*sym.vars) == 
+            nb += _assert( sym.cpu.ctx().get(X86::EAX).as_uint(*sym.vars) == 
                 (concat(concat(concat(extract(eax, 7,0),
                                extract(eax, 15, 8)),
                                extract(eax,23,16)),
@@ -1514,21 +1515,21 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,3));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BT");
 
             // bit(0x8, 4)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,4));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BT");
                             
             // bit(0x8, 19) --> 19 = 3%16
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,19));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BT");
             
             // from memory
@@ -1540,7 +1541,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1701));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,8));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BT");
                             
             /* On 32 bits */
@@ -1551,21 +1552,21 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,28));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BT");
                             
             // bit(0x10000000, 29)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,29));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BT");
                             
             // bit(0x10000000, 60)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,60));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BT");
                             
             /* With an imm */
@@ -1576,7 +1577,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x2000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,13));
             sym.run_from(0x1190, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BT");
                             
             code = string("\x0F\xBA\xE0\x0C", 4); // bt eax, 12
@@ -1586,7 +1587,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x2000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,13));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BT");
             return nb;
         }
@@ -1603,25 +1604,25 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,3));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x8)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x8)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTS");
 
             // bit(0x8, 4)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,4));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x18)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x18)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTS");
                             
             // bit(0x8, 19) --> 19 = 3%16
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,19));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTS");
             
             // from memory
@@ -1633,9 +1634,9 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 2)->as_uint() == exprcst(16 , 0xffff)->as_uint(),
+            nb += _assert(  sym.mem->read(0x1700, 2).as_uint() == exprcst(16 , 0xffff)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTS");
                             
             /* On 32 bits */
@@ -1647,27 +1648,27 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,28));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTS");
                             
             // bit(0x10000000, 29)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,29));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x30000000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x30000000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTS");
                             
             // bit(0x10000000, 60)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,60));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTS");
                             
             /* With an imm */
@@ -1677,9 +1678,9 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x2000));
             sym.run_from(0x1190, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x2000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x2000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTS");
                             
             code = string("\x0F\xBA\xE8\x0C", 4); // bts eax, 12
@@ -1688,9 +1689,9 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x2000));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x3000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x3000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTS");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTS");
             return nb;
         }
@@ -1708,27 +1709,27 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,3));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTC");
 
             // bit(0x8, 4)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,4));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x18)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x18)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTC");
                             
             // bit(0x8, 19) --> 19 = 3%16
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,19));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTC");
             
             // from memory
@@ -1740,9 +1741,9 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 2)->as_uint() == exprcst(16 , 0xffff)->as_uint(),
+            nb += _assert(  sym.mem->read(0x1700, 2).as_uint() == exprcst(16 , 0xffff)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTC");
                             
             /* On 32 bits */
@@ -1754,27 +1755,27 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,28));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTC");
                             
             // bit(0x10000000, 29)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,29));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x30000000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x30000000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTC");
                             
             // bit(0x10000000, 60)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,60));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTC");
                             
             /* With an imm */
@@ -1784,9 +1785,9 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x2000));
             sym.run_from(0x1190, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTC");
                             
             code = string("\x0F\xBA\xF8\x0C", 4); // btc eax, 12
@@ -1795,9 +1796,9 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x2000));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x3000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x3000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTC");
             return nb;
         }
@@ -1815,27 +1816,27 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,3));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTR");
 
             // bit(0x8, 4)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,4));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x8)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x8)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTR");
                             
             // bit(0x8, 19) --> 19 = 3%16
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,19));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTR");
             
             // from memory
@@ -1847,9 +1848,9 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 2)->as_uint() == exprcst(16 , 0xfffe)->as_uint(),
+            nb += _assert(  sym.mem->read(0x1700, 2).as_uint() == exprcst(16 , 0xfffe)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTR");
                             
             /* On 32 bits */
@@ -1861,27 +1862,27 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,28));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTR");
                             
             // bit(0x10000000, 29)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,29));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTR");
                             
             // bit(0x10000000, 60)
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,60));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTR");
                             
             /* With an imm */
@@ -1891,9 +1892,9 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x2000));
             sym.run_from(0x1190, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BTR");
                             
             code = string("\x0F\xBA\xF0\x0C", 4); // bts eax, 12
@@ -1902,9 +1903,9 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x2000));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x2000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x2000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BTR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BTR");
             return nb;
         }
@@ -1924,15 +1925,15 @@ namespace test
             sym.cpu.ctx().set(X86::ECX, exprcst(32,8));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xf)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xf)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
 
             /* Index on more than 8 bits */
@@ -1941,15 +1942,15 @@ namespace test
             sym.cpu.ctx().set(X86::ECX, exprcst(32,0x1008));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xf)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xf)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
                             
             /* Index on more than 8 bits */
@@ -1958,15 +1959,15 @@ namespace test
             sym.cpu.ctx().set(X86::ECX, exprcst(32,0x1008));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xf)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xf)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
                             
             /* Index bigger than operand size */
@@ -1975,15 +1976,15 @@ namespace test
             sym.cpu.ctx().set(X86::ECX, exprcst(32,33));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == sym.cpu.ctx().get(X86::EBX)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == sym.cpu.ctx().get(X86::EBX).as_uint(),
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
                             
             /* Index zero */
@@ -1992,15 +1993,15 @@ namespace test
             sym.cpu.ctx().set(X86::ECX, exprcst(32,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32,0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32,0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute BZHI");
                             
             return nb;
@@ -2016,22 +2017,22 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CBW");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x7f));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x7f)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x7f)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CBW");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x80));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xff80)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xff80)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CBW");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000106));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000006)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000006)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CBW");
 
             return nb;
@@ -2049,33 +2050,33 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x1234));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWD");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWD");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x7f98));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x1234));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x7f98)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x7f98)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWD");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWD");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8000));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x1234));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x8000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x8000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWD");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0xffff)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == exprcst(32, 0xffff)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWD");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000106));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x1234));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000106)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000106)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWD");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CWD");
 
             return nb;
@@ -2092,22 +2093,22 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWDE");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x7f98));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x7f98)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x7f98)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWDE");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x8000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xffff8000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xffff8000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWDE");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000106));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x00000106)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x00000106)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CWDE");
 
             return nb;
@@ -2125,33 +2126,33 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x12345678));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CDQ");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CDQ");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x7f980000));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x12345678));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x7f980000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x7f980000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CDQ");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0x0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == exprcst(32, 0x0)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CDQ");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x80000001));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x12345678));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x80000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x80000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CDQ");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0xffffffff)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == exprcst(32, 0xffffffff)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CDQ");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000106));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x12345678));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000106)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000106)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CDQ");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CDQ");
 
             return nb;
@@ -2167,12 +2168,12 @@ namespace test
             
             sym.cpu.ctx().set(X86::CF, exprcst(8,0x1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CLC");
                             
             sym.cpu.ctx().set(X86::CF, exprcst(8,0x0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CLC");
             return nb;
         }
@@ -2187,12 +2188,12 @@ namespace test
             
             sym.cpu.ctx().set(X86::DF, exprcst(32,0x1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::DF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::DF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CLD");
                             
             sym.cpu.ctx().set(X86::DF, exprcst(32,0x0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::DF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::DF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CLD");
             return nb;
         }
@@ -2207,12 +2208,12 @@ namespace test
             
             sym.cpu.ctx().set(X86::IF, exprcst(32,0x1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::IF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::IF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CLI");
                             
             sym.cpu.ctx().set(X86::IF, exprcst(32,0x0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::IF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::IF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CLI");
             return nb;
         }
@@ -2227,12 +2228,12 @@ namespace test
             
             sym.cpu.ctx().set(X86::CF, exprcst(8,0x1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMC");
                             
             sym.cpu.ctx().set(X86::CF, exprcst(8,0x0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMC");
             return nb;
         }
@@ -2254,19 +2255,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVA");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVA");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMOVA");
             
             /* 32 bits */
@@ -2277,19 +2278,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVA");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVA");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVA");
                             
             /* With condition not verified */
@@ -2299,7 +2300,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVA");
                             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
@@ -2308,7 +2309,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVA");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
@@ -2316,7 +2317,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVA");
             return nb;
         }
@@ -2334,19 +2335,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVAE");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVAE");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVAE");
                             
             /* With condition not verified */
@@ -2355,7 +2356,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVAE");
                             
             return nb;
@@ -2374,19 +2375,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVB");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVB");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVB");
                             
             /* With condition not verified */
@@ -2395,7 +2396,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVB");
                             
             return nb;
@@ -2420,7 +2421,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVBE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
@@ -2428,13 +2429,13 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVBE");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVBE");
                             
             /* With condition not verified */
@@ -2443,7 +2444,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVBE");
             
             return nb;
@@ -2466,19 +2467,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVE");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVE");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVE");
                             
             /* With condition not verified */
@@ -2487,7 +2488,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVE");
                             
             return nb;
@@ -2511,7 +2512,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVG");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
@@ -2520,7 +2521,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVG");
                             
             
@@ -2530,7 +2531,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVG");
                             
             /* With condition not verified */
@@ -2540,7 +2541,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVG");
                             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
@@ -2549,7 +2550,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVG");
                             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
@@ -2558,7 +2559,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVG");
             
             return nb;
@@ -2581,7 +2582,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVGE");
             
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
@@ -2589,7 +2590,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVGE");
                             
             
@@ -2598,7 +2599,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVGE");
                             
             /* With condition not verified */
@@ -2607,7 +2608,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVGE");
                             
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
@@ -2615,7 +2616,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVGE");
             
             return nb;
@@ -2638,7 +2639,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVL");
             
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
@@ -2646,7 +2647,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVL");
                             
             
@@ -2655,7 +2656,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVL");
                             
             /* With condition not verified */
@@ -2664,7 +2665,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVL");
                             
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
@@ -2672,7 +2673,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVL");
             
             return nb;
@@ -2696,7 +2697,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVLE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
@@ -2705,7 +2706,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVLE");
                             
             
@@ -2715,7 +2716,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVLE");
                             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
@@ -2724,7 +2725,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVLE");
                             
             /* With condition not verified */
@@ -2734,7 +2735,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVLE");
                             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
@@ -2743,7 +2744,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVLE");
             
             return nb;
@@ -2765,19 +2766,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVNE");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNE");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNE");
                             
             /* With condition not verified */
@@ -2786,7 +2787,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNE");
                             
             return nb;
@@ -2808,19 +2809,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVNO");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNO");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNO");
                             
             /* With condition not verified */
@@ -2829,7 +2830,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNO");
                             
             return nb;
@@ -2851,19 +2852,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVNP");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNP");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNP");
                             
             /* With condition not verified */
@@ -2872,7 +2873,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNP");
                             
             return nb;
@@ -2894,19 +2895,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVNS");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNS");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNS");
                             
             /* With condition not verified */
@@ -2915,7 +2916,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVNS");
                             
             return nb;
@@ -2937,19 +2938,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVO");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVO");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVO");
                             
             /* With condition not verified */
@@ -2958,7 +2959,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVO");
                             
             return nb;
@@ -2980,19 +2981,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVP");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVP");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVP");
                             
             /* With condition not verified */
@@ -3001,7 +3002,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVP");
                             
             return nb;
@@ -3023,19 +3024,19 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMOVP");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x10000001));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVP");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x12340000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12340000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12340000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVP");
                             
             /* With condition not verified */
@@ -3044,7 +3045,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x12345678)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x12345678)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMOVP");
                             
             return nb;
@@ -3065,32 +3066,32 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xff));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10ff));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
                             
             code = string("\x3C\x81", 2); // cmp al(0x80), 0x81
@@ -3099,18 +3100,18 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x80));
             sym.run_from(0x1190, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
             /* TODO - ghidra bug ? 
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
             */
             
@@ -3120,18 +3121,18 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1ffff));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
             /* TODO - ghidra bug ? 
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             */
                             
@@ -3141,18 +3142,18 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xfa000009));
             sym.run_from(0x1200, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             /* TODO - ghidra bug ? 
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             */
             
@@ -3161,18 +3162,18 @@ namespace test
             sym.mem->write_buffer(0x1010+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xff000000));
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
             /* TODO - ghidra bug ? 
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
             */
             
@@ -3181,18 +3182,18 @@ namespace test
             sym.mem->write_buffer(0x1020+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10001235));
             sym.run_from(0x1020, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             /* TODO - ghidra bug ? 
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             */
             
@@ -3201,18 +3202,18 @@ namespace test
             sym.mem->write_buffer(0x1030+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xffff0000));
             sym.run_from(0x1030, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             /* TODO - ghidra bug ? 
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             */
                             
@@ -3221,18 +3222,18 @@ namespace test
             sym.mem->write_buffer(0x1040+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xff000000));
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
             /* TODO - ghidra bug ? 
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             */
 
@@ -3243,18 +3244,18 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xf800));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x7900));
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             /* TODO - ghidra bug ? 
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
             */
             
@@ -3264,17 +3265,17 @@ namespace test
             sym.mem->write_buffer(0x1080+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.mem->write(0x1700, exprcst(32, 0x01f62303));
             sym.run_from(0x1080, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             
             /* cmp reg,mem */
@@ -3285,17 +3286,17 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xAAAA));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x1700));
             sym.run_from(0x1060, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
                             
             /* cmp mem,reg */
@@ -3306,17 +3307,17 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1800));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0xffffffff));
             sym.run_from(0x1070, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMP");
             
             return nb;
@@ -3336,22 +3337,22 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32,0x1000));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == exprcst(32, 0xfff)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == exprcst(32, 0xfff)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x14ff)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x14ff,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
             /* TODO - ghidra bug ?
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
             */
 
@@ -3361,22 +3362,22 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32,0x1000));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == exprcst(32, 0x1001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == exprcst(32, 0x1001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x1501)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == exprcst(32, 0x1501)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
             /* TODO - ghidra bug ?
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSB");
             */
             return nb;
@@ -3396,19 +3397,19 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32,0x1000));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == exprcst(32, 0xffc)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == exprcst(32, 0xffc)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x14fc)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == exprcst(32, 0x14fc)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSD");
             
             sym.mem->write(0x1000, exprcst(32, 0x1234));
@@ -3417,19 +3418,19 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32,0x1000));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == exprcst(32, 0x1004)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == exprcst(32, 0x1004)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x1504)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == exprcst(32, 0x1504)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSD");
 
             return nb;
@@ -3450,19 +3451,19 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32,0x1000));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == exprcst(32, 0xffe)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == exprcst(32, 0xffe)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x14fe)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == exprcst(32, 0x14fe)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSW");
             
             sym.mem->write(0x1000, exprcst(32, 0x1234));
@@ -3471,19 +3472,19 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32,0x1000));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == exprcst(32, 0x1002)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == exprcst(32, 0x1002)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x1502)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == exprcst(32, 0x1502)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPSW");
             
             return nb;
@@ -3502,21 +3503,21 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x2100));
             sym.cpu.ctx().set(X86::ECX, exprcst(32,0x4200));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x21)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x21)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == exprcst(32, 0x4200)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == exprcst(32, 0x4200)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::ECX)->as_uint() == exprcst(32, 0x4200)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ECX).as_uint() == exprcst(32, 0x4200)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
             
             /* On 16 bits */
@@ -3529,21 +3530,21 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x1700));
             sym.cpu.ctx().set(X86::ECX, exprcst(32,0x1000BBBB));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x1111)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x1111)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == exprcst(32, 0x1700)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == exprcst(32, 0x1700)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::ECX)->as_uint() == exprcst(32, 0x1000BBBB)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ECX).as_uint() == exprcst(32, 0x1000BBBB)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute CMPXCHG");
             return nb;
         }
@@ -3559,37 +3560,37 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x21));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x20)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x20)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute DEC");
             
            sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xffffff01));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xffffff00)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xffffff00)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute DEC");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute DEC");
             return nb;
         }
@@ -3606,7 +3607,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000015));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x4));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000105)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000105)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute DIV");
             
             
@@ -3619,9 +3620,9 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x4));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x10000000));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x10000005)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x10000005)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute DIV");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0x10000001)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == exprcst(32, 0x10000001)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute DIV");
                             
             /* On 32 bits */
@@ -3634,9 +3635,9 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x1700));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x1));
             sym.run_from(0x1180, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xaaaaaab,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0xaaaaaab,
                             "ArchX86: failed to disassembly and/or execute DIV");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == 3,
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == 3,
                             "ArchX86: failed to disassembly and/or execute DIV");
 
             return nb;
@@ -3654,7 +3655,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10000015));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,-4));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x100001fb)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x100001fb)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute IDIV");
 
             /* On 16 bits */
@@ -3666,18 +3667,18 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x4));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x1000ffff));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, -5)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, -5)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute IDIV");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0x1000ffff)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == exprcst(32, 0x1000ffff)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute IDIV");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,-24));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x67));
             sym.cpu.ctx().set(X86::EDX, exprcst(32,0x1000ffff));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xffff0000)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xffff0000)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute IDIV");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == exprcst(32, 0x1000ffe8)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == exprcst(32, 0x1000ffe8)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute IDIV");
             
             return nb;
@@ -3694,37 +3695,37 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x22));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0x23)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0x23)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute INC");
             
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xffffff01));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0xffffff02)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == exprcst(32, 0xffffff02)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute INC");
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute INC");
             return nb;
         }
@@ -3741,8 +3742,8 @@ namespace test
             sym.cpu.ctx().set(X86::EBP, exprcst(32,0x1704));
             sym.mem->write(0x1704, exprcst(32, 0x1234));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x1708, "ArchX86: failed to disassembly and/or execute LEAVE");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBP)->as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute LEAVE");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESP).as_uint() == 0x1708, "ArchX86: failed to disassembly and/or execute LEAVE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBP).as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute LEAVE");
             
             return nb;
         }
@@ -3759,18 +3760,18 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,48));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 4));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x00C0, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 4, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x00C0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 4, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x4200fc));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 4));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x42fff0, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 4, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x42fff0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 4, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
 
             code = string("\x66\xF7\xEB", 3); // imul bx
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), 3);
@@ -3781,11 +3782,11 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::EDX, exprcst(32, 0x11001234));
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xC0, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 4, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == 0x11000000, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0xC0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 4, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == 0x11000000, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
 
             code = string("\xF7\xEB", 2); // imul ebx
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), 2);
@@ -3796,11 +3797,11 @@ namespace test
             sym.cpu.ctx().set(X86::EDX, exprcst(32, 0x11001234));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1020, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x86635d80, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0xfffffe59, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == 0xffffffff, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x86635d80, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0xfffffe59, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == 0xffffffff, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
             
             /* Two-operands */
             code = string("\x66\x0F\xAF\xC3", 4); // imul ax, bx
@@ -3811,10 +3812,10 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x1000fffe));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1030, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1000fffc, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x1000fffe, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1000fffc, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x1000fffe, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
             
             code = string("\x0F\xAF\xC3", 3); // imul eax, ebx
             sym.mem->write_buffer(0x1040, (uint8_t*)code.c_str(), 3);
@@ -3824,9 +3825,9 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x80000001));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x00000002, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x00000002, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
             
             /* Three-operands */
             code = string("\x6B\xC3\x07", 3); // imul eax, ebx, 7
@@ -3837,19 +3838,19 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x00100000));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x00700000, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x00100000, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x00700000, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x00100000, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xffffffff));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_int() == -7, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_int() == -1, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_int() == -7, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_int() == -1, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
             
             code = string("\x69\xC3\x00\x00\x00\x10", 6); // imul eax, ebx, 0x10000000
             sym.mem->write_buffer(0x1060, (uint8_t*)code.c_str(), 6);
@@ -3859,19 +3860,19 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 17));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.run_from(0x1060, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10000000, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 17, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10000000, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 17, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute IMUL");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, -1));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1060, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xf0000000, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_int() == -1, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0xf0000000, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_int() == -1, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute IMUL");
             
             return nb;
         }
@@ -3889,25 +3890,25 @@ namespace test
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JA");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JA");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JA");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JA");
             
             
             
@@ -3920,25 +3921,25 @@ namespace test
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JA");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JA");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JA");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JA");
             
             return nb;
         }
@@ -3955,12 +3956,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JAE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JAE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JAE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JAE");
             
             
             code = string("\x0f\x83\x50\x34\x12\x00", 6 ); // jae 0x123456
@@ -3971,12 +3972,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JAE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JAE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JAE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JAE");
             
             
             return nb;
@@ -3998,12 +3999,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JB");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JB");
             
             
             code = string("\x0f\x82\x50\x34\x12\x00", 6 ); // jb 0x123456
@@ -4014,12 +4015,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JB");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JB");
             
             
             return nb;
@@ -4042,23 +4043,23 @@ namespace test
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JBE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JBE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JBE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JBE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JBE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JBE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JBE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JBE");
             
             
             
@@ -4071,23 +4072,23 @@ namespace test
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JBE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JBE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JBE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JBE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JBE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JBE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::CF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JBE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JBE");
             
             return nb;
         }
@@ -4106,12 +4107,12 @@ namespace test
             // Taken
             sym.cpu.ctx().set(X86::ECX, exprcst(32,0x12340000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JCXZ");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JCXZ");
 
             // Not taken
             sym.cpu.ctx().set(X86::ECX, exprcst(32,2));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1003, "ArchX86: failed to disassembly and/or execute JCXZ");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1003, "ArchX86: failed to disassembly and/or execute JCXZ");
             */
             return nb;
         }
@@ -4128,12 +4129,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JE");
             
             
             code = string("\x0f\x84\x50\x34\x12\x00", 6 ); // je 0x123456
@@ -4144,12 +4145,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JE");
             
             
             return nb;
@@ -4171,12 +4172,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::ECX, exprcst(32,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JCXZ");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JCXZ");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ECX, exprcst(32,0x80000000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JCXZ");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JCXZ");
             
             return nb;
         }
@@ -4199,32 +4200,32 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JG");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JG");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JG");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JG");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JG");
             
             
             
@@ -4238,32 +4239,32 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JG");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JG");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JG");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JG");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JG");
             
             return nb;
         }
@@ -4285,23 +4286,23 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JGE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JGE");
             
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JGE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JGE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JGE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JGE");
             
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JGE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JGE");
             
             
             
@@ -4314,23 +4315,23 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JGE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JGE");
             
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JGE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JGE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JGE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JGE");
             
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JGE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JGE");
             
             return nb;
         }
@@ -4352,23 +4353,23 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JL");
             
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JL");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JL");
             
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JL");
             
             
             
@@ -4381,23 +4382,23 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JL");
             
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JL");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JL");
             
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JL");
             
             return nb;
         }
@@ -4420,38 +4421,38 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JLE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JLE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JLE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JLE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JLE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JLE");
             
             
             
@@ -4465,38 +4466,38 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JLE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JLE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JLE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JLE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JLE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JLE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JLE");
             
             
             return nb;
@@ -4518,12 +4519,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JNE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JNE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JNE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JNE");
             
             
             code = string("\x0f\x85\x50\x34\x12\x00", 6 ); // jne 0x123456
@@ -4534,12 +4535,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JNE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JNE");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JNE");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JNE");
             
             
             return nb;
@@ -4561,12 +4562,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JNO");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JNO");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JNO");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JNO");
             
             
             code = string("\x0f\x81\x50\x34\x12\x00", 6 ); // jno 0x123456
@@ -4577,12 +4578,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JNO");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JNO");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JNO");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JNO");
             
             
             return nb;
@@ -4604,12 +4605,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::PF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JNP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JNP");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::PF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JNP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JNP");
             
             
             code = string("\x0f\x8b\x50\x34\x12\x00", 6 ); // jnp 0x123456
@@ -4620,12 +4621,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::PF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JNP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JNP");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::PF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JNP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JNP");
             
             
             return nb;
@@ -4647,12 +4648,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JNS");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JNS");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JNS");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JNS");
             
             
             code = string("\x0f\x89\x50\x34\x12\x00", 6 ); // jns 0x123456
@@ -4663,12 +4664,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JNS");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JNS");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JNS");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JNS");
             
             
             return nb;
@@ -4686,12 +4687,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JO");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JO");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JO");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JO");
             
             
             code = string("\x0f\x80\x50\x34\x12\x00", 6 ); // jo 0x123456
@@ -4702,12 +4703,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JO");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JO");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JO");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JO");
             
             
             return nb;
@@ -4725,12 +4726,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::PF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JP");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::PF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JP");
             
             
             code = string("\x0f\x8a\x50\x34\x12\x00", 6 ); // jp 0x123456
@@ -4741,12 +4742,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::PF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JP");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::PF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JP");
             
             
             return nb;
@@ -4764,12 +4765,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JS");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JS");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JS");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute JS");
             
             code = string("\x0f\x88\x50\x34\x12\x00", 6 ); // js 0x123456
             sym.mem->write_buffer(0x2000, (uint8_t*)code.c_str(), 6);
@@ -4779,12 +4780,12 @@ namespace test
             /* Taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JS");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JS");
             
             /* Not taken */
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JS");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x2006, "ArchX86: failed to disassembly and/or execute JS");
             
             
             return nb;
@@ -4809,7 +4810,7 @@ namespace test
             sym.cpu.ctx().set(X86::PF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0b1101011100000000, "ArchX86: failed to disassembly and/or execute LAHF");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0b1101011100000000, "ArchX86: failed to disassembly and/or execute LAHF");
            
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0b0010101000000000));
             sym.cpu.ctx().set(X86::SF, exprcst(8, 1));
@@ -4818,7 +4819,7 @@ namespace test
             sym.cpu.ctx().set(X86::PF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0b1101011100000000, "ArchX86: failed to disassembly and/or execute LAHF");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0b1101011100000000, "ArchX86: failed to disassembly and/or execute LAHF");
             return nb;
         }
         
@@ -4837,7 +4838,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x20));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x82, "ArchX86: failed to disassembly and/or execute LEA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x82, "ArchX86: failed to disassembly and/or execute LEA");
            
             code = string("\x8d\x04\x9d\x02\x00\x01\x00", 7); // lea eax, dword ptr[ 0x10000 + ebx*4 + 2]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), 7);
@@ -4845,7 +4846,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x20));
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10082, "ArchX86: failed to disassembly and/or execute LEA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10082, "ArchX86: failed to disassembly and/or execute LEA");
             
             code = string("\x66\x8d\x04\x9d\x02\x00\x01\x00", 8); // lea ax, dword ptr[ 0x10000 + ebx*4 + 2]
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), 8);
@@ -4853,7 +4854,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x20));
             sym.run_from(0x1020, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x82, "ArchX86: failed to disassembly and/or execute LEA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x82, "ArchX86: failed to disassembly and/or execute LEA");
             
             code = string("\x67\x8D\x87\x34\x12", 5); // lea eax, [ 0x1234 + bx]
             sym.mem->write_buffer(0x1030, (uint8_t*)code.c_str(), 5);
@@ -4861,7 +4862,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 34));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x10020));
             sym.run_from(0x1030, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1254, "ArchX86: failed to disassembly and/or execute LEA");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1254, "ArchX86: failed to disassembly and/or execute LEA");
             
             return nb;
         }
@@ -4883,15 +4884,15 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x12AA, "ArchX86: failed to disassembly and/or execute LODSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x1801, "ArchX86: failed to disassembly and/or execute LODSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x12AA, "ArchX86: failed to disassembly and/or execute LODSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x1801, "ArchX86: failed to disassembly and/or execute LODSB");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1234));
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x12AA, "ArchX86: failed to disassembly and/or execute LODSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x17ff, "ArchX86: failed to disassembly and/or execute LODSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x12AA, "ArchX86: failed to disassembly and/or execute LODSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x17ff, "ArchX86: failed to disassembly and/or execute LODSB");
             
             return nb;
         }
@@ -4912,15 +4913,15 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute LODSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x1804, "ArchX86: failed to disassembly and/or execute LODSD");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute LODSD");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x1804, "ArchX86: failed to disassembly and/or execute LODSD");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x12));
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute LODSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x17fc, "ArchX86: failed to disassembly and/or execute LODSD");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute LODSD");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x17fc, "ArchX86: failed to disassembly and/or execute LODSD");
             
             return nb;
         }
@@ -4941,15 +4942,15 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute LODSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x1802, "ArchX86: failed to disassembly and/or execute LODSW");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute LODSW");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x1802, "ArchX86: failed to disassembly and/or execute LODSW");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10000));
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x11234, "ArchX86: failed to disassembly and/or execute LODSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x17fe, "ArchX86: failed to disassembly and/or execute LODSW");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x11234, "ArchX86: failed to disassembly and/or execute LODSW");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x17fe, "ArchX86: failed to disassembly and/or execute LODSW");
             
             return nb;
         }
@@ -4967,7 +4968,7 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1100));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1112, "ArchX86: failed to disassembly and/or execute MOV");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1112, "ArchX86: failed to disassembly and/or execute MOV");
             
             code = string("\x66\xb8\x34\x12", 4); // mov ax, 0x1234
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), 4);
@@ -4975,7 +4976,7 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1100));
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute MOV");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute MOV");
             
             code = string("\xa1\x00\x17\x00\x00", 5); // mov eax, dword ptr [0x1700]
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), 5);
@@ -4984,7 +4985,7 @@ namespace test
             sym.mem->write(0x1700, exprcst(32, 0x07654321));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x11dd00));
             sym.run_from(0x1020, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x07654321, "ArchX86: failed to disassembly and/or execute MOV");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x07654321, "ArchX86: failed to disassembly and/or execute MOV");
             
             code = string("\x88\x18", 2); // mov byte ptr [eax], bl
             sym.mem->write_buffer(0x1030, (uint8_t*)code.c_str(), 2);
@@ -4993,7 +4994,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x1234));
             sym.run_from(0x1030, 1);
-            nb += _assert(  sym.mem->read(0x1800, 1)->as_uint() == 0x34, "ArchX86: failed to disassembly and/or execute MOV");
+            nb += _assert(  sym.mem->read(0x1800, 1).as_uint() == 0x34, "ArchX86: failed to disassembly and/or execute MOV");
             
             return nb;
         }
@@ -5025,8 +5026,8 @@ namespace test
             sym.cpu.ctx().set(X86::ZMM6, exprcst(512, "89769876aaaa000000001234"));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1800));
             sym.run_from(0x1020, 1);
-            nb += _assert(  sym.mem->read(0x1800, 8)->as_uint() == 0xaaaa000000001234, "ArchX86: failed to disassembly and/or execute MOVAPD");
-            nb += _assert(  sym.mem->read(0x1808, 8)->as_uint() == 0x89769876, "ArchX86: failed to disassembly and/or execute MOVAPD");
+            nb += _assert(  sym.mem->read(0x1800, 8).as_uint() == 0xaaaa000000001234, "ArchX86: failed to disassembly and/or execute MOVAPD");
+            nb += _assert(  sym.mem->read(0x1808, 8).as_uint() == 0x89769876, "ArchX86: failed to disassembly and/or execute MOVAPD");
 
             return nb;
         }
@@ -5059,8 +5060,8 @@ namespace test
             sym.cpu.ctx().set(X86::ZMM6, exprcst(512, "f000000089769876aaaabbbb00001234"));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1800));
             sym.run_from(0x1020, 1);
-            nb += _assert(  sym.mem->read(0x1800, 8)->as_uint() == 0xaaaabbbb00001234, "ArchX86: failed to disassembly and/or execute MOVAPS");
-            nb += _assert(  sym.mem->read(0x1808, 8)->as_uint() == 0xf000000089769876, "ArchX86: failed to disassembly and/or execute MOVAPS");
+            nb += _assert(  sym.mem->read(0x1800, 8).as_uint() == 0xaaaabbbb00001234, "ArchX86: failed to disassembly and/or execute MOVAPS");
+            nb += _assert(  sym.mem->read(0x1808, 8).as_uint() == 0xf000000089769876, "ArchX86: failed to disassembly and/or execute MOVAPS");
 
             return nb;
         }
@@ -5076,7 +5077,7 @@ namespace test
             sym.cpu.ctx().set(X86::ZMM0, exprcst(512, 123));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 456));
             sym.run_from(0x1000, 1);
-            nb += _assert( sym.cpu.ctx().get(X86::EAX)->as_uint() == 123, "ArchX86: failed to disassembly and/or execute MOVD");
+            nb += _assert( sym.cpu.ctx().get(X86::EAX).as_uint() == 123, "ArchX86: failed to disassembly and/or execute MOVD");
 
             code = string("\x66\x0F\x7E\x00", 4); // movd [eax], xmm0
             sym.mem->write_buffer(0x1030, (uint8_t*)code.c_str(), code.size());
@@ -5084,7 +5085,7 @@ namespace test
             sym.cpu.ctx().set(X86::ZMM0, exprcst(512, 123));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.run_from(0x1030, 1);
-            nb += _assert(  sym.mem->read(0x1900, 4)->as_uint() == 123, "ArchX86: failed to disassembly and/or execute MOVD");
+            nb += _assert(  sym.mem->read(0x1900, 4).as_uint() == 123, "ArchX86: failed to disassembly and/or execute MOVD");
 
             code = string("\x66\x0F\x6E\xC0", 4); // movd xmm0, eax
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -5110,7 +5111,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0x1234567812345678));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 456));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute MOVD");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute MOVD");
 
             code = string("\x0F\x7E\x00", 3); // movd [eax], mm0
             sym.mem->write_buffer(0x1040, (uint8_t*)code.c_str(), code.size());
@@ -5118,7 +5119,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 12345));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.mem->read(0x1900, 4)->as_uint() == 12345, "ArchX86: failed to disassembly and/or execute MOVD");
+            nb += _assert(  sym.mem->read(0x1900, 4).as_uint() == 12345, "ArchX86: failed to disassembly and/or execute MOVD");
 
             code = string("\x0F\x6E\xC0", 3); // movd mm0, eax
             sym.mem->write_buffer(0x1050, (uint8_t*)code.c_str(), code.size());
@@ -5126,7 +5127,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0x1354615165121));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xdeadbeef));
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xdeadbeef, "ArchX86: failed to disassembly and/or execute MOVD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xdeadbeef, "ArchX86: failed to disassembly and/or execute MOVD");
           
             code = string("\x0F\x6E\x00", 3); // movd mm0, [eax]
             sym.mem->write_buffer(0x1060, (uint8_t*)code.c_str(), code.size());
@@ -5135,7 +5136,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1800));
             sym.mem->write(0x1800, 0xdeadbeef, 4);
             sym.run_from(0x1060, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xdeadbeef, "ArchX86: failed to disassembly and/or execute MOVD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xdeadbeef, "ArchX86: failed to disassembly and/or execute MOVD");
           
             return nb;
         }
@@ -5168,8 +5169,8 @@ namespace test
             sym.cpu.ctx().set(X86::ZMM6, exprcst(512, "897698760000000000001234"));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1800));
             sym.run_from(0x1020, 1);
-            nb += _assert(  sym.mem->read(0x1800, 8)->as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute MOVDQA");
-            nb += _assert(  sym.mem->read(0x1808, 8)->as_uint() == 0x89769876, "ArchX86: failed to disassembly and/or execute MOVDQA");
+            nb += _assert(  sym.mem->read(0x1800, 8).as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute MOVDQA");
+            nb += _assert(  sym.mem->read(0x1808, 8).as_uint() == 0x89769876, "ArchX86: failed to disassembly and/or execute MOVDQA");
 
             return nb;
         }
@@ -5193,7 +5194,7 @@ namespace test
             sym.cpu.ctx().set(X86::ZMM0, exprcst(512, "12340000000000000000"));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.mem->read(0x1900, 8)->as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute MOVHPS");
+            nb += _assert(  sym.mem->read(0x1900, 8).as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute MOVHPS");
 
             return nb;
         }
@@ -5207,7 +5208,7 @@ namespace test
             sym.mem->write_buffer(0x1000+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0x12345678deadbeef));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0x12345678deadbeef, "ArchX86: failed to disassembly and/or execute MOVQ");   
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0x12345678deadbeef, "ArchX86: failed to disassembly and/or execute MOVQ");   
 
             code = string("\x0F\x6F\x00", 3); // movq mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -5216,7 +5217,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xdeadbeef87654321, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xdeadbeef87654321, "ArchX86: failed to disassembly and/or execute MOVQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xdeadbeef87654321, "ArchX86: failed to disassembly and/or execute MOVQ");
 
             code = string("\xF3\x0F\x7E\xC7", 4); // movq xmm0, xmm7
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -5253,9 +5254,9 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x18ff, "ArchX86: failed to disassembly and/or execute MOVSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x17ff, "ArchX86: failed to disassembly and/or execute MOVSB");
-            nb += _assert(  sym.mem->read(0x1900, 1)->as_uint() == 0x12, "ArchX86: failed to disassembly and/or execute MOVSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x18ff, "ArchX86: failed to disassembly and/or execute MOVSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x17ff, "ArchX86: failed to disassembly and/or execute MOVSB");
+            nb += _assert(  sym.mem->read(0x1900, 1).as_uint() == 0x12, "ArchX86: failed to disassembly and/or execute MOVSB");
             
             sym.mem->write(0x1800, exprcst(16, 0x12));
             sym.mem->write(0x1900, exprcst(16, 0x23));
@@ -5263,9 +5264,9 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x1901, "ArchX86: failed to disassembly and/or execute MOVSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x1801, "ArchX86: failed to disassembly and/or execute MOVSB");
-            nb += _assert(  sym.mem->read(0x1900, 1)->as_uint() == 0x12, "ArchX86: failed to disassembly and/or execute MOVSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x1901, "ArchX86: failed to disassembly and/or execute MOVSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x1801, "ArchX86: failed to disassembly and/or execute MOVSB");
+            nb += _assert(  sym.mem->read(0x1900, 1).as_uint() == 0x12, "ArchX86: failed to disassembly and/or execute MOVSB");
             
             return nb;
         }
@@ -5284,9 +5285,9 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x18fc, "ArchX86: failed to disassembly and/or execute MOVSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x17fc, "ArchX86: failed to disassembly and/or execute MOVSD");
-            nb += _assert(  sym.mem->read(0x1900, 4)->as_uint() == 0x1000babe, "ArchX86: failed to disassembly and/or execute MOVSD");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x18fc, "ArchX86: failed to disassembly and/or execute MOVSD");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x17fc, "ArchX86: failed to disassembly and/or execute MOVSD");
+            nb += _assert(  sym.mem->read(0x1900, 4).as_uint() == 0x1000babe, "ArchX86: failed to disassembly and/or execute MOVSD");
             
             sym.mem->write(0x1800, exprcst(32, 0x1000babe));
             sym.mem->write(0x1900, exprcst(32, 0xAAAAAAAA));
@@ -5294,9 +5295,9 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x1904, "ArchX86: failed to disassembly and/or execute MOVSD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x1804, "ArchX86: failed to disassembly and/or execute MOVSD");
-            nb += _assert(  sym.mem->read(0x1900, 4)->as_uint() == 0x1000babe, "ArchX86: failed to disassembly and/or execute MOVSD");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x1904, "ArchX86: failed to disassembly and/or execute MOVSD");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x1804, "ArchX86: failed to disassembly and/or execute MOVSD");
+            nb += _assert(  sym.mem->read(0x1900, 4).as_uint() == 0x1000babe, "ArchX86: failed to disassembly and/or execute MOVSD");
             
             code = string("\xF2\x0F\x10\xC1", 4); // movsd xmm0, xmm1
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -5320,7 +5321,7 @@ namespace test
             sym.cpu.ctx().set(X86::ZMM1, exprcst(512, 0xcafebabe1234));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.run_from(0x1030, 1);
-            nb += _assert(  sym.mem->read(0x1900, 8)->as_uint() == 0xcafebabe1234, "ArchX86: failed to disassembly and/or execute MOVSD");
+            nb += _assert(  sym.mem->read(0x1900, 8).as_uint() == 0xcafebabe1234, "ArchX86: failed to disassembly and/or execute MOVSD");
 
             return nb;
         }
@@ -5339,9 +5340,9 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x18fe, "ArchX86: failed to disassembly and/or execute MOVSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x17fe, "ArchX86: failed to disassembly and/or execute MOVSW");
-            nb += _assert(  sym.mem->read(0x1900, 2)->as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute MOVSW");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x18fe, "ArchX86: failed to disassembly and/or execute MOVSW");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x17fe, "ArchX86: failed to disassembly and/or execute MOVSW");
+            nb += _assert(  sym.mem->read(0x1900, 2).as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute MOVSW");
             
             sym.mem->write(0x1800, exprcst(16, 0x1234));
             sym.mem->write(0x1900, exprcst(16, 0xAAAA));
@@ -5349,9 +5350,9 @@ namespace test
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x1800));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x1902, "ArchX86: failed to disassembly and/or execute MOVSW");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x1802, "ArchX86: failed to disassembly and/or execute MOVSW");
-            nb += _assert(  sym.mem->read(0x1900, 2)->as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute MOVSW");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x1902, "ArchX86: failed to disassembly and/or execute MOVSW");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x1802, "ArchX86: failed to disassembly and/or execute MOVSW");
+            nb += _assert(  sym.mem->read(0x1900, 2).as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute MOVSW");
             
             return nb;
         }
@@ -5367,8 +5368,8 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1234));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x1A));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1A, "ArchX86: failed to disassembly and/or execute MOVSX");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x1A, "ArchX86: failed to disassembly and/or execute MOVSX");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1A, "ArchX86: failed to disassembly and/or execute MOVSX");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x1A, "ArchX86: failed to disassembly and/or execute MOVSX");
             
             
             code = string("\x0F\xBF\x03", 3); // movsx eax, word ptr [ebx]
@@ -5379,8 +5380,8 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1234));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x1800));
             sym.run_from(0x1010, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xffffAAAA, "ArchX86: failed to disassembly and/or execute MOVSX");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x1800, "ArchX86: failed to disassembly and/or execute MOVSX");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xffffAAAA, "ArchX86: failed to disassembly and/or execute MOVSX");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x1800, "ArchX86: failed to disassembly and/or execute MOVSX");
             
             return nb;
         }
@@ -5396,8 +5397,8 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1234));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xff));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xff, "ArchX86: failed to disassembly and/or execute MOVZX");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0xff, "ArchX86: failed to disassembly and/or execute MOVZX");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0xff, "ArchX86: failed to disassembly and/or execute MOVZX");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0xff, "ArchX86: failed to disassembly and/or execute MOVZX");
             
             
             code = string("\x0F\xB7\x03", 3); // movzx eax, word ptr [ebx]
@@ -5408,8 +5409,8 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x12345678));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x1800));
             sym.run_from(0x1010, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xAAAA, "ArchX86: failed to disassembly and/or execute MOVZX");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x1800, "ArchX86: failed to disassembly and/or execute MOVZX");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xAAAA, "ArchX86: failed to disassembly and/or execute MOVZX");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x1800, "ArchX86: failed to disassembly and/or execute MOVZX");
             
             return nb;
         }
@@ -5429,20 +5430,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x23));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x10));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x230, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x10, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x230, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x10, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute MUL");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 3));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 6, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 3, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 6, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 3, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute MUL");
             
             
             code = string("\x66\xF7\xE3", 3); // mul bx
@@ -5453,23 +5454,23 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xffff));
             sym.cpu.ctx().set(X86::EDX, exprcst(32, 0x11001234));
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1000edcc, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0xffff, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == 0x11001233, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1013, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1000edcc, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0xffff, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == 0x11001233, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1013, "ArchX86: failed to disassembly and/or execute MUL");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1234));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x0));
             sym.cpu.ctx().set(X86::EDX, exprcst(32, 0x11001234));
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x0000, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x0, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == 0x11000000, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1013, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x0000, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x0, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == 0x11000000, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1013, "ArchX86: failed to disassembly and/or execute MUL");
             
             
             code = string("\xf7\xe3", 2); // mul ebx
@@ -5480,12 +5481,12 @@ namespace test
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x12345678));
             sym.cpu.ctx().set(X86::EDX, exprcst(32, 0xAAAAAA));
             sym.run_from(0x1020, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xf9dc88e0, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDX)->as_uint() == 0x5213a2, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1022, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xf9dc88e0, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDX).as_uint() == 0x5213a2, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute MUL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1022, "ArchX86: failed to disassembly and/or execute MUL");
             
             return nb;
             
@@ -5501,23 +5502,23 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x8000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x8000, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
-            // nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x8000, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
+            // nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xff00));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x0100, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            // nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x0100, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            // nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
             
             code = string("\xF7\xD8", 2); // neg eax
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), 2);
@@ -5525,23 +5526,23 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1));
             sym.run_from(0x1010, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xffffffff, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
-            // nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xffffffff, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
+            // nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x0));
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x0, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            // nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            // nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute NEG");
             
             return nb;
         }
@@ -5555,7 +5556,7 @@ namespace test
             sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), 1);
             sym.mem->write_buffer(0x1000+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1001, "ArchX86: failed to disassembly and/or execute NOP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1001, "ArchX86: failed to disassembly and/or execute NOP");
             */
             return nb;
         }
@@ -5570,7 +5571,7 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x11110f11));
             sym.run_from(0x1000, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1111f011, "ArchX86: failed to disassembly and/or execute NOT");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1111f011, "ArchX86: failed to disassembly and/or execute NOT");
             
             code = string("\xF7\xD0", 2); // not eax
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), 2);
@@ -5578,7 +5579,7 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x80000000));
             sym.run_from(0x1010, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x7fffffff, "ArchX86: failed to disassembly and/or execute NOT");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x7fffffff, "ArchX86: failed to disassembly and/or execute NOT");
             
             return nb;
         }
@@ -5596,51 +5597,51 @@ namespace test
             sym.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xffffffff,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xffffffff,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute OR");
             
             // 0xff000000 | 0x000000ff
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xff000000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xff));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xff0000ff,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xff0000ff,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute OR");
                             
             // 0 | 0 
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute OR");
                             
             // On 16 bits... 
@@ -5652,17 +5653,17 @@ namespace test
             sym.mem->write_buffer(0x1170+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xa00000fe,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xa00000fe,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute OR");
             
             return nb;
@@ -5682,7 +5683,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0x1234));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0xffff000000000000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xffff000000001234, "ArchX86: failed to disassembly and/or execute PADDD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xffff000000001234, "ArchX86: failed to disassembly and/or execute PADDD");
 
             code = string("\x0F\xFE\x00", 3); // paddd mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -5691,7 +5692,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 1, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xab1112ff00000000, "ArchX86: failed to disassembly and/or execute PADDD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xab1112ff00000000, "ArchX86: failed to disassembly and/or execute PADDD");
 
             code = string("\x66\x0F\xFE\xC1", 4); // paddd xmm0, xmm1
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -5727,7 +5728,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0x1234));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0xffff000000000000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xffff000000001234, "ArchX86: failed to disassembly and/or execute PADDQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xffff000000001234, "ArchX86: failed to disassembly and/or execute PADDQ");
 
             code = string("\x0F\xD4\x00", 3); // paddq mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -5736,7 +5737,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 1, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xab1112ff00cd77f0, "ArchX86: failed to disassembly and/or execute PADDQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xab1112ff00cd77f0, "ArchX86: failed to disassembly and/or execute PADDQ");
 
             code = string("\x66\x0F\xD4\xC1", 4); // paddq xmm0, xmm1
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -5771,8 +5772,8 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xab00120000cd00ef));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0xab33123333cd33ef));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xff00ff0000ff00ff, "ArchX86: failed to disassembly and/or execute PCMPEQB");   
-            nb += _assert(  sym.cpu.ctx().get(X86::MM1)->as_uint() == 0xab33123333cd33ef, "ArchX86: failed to disassembly and/or execute PCMPEQB");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xff00ff0000ff00ff, "ArchX86: failed to disassembly and/or execute PCMPEQB");   
+            nb += _assert(  sym.cpu.ctx().get(X86::MM1).as_uint() == 0xab33123333cd33ef, "ArchX86: failed to disassembly and/or execute PCMPEQB");
 
             code = string("\x0F\x74\x00", 3); // pcmpeqb mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -5781,7 +5782,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xdeadbeef87654321, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert( sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xffffffff00000000, "ArchX86: failed to disassembly and/or execute PCMPEQB");
+            nb += _assert( sym.cpu.ctx().get(X86::MM0).as_uint() == 0xffffffff00000000, "ArchX86: failed to disassembly and/or execute PCMPEQB");
 
             code = string("\x66\x0F\x74\xC1", 4); // pcmpeqb xmm0, xmm1
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -5816,8 +5817,8 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xab33123300cd33ef));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0xab33123333cd33ef));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xffffffff00000000, "ArchX86: failed to disassembly and/or execute PCMPEQD");   
-            nb += _assert(  sym.cpu.ctx().get(X86::MM1)->as_uint() == 0xab33123333cd33ef, "ArchX86: failed to disassembly and/or execute PCMPEQD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xffffffff00000000, "ArchX86: failed to disassembly and/or execute PCMPEQD");   
+            nb += _assert(  sym.cpu.ctx().get(X86::MM1).as_uint() == 0xab33123333cd33ef, "ArchX86: failed to disassembly and/or execute PCMPEQD");
 
             code = string("\x0F\x76\x00", 3); // pcmpeqd mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -5826,7 +5827,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xdeadbeef87654321, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xffffffff00000000, "ArchX86: failed to disassembly and/or execute PCMPEQD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xffffffff00000000, "ArchX86: failed to disassembly and/or execute PCMPEQD");
 
             code = string("\x66\x0F\x76\xC1", 4); // pcmpeqd xmm0, xmm1
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -5866,8 +5867,8 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xab33126000cdffef));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0xab33123333cd33ef));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xffffffff00000000, "ArchX86: failed to disassembly and/or execute PCMPGTD");   
-            nb += _assert(  sym.cpu.ctx().get(X86::MM1)->as_uint() == 0xab33123333cd33ef, "ArchX86: failed to disassembly and/or execute PCMPGTD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xffffffff00000000, "ArchX86: failed to disassembly and/or execute PCMPGTD");   
+            nb += _assert(  sym.cpu.ctx().get(X86::MM1).as_uint() == 0xab33123333cd33ef, "ArchX86: failed to disassembly and/or execute PCMPGTD");
 
             code = string("\x0F\x66\x00", 3); // pcmpgtd mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -5876,7 +5877,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xdeadbeef87654321, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xffffffff, "ArchX86: failed to disassembly and/or execute PCMPGTD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xffffffff, "ArchX86: failed to disassembly and/or execute PCMPGTD");
 
             code = string("\x66\x0F\x66\xC1", 4); // pcmpgtd xmm0, xmm1
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -5912,16 +5913,16 @@ namespace test
             sym.cpu.ctx().set(X86::ZMM0, exprcst(512, "abcdf68761234567811223344"));
             sym.cpu.ctx().set(X86::EAX, 0xffffffff);
             sym.run_from(0x1020, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->size == 32, "ArchX86: failed to disassembly and/or execute PEXTRB");
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x11, "ArchX86: failed to disassembly and/or execute PEXTRB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).size() == 32, "ArchX86: failed to disassembly and/or execute PEXTRB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x11, "ArchX86: failed to disassembly and/or execute PEXTRB");
 
             code = string("\x66\x0F\x3A\x14\xC0\x08", 6); // pextrb eax, xmm0, 8
             sym.mem->write_buffer(0x1040, (uint8_t*)code.c_str(), code.size());
             sym.mem->write_buffer(0x1040+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::ZMM0, exprcst(512, "abcdf68761234567811223344"));
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->size == 32, "ArchX86: failed to disassembly and/or execute PEXTRB");
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x76, "ArchX86: failed to disassembly and/or execute PEXTRB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).size() == 32, "ArchX86: failed to disassembly and/or execute PEXTRB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x76, "ArchX86: failed to disassembly and/or execute PEXTRB");
 
             code = string("\x66\x0F\x3A\x14\x00\x02", 6); // pextrb [eax], xmm0, 2
             sym.mem->write_buffer(0x1030, (uint8_t*)code.c_str(), code.size());
@@ -5930,7 +5931,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
 
             sym.run_from(0x1030, 1);
-            nb += _assert(  sym.mem->read(0x1900, 1)->as_uint() == 0xcd, "ArchX86: failed to disassembly and/or execute PEXTRB");
+            nb += _assert(  sym.mem->read(0x1900, 1).as_uint() == 0xcd, "ArchX86: failed to disassembly and/or execute PEXTRB");
 
             return nb;
         }
@@ -5945,7 +5946,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xab1112ff00cd77ef));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0xab33123333cd33ef));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xab11123300cd33ef, "ArchX86: failed to disassembly and/or execute PMINUB");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xab11123300cd33ef, "ArchX86: failed to disassembly and/or execute PMINUB");
 
             code = string("\x0F\xDA\x00", 3); // pminub mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -5954,7 +5955,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xab33123333cd33ef, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xab11123300cd33ef, "ArchX86: failed to disassembly and/or execute PMINUB");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xab11123300cd33ef, "ArchX86: failed to disassembly and/or execute PMINUB");
 
             code = string("\x66\x0F\xDA\xC1", 4); // pminub xmm0, xmm1
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -5989,7 +5990,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x12345678));
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xff7f8012cc63ff77));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0b10101010, "ArchX86: failed to disassembly and/or execute PMOVMSKB");   
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0b10101010, "ArchX86: failed to disassembly and/or execute PMOVMSKB");   
 
             code = string("\x66\x0F\xD7\xC0", 4); // pmovmskb eax, xmm0
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -5998,7 +5999,7 @@ namespace test
             sym.cpu.ctx().set(X86::ZMM0, exprcst(512, "ffffffff7f7f7f7fff7f8012cc63ff77"));
 
             sym.run_from(0x1010, 1);
-            nb += _assert( sym.cpu.ctx().get(X86::EAX)->as_uint() == 0b1111000010101010, "ArchX86: failed to disassembly and/or execute PMOVMSKB");
+            nb += _assert( sym.cpu.ctx().get(X86::EAX).as_uint() == 0b1111000010101010, "ArchX86: failed to disassembly and/or execute PMOVMSKB");
 
             return nb;
         }
@@ -6015,9 +6016,9 @@ namespace test
             
             sym.mem->write(0x1800, exprcst(32, 0x12345678));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x12345678,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x12345678,
                             "ArchX86: failed to disassembly and/or execute POP");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x1804,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP).as_uint() == 0x1804,
                             "ArchX86: failed to disassembly and/or execute POP");
                             
                             
@@ -6029,11 +6030,11 @@ namespace test
 
             sym.mem->write(0x1800, exprcst(16, 0x1234));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1700,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1700,
                             "ArchX86: failed to disassembly and/or execute POP");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x1802,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP).as_uint() == 0x1802,
                             "ArchX86: failed to disassembly and/or execute POP");
-            nb += _assert(  sym.mem->read(0x1700, 2)->as_uint() == 0x1234,
+            nb += _assert(  sym.mem->read(0x1700, 2).as_uint() == 0x1234,
                             "ArchX86: failed to disassembly and/or execute POP");
             return nb;
         }
@@ -6057,22 +6058,22 @@ namespace test
             sym.mem->write(0x181c, exprcst(32, 0x11111111));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EDI)->as_uint() == 0xAAAAAAAA,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EDI).as_uint() == 0xAAAAAAAA,
                             "ArchX86: failed to disassembly and/or execute POPAD");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESI)->as_uint() == 0xBBBBBBBB,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESI).as_uint() == 0xBBBBBBBB,
                             "ArchX86: failed to disassembly and/or execute POPAD");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EBP)->as_uint() == 0xCCCCCCCC,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EBP).as_uint() == 0xCCCCCCCC,
                             "ArchX86: failed to disassembly and/or execute POPAD");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EBX)->as_uint() == 0xDDDDDDDD,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EBX).as_uint() == 0xDDDDDDDD,
                             "ArchX86: failed to disassembly and/or execute POPAD");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EDX)->as_uint() == 0xEEEEEEEE,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EDX).as_uint() == 0xEEEEEEEE,
                             "ArchX86: failed to disassembly and/or execute POPAD");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ECX)->as_uint() == 0xFFFFFFFF,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ECX).as_uint() == 0xFFFFFFFF,
                             "ArchX86: failed to disassembly and/or execute POPAD");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x11111111,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x11111111,
                             "ArchX86: failed to disassembly and/or execute POPAD");
                             
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x1820,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP).as_uint() == 0x1820,
                             "ArchX86: failed to disassembly and/or execute POPAD");
 
             return nb;
@@ -6088,7 +6089,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xffff0000));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0xffff0000ffff0000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xffff0000ffff0000, "ArchX86: failed to disassembly and/or execute POR");   
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xffff0000ffff0000, "ArchX86: failed to disassembly and/or execute POR");   
             
             code = string("\x0F\xEB\x00", 3); // por mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -6097,7 +6098,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xdeadbeef12340000, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xdeadbeef12340001, "ArchX86: failed to disassembly and/or execute POR");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xdeadbeef12340001, "ArchX86: failed to disassembly and/or execute POR");
 
             code = string("\x66\x0F\xEB\xC1", 4); // por xmm0, xmm1
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -6164,7 +6165,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0x1234));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0x4));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0x12340, "ArchX86: failed to disassembly and/or execute PSLLD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0x12340, "ArchX86: failed to disassembly and/or execute PSLLD");
 
             code = string("\x0F\xF2\x00", 3); // pslld mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -6173,7 +6174,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 64, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute PSLLD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0, "ArchX86: failed to disassembly and/or execute PSLLD");
 
             code = string("\x66\x0F\xF2\xC1", 4); // pslld xmm0, xmm1
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -6208,7 +6209,7 @@ namespace test
             sym.mem->write_buffer(0x1050+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0x123400001234));
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0x12340000123400, "ArchX86: failed to disassembly and/or execute PSLLD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0x12340000123400, "ArchX86: failed to disassembly and/or execute PSLLD");
 
             return nb;
         }
@@ -6254,7 +6255,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0x1234));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0x4));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0x12340, "ArchX86: failed to disassembly and/or execute PSLLQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0x12340, "ArchX86: failed to disassembly and/or execute PSLLQ");
 
             code = string("\x0F\xF3\x00", 3); // psllq mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -6263,7 +6264,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 64, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute PSLLQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0, "ArchX86: failed to disassembly and/or execute PSLLQ");
 
             code = string("\x66\x0F\xF3\xC1", 4); // psllq xmm0, xmm1
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -6298,7 +6299,7 @@ namespace test
             sym.mem->write_buffer(0x1050+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0x1234));
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0x123400, "ArchX86: failed to disassembly and/or execute PSLLQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0x123400, "ArchX86: failed to disassembly and/or execute PSLLQ");
 
             return nb;
         }
@@ -6314,7 +6315,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0xffff000000001212));
             sym.run_from(0x1000, 1);
 
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0x0000000000000022, "ArchX86: failed to disassembly and/or execute PSUBB");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0x0000000000000022, "ArchX86: failed to disassembly and/or execute PSUBB");
             
 
             code = string("\x0F\xF8\x00", 3); // psubb mm0, [eax]
@@ -6324,7 +6325,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 1, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xab1112fffffffffe, "ArchX86: failed to disassembly and/or execute PSUBB");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xab1112fffffffffe, "ArchX86: failed to disassembly and/or execute PSUBB");
             */
 
             code = string("\x66\x0F\xF8\xC1", 4); // psubb xmm0, xmm1
@@ -6379,7 +6380,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xdeadbeef12121212));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0x12345678cafebabe));
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0x12345678deadbeef, "ArchX86: failed to disassembly and/or execute PUNPCKHDQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0x12345678deadbeef, "ArchX86: failed to disassembly and/or execute PUNPCKHDQ");
 
             code = string("\x0F\x6A\x00", 3); // punpckhdq mm0, [eax]
             sym.mem->write_buffer(0x1050, (uint8_t*)code.c_str(), code.size());
@@ -6388,7 +6389,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xab001200abababab, 8);
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xababababdeadbeef, "ArchX86: failed to disassembly and/or execute PUNPCKHDQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xababababdeadbeef, "ArchX86: failed to disassembly and/or execute PUNPCKHDQ");
 
             return nb;
         }
@@ -6452,7 +6453,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xdeadbeef12121212));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0x12345678cafebabe));
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xca12fe12ba12be12, "ArchX86: failed to disassembly and/or execute PUNPCKLBW");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xca12fe12ba12be12, "ArchX86: failed to disassembly and/or execute PUNPCKLBW");
             
             code = string("\x0F\x60\x00", 3); // punpcklbw mm0, [eax]
             sym.mem->write_buffer(0x1050, (uint8_t*)code.c_str(), code.size());
@@ -6461,7 +6462,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xab001200abababab, 8);
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xab12ab12ab12ab12, "ArchX86: failed to disassembly and/or execute PUNPCKLBW");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xab12ab12ab12ab12, "ArchX86: failed to disassembly and/or execute PUNPCKLBW");
 
             return nb;
         }
@@ -6496,7 +6497,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xdeadbeef12121212));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0x12345678cafebabe));
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xcafebabe12121212, "ArchX86: failed to disassembly and/or execute PUNPCKLDQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xcafebabe12121212, "ArchX86: failed to disassembly and/or execute PUNPCKLDQ");
             
             code = string("\x0F\x62\x00", 3); // punpckldq mm0, [eax]
             sym.mem->write_buffer(0x1050, (uint8_t*)code.c_str(), code.size());
@@ -6505,7 +6506,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xab001200abababab, 8);
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xabababab12121212, "ArchX86: failed to disassembly and/or execute PUNPCKLDQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xabababab12121212, "ArchX86: failed to disassembly and/or execute PUNPCKLDQ");
 
             return nb;
         }
@@ -6566,7 +6567,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xdeadbeef12121212));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0x12345678cafebabe));
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xcafe1212babe1212, "ArchX86: failed to disassembly and/or execute PUNPCKLWD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xcafe1212babe1212, "ArchX86: failed to disassembly and/or execute PUNPCKLWD");
             
             code = string("\x0F\x61\x00", 3); // punpcklwd mm0, [eax]
             sym.mem->write_buffer(0x1050, (uint8_t*)code.c_str(), code.size());
@@ -6575,7 +6576,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xab001200abababab, 8);
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xabab1212abab1212, "ArchX86: failed to disassembly and/or execute PUNPCKLWD");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xabab1212abab1212, "ArchX86: failed to disassembly and/or execute PUNPCKLWD");
 
             return nb;
         }
@@ -6591,9 +6592,9 @@ namespace test
             sym.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x1800,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP).as_uint() == 0x1800,
                             "ArchX86: failed to disassembly and/or execute PUSH");
-            nb += _assert(  (uint32_t)sym.mem->read(0x1800, 4)->as_uint() == 0xffffffff,
+            nb += _assert(  (uint32_t)sym.mem->read(0x1800, 4).as_uint() == 0xffffffff,
                             "ArchX86: failed to disassembly and/or execute PUSH");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
@@ -6604,9 +6605,9 @@ namespace test
             
             sym.mem->write(0x1900, exprcst(16, 0x1234));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x1802,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP).as_uint() == 0x1802,
                             "ArchX86: failed to disassembly and/or execute PUSH");
-            nb += _assert(  (uint16_t)sym.mem->read(0x1802, 2)->as_uint() == 0x1234,
+            nb += _assert(  (uint16_t)sym.mem->read(0x1802, 2).as_uint() == 0x1234,
                             "ArchX86: failed to disassembly and/or execute PUSH");
                             
             sym.cpu.ctx().set(X86::ESP, exprcst(32, 0x1804));
@@ -6616,9 +6617,9 @@ namespace test
             
             sym.mem->write(0x1804, exprcst(16, 0xABCD));
             sym.run_from(0x1180, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x1802,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP).as_uint() == 0x1802,
                             "ArchX86: failed to disassembly and/or execute PUSH");
-            nb += _assert(  (uint16_t)sym.mem->read(0x1802, 2)->as_uint() == 0xABCD,
+            nb += _assert(  (uint16_t)sym.mem->read(0x1802, 2).as_uint() == 0xABCD,
                             "ArchX86: failed to disassembly and/or execute PUSH");
                
             return nb;
@@ -6643,21 +6644,21 @@ namespace test
             sym.cpu.ctx().set(X86::EDI, exprcst(32, 0x11111111));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x181c, 4)->as_uint() == 0xAAAAAAAA,
+            nb += _assert(  (uint32_t)sym.mem->read(0x181c, 4).as_uint() == 0xAAAAAAAA,
                             "ArchX86: failed to disassembly and/or execute PUSHAD");
-            nb += _assert(  (uint32_t)sym.mem->read(0x1818, 4)->as_uint() == 0xBBBBBBBB,
+            nb += _assert(  (uint32_t)sym.mem->read(0x1818, 4).as_uint() == 0xBBBBBBBB,
                             "ArchX86: failed to disassembly and/or execute PUSHAD");
-            nb += _assert(  (uint32_t)sym.mem->read(0x1814, 4)->as_uint() == 0xCCCCCCCC,
+            nb += _assert(  (uint32_t)sym.mem->read(0x1814, 4).as_uint() == 0xCCCCCCCC,
                             "ArchX86: failed to disassembly and/or execute PUSHAD");
-            nb += _assert(  (uint32_t)sym.mem->read(0x1810, 4)->as_uint() == 0xDDDDDDDD,
+            nb += _assert(  (uint32_t)sym.mem->read(0x1810, 4).as_uint() == 0xDDDDDDDD,
                             "ArchX86: failed to disassembly and/or execute PUSHAD");
-            nb += _assert(  (uint32_t)sym.mem->read(0x180c, 4)->as_uint() == 0x1820,
+            nb += _assert(  (uint32_t)sym.mem->read(0x180c, 4).as_uint() == 0x1820,
                             "ArchX86: failed to disassembly and/or execute PUSHAD");
-            nb += _assert(  (uint32_t)sym.mem->read(0x1808, 4)->as_uint() == 0xEEEEEEEE,
+            nb += _assert(  (uint32_t)sym.mem->read(0x1808, 4).as_uint() == 0xEEEEEEEE,
                             "ArchX86: failed to disassembly and/or execute PUSHAD");
-            nb += _assert(  (uint32_t)sym.mem->read(0x1804, 4)->as_uint() == 0xFFFFFFFF,
+            nb += _assert(  (uint32_t)sym.mem->read(0x1804, 4).as_uint() == 0xFFFFFFFF,
                             "ArchX86: failed to disassembly and/or execute PUSHAD");
-            nb += _assert(  (uint32_t)sym.mem->read(0x1800, 4)->as_uint() == 0x11111111,
+            nb += _assert(  (uint32_t)sym.mem->read(0x1800, 4).as_uint() == 0x11111111,
                             "ArchX86: failed to disassembly and/or execute PUSHAD");
 
             return nb;
@@ -6673,7 +6674,7 @@ namespace test
             sym.cpu.ctx().set(X86::MM0, exprcst(64, 0xffff0000));
             sym.cpu.ctx().set(X86::MM1, exprcst(64, 0xffff0000ffff0000));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xffff000000000000, "ArchX86: failed to disassembly and/or execute PXOR");   
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xffff000000000000, "ArchX86: failed to disassembly and/or execute PXOR");   
             
             code = string("\x0F\xEF\x00", 3); // pxor mm0, [eax]
             sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -6682,7 +6683,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xdeadbeef12340000, 8);
             sym.run_from(0x1010, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0)->as_uint() == 0xdeadbeef12340001, "ArchX86: failed to disassembly and/or execute PXOR");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xdeadbeef12340001, "ArchX86: failed to disassembly and/or execute PXOR");
 
             code = string("\x66\x0F\xEF\xC1", 4); // pxor xmm0, xmm1
             sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
@@ -6717,15 +6718,15 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x100c0, "ArchX86: failed to disassembly and/or execute RCL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x100c0, "ArchX86: failed to disassembly and/or execute RCL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCL");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10010));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10800, "ArchX86: failed to disassembly and/or execute RCL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10800, "ArchX86: failed to disassembly and/or execute RCL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCL");
 
             code = string("\xD1\x10", 2); // rcl dword ptr [eax], 1
             sym.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -6736,18 +6737,18 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 0));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0x44444445, "ArchX86: failed to disassembly and/or execute RCL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCL");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0x44444445, "ArchX86: failed to disassembly and/or execute RCL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCL");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1700));
             sym.mem->write(0x1700, exprcst(32, 0x80000000));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCL");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCL");
             
             return nb;
         }
@@ -6767,15 +6768,15 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10224, "ArchX86: failed to disassembly and/or execute RCR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10224, "ArchX86: failed to disassembly and/or execute RCR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCR");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x11240));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10024, "ArchX86: failed to disassembly and/or execute RCR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10024, "ArchX86: failed to disassembly and/or execute RCR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCR");
             
             code = string("\xD1\x18", 2); // rcr dword ptr [eax], 1
             sym.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -6786,18 +6787,18 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 0));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0x91111111, "ArchX86: failed to disassembly and/or execute RCR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCR");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0x91111111, "ArchX86: failed to disassembly and/or execute RCR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCR");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1700));
             sym.mem->write(0x1700, exprcst(32, 0x10000001));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0x08000000, "ArchX86: failed to disassembly and/or execute RCR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCR");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0x08000000, "ArchX86: failed to disassembly and/or execute RCR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute RCR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute RCR");
             
             return nb;
         }
@@ -6813,9 +6814,9 @@ namespace test
             sym.mem->write(0x1800, exprcst(32, 0x1700));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x1804,
+            nb += _assert(  sym.cpu.ctx().get(X86::ESP).as_uint() == 0x1804,
                             "ArchX86: failed to disassembly and/or execute RET");
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1700,
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1700,
                             "ArchX86: failed to disassembly and/or execute RET");
                             
             
@@ -6826,9 +6827,9 @@ namespace test
             sym.mem->write(0x1800, exprcst(32, 0x1700));
 
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x1834,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::ESP).as_uint() == 0x1834,
                             "ArchX86: failed to disassembly and/or execute RET");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1700,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1700,
                             "ArchX86: failed to disassembly and/or execute RET");
                
             return nb;
@@ -6845,14 +6846,14 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10201));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10081, "ArchX86: failed to disassembly and/or execute ROL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute ROL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10081, "ArchX86: failed to disassembly and/or execute ROL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute ROL");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10010));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10800, "ArchX86: failed to disassembly and/or execute ROL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10800, "ArchX86: failed to disassembly and/or execute ROL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROL");
             
             code = string("\xD1\x00", 2); // rol dword ptr [eax], 1
             sym.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -6863,18 +6864,18 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0x44444444, "ArchX86: failed to disassembly and/or execute ROL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROL");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0x44444444, "ArchX86: failed to disassembly and/or execute ROL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROL");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1700));
             sym.mem->write(0x1700, exprcst(32, 0x80000001));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 0));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 3, "ArchX86: failed to disassembly and/or execute ROL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute ROL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute ROL");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 3, "ArchX86: failed to disassembly and/or execute ROL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute ROL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute ROL");
             
             return nb;
         }
@@ -6890,14 +6891,14 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10201));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10204, "ArchX86: failed to disassembly and/or execute ROR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10204, "ArchX86: failed to disassembly and/or execute ROR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROR");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10018));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x13000, "ArchX86: failed to disassembly and/or execute ROR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x13000, "ArchX86: failed to disassembly and/or execute ROR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROR");
             
             code = string("\xD1\x08", 2); // ror dword ptr [eax], 1
             sym.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -6908,18 +6909,18 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0x11111111, "ArchX86: failed to disassembly and/or execute ROR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROR");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0x11111111, "ArchX86: failed to disassembly and/or execute ROR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROR");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1700));
             sym.mem->write(0x1700, exprcst(32, 0x80000000));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0x40000000, "ArchX86: failed to disassembly and/or execute ROR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute ROR");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0x40000000, "ArchX86: failed to disassembly and/or execute ROR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute ROR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute ROR");
             
             return nb;
         }
@@ -6935,11 +6936,11 @@ namespace test
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10201));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x02000204, "ArchX86: failed to disassembly and/or execute RORX");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x02000204, "ArchX86: failed to disassembly and/or execute RORX");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10018));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x30000200, "ArchX86: failed to disassembly and/or execute RORX");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x30000200, "ArchX86: failed to disassembly and/or execute RORX");
             
             code = string("\xC4\xE3\x7B\xF0\x18\x01", 6); // rorx ebx, dword ptr [eax], 1
             sym.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), code.size()); 
@@ -6948,13 +6949,13 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1700));
             sym.mem->write(0x1700, exprcst(32, 0x22222222));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x11111111, "ArchX86: failed to disassembly and/or execute RORX");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x11111111, "ArchX86: failed to disassembly and/or execute RORX");
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1700));
             sym.mem->write(0x1700, exprcst(32, 0x80000000));
 
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() == 0x40000000, "ArchX86: failed to disassembly and/or execute RORX");
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() == 0x40000000, "ArchX86: failed to disassembly and/or execute RORX");
 
             return nb;
         }
@@ -6971,14 +6972,14 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10201));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x12010, "ArchX86: failed to disassembly and/or execute SAL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x12010, "ArchX86: failed to disassembly and/or execute SAL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAL");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x11010));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10100, "ArchX86: failed to disassembly and/or execute SAL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute SAL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10100, "ArchX86: failed to disassembly and/or execute SAL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute SAL");
             
             code = string("\xd1\x20", 2); // sal dword ptr [eax], 1
             sym.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -6989,18 +6990,18 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0x44444444, "ArchX86: failed to disassembly and/or execute SAL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAL");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0x44444444, "ArchX86: failed to disassembly and/or execute SAL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAL");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1700));
             sym.mem->write(0x1700, exprcst(32, 0x80000001));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 0));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 2, "ArchX86: failed to disassembly and/or execute SAL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute SAL");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute SAL");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 2, "ArchX86: failed to disassembly and/or execute SAL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute SAL");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute SAL");
             
             return nb;
         }
@@ -7019,14 +7020,14 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10201));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10020, "ArchX86: failed to disassembly and/or execute SAR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10020, "ArchX86: failed to disassembly and/or execute SAR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAR");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1f008));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1ff00, "ArchX86: failed to disassembly and/or execute SAR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute SAR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1ff00, "ArchX86: failed to disassembly and/or execute SAR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute SAR");
             
             code = string("\xd1\x38", 2); // sar dword ptr [eax], 1
             sym.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -7037,18 +7038,18 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0x11111111, "ArchX86: failed to disassembly and/or execute SAR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAR");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0x11111111, "ArchX86: failed to disassembly and/or execute SAR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAR");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1700));
             sym.mem->write(0x1700, exprcst(32, 0x80000001));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0xc0000000, "ArchX86: failed to disassembly and/or execute SAR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute SAR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAR");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0xc0000000, "ArchX86: failed to disassembly and/or execute SAR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute SAR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute SAR");
             
             return nb;
         }
@@ -7067,14 +7068,14 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x10201));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10020, "ArchX86: failed to disassembly and/or execute SHR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute SHR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10020, "ArchX86: failed to disassembly and/or execute SHR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute SHR");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1f008));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10f00, "ArchX86: failed to disassembly and/or execute SHR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute SHR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10f00, "ArchX86: failed to disassembly and/or execute SHR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute SHR");
             
             code = string("\xd1\x28", 2); // shr dword ptr [eax], 1
             sym.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -7085,19 +7086,19 @@ namespace test
             sym.cpu.ctx().set(X86::CF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0x11111111, "ArchX86: failed to disassembly and/or execute SHR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute SHR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute SHR");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0x11111111, "ArchX86: failed to disassembly and/or execute SHR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute SHR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute SHR");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1700));
             sym.mem->write(0x1700, exprcst(32, 0x80000001));
             sym.cpu.ctx().set(X86::CF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::OF, exprcst(8, 0));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() == 0x40000000, "ArchX86: failed to disassembly and/or execute SHR");
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute SHR");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() == 0x40000000, "ArchX86: failed to disassembly and/or execute SHR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::CF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute SHR");
             /* TODO - ghidra error, they forget to set OF for 1-bit shifts
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute SHR");
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::OF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute SHR");
             */
             return nb;
         }
@@ -7115,20 +7116,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xff));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x14ff)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x14ff,
                             "ArchX86: failed to disassembly and/or execute SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASB");
             */
 
@@ -7138,20 +7139,20 @@ namespace test
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
             
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x1501)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == exprcst(32, 0x1501)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASB");
             */
             return nb;
@@ -7170,20 +7171,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xAAAA));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x14fc)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == exprcst(32, 0x14fc)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute SCASD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASD");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASD");
             */
             sym.mem->write(0x1500, exprcst(32, 0x1235));
@@ -7191,20 +7192,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1234));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x1504)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == exprcst(32, 0x1504)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute SCASD");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASD");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASD");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASD");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASD");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASD");
             */
             return nb;
@@ -7223,20 +7224,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xAAAA));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x14fe)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == exprcst(32, 0x14fe)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute SCASW");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASW");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASW");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASW");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASW");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASW");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASW");
             */
 
@@ -7245,20 +7246,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1234));
             sym.cpu.ctx().set(X86::EDI, exprcst(32,0x1500));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == exprcst(32, 0x1502)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == exprcst(32, 0x1502)->as_uint(),
                             "ArchX86: failed to disassembly and/or execute SCASW");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASW");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASW");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASW");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SCASW");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASW");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SCASW");
             */
             return nb;
@@ -7280,7 +7281,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETA");
             
             
@@ -7292,7 +7293,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETA");
                             
             /* With condition not verified */
@@ -7302,7 +7303,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETA");
                             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
@@ -7311,7 +7312,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETA");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
@@ -7319,7 +7320,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETA");
             return nb;
         }
@@ -7339,7 +7340,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETAE");
             
             
@@ -7351,7 +7352,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETAE");
                             
             /* With condition not verified */
@@ -7360,7 +7361,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETAE");
                             
             
@@ -7382,7 +7383,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETB");
             
             
@@ -7394,7 +7395,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETB");
                             
             /* With condition not verified */
@@ -7403,7 +7404,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETB");
                             
             
@@ -7429,7 +7430,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETBE");
             
             
@@ -7441,7 +7442,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETBE");
                             
             /* With condition -verified- */
@@ -7451,7 +7452,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETBE");
                             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,0));
@@ -7460,7 +7461,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETBE");
             
             sym.cpu.ctx().set(X86::ZF, exprcst(8,1));
@@ -7468,7 +7469,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETBE");
             return nb;
         }
@@ -7492,7 +7493,7 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETG");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
@@ -7500,7 +7501,7 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETG");
             
             /* Mem */
@@ -7514,7 +7515,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETG");
                             
             /* With condition not verified */
@@ -7523,7 +7524,7 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETG");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
@@ -7531,7 +7532,7 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETG");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
@@ -7539,7 +7540,7 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETG");
             
             return nb;
@@ -7564,7 +7565,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETGE");
             
             
@@ -7576,7 +7577,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETGE");
                             
             /* With condition not verified */
@@ -7586,7 +7587,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETGE");
                             
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
@@ -7595,7 +7596,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETGE");
             
             return nb;
@@ -7620,7 +7621,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETL");
             
             
@@ -7634,7 +7635,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETL");
                             
             /* With condition not verified */
@@ -7644,7 +7645,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETL");
                             
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
@@ -7653,7 +7654,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETL");
             
             return nb;
@@ -7678,7 +7679,7 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETLE");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
@@ -7686,7 +7687,7 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETLE");
             
             /* Mem */
@@ -7700,7 +7701,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETLE");
                             
             /* With condition not verified */
@@ -7709,7 +7710,7 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,1));
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETLE");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
@@ -7717,7 +7718,7 @@ namespace test
             sym.cpu.ctx().set(X86::SF, exprcst(8,0));
             sym.cpu.ctx().set(X86::OF, exprcst(8,0));
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETLE");
             
             return nb;
@@ -7741,7 +7742,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETE");
             
             
@@ -7753,7 +7754,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETE");
                             
             /* With condition not verified */
@@ -7762,7 +7763,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETE");
                             
             
@@ -7787,7 +7788,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETNE");
             
             
@@ -7799,7 +7800,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETNE");
                             
             /* With condition not verified */
@@ -7808,7 +7809,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETNE");
                             
             
@@ -7833,7 +7834,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETNO");
             
             
@@ -7845,7 +7846,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETNO");
                             
             /* With condition not verified */
@@ -7854,7 +7855,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETNO");
                             
             
@@ -7879,7 +7880,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETNP");
             
             
@@ -7891,7 +7892,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETNP");
                             
             /* With condition not verified */
@@ -7900,7 +7901,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETNP");                   
             return nb;
         }
@@ -7923,7 +7924,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETNS");
             
             
@@ -7935,7 +7936,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETNS");
                             
             /* With condition not verified */
@@ -7944,7 +7945,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETNS");                   
             return nb;
         }
@@ -7967,7 +7968,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETO");
             
             
@@ -7979,7 +7980,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETO");
                             
             /* With condition not verified */
@@ -7988,7 +7989,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETO");
                             
             
@@ -8013,7 +8014,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETP");
             
             
@@ -8025,7 +8026,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETP");
                             
             /* With condition not verified */
@@ -8034,7 +8035,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETP");                   
             return nb;
         }
@@ -8057,7 +8058,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,2));
             
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETS");
             
             
@@ -8069,7 +8070,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 1,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SETS");
                             
             /* With condition not verified */
@@ -8078,7 +8079,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1700));
             sym.mem->write(0x1700, exprcst(8, 12));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.mem->read(0x1700, 1)->as_uint() == 0,
+            nb += _assert(  sym.mem->read(0x1700, 1).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SETS");                   
             return nb;
         }
@@ -8096,7 +8097,7 @@ namespace test
             sym.mem->write_buffer(0x1160, (uint8_t*)code.c_str(), 1);
             sym.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute STC");
 
             return nb;
@@ -8115,7 +8116,7 @@ namespace test
             sym.mem->write_buffer(0x1160, (uint8_t*)code.c_str(), 1);
             sym.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::DF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::DF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute STD");
 
             return nb;
@@ -8134,7 +8135,7 @@ namespace test
             sym.mem->write_buffer(0x1160, (uint8_t*)code.c_str(), 1);
             sym.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1160, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::IF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::IF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute STI");
 
             return nb;
@@ -8156,16 +8157,16 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x12));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x18ff, "ArchX86: failed to disassembly and/or execute STOSB");
-            nb += _assert(  sym.mem->read(0x1900, 1)->as_uint() == 0x12, "ArchX86: failed to disassembly and/or execute STOSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x18ff, "ArchX86: failed to disassembly and/or execute STOSB");
+            nb += _assert(  sym.mem->read(0x1900, 1).as_uint() == 0x12, "ArchX86: failed to disassembly and/or execute STOSB");
             
             sym.mem->write(0x1900, exprcst(16, 0x23));
             sym.cpu.ctx().set(X86::EDI, exprcst(32, 0x1900));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x12));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x1901, "ArchX86: failed to disassembly and/or execute STOSB");
-            nb += _assert(  sym.mem->read(0x1900, 1)->as_uint() == 0x12, "ArchX86: failed to disassembly and/or execute STOSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x1901, "ArchX86: failed to disassembly and/or execute STOSB");
+            nb += _assert(  sym.mem->read(0x1900, 1).as_uint() == 0x12, "ArchX86: failed to disassembly and/or execute STOSB");
             
             return nb;
         }
@@ -8186,16 +8187,16 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x12345678));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x18fc, "ArchX86: failed to disassembly and/or execute STOSD");
-            nb += _assert(  sym.mem->read(0x1900, 4)->as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute STOSD");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x18fc, "ArchX86: failed to disassembly and/or execute STOSD");
+            nb += _assert(  sym.mem->read(0x1900, 4).as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute STOSD");
             
             sym.mem->write(0x1900, exprcst(32, 0x23));
             sym.cpu.ctx().set(X86::EDI, exprcst(32, 0x1900));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x12345678));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x1904, "ArchX86: failed to disassembly and/or execute STOSD");
-            nb += _assert(  sym.mem->read(0x1900, 4)->as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute STOSD");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x1904, "ArchX86: failed to disassembly and/or execute STOSD");
+            nb += _assert(  sym.mem->read(0x1900, 4).as_uint() == 0x12345678, "ArchX86: failed to disassembly and/or execute STOSD");
             
             return nb;
         }
@@ -8213,16 +8214,16 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x12345678));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x18fe, "ArchX86: failed to disassembly and/or execute STOSW");
-            nb += _assert(  sym.mem->read(0x1900, 2)->as_uint() == 0x5678, "ArchX86: failed to disassembly and/or execute STOSW");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x18fe, "ArchX86: failed to disassembly and/or execute STOSW");
+            nb += _assert(  sym.mem->read(0x1900, 2).as_uint() == 0x5678, "ArchX86: failed to disassembly and/or execute STOSW");
             
             sym.mem->write(0x1900, exprcst(32, 0x23));
             sym.cpu.ctx().set(X86::EDI, exprcst(32, 0x1900));
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x12345678));
             sym.cpu.ctx().set(X86::DF, exprcst(32, 0x0));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x1902, "ArchX86: failed to disassembly and/or execute STOSW");
-            nb += _assert(  sym.mem->read(0x1900, 2)->as_uint() == 0x5678, "ArchX86: failed to disassembly and/or execute STOSW");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x1902, "ArchX86: failed to disassembly and/or execute STOSW");
+            nb += _assert(  sym.mem->read(0x1900, 2).as_uint() == 0x5678, "ArchX86: failed to disassembly and/or execute STOSW");
             
             return nb;
         }
@@ -8238,39 +8239,39 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xff));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xf0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0xf0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             */
 
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10ff));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10f0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10f0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             */
 
@@ -8280,20 +8281,20 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x80));
             sym.run_from(0x1190, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xff,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0xff,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
             */
             
@@ -8303,20 +8304,20 @@ namespace test
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1ffff));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1ff00,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1ff00,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             */
 
@@ -8325,20 +8326,20 @@ namespace test
             sym.mem->write_buffer(0x1200+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xfa000009));
             sym.run_from(0x1200, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xfa000008,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xfa000008,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             */
 
@@ -8347,20 +8348,20 @@ namespace test
             sym.mem->write_buffer(0x1020+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10001235));
             sym.run_from(0x1020, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10000001,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10000001,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             */
 
@@ -8369,20 +8370,20 @@ namespace test
             sym.mem->write_buffer(0x1030+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xffff0000));
             sym.run_from(0x1030, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x00ff0000,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x00ff0000,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             */
 
@@ -8393,20 +8394,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xf800));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x7900));
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x7f00,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x7f00,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
             */
 
@@ -8418,20 +8419,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xAAAA));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0x1700));
             sym.run_from(0x1060, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             */
 
@@ -8443,20 +8444,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1800));
             sym.cpu.ctx().set(X86::EBX, exprcst(32,0xffffffff));
             sym.run_from(0x1070, 1);
-            nb += _assert(  sym.mem->read(0x1800, 4)->as_uint() == 0x0,
+            nb += _assert(  sym.mem->read(0x1800, 4).as_uint() == 0x0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SUB");
             */
             return nb;
@@ -8474,40 +8475,40 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0xff));
             sym.cpu.ctx().set(X86::CF, exprcst(8,0x1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xf0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0xf0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SBB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
             */
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x10ff));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x10f0,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x10f0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SBB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
             */
 
@@ -8518,20 +8519,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x80));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1190, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xff,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0xff,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SBB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SBB");
             */
             
@@ -8542,20 +8543,20 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0x1ffff));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() == 0x1ff00,
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() == 0x1ff00,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == exprcst(32, 1)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute SBB");
             /*
-            nb += _assert(  sym.cpu.ctx().get(X86::AF)->as_uint() == exprcst(32, 0)->as_uint(),
+            nb += _assert(  sym.cpu.ctx().get(X86::AF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute SBB");
             */
             return nb;
@@ -8577,11 +8578,11 @@ namespace test
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute TEST");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute TEST");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute TEST");
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute TEST");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
             
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32,0X81230004));
@@ -8592,11 +8593,11 @@ namespace test
             sym.cpu.ctx().set(X86::OF, exprcst(8,1));
             sym.cpu.ctx().set(X86::CF, exprcst(8,1));
             sym.run_from(0x1170, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute TEST");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute TEST");
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute TEST");
                             
             return nb;
         }
@@ -8641,13 +8642,13 @@ namespace test
             sym.mem->write_buffer(0x1040, (uint8_t*)code.c_str(), 3);
             sym.mem->write_buffer(0x1040+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() ==  0x24, "ArchX86: failed to disassembly and/or execute XADD"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() ==  0x23, "ArchX86: failed to disassembly and/or execute XADD"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() ==  0x1, "ArchX86: failed to disassembly and/or execute XADD"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() ==  0x24, "ArchX86: failed to disassembly and/or execute XADD"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() ==  0x23, "ArchX86: failed to disassembly and/or execute XADD"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() ==  0x1, "ArchX86: failed to disassembly and/or execute XADD"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD");
 
             // xadd DWORD PTR [ecx], ecx
             /* TODO, ghidra bug - they affect ecx too quickly so the store
@@ -8659,13 +8660,13 @@ namespace test
             sym.cpu.ctx().set(X86::ECX, exprcst(32, 0x1700));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x1));
             sym.run_from(0x1100, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() ==  0x800016ff, "ArchX86: failed to disassembly and/or execute XADD"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::ECX)->as_uint() ==  0x7fffffff, "ArchX86: failed to disassembly and/or execute XADD"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() ==  0x1, "ArchX86: failed to disassembly and/or execute XADD"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() ==  0x1, "ArchX86: failed to disassembly and/or execute XADD"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() ==  0x1, "ArchX86: failed to disassembly and/or execute XADD");
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() ==  0x800016ff, "ArchX86: failed to disassembly and/or execute XADD"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::ECX).as_uint() ==  0x7fffffff, "ArchX86: failed to disassembly and/or execute XADD"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() ==  0x1, "ArchX86: failed to disassembly and/or execute XADD"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() ==  0x1, "ArchX86: failed to disassembly and/or execute XADD"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() ==  0x0, "ArchX86: failed to disassembly and/or execute XADD");
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() ==  0x1, "ArchX86: failed to disassembly and/or execute XADD");
             */
             return nb;
         }
@@ -8681,8 +8682,8 @@ namespace test
             sym.mem->write_buffer(0x1040, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1040+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() ==  0x1, "ArchX86: failed to disassembly and/or execute XCHG"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::EBX)->as_uint() ==  0x23, "ArchX86: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() ==  0x1, "ArchX86: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::EBX).as_uint() ==  0x23, "ArchX86: failed to disassembly and/or execute XCHG"); 
             
             // xchg DWORD PTR [ecx], ecx 
             code = string("\x87\x09", 2);
@@ -8691,8 +8692,8 @@ namespace test
             sym.mem->write(0x1700, exprcst(32, 0x12345678));
             sym.cpu.ctx().set(X86::ECX, exprcst(32, 0x1700));
             sym.run_from(0x1100, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() ==  0x1700, "ArchX86: failed to disassembly and/or execute XCHG"); 
-            nb += _assert(  sym.cpu.ctx().get(X86::ECX)->as_uint() ==  0x12345678, "ArchX86: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() ==  0x1700, "ArchX86: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X86::ECX).as_uint() ==  0x12345678, "ArchX86: failed to disassembly and/or execute XCHG"); 
             
             // xchg al, BYTE PTR [bx]
             code = string("\x67\x86\x07", 3);
@@ -8702,8 +8703,8 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xfAA));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x10020));
             sym.run_from(0x1110, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() ==  0xf12, "ArchX86: failed to disassembly and/or execute XCHG");
-            nb += _assert(  (uint8_t)sym.mem->read(0x20, 1)->as_uint() ==  0xAA, "ArchX86: failed to disassembly and/or execute XCHG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() ==  0xf12, "ArchX86: failed to disassembly and/or execute XCHG");
+            nb += _assert(  (uint8_t)sym.mem->read(0x20, 1).as_uint() ==  0xAA, "ArchX86: failed to disassembly and/or execute XCHG");
             return nb;
         }
         
@@ -8718,49 +8719,49 @@ namespace test
             sym.mem->write_buffer(0x1160, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xffff0000, 
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xffff0000, 
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute XOR");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xfffff000));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x000fffff));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xfff00fff, 
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xfff00fff, 
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute XOR");
                             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x80000001));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x80000001));
             sym.run_from(0x1160, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute XOR");
                             
             // On 16 bits 
@@ -8770,33 +8771,33 @@ namespace test
             sym.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 3);
             sym.mem->write_buffer(0x1170+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xa0000001,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xa0000001,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
             
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xab00000f));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0xba00000f));
             sym.run_from(0x1170, 1);
-            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX)->as_uint() == 0xab000000,
+            nb += _assert(  (uint32_t)sym.cpu.ctx().get(X86::EAX).as_uint() == 0xab000000,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::CF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::CF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::OF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::OF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::SF)->as_uint() == 0,
+            nb += _assert(  sym.cpu.ctx().get(X86::SF).as_uint() == 0,
                             "ArchX86: failed to disassembly and/or execute XOR");
-            nb += _assert(  sym.cpu.ctx().get(X86::PF)->as_uint() == 1,
+            nb += _assert(  sym.cpu.ctx().get(X86::PF).as_uint() == 1,
                             "ArchX86: failed to disassembly and/or execute XOR");
             return nb;
         }
@@ -8837,7 +8838,7 @@ namespace test
 
             sym.run_from(0x1000, 1);
             
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JMP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute JMP");
             
             
             code = string("\xe9\x51\x34\x12\x00", 5 ); // jmp 0x123456
@@ -8846,7 +8847,7 @@ namespace test
             sym.mem->write_buffer(0x2000+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JMP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute JMP");
             
             code = string("\x66\xff\xe0", 3 ); // jmp ax
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1234));
@@ -8854,7 +8855,7 @@ namespace test
             sym.mem->write_buffer(0x1234, (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.mem->write_buffer(0x3000+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x3000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute JMP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute JMP");
             
             code = string("\xff\xe0", 2 ); // jmp eax
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x00123456));
@@ -8862,7 +8863,7 @@ namespace test
             sym.mem->write_buffer(0x123456, (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.mem->write_buffer(0x5000+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x5000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x00123456, "ArchX86: failed to disassembly and/or execute JMP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x00123456, "ArchX86: failed to disassembly and/or execute JMP");
             
             code = string("\xff\x20", 2 ); // jmp dword ptr [eax]
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x4010));
@@ -8871,7 +8872,7 @@ namespace test
             sym.mem->write_buffer(0x111111, (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.mem->write_buffer(0x4000+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x4000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x111111, "ArchX86: failed to disassembly and/or execute JMP");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x111111, "ArchX86: failed to disassembly and/or execute JMP");
             
             return nb;
         }
@@ -8885,9 +8886,9 @@ namespace test
             sym.mem->write_buffer(0x1012, (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::ESP, exprcst(32, 0x10004));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute CALL");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x10000, "ArchX86: failed to disassembly and/or execute CALL");
-            nb += _assert(  sym.mem->read(0x10000, 4)->as_uint() == 0x1005, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1012, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESP).as_uint() == 0x10000, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.mem->read(0x10000, 4).as_uint() == 0x1005, "ArchX86: failed to disassembly and/or execute CALL");
             
             
             code = string("\xe8\x51\x34\x12\x00", 5 ); // call 0x123456
@@ -8895,9 +8896,9 @@ namespace test
             sym.mem->write_buffer(0x125456, (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::ESP, exprcst(32, 0x10004));
             sym.run_from(0x2000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute CALL");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x10000, "ArchX86: failed to disassembly and/or execute CALL");
-            nb += _assert(  sym.mem->read(0x10000, 4)->as_uint() == 0x2005, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x125456, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESP).as_uint() == 0x10000, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.mem->read(0x10000, 4).as_uint() == 0x2005, "ArchX86: failed to disassembly and/or execute CALL");
             
             
             /* 
@@ -8907,9 +8908,9 @@ namespace test
             sym.mem->write_buffer(0x1234, (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::ESP, exprcst(32, 0x10004));
             sym.run_from(0x3000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute CALL");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x10000, "ArchX86: failed to disassembly and/or execute CALL");
-            nb += _assert(  sym.mem->read(0x10000, 4)->as_uint() == 0x3003, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1234, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESP).as_uint() == 0x10000, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.mem->read(0x10000, 4).as_uint() == 0x3003, "ArchX86: failed to disassembly and/or execute CALL");
             */
             
             code = string("\xff\xd0", 2 ); // call eax
@@ -8918,9 +8919,9 @@ namespace test
             sym.mem->write_buffer(0x123456, (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::ESP, exprcst(32, 0x10004));
             sym.run_from(0x5000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x00123456, "ArchX86: failed to disassembly and/or execute CALL");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x10000, "ArchX86: failed to disassembly and/or execute CALL");
-            nb += _assert(  sym.mem->read(0x10000, 4)->as_uint() == 0x5002, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x00123456, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESP).as_uint() == 0x10000, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.mem->read(0x10000, 4).as_uint() == 0x5002, "ArchX86: failed to disassembly and/or execute CALL");
             
             
             code = string("\xff\x10", 2 ); // call dword ptr [eax]
@@ -8930,9 +8931,9 @@ namespace test
             sym.mem->write_buffer(0x111111, (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.cpu.ctx().set(X86::ESP, exprcst(32, 0x10004));
             sym.run_from(0x4000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x111111, "ArchX86: failed to disassembly and/or execute CALL");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESP)->as_uint() == 0x10000, "ArchX86: failed to disassembly and/or execute CALL");
-            nb += _assert(  sym.mem->read(0x10000, 4)->as_uint() == 0x4002, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x111111, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESP).as_uint() == 0x10000, "ArchX86: failed to disassembly and/or execute CALL");
+            nb += _assert(  sym.mem->read(0x10000, 4).as_uint() == 0x4002, "ArchX86: failed to disassembly and/or execute CALL");
             
             return nb;
         }
@@ -8953,10 +8954,10 @@ namespace test
             sym.cpu.ctx().set(X86::ECX, exprcst(32, 4));
             sym.cpu.ctx().set(X86::DF, exprcst(8, 0));
             sym.run_from(0x1000, 5);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REP MOVSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x3004, "ArchX86: failed to disassembly and/or execute REP MOVSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x2004, "ArchX86: failed to disassembly and/or execute REP MOVSB");
-            nb += _assert(  sym.mem->read(0x3000, 8)->as_uint() == 0x0000000044434241, "ArchX86: failed to disassembly and/or execute REP MOVSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REP MOVSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x3004, "ArchX86: failed to disassembly and/or execute REP MOVSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x2004, "ArchX86: failed to disassembly and/or execute REP MOVSB");
+            nb += _assert(  sym.mem->read(0x3000, 8).as_uint() == 0x0000000044434241, "ArchX86: failed to disassembly and/or execute REP MOVSB");
 
             sym.mem->write_buffer(0x3000, (uint8_t*)"\x00\x00\x00\x00", 4);
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x2000));
@@ -8964,10 +8965,10 @@ namespace test
             sym.cpu.ctx().set(X86::ECX, exprcst(32, 0));
             sym.cpu.ctx().set(X86::DF, exprcst(8, 1));
             sym.run_from(0x1000, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REP MOVSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x3000, "ArchX86: failed to disassembly and/or execute REP MOVSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x2000, "ArchX86: failed to disassembly and/or execute REP MOVSB");
-            nb += _assert(  sym.mem->read(0x3000, 8)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute REP MOVSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REP MOVSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x3000, "ArchX86: failed to disassembly and/or execute REP MOVSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x2000, "ArchX86: failed to disassembly and/or execute REP MOVSB");
+            nb += _assert(  sym.mem->read(0x3000, 8).as_uint() == 0, "ArchX86: failed to disassembly and/or execute REP MOVSB");
             
             return nb;
         }
@@ -8988,9 +8989,9 @@ namespace test
             sym.cpu.ctx().set(X86::ZF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::DF, exprcst(8, 0));
             sym.run_from(0x1000, 5);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x3005, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x2005, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x3005, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x2005, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
 
             sym.cpu.ctx().set(X86::ESI, exprcst(32, 0x2000));
             sym.cpu.ctx().set(X86::EDI, exprcst(32, 0x3000));
@@ -8998,9 +8999,9 @@ namespace test
             sym.cpu.ctx().set(X86::ZF, exprcst(8, 1));
             sym.cpu.ctx().set(X86::DF, exprcst(8, 0));
             sym.run_from(0x1000, 4);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x3003, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ESI)->as_uint() == 0x2003, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x3003, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
+            nb += _assert(  sym.cpu.ctx().get(X86::ESI).as_uint() == 0x2003, "ArchX86: failed to disassembly and/or execute REPE CMPSB");
 
             return nb;
         }
@@ -9020,9 +9021,9 @@ namespace test
             sym.cpu.ctx().set(X86::ZF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::DF, exprcst(8, 0));
             sym.run_from(0x1000, 7);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x2007, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 1, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x2007, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 1, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
             
             
             sym.cpu.ctx().set(X86::EDI, exprcst(32, 0x2000));
@@ -9031,9 +9032,9 @@ namespace test
             sym.cpu.ctx().set(X86::ZF, exprcst(8, 0));
             sym.cpu.ctx().set(X86::DF, exprcst(8, 0));
             sym.run_from(0x1000, 5);
-            nb += _assert(  sym.cpu.ctx().get(X86::EIP)->as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::EDI)->as_uint() == 0x2004, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
-            nb += _assert(  sym.cpu.ctx().get(X86::ZF)->as_uint() == 0, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EIP).as_uint() == 0x1002, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
+            nb += _assert(  sym.cpu.ctx().get(X86::EDI).as_uint() == 0x2004, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
+            nb += _assert(  sym.cpu.ctx().get(X86::ZF).as_uint() == 0, "ArchX86: failed to disassembly and/or execute REPNE SCASB");
 
             return nb;
         }

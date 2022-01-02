@@ -29,12 +29,6 @@ Number::Number(): size(0), cst_(-1), mpz_(0){}
 
 Number::Number(size_t bits): size(bits), cst_(0), mpz_(0){}
 
-Number::Number(size_t bits, cst_t value): size(bits), cst_(value)
-{
-    if (bits > 64)
-        set_mpz(value);
-}
-
 Number::~Number(){}
 
 void Number::adjust_mpz()
@@ -91,6 +85,14 @@ cst_t __number_cst_sign_extend(size_t size, cst_t val)
         val = ((((ucst_t)1<<size)-1) & val);
     }
     return val;
+}
+
+Number::Number(size_t bits, cst_t value): size(bits)
+{
+    if (bits > 64)
+        set_mpz(value);
+    else
+        cst_ = __number_cst_sign_extend(size, value);
 }
 
 /// Set the number to simple value 'val'
@@ -412,7 +414,7 @@ void Number::set_div(const Number& n1, const Number& n2)
 void Number::set_extract(const Number& n, unsigned int high, unsigned int low)
 {
     cst_t tmp;
-    size = high - low + 1;
+    size_t tmp_size = high - low + 1;
     if (n.size <= 64)
     {
         ucst_t mask;
@@ -422,6 +424,7 @@ void Number::set_extract(const Number& n, unsigned int high, unsigned int low)
             mask = (((cst_t)1 << (high+1))-1);
 
         tmp =  ((ucst_t)n.cst_ & mask) >> (ucst_t)low;
+        size = tmp_size;
         set_cst(tmp);
     }
     else
@@ -429,7 +432,7 @@ void Number::set_extract(const Number& n, unsigned int high, unsigned int low)
         mpz_t tmp;
         mpz_init_set_ui(tmp, 0); // init tmp mpz
         // Copy bit by bit
-        for (unsigned int i = 0; i < size; i++)
+        for (unsigned int i = 0; i < tmp_size; i++)
         {
             if (mpz_tstbit(n.mpz_.get_mpz_t(), i+low) == 1)
                 mpz_setbit(tmp, i);
@@ -437,6 +440,7 @@ void Number::set_extract(const Number& n, unsigned int high, unsigned int low)
                 mpz_clrbit(tmp, i);
         }
 
+        size = tmp_size;
         mpz_ = mpz_class(tmp);
         mpz_clear(tmp); // clear tmp mpz
         // adjust_mpz(); no need to adjust, we set bits manually
@@ -450,14 +454,15 @@ void Number::set_extract(const Number& n, unsigned int high, unsigned int low)
 
 void Number::set_concat(const Number& n1, const Number& n2)
 {
-    size = n1.size + n2.size;
-    if (size <= 64)
+    size_t tmp_size = n1.size + n2.size; // Use tmp size because *this might be n1 or n2
+    if (tmp_size <= 64)
     {
         cst_t tmp = n2.cst_;
         // Mask higher bits before doing OR
         tmp &= (((ucst_t)1<<(ucst_t)n2.size)-1);
         // Do OR to set higher part
         tmp |= (ucst_t)n1.cst_ << (ucst_t)n2.size;
+        size = tmp_size;
         set_cst(tmp);
     }
     else
@@ -478,6 +483,7 @@ void Number::set_concat(const Number& n1, const Number& n2)
             mpz_ior(mpz_.get_mpz_t(), mpz_.get_mpz_t(), t1);
             mpz_clear(t1);
         }
+        size = tmp_size;
         adjust_mpz();
     }
 }
@@ -620,7 +626,7 @@ void Number::set_overwrite(const Number& n1, const Number& n2, int lb)
     }
 }
 
-bool Number::sless_than(const Number& other)
+bool Number::sless_than(const Number& other) const
 {
     if (size <= 64)
     {
@@ -634,7 +640,7 @@ bool Number::sless_than(const Number& other)
     }
 }
 
-bool Number::slessequal_than(const Number& other)
+bool Number::slessequal_than(const Number& other) const
 {
     if (size <= 64)
     {
@@ -648,7 +654,7 @@ bool Number::slessequal_than(const Number& other)
     }
 }
 
-bool Number::less_than(const Number& other)
+bool Number::less_than(const Number& other) const
 {
     if (size <= 64)
     {
@@ -688,7 +694,7 @@ bool Number::less_than(const Number& other)
     }
 }
 
-bool Number::lessequal_than(const Number& other)
+bool Number::lessequal_than(const Number& other) const
 {
     if (size <= 64)
     {
@@ -729,7 +735,7 @@ bool Number::lessequal_than(const Number& other)
 }
 
 
-bool Number::equal_to(const Number& other)
+bool Number::equal_to(const Number& other) const
 {
     if (size <= 64)
     {

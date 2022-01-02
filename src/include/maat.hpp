@@ -17,6 +17,7 @@
 #include "settings.hpp"
 #include "event.hpp"
 #include "pinst.hpp"
+#include "value.hpp"
 
 
 #endif

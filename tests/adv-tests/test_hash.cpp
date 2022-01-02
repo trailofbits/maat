@@ -1,6 +1,7 @@
 #include "engine.hpp"
 #include "memory.hpp"
 #include "exception.hpp"
+#include "varcontext.hpp"
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -36,7 +37,7 @@ namespace hash
         engine.cpu.ctx().set(X86::ESP, 0x9000);
         engine.cpu.ctx().set(X86::EBP, 0x9000);
         /* Set input at esp + 0x4 */
-        engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+4, exprcst(32, in));
+        engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint()+4, exprcst(32, in));
 
         engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x5a6));
         // Execute
@@ -44,7 +45,7 @@ namespace hash
         engine.hooks.disable_all();
         
         // Check res in eax
-        return _assert(engine.cpu.ctx().get(X86::EAX)->as_uint() == out, "Hash emulation test: X86: simple_algo_1: failed");
+        return _assert(engine.cpu.ctx().get(X86::EAX).as_uint() == out, "Hash emulation test: X86: simple_algo_1: failed");
     }
     
     
@@ -193,8 +194,8 @@ namespace hash
         engine.cpu.ctx().set(X86::EBP, exprcst(32, 0xffffd15c));
         // Set input string at esp+4 and length at esp+8
         engine.mem->write_buffer(0x11000, (uint8_t*)in, strlen(in));
-        engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+4, exprcst(32, 0x11000));
-        engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint()+8, exprcst(32, strlen(in)));
+        engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint()+4, exprcst(32, 0x11000));
+        engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint()+8, exprcst(32, strlen(in)));
 
         engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x8048b81));
         // Execute
@@ -202,10 +203,10 @@ namespace hash
         engine.hooks.disable_all();
 
         // Check res at 0x80dbca4
-        return _assert( engine.mem->read(0x80dbcac, 4)->as_uint() == out0 &&
-                        engine.mem->read(0x80dbca4, 4)->as_uint() == out1 &&
-                        engine.mem->read(0x80dbca8, 4)->as_uint() == out2 &&
-                        engine.mem->read(0x80dbcb0, 4)->as_uint() == out3
+        return _assert( engine.mem->read(0x80dbcac, 4).as_uint() == out0 &&
+                        engine.mem->read(0x80dbca4, 4).as_uint() == out1 &&
+                        engine.mem->read(0x80dbca8, 4).as_uint() == out2 &&
+                        engine.mem->read(0x80dbcb0, 4).as_uint() == out3
                         , "Hash emulation test: md5: failed");
     }
 

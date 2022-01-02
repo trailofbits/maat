@@ -18,7 +18,7 @@ Type ABI::type() const
     return _type;
 }
 
-void ABI::prepare_args(MaatEngine& engine, const std::vector<Expr>& args) const
+void ABI::prepare_args(MaatEngine& engine, const std::vector<Value>& args) const
 {
     throw env_exception("ABI::prepare_args(): cannot be called from base class");
 }
@@ -26,13 +26,13 @@ void ABI::prepare_args(MaatEngine& engine, const std::vector<Expr>& args) const
 void ABI::get_args(
     MaatEngine& engine,
     const args_spec_t& args_spec,
-    std::vector<Expr>& args
+    std::vector<Value>& args
 ) const
 {
     throw env_exception("ABI::get_args(): cannot be called from base class");
 }
 
-Expr ABI::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+Value ABI::get_arg(MaatEngine& engine, int n, size_t arg_size) const
 {
     throw env_exception("ABI::get_arg(): cannot be called from base class");
 }
@@ -80,7 +80,7 @@ const ABI& X86_CDECL::instance()
 void X86_CDECL::get_args(
     MaatEngine& engine,
     const args_spec_t& args_spec,
-    std::vector<Expr>& args
+    std::vector<Value>& args
 ) const
 {
     int i = 0;
@@ -88,12 +88,12 @@ void X86_CDECL::get_args(
         args.push_back(get_arg(engine, i++, arg));
 }
 
-Expr X86_CDECL::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+Value X86_CDECL::get_arg(MaatEngine& engine, int n, size_t arg_size) const
 {
     // Regs on the stack, pushed right to left
     arg_size = ABI::real_arg_size(engine, arg_size);
-    Expr res = engine.mem->read(engine.cpu.ctx().get(X86::ESP)->as_uint() + 4 + 4*n, 4);
-    return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    Value res = engine.mem->read(engine.cpu.ctx().get(X86::ESP).as_uint() + 4 + 4*n, 4);
+    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
 }
 
 void X86_CDECL::set_ret_value(
@@ -111,17 +111,16 @@ void X86_CDECL::set_ret_value(
 void X86_CDECL::prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const
 {
     // Push the return address, simply
-    engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP) - 4);
-    engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint(), ret_addr, 4);
+    engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP).as_uint() - 4);
+    engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint(), ret_addr, 4);
 }
 
 void X86_CDECL::ret(MaatEngine& engine) const
 {
     // Pop EIP
-    engine.cpu.ctx().set(X86::EIP, engine.mem->read((engine.cpu.ctx().get(X86::ESP)->as_uint()), 4));
-    engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP) + 4);
+    engine.cpu.ctx().set(X86::EIP, engine.mem->read((engine.cpu.ctx().get(X86::ESP).as_uint()), 4));
+    engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP).as_uint() + 4);
 }
-
 
 
 // ========== ABI X86 STDCALL ============
@@ -137,7 +136,7 @@ const ABI& X86_STDCALL::instance()
 void X86_STDCALL::get_args(
     MaatEngine& engine,
     const args_spec_t& args_spec,
-    std::vector<Expr>& args
+    std::vector<Value>& args
 ) const
 {
     int i = 0;
@@ -145,12 +144,12 @@ void X86_STDCALL::get_args(
         args.push_back(get_arg(engine, i++, arg));
 }
 
-Expr X86_STDCALL::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+Value X86_STDCALL::get_arg(MaatEngine& engine, int n, size_t arg_size) const
 {
     // Regs on the stack, pushed right to left
     arg_size = ABI::real_arg_size(engine, arg_size);
-    Expr res = engine.mem->read(engine.cpu.ctx().get(X86::ESP)->as_uint() + 4 + 4*n, 4);
-    return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    Value res = engine.mem->read(engine.cpu.ctx().get(X86::ESP).as_uint() + 4 + 4*n, 4);
+    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
 }
 
 void X86_STDCALL::set_ret_value(
@@ -168,15 +167,15 @@ void X86_STDCALL::set_ret_value(
 void X86_STDCALL::prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const
 {
     // Push the return address, simply
-    engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP) - 4);
-    engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint(), ret_addr, 4);
+    engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP).as_uint() - 4);
+    engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint(), ret_addr, 4);
 }
 
 void X86_STDCALL::ret(MaatEngine& engine) const
 {
     // Pop EIP
-    engine.cpu.ctx().set(X86::EIP, engine.mem->read((engine.cpu.ctx().get(X86::ESP)->as_uint()), 4));
-    engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP) + 4);
+    engine.cpu.ctx().set(X86::EIP, engine.mem->read((engine.cpu.ctx().get(X86::ESP).as_uint()), 4));
+    engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP).as_uint() + 4);
 }
 
 
@@ -193,7 +192,7 @@ const ABI& X86_LINUX_SYSENTER::instance()
 void X86_LINUX_SYSENTER::get_args(
     MaatEngine& engine,
     const args_spec_t& args_spec,
-    std::vector<Expr>& args
+    std::vector<Value>& args
 ) const
 {
     int i = 0;
@@ -201,7 +200,7 @@ void X86_LINUX_SYSENTER::get_args(
         args.push_back(get_arg(engine, i++, arg));
 }
 
-Expr X86_LINUX_SYSENTER::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+Value X86_LINUX_SYSENTER::get_arg(MaatEngine& engine, int n, size_t arg_size) const
 {
     std::vector<reg_t> arg_regs{X86::EBX, X86::ECX, X86::EDX, X86::ESI, X86::EDI};
     if (n > 6)
@@ -209,14 +208,14 @@ Expr X86_LINUX_SYSENTER::get_arg(MaatEngine& engine, int n, size_t arg_size) con
         throw env_exception("X86 Linux INT80 ABI doesn't support more than 6 arguments");
     }
 
-    Expr res = nullptr;
+    Value res;
     if (n < 6)
         res = engine.cpu.ctx().get(arg_regs[n]);
     else // n == 6
-        res = engine.mem->read(engine.cpu.ctx().get(X86::EBP)->as_uint(), 4);
+        res = engine.mem->read(engine.cpu.ctx().get(X86::EBP).as_uint(), 4);
 
     arg_size = ABI::real_arg_size(engine, arg_size);
-    return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
 }
 
 // ========== ABI X64 SYSTEM V ============
@@ -232,7 +231,7 @@ const ABI& X64_SYSTEM_V::instance()
 void X64_SYSTEM_V::get_args(
     MaatEngine& engine,
     const args_spec_t& args_spec,
-    std::vector<Expr>& args
+    std::vector<Value>& args
 ) const
 {
     int i = 0;
@@ -240,10 +239,10 @@ void X64_SYSTEM_V::get_args(
         args.push_back(get_arg(engine, i++, arg));
 }
 
-Expr X64_SYSTEM_V::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+Value X64_SYSTEM_V::get_arg(MaatEngine& engine, int n, size_t arg_size) const
 {
     std::vector<reg_t> arg_regs{X64::RDI, X64::RSI, X64::RDX, X64::RCX, X64::R8, X64::R9};
-    Expr res = nullptr;
+    Value res;
     arg_size = ABI::real_arg_size(engine, arg_size);
     if (n < 6)
     {
@@ -251,19 +250,19 @@ Expr X64_SYSTEM_V::get_arg(MaatEngine& engine, int n, size_t arg_size) const
     }
     else
     {
-        addr_t stack = engine.cpu.ctx().get(X64::RSP)->as_uint() + 8;
+        addr_t stack = engine.cpu.ctx().get(X64::RSP).as_uint() + 8;
         res = engine.mem->read(stack+(8*(n-arg_regs.size())), arg_size);
     }
     // TODO(boyan): this assumes little endian if we read arguments
     // from the stack
-    return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
 }
 
 void X64_SYSTEM_V::prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const
 {
     // Push the return address, simply
-    engine.cpu.ctx().set(X64::RSP, engine.cpu.ctx().get(X64::RSP) - 8);
-    engine.mem->write(engine.cpu.ctx().get(X64::RSP), ret_addr, 8);
+    engine.cpu.ctx().set(X64::RSP, engine.cpu.ctx().get(X64::RSP).as_uint() - 8);
+    engine.mem->write(engine.cpu.ctx().get(X64::RSP).as_uint(), ret_addr, 8);
 }
 
 void X64_SYSTEM_V::set_ret_value(
@@ -281,8 +280,8 @@ void X64_SYSTEM_V::set_ret_value(
 void X64_SYSTEM_V::ret(MaatEngine& engine) const
 {
     // Caller clean-up, we just simulate a 'ret' instruction
-    engine.cpu.ctx().set(X64::RIP, engine.mem->read((engine.cpu.ctx().get(X64::RSP)), 8));
-    engine.cpu.ctx().set(X64::RSP, engine.cpu.ctx().get(X64::RSP) + 8);
+    engine.cpu.ctx().set(X64::RIP, engine.mem->read(engine.cpu.ctx().get(X64::RSP).as_uint(), 8));
+    engine.cpu.ctx().set(X64::RSP, engine.cpu.ctx().get(X64::RSP).as_uint() + 8);
 }
 
 // ========== ABI X64 SYSCALL LINUX ============
@@ -298,7 +297,7 @@ const ABI& X64_LINUX_SYSCALL::instance()
 void X64_LINUX_SYSCALL::get_args(
     MaatEngine& engine,
     const args_spec_t& args_spec,
-    std::vector<Expr>& args
+    std::vector<Value>& args
 ) const
 {
     int i = 0;
@@ -306,10 +305,10 @@ void X64_LINUX_SYSCALL::get_args(
         args.push_back(get_arg(engine, i++, arg));
 }
 
-Expr X64_LINUX_SYSCALL::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+Value X64_LINUX_SYSCALL::get_arg(MaatEngine& engine, int n, size_t arg_size) const
 {
     std::vector<reg_t> arg_regs{X64::RDI, X64::RSI, X64::RDX, X64::R10, X64::R8, X64::R9};
-    Expr res = nullptr;
+    Value res;
     arg_size = ABI::real_arg_size(engine, arg_size);
     if (n >= arg_regs.size())
     {
@@ -317,9 +316,9 @@ Expr X64_LINUX_SYSCALL::get_arg(MaatEngine& engine, int n, size_t arg_size) cons
     }
     else
     {
-        res = engine.cpu.ctx().get(arg_regs[n]);
+        res = engine.cpu.ctx().get(arg_regs[n]).as_expr();
     }
-    return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
 }
 
 void X64_LINUX_SYSCALL::set_ret_value(
@@ -353,7 +352,7 @@ const ABI& X86_LINUX_INT80::instance()
 void X86_LINUX_INT80::get_args(
     MaatEngine& engine,
     const args_spec_t& args_spec,
-    std::vector<Expr>& args
+    std::vector<Value>& args
 ) const
 {
     int i = 0;
@@ -361,10 +360,10 @@ void X86_LINUX_INT80::get_args(
         args.push_back(get_arg(engine, i++, arg));
 }
 
-Expr X86_LINUX_INT80::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+Value X86_LINUX_INT80::get_arg(MaatEngine& engine, int n, size_t arg_size) const
 {
     std::vector<reg_t> arg_regs{X86::EBX, X86::ECX, X86::EDX, X86::ESI, X86::EDI, X86::EBP};
-    Expr res = nullptr;
+    Value res;
     arg_size = ABI::real_arg_size(engine, arg_size);
     if (n >= arg_regs.size())
     {
@@ -374,7 +373,7 @@ Expr X86_LINUX_INT80::get_arg(MaatEngine& engine, int n, size_t arg_size) const
     {
         res = engine.cpu.ctx().get(arg_regs[n]);
     }
-    return (res->size/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
 }
 
 void X86_LINUX_INT80::set_ret_value(

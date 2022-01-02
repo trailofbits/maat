@@ -3,6 +3,7 @@
 #include "exception.hpp"
 #include "solver.hpp"
 #include "loader.hpp"
+#include "varcontext.hpp"
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -54,8 +55,8 @@ namespace solve_symbolic_ptr{
             // Set EIP at beginning of func
             engine.cpu.ctx().set(X86::EIP, 0x52d);
             // Put argument at esp+4
-            engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP)->as_uint() - 0x40);
-            engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint() + 4, symarg);
+            engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP).as_uint() - 0x40);
+            engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint() + 4, symarg);
             // Breakpoint at the end of func
             engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x588));
 
@@ -66,7 +67,7 @@ namespace solve_symbolic_ptr{
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
-            sol->add(engine.cpu.ctx().get(X86::EAX) == 42);
+            sol->add(engine.cpu.ctx().get(X86::EAX).as_expr() == 42);
             sol->add(0 <= symarg && symarg < 6);
             nb += _assert(sol->check(), "Couldn't find model to solve symbolic pointer");
             auto model = sol->get_model();
@@ -106,11 +107,11 @@ namespace solve_symbolic_ptr{
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
-            sol->add(engine.cpu.ctx().get(X86::EAX) == 42);
+            sol->add(engine.cpu.ctx().get(X86::EAX).as_expr() == 42);
 
             nb += _assert(sol->check(), "Couldn't find model to solve symbolic pointer");
             auto model = sol->get_model();
-            nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_uint(*model) == 42, 
+            nb += _assert(engine.cpu.ctx().get(X86::EAX).as_uint(*model) == 42, 
                 "Re-evaluating result with new VarContext gives wrong value");
 
             // Try to restore model and run the program again with the solved solution
@@ -122,7 +123,7 @@ namespace solve_symbolic_ptr{
             engine.run();
 
             nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to re-run the target program to check solution ");
-            nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_uint(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
+            nb += _assert(engine.cpu.ctx().get(X86::EAX).as_uint(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
 
             return nb;
         }
@@ -165,11 +166,11 @@ namespace solve_symbolic_ptr{
             sol->reset();
             for (auto& constraint : engine.path.constraints())
                 sol->add(constraint);
-            sol->add(engine.cpu.ctx().get(X86::EAX) == 42);
+            sol->add(engine.cpu.ctx().get(X86::EAX).as_expr() == 42);
 
             nb += _assert(sol->check(), "Couldn't find model to solve symbolic pointer");
             auto model = sol->get_model();
-            nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_uint(*model) == 42,
+            nb += _assert(engine.cpu.ctx().get(X86::EAX).as_uint(*model) == 42,
                 "Re-evaluating result with new VarContext gives wrong value");
 
             // Try to restore model and run the program again with the solved solution
@@ -181,7 +182,7 @@ namespace solve_symbolic_ptr{
             engine.run();
 
             nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to re-run the target program to check solution ");
-            nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_int(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
+            nb += _assert(engine.cpu.ctx().get(X86::EAX).as_int(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
 
             return nb;
         }
@@ -203,8 +204,8 @@ namespace solve_symbolic_ptr{
             // Set EIP at beginning of func
             engine.cpu.ctx().set(X86::EIP, exprcst(32, 0x52d));
             // Put argument at esp+4
-            engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP) - 0x40);
-            engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint() + 4, symarg);
+            engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP).as_expr() - 0x40);
+            engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint() + 4, symarg);
             // Breakpoint at the end of func
             engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x57d));
 
@@ -216,7 +217,7 @@ namespace solve_symbolic_ptr{
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
-            sol->add( engine.cpu.ctx().get(X86::EAX) == 42);
+            sol->add( engine.cpu.ctx().get(X86::EAX).as_expr() == 42);
             sol->add( symarg <= 6 && symarg >= 0);
 
             nb += _assert(sol->check(), "Couldn't find model to solve symbolic pointer");
@@ -254,11 +255,11 @@ namespace solve_symbolic_ptr{
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
-            sol->add( engine.cpu.ctx().get(X86::EAX) == 42);
+            sol->add( engine.cpu.ctx().get(X86::EAX).as_expr() == 42);
 
             nb += _assert(sol->check(), "Couldn't find model to solve symbolic pointer");
             auto model = sol->get_model();
-            nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_uint(*model) == 42, 
+            nb += _assert(engine.cpu.ctx().get(X86::EAX).as_uint(*model) == 42, 
                 "Re-evaluating result with new VarContext gives wrong value");
 
             // Try to restore model and run the program again with the solved solution
@@ -270,7 +271,7 @@ namespace solve_symbolic_ptr{
             engine.run();
 
             nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to re-run the target program to check solution ");
-            nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_uint(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
+            nb += _assert(engine.cpu.ctx().get(X86::EAX).as_uint(*engine.vars) == 42, "Re-running program with the solution didn't produce the right result ");
 
             return nb;
         }
@@ -293,9 +294,9 @@ namespace solve_symbolic_ptr{
             // Set EIP at beginning of func
             engine.cpu.ctx().set(X86::EIP, exprcst(32, 0x52d));
             // Put argument at esp+4
-            engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP) - 0x40);
-            engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint() + 4, idx2);
-            engine.mem->write(engine.cpu.ctx().get(X86::ESP)->as_uint() + 8, idx1);
+            engine.cpu.ctx().set(X86::ESP, engine.cpu.ctx().get(X86::ESP).as_expr() - 0x40);
+            engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint() + 4, idx2);
+            engine.mem->write(engine.cpu.ctx().get(X86::ESP).as_uint() + 8, idx1);
 
             // Breakpoint at the end of func
             engine.hooks.add(Event::EXEC, When::BEFORE, "", AddrFilter(0x5cc));
@@ -310,7 +311,7 @@ namespace solve_symbolic_ptr{
 
             // Check if there is a value for the index so that we write at the right address :)
             sol->reset();
-            sol->add(engine.cpu.ctx().get(X86::EAX) == 42);
+            sol->add(engine.cpu.ctx().get(X86::EAX).as_expr() == 42);
             sol->add(idx1 >= 0);
             sol->add(idx2 >= 0);
 
@@ -318,7 +319,7 @@ namespace solve_symbolic_ptr{
             auto model = sol->get_model();
             engine.vars->update_from(*model);
 
-            nb += _assert(engine.cpu.ctx().get(X86::EAX)->as_uint(*engine.vars) == 42, "Got wrong model when solving symbolic pointer");
+            nb += _assert(engine.cpu.ctx().get(X86::EAX).as_uint(*engine.vars) == 42, "Got wrong model when solving symbolic pointer");
             nb += _assert(engine.vars->get("idx1")%10 == engine.vars->get("idx2")%10, "Got wrong model when solving symbolic pointer");
 
             return nb;

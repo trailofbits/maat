@@ -39,9 +39,9 @@ int CPU_set_attro(PyObject *self, PyObject *attr, PyObject *value)
         // Get reg number
         ir::reg_t reg = as_cpu_object(self).arch->reg_num(name);
         // Check if value to set is expression or integer
-        if (PyObject_TypeCheck(value, (PyTypeObject*)get_Expr_Type()))
+        if (PyObject_TypeCheck(value, (PyTypeObject*)get_Value_Type()))
         {
-            as_cpu_object(self).cpu->ctx().set(reg, *(as_expr_object(value).expr));
+            as_cpu_object(self).cpu->ctx().set(reg, *(as_value_object(value).value));
         }
         else if (PyLong_Check(value))
         {
@@ -93,7 +93,7 @@ PyObject* CPU_get_attro(PyObject *self, PyObject *attr)
     try
     {
         ir::reg_t reg = as_cpu_object(self).arch->reg_num(name);
-        return PyExpr_FromExprAndVarContext(as_cpu_object(self).cpu->ctx().get(reg), *(as_cpu_object(self).varctx));
+        return PyValue_FromValueAndVarContext(as_cpu_object(self).cpu->ctx().get(reg), *(as_cpu_object(self).varctx));
     }
     catch(const ir_exception& e)
     {

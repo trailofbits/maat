@@ -203,14 +203,15 @@ public:
     void extend_before(addr_t nb_bytes);
 
 public:
-    Expr read(addr_t addr, unsigned int nb_bytes); ///< Read memory
-    void write(addr_t addr, const Expr& val, VarContext& ctx); ///< Write abstract value
+    Value read(addr_t addr, unsigned int nb_bytes); ///< Read memory
+    void read(Value& res, addr_t addr, unsigned int nb_bytes); ///< Read memory
+    void write(addr_t addr, const Value& val, VarContext& ctx); ///< Write value
     void write(addr_t addr, cst_t val, unsigned int nb_bytes); ///< Write concrete value
     void write(addr_t addr, uint8_t* src, int nb_bytes); ///< Write concrete buffer
-    void write(addr_t addr, const std::vector<Expr>& buf, VarContext& ctx); ///< Write abstract buffer
+    void write(addr_t addr, const std::vector<Value>& buf, VarContext& ctx); ///< Write buffer of values
 
     /** \brief Read memory at the address pointed by a symbolic pointer */
-    Expr symbolic_ptr_read(const Expr& addr, ValueSet& addr_value_set, unsigned int nb_bytes, const Expr& base);
+    void symbolic_ptr_read(Value& res, const Expr& addr, ValueSet& addr_value_set, unsigned int nb_bytes, const Expr& base);
 
 public:
     /* Special reading and writing (for snapshoting) */
@@ -246,10 +247,10 @@ class SymbolicMemWrite
 {
 public:
     Expr addr; ///< Address of the write (symbolic pointer)
-    Expr value; ///< Value written
+    Value value; ///< Value written
     ValueSet refined_value_set;
-    SymbolicMemWrite(Expr a, Expr v, ValueSet& vs): addr(a), value(v), refined_value_set(vs){};
-    SymbolicMemWrite(addr_t a, size_t size, Expr val)
+    SymbolicMemWrite(Expr a, const Value& val, ValueSet& vs): addr(a), value(val), refined_value_set(vs){};
+    SymbolicMemWrite(addr_t a, size_t size, const Value& val)
     {
         addr = exprcst(size, a);
         value = val;
@@ -321,16 +322,16 @@ public:
     SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContext> varctx);
     /** \brief Record symbolic pointer write. 'addr_min' and 'addr_max' are the
      * minimal and maximal concrete values that the 'addr' expression can take */
-    void symbolic_ptr_write(const Expr& addr, Expr val, addr_t addr_min, addr_t addr_max);
+    void symbolic_ptr_write(const Expr& addr, const Value& val, addr_t addr_min, addr_t addr_max);
     /// Record concrete pointer write
-    void concrete_ptr_write(const Expr& addr, Expr val); // TODO: addr was 'Expr' before ?
-    void concrete_ptr_write_buffer(addr_t addr, uint8_t* src, int nb_bytes, size_t arch_bits);
+    void concrete_ptr_write(Expr addr, const Value& val);
+    void concrete_ptr_write_buffer(Expr addr, uint8_t* src, int nb_bytes, size_t arch_bits);
 
     /// Read from concrete address 'addr'
-    Expr concrete_ptr_read(const Expr& addr, int nb_bytes, Expr base);
+    Expr concrete_ptr_read(Expr addr, int nb_bytes, Expr base);
     /** \brief Read from symbolic address 'addr'. 'addr_value_set' is a reference to
      * the set of values that can be taken by 'addr' */
-    Expr symbolic_ptr_read(const Expr& addr, ValueSet& addr_value_set, int nb_bytes, Expr base);
+    Expr symbolic_ptr_read(Expr& addr, ValueSet& addr_value_set, int nb_bytes, Expr base);
 
     /// Return true if the memory area contains a recorded symbolic write
     bool contains_symbolic_write(addr_t start, addr_t end);
@@ -410,54 +411,53 @@ public:
     /// Return free if no segment exists between 'start' and 'end'
     bool is_free(addr_t start, addr_t end);
 
-// Read/Write to abstract address
+// Main read/Write interface for the core engine operations (most performant functions)
 public:
-    /** \brief Read *nb_bytes* at address *addr*. If *addr* is not concrete, this
-     * function automatically performs a symbolic pointer read. */
-    Expr read(Expr addr, unsigned int nb_bytes);
-    /** \brief Read a buffer in memory
-     * @param addr Start address of the buffer
-     * @param nb_elems Number of elements to read in the buffer
-     * @param elem_size Size of a single buffer element in bytes */ 
-    std::vector<Expr> read_buffer(Expr addr, unsigned int nb_elems, unsigned int elem_size=1);
+    /// Read 'nb_bytes' at address 'addr'
+    void read(Value& res, addr_t addr, unsigned int nb_bytes, mem_alert_t* alert=nullptr, bool force_concrete_read=false);
     /** \brief Read a buffer in memory
      * @param res Vector where to store the buffer elements
      * @param addr Start address of the buffer
      * @param nb_elems Number of elements to read in the buffer
      * @param elem_size Size of a single buffer element in bytes */
-    void read_buffer(std::vector<Expr>& res, Expr addr, unsigned int nb_elems, unsigned int elem_size=1);
+    void read_buffer(std::vector<Value>& res, const Value& addr, unsigned int nb_elems, unsigned int elem_size=1);
     /** \brief Read a concrete string of length *len* from address *addr*. If len=0,
      * it reads a C-style string and stops at the first null-byte. If *addr* is not concrete,
      * the function raises a **mem_exception**. */
-    std::string read_string(Expr addr, unsigned int len=0);
-    /** \brief Write abstract expression in memory. **Warning**: this function can be used by users
-     * but the engine should only use write() with concrete addresses, or symbolic_ptr_write() directly */
-    void write(Expr addr, Expr val, bool ignore_mem_permissions=false);
-    /** Write concrete value in memory. **Warning**: this function can be used by users
-     * but the engine should only use write() with concrete addresses, or symbolic_ptr_write() directly */
-    void write(Expr addr, cst_t val, int nb_bytes, bool ignore_mem_permissions=false);
-    /// Write concrete buffer in memory
-    void write_buffer(Expr addr, uint8_t* src, int nb_bytes, bool ignore_mem_permissions=false);
-    /// Write abstract buffer in memory 
-    void write_buffer(Expr addr, const std::vector<Expr>& src, bool ignore_mem_permissions=false);
-
-public:
-    /// Read 'nb_bytes' at address 'addr'
-    Expr read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert=nullptr, bool force_concrete_read=false);
-    /// Read a buffer of 'nb_elems' elements of size 'elem_size' from address 'addr'
-    std::vector<Expr> read_buffer(addr_t addr, unsigned int nb_elems, unsigned int elem_size=1);
-    /** \brief Read a buffer of 'nb_elems' elements of size 'elem_size' from address 'addr'
-     * and writes each element as an abstract expression in the vector 'res' */
-    void read_buffer(std::vector<Expr>& buffer, addr_t addr, unsigned int nb_elems, unsigned int elem_size=1);
-    /** \brief Read a concrete string of length 'len' from address 'addr'. If len=0,
-     * it reads a C-style string and stops at the first null-byte */
-    std::string read_string(addr_t addr, unsigned int len=0);
-    /// Write abstract expression in memory
+    std::string read_string(const Value& addr, unsigned int len=0);
+    /// Write 'value' at address 'addr'
     void write(
         addr_t addr,
-        Expr val, 
-        mem_alert_t* alert = nullptr, 
-        bool called_by_engine = false,
+        const Value& value,
+        mem_alert_t* alert = nullptr,
+        bool ignore_mem_permissions = false,  
+        bool called_by_engine = false
+    );
+    /// Write at a symbolic memory address. *range* is the range of possible values for *addr*
+    void symbolic_ptr_write(Expr addr, const ValueSet& range, const Value& val, const Settings& settings, mem_alert_t* alert=nullptr, bool called_by_engine=false);
+    /// Read at a symbolic memory address. *range* is the range of possible values for *addr*. Write result in 'res'
+    void symbolic_ptr_read(Value& res, Expr addr, const ValueSet& range, unsigned int nb_bytes, const Settings& settings);
+
+// Convenience read/write methods (less peformant)
+public:
+    /// Read 'nb_bytes' at address 'addr'
+    Value read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert=nullptr, bool force_concrete_read=false);
+    /// Read 'nb_bytes' at address 'addr'
+    Value read(const Value& addr, unsigned int nb_bytes, bool ignore_mem_permissions=false);
+    /** \brief Read *nb_bytes* at address *addr*. If *addr* is not concrete, this
+     * function automatically performs a symbolic pointer read. */
+    Expr read(Expr addr, unsigned int nb_bytes);
+    /// Write concrete value in memory
+    void write(
+        const Value& addr,
+        cst_t val,
+        int nb_bytes,
+        bool ignore_mem_permissions=false
+    );
+    /// Write 'value' at address 'addr'
+    void write(
+        const Value& addr,
+        const Value& value,
         bool ignore_mem_permissions = false
     );
     /// Write concrete value to memory
@@ -465,28 +465,37 @@ public:
         addr_t addr,
         cst_t val,
         int nb_bytes,
-        bool ignore_mem_permissions = false, 
-        mem_alert_t* alert = nullptr, 
-        bool called_by_engine = false
+        bool ignore_mem_permissions = false
     );
-    /// Write concrete value to memory
-    void write(
-        addr_t addr,
-        const Number& val,
-        bool ignore_mem_permissions = false,
-        mem_alert_t* alert = nullptr,
-        bool called_by_engine = false
-    );
+
+// Legacy read/write methods
+public:
+    void write(addr_t addr, Expr e);
+
+// Convenience methods to read/write buffers and strings
+public:
+    /** \brief Read a buffer in memory
+     * @param addr Start address of the buffer
+     * @param nb_elems Number of elements to read in the buffer
+     * @param elem_size Size of a single buffer element in bytes */ 
+    std::vector<Value> read_buffer(const Value& addr, unsigned int nb_elems, unsigned int elem_size=1);
+    /// Read a buffer of 'nb_elems' elements of size 'elem_size' from address 'addr'
+    std::vector<Value> read_buffer(addr_t addr, unsigned int nb_elems, unsigned int elem_size=1);
+    /** \brief Read a buffer of 'nb_elems' elements of size 'elem_size' from address 'addr'
+     * and writes each element as an abstract expression in the vector 'res' */
+    void read_buffer(std::vector<Value>& buffer, addr_t addr, unsigned int nb_elems, unsigned int elem_size=1);
+    /** \brief Read a concrete string of length 'len' from address 'addr'. If len=0,
+     * it reads a C-style string and stops at the first null-byte */
+    std::string read_string(addr_t addr, unsigned int len=0);
+    /// Write concrete buffer in memory
+    void write_buffer(const Value& addr, uint8_t* src, int nb_bytes, bool ignore_mem_permissions=false);
+    /// Write abstract buffer in memory 
+    void write_buffer(const Value& addr, const std::vector<Value>& src, bool ignore_mem_permissions=false);    
     /// Write a concrete buffer in memory 
     void write_buffer(addr_t addr, uint8_t* src, int nb_bytes, bool ignore_mem_permissions=false);
     /// Write an abstract buffer in memory 
-    void write_buffer(addr_t addr, const std::vector<Expr>& src, bool ignore_mem_permissions=false);
+    void write_buffer(addr_t addr, const std::vector<Value>& src, bool ignore_mem_permissions=false);
 
-public:
-    /// Write at a symbolic memory address. *range* is the range of possible values for *addr*
-    void symbolic_ptr_write(Expr addr, const ValueSet& range, Expr val, const Settings& settings, mem_alert_t* alert=nullptr, bool called_by_engine=false);
-    /// Read at a symbolic memory address. *range* is the range of possible values for *addr*
-    Expr symbolic_ptr_read(Expr addr, const ValueSet& range, unsigned int nb_bytes, const Settings& settings);
 public:
     /// Make a buffer purely symbolic, return the symbolic name of the buffer 
     std::string make_symbolic(addr_t addr, unsigned int nb_elems, unsigned int elem_size,  const std::string& basename);

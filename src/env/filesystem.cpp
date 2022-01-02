@@ -42,7 +42,7 @@ unsigned int PhysicalFile::copy_real_file(const std::string& filename)
     }
 }
 
-unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t& write_ptr)
+unsigned int PhysicalFile::write_buffer(const std::vector<Value>& buffer, addr_t& write_ptr)
 {
     int n = 0;
     VarContext dummy_ctx;
@@ -60,19 +60,19 @@ unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t&
         throw env_exception("Can not write to symbolic link file");
     }
 
-    for (const auto& e : buffer)
+    for (const auto& val : buffer)
     {
-        if (e->size/8 + write_ptr - 1 > data->end)
+        if (val.size()/8 + write_ptr - 1 > data->end)
         {
             // Extend file to write more
             data->extend_after(data->size()); // Double size
         }
         // Record write for snapshots
-        record_write(write_ptr, e->size/8);
+        record_write(write_ptr, val.size()/8);
         // Do the write
-        data->write(write_ptr, e, dummy_ctx);
-        write_ptr += e->size/8;
-        n += e->size/8;
+        data->write(write_ptr, val, dummy_ctx);
+        write_ptr += val.size()/8;
+        n += val.size()/8;
     }
 
     // Update size
@@ -87,10 +87,10 @@ unsigned int PhysicalFile::write_buffer(const std::vector<Expr>& buffer, addr_t&
         std::ostream& os = flush_stream.value().get();
         for (int i = 0; i < n; i++)
         {
-            Expr e = data->read(start_write_ptr+i, 1);
+            Value val = data->read(start_write_ptr+i, 1);
             try
             {
-                os.put((char)e->as_int()&0xff);
+                os.put((char)val.as_int()&0xff);
             }
             catch (const expression_exception& e)
             {
@@ -155,7 +155,7 @@ unsigned int PhysicalFile::write_buffer(uint8_t* buffer, addr_t& offset, int nb_
 }
 
 unsigned int PhysicalFile::read_buffer(
-    std::vector<Expr>& buffer,
+    std::vector<Value>& buffer,
     addr_t& read_ptr,
     unsigned int nb_elems,
     unsigned int elem_size
@@ -297,7 +297,7 @@ flags(0), physical_file(file), _handle(handle), deleted(false), _alloc_addr(0)
     state.write_ptr = 0;
 }
 
-unsigned int FileAccessor::write_buffer(const std::vector<Expr>& buffer)
+unsigned int FileAccessor::write_buffer(const std::vector<Value>& buffer)
 {
     return physical_file->write_buffer(buffer, state.write_ptr);
 }
@@ -308,7 +308,7 @@ unsigned int FileAccessor::write_buffer(uint8_t* buffer, int len)
 }
 
 unsigned int FileAccessor::read_buffer(
-    std::vector<Expr>& buffer,
+    std::vector<Value>& buffer,
     unsigned int nb_elems,
     unsigned int elem_size
 ){

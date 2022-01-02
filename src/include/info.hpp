@@ -5,6 +5,7 @@
 #include "ir.hpp"
 #include "constraint.hpp"
 #include "arch.hpp"
+#include "value.hpp"
 
 namespace maat
 {
@@ -40,8 +41,8 @@ enum class Stop
 struct  RegAccess
 {
     ir::reg_t reg; ///< Register that is accessed
-    Expr value; ///< Current value of the register
-    Expr new_value; ///< Value of the register after access (for reads it is the same as 'value')
+    Value value; ///< Current value of the register
+    Value new_value; ///< Value of the register after access (for reads it is the same as 'value')
     bool written; ///< If the register is written
     bool read; ///< If the register is read
 
@@ -69,9 +70,9 @@ struct  RegAccess
 /// Struct holding information about a memory access
 struct MemAccess
 {
-    Expr addr; ///< Address where memory is accessed
+    Value addr; ///< Address where memory is accessed
     size_t size; ///< Number of bytes accessed
-    Expr value; ///< Value read/written from/to memory
+    Value value; ///< Value read/written from/to memory
     bool written; ///< If the memory is written
     bool read; ///< If the memory is read
 };
@@ -85,8 +86,8 @@ struct Branch
 {
     std::optional<bool> taken = std::nullopt; ///< Boolean indicating if the branch is taken or not (it has no value for purely symbolic conditions)
     Constraint cond; ///< Condition for the branch. The branch is taken if the constraint evaluates to True (**warning**: null for unconditional branches)
-    Expr target; ///< Target address if the branch is taken (**warning**: null for IR internal branches)
-    Expr next; ///< Next instruction if the branch is not taken (**warning**: null for regular branch operation)
+    Value target; ///< Target address if the branch is taken (**warning**: null for IR internal branches)
+    Value next; ///< Next instruction if the branch is not taken (**warning**: null for regular branch operation)
 };
 
 /// Print branch info to a stream
@@ -111,7 +112,7 @@ public:
     std::optional<Branch> branch; ///< Info about branch operation
     std::optional<RegAccess> reg_access; ///< Info about register access
     std::optional<MemAccess> mem_access; ///< Info about memory access
-    std::optional<Expr> exit_status; ///< Expression return as the process exit status at program exit
+    std::optional<Value> exit_status; ///< Expression return as the process exit status at program exit
 public:
     Info(){this->reset();};
     Info(const Info& other) = default;

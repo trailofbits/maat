@@ -1,4 +1,5 @@
 #include "expression.hpp"
+#include "varcontext.hpp"
 #include "exception.hpp"
 #include <iostream>
 #include <string>

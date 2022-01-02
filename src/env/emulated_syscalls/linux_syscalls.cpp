@@ -11,14 +11,14 @@ namespace emulated{
 // ssize_t read(int fd, void *buf, size_t count);
 FunctionCallback::return_t sys_linux_read(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    int fd = args[0]->as_uint(*engine.vars);
-    size_t count = args[2]->as_uint(*engine.vars);
+    int fd = args[0].as_uint(*engine.vars);
+    size_t count = args[2].as_uint(*engine.vars);
     // Get file accessor and read file
     env::FileAccessor& fa = engine.env->fs.get_fa_by_handle(fd);
-    std::vector<Expr> content;
+    std::vector<Value> content;
     cst_t res = fa.read_buffer(content, count, 1);
     // Write to buffer in memory
     engine.mem->write_buffer(args[1], content);
@@ -29,18 +29,18 @@ FunctionCallback::return_t sys_linux_read(
 // ssize_t read(int fd, void *buf, size_t count, off_t offset);
 FunctionCallback::return_t sys_linux_pread(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    int fd = args[0]->as_uint(*engine.vars);
-    size_t count = args[2]->as_uint(*engine.vars);
-    offset_t offset = args[3]->as_uint(*engine.vars);
+    int fd = args[0].as_uint(*engine.vars);
+    size_t count = args[2].as_uint(*engine.vars);
+    offset_t offset = args[3].as_uint(*engine.vars);
 
     // pread() reads from an arbitrary offset in the file and
     // doesn't change the offset, so directly read from the
     // PhysicalFile
     physical_file_t file = engine.env->fs.get_file_by_handle(fd);
-    std::vector<Expr> content;
+    std::vector<Value> content;
     cst_t res = file->read_buffer(content, offset, count, 1);
     // Write to buffer in memory
     engine.mem->write_buffer(args[1], content);
@@ -51,19 +51,19 @@ FunctionCallback::return_t sys_linux_pread(
 // ssize_t write(int fd, const void *buf, size_t count);
 FunctionCallback::return_t sys_linux_write(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    int fd = args[0]->as_uint(*engine.vars);
-    cst_t count = args[2]->as_uint(*engine.vars);
-    Expr buf = args[1];
+    int fd = args[0].as_uint(*engine.vars);
+    cst_t count = args[2].as_uint(*engine.vars);
+    Value buf = args[1];
     cst_t res;
 
     try
     {
         env::FileAccessor& fa = engine.env->fs.get_fa_by_handle(fd);
         // Read buffer of bytes
-        std::vector<Expr> buffer;
+        std::vector<Value> buffer;
         engine.mem->read_buffer(buffer, buf, count, 1);
         // Write it to file
         res = fa.write_buffer(buffer);
@@ -85,25 +85,25 @@ FunctionCallback::return_t sys_linux_write(
 // };
 FunctionCallback::return_t sys_linux_writev(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    int fd = args[0]->as_uint(*engine.vars);
-    cst_t count = args[2]->as_uint(*engine.vars);
-    Expr iov = args[1];
+    int fd = args[0].as_uint(*engine.vars);
+    cst_t count = args[2].as_uint(*engine.vars);
+    Value iov = args[1];
     cst_t res = 0;
-    Expr iov_len, iov_base;
+    Value iov_len, iov_base;
     ucst_t ptr_size = engine.arch->octets();
     ucst_t struct_size = ptr_size*2;
     // Write all iov buffers
     for (cst_t i = 0; i < count; i++)
     {
         // Read iovec struct
-        iov_base = engine.mem->read(iov->as_uint(*engine.vars) + i*struct_size, ptr_size);
-        iov_len = engine.mem->read(iov->as_uint(*engine.vars) + i*struct_size + ptr_size, ptr_size);
-        res += iov_len->as_uint(*engine.vars);
+        iov_base = engine.mem->read(iov.as_uint(*engine.vars) + i*struct_size, ptr_size);
+        iov_len = engine.mem->read(iov.as_uint(*engine.vars) + i*struct_size + ptr_size, ptr_size);
+        res += iov_len.as_uint(*engine.vars);
         // Perform write() syscall
-        std::vector<Expr> write_args = {args[0], iov_base, iov_len};
+        std::vector<Value> write_args = {args[0], iov_base, iov_len};
         sys_linux_write(engine, write_args);
     }
     return res;
@@ -218,11 +218,11 @@ FunctionCallback::return_t _stat(
 // int stat(const char *restrict pathname, struct stat *restrict statbuf);
 FunctionCallback::return_t sys_linux_stat(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     std::string filepath = engine.mem->read_string(args[0]);
-    addr_t statbuf = args[1]->as_uint(*engine.vars);
+    addr_t statbuf = args[1].as_uint(*engine.vars);
 
     if (engine.env->fs.is_relative_path(filepath))
         filepath = engine.env->fs.path_from_relative_path(filepath, engine.process->pwd);
@@ -238,10 +238,10 @@ FunctionCallback::return_t sys_linux_stat(
 // int close(int fd);
 FunctionCallback::return_t sys_linux_close(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    int fd = args[0]->as_uint(*engine.vars);
+    int fd = args[0].as_uint(*engine.vars);
 
     try
     {
@@ -258,11 +258,11 @@ FunctionCallback::return_t sys_linux_close(
 // int fstat(int fd, struct stat *restrict statbuf);
 FunctionCallback::return_t sys_linux_fstat(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    int fd = args[0]->as_uint(*engine.vars);
-    addr_t statbuf = args[1]->as_uint(*engine.vars);
+    int fd = args[0].as_uint(*engine.vars);
+    addr_t statbuf = args[1].as_uint(*engine.vars);
 
     env::physical_file_t file = engine.env->fs.get_file_by_handle(fd);
     return _stat(engine, file, statbuf);
@@ -272,15 +272,15 @@ FunctionCallback::return_t sys_linux_fstat(
 // int fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags);
 FunctionCallback::return_t sys_linux_fstatat(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     cst_t AT_FDCWD = -100;
     cst_t AT_EMPTY_PATH = 0x1000;
     std::string pathname = engine.mem->read_string(args[1]);
-    addr_t statbuf = args[2]->as_uint(*engine.vars);
-    int dirfd = args[0]->as_int(*engine.vars);
-    int flags = args[3]->as_int(*engine.vars);
+    addr_t statbuf = args[2].as_uint(*engine.vars);
+    int dirfd = args[0].as_int(*engine.vars);
+    int flags = args[3].as_int(*engine.vars);
     bool absolute_path = pathname[0] == '/';
     std::string filepath = "";
     physical_file_t file = nullptr;
@@ -315,15 +315,15 @@ FunctionCallback::return_t sys_linux_fstatat(
 // where arguments are passed in a struct pointer :/
 FunctionCallback::return_t sys_linux_mmap(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    addr_t addr = args[0]->as_uint(*engine.vars);
-    cst_t length = args[1]->as_uint(*engine.vars);
-    int prot = args[2]->as_uint(*engine.vars);
-    ucst_t flags = args[3]->as_uint(*engine.vars);
-    cst_t fd = args[4]->as_uint(*engine.vars);
-    offset_t offset  = args[5]->as_uint(*engine.vars);
+    addr_t addr = args[0].as_uint(*engine.vars);
+    cst_t length = args[1].as_uint(*engine.vars);
+    int prot = args[2].as_uint(*engine.vars);
+    ucst_t flags = args[3].as_uint(*engine.vars);
+    cst_t fd = args[4].as_uint(*engine.vars);
+    offset_t offset  = args[5].as_uint(*engine.vars);
     mem_flag_t mflags = 0;
     addr_t res = -1;
     cst_t aligned_length;
@@ -409,7 +409,7 @@ FunctionCallback::return_t sys_linux_mmap(
             // If requesting too many bytes, adjust to real file size
             length = file->size() - offset;
         }
-        std::vector<Expr> content;
+        std::vector<Value> content;
         file->read_buffer(content, offset, length, 1); // Read file content into buffer
         // Write the file content in allocated memory
         engine.mem->write_buffer(res, content, true); // Ignore flags when mapping file
@@ -422,10 +422,10 @@ FunctionCallback::return_t sys_linux_mmap(
 // into the file in 4096-byte units (instead of bytes, as is done by mmap(2))
 FunctionCallback::return_t sys_linux_mmap2(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    std::vector<Expr> new_args = args;
+    std::vector<Value> new_args = args;
     new_args[5] = new_args[5]*4096;
     return sys_linux_mmap(engine, new_args);
 }
@@ -433,11 +433,11 @@ FunctionCallback::return_t sys_linux_mmap2(
 
 FunctionCallback::return_t sys_linux_munmap(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    addr_t addr = args[0]->as_uint(*engine.vars);
-    cst_t length = args[1]->as_uint(*engine.vars);
+    addr_t addr = args[0].as_uint(*engine.vars);
+    cst_t length = args[1].as_uint(*engine.vars);
 
     // Adjust addr and length
     if (addr % 0x1000 != 0)
@@ -452,12 +452,12 @@ FunctionCallback::return_t sys_linux_munmap(
 // int mprotect(void *addr, size_t len, int prot);
 FunctionCallback::return_t sys_linux_mprotect(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    addr_t addr = args[0]->as_uint(*engine.vars);
-    cst_t length = args[1]->as_uint(*engine.vars);
-    int prot = args[2]->as_int(*engine.vars);
+    addr_t addr = args[0].as_uint(*engine.vars);
+    cst_t length = args[1].as_uint(*engine.vars);
+    int prot = args[2].as_int(*engine.vars);
     mem_flag_t flags = 0;
     int PROT_EXEC = 0x4, PROT_READ = 0x1, PROT_WRITE = 0x2;
 
@@ -484,10 +484,10 @@ FunctionCallback::return_t sys_linux_mprotect(
 // int brk(void* addr)
 FunctionCallback::return_t sys_linux_brk(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    addr_t addr = args[0]->as_uint(*engine.vars);
+    addr_t addr = args[0].as_uint(*engine.vars);
     addr_t end_heap, prev_end;
     addr_t extend_bytes = 0;
 
@@ -527,14 +527,14 @@ FunctionCallback::return_t sys_linux_brk(
 // int access(const char *pathname, int mode);
 FunctionCallback::return_t sys_linux_access(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     ucst_t  R = 4,
             W = 2,
             X = 1,
             F = 0;
-    ucst_t mode = args[1]->as_uint(*engine.vars);
+    ucst_t mode = args[1].as_uint(*engine.vars);
     std::string file = engine.mem->read_string(args[0]);
     // Get file
     env::node_status_t status = engine.env->fs.get_node_status(file);
@@ -548,7 +548,7 @@ FunctionCallback::return_t sys_linux_access(
 // int uname(struct utsname *buf);
 FunctionCallback::return_t sys_linux_newuname(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     /*
@@ -569,7 +569,7 @@ FunctionCallback::return_t sys_linux_newuname(
     */
 
 
-    addr_t utsname = args[0]->as_uint(*engine.vars);
+    addr_t utsname = args[0].as_uint(*engine.vars);
     std::string sysname = "Linux\x00";
     std::string nodename = "\x00"; // Not supported
     std::string release = "4.15.0-88-generic\x00";
@@ -596,7 +596,7 @@ FunctionCallback::return_t sys_linux_newuname(
 // int arch_prctl(struct task_struct *task, int code, unsigned long* addr)
 FunctionCallback::return_t sys_linux_arch_prctl(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     /* Function codes
@@ -615,7 +615,7 @@ FunctionCallback::return_t sys_linux_arch_prctl(
         #define ARCH_CET_ALLOC_SHSTK	0x3005
         #define ARCH_CET_PUSH_SHSTK	0x3006
     */
-    ucst_t code = args[0]->as_uint(*engine.vars);
+    ucst_t code = args[0].as_uint(*engine.vars);
     if (code == 0x1002) // Set FS
     {
         // HACK: in Maat we don't distinguish between segment selector
@@ -679,11 +679,11 @@ FunctionCallback::return_t linux_generic_open(MaatEngine& engine, const std::str
 // int open(const char *pathname, int flags, mode_t mode);
 FunctionCallback::return_t sys_linux_open(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     std::string pathname = engine.mem->read_string(args[0]);
-    int flags = args[1]->as_int(*engine.vars);
+    int flags = args[1].as_int(*engine.vars);
     bool absolute_path = pathname[0] == '/';
     std::string filepath = "";
     // Get filepath
@@ -701,13 +701,13 @@ FunctionCallback::return_t sys_linux_open(
 // int openat(int dirfd, const char *pathname, int flags, mode_t mode);
 FunctionCallback::return_t sys_linux_openat(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
     cst_t AT_FDCWD = -100; 
     std::string pathname = engine.mem->read_string(args[1]);
-    int dirfd = args[0]->as_int(*engine.vars);
-    int flags = args[2]->as_int(*engine.vars);
+    int dirfd = args[0].as_int(*engine.vars);
+    int flags = args[2].as_int(*engine.vars);
     bool absolute_path = pathname[0] == '/';
     std::string filepath = "";
     // Get filepath
@@ -732,12 +732,12 @@ FunctionCallback::return_t sys_linux_openat(
 // ssize_t readlink(const char *path, char *buf, size_t bufsiz);
 FunctionCallback::return_t sys_linux_readlink(
     MaatEngine& engine,
-    const std::vector<Expr>& args
+    const std::vector<Value>& args
 )
 {
-    addr_t path = args[0]->as_uint(*engine.vars);
-    addr_t buf = args[1]->as_uint(*engine.vars);
-    size_t bufsiz = args[2]->as_uint(*engine.vars);
+    addr_t path = args[0].as_uint(*engine.vars);
+    addr_t buf = args[1].as_uint(*engine.vars);
+    size_t bufsiz = args[2].as_uint(*engine.vars);
     cst_t res;
 
     // Get file

@@ -23,12 +23,12 @@ namespace test{
         }
         
         unsigned int _assert_bignum_eq(
-            Expr var,
+            const Value& var,
             std::string expected_value,
             std::string error_msg
         )
         {
-            const Number& number = var->as_number();
+            const Number& number = var.as_number();
             std::stringstream ss;
             ss << number;
             if (ss.str() != expected_value)
@@ -69,30 +69,30 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400001010));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x00001010));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0x001f)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0x001f)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
             
             // 0x00001010 : 0xaaaa00100000
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x00001010));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0xaaaa00100000));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0x001fffff)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0x001fffff)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
                         
             // On 64 bits
@@ -103,30 +103,30 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0));
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 0));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0xffffffffffffffff)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0xffffffffffffffff)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
                             
             // 0xffffffffffffffff : 0x0020000000000000
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0xffffffffffffffff));
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 0x0020000000000000));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0x003fffffffffffff)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0x003fffffffffffff)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSMSK");
             return nb;
         }
@@ -146,30 +146,30 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400000000));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x000000f0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0xe0)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0xe0)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
             
             // 0x00100000
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400000000));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x00100000));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
             
             // On 64 bits
@@ -181,33 +181,33 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x12340000abcd));
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 0));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-                            
+
             // 0xffffffffffffffff
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 0xffffffffffffffff));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0xfffffffffffffffe)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0xfffffffffffffffe)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BLSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BLSR");
             return nb;
         }
-        
+
         unsigned int disass_bsf(MaatEngine& engine){
             unsigned int nb = 0;
             std::string code;
@@ -220,28 +220,28 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, 0);
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x00001100));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 8)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 8)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSF");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BSF");
             // bsf 0x0
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BSF");
             // bsf 0x8000
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x8000));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 15)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 15)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSF");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BSF");
             
             // bsf 0x10000
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x10000));
             engine.cpu.ctx().set(X64::ZF, exprcst(64,0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BSF");
             
             /* On 32 bits */
@@ -252,9 +252,9 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123456786465112));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x00010000));
             engine.run_from(0x1200, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 16)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 16)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSF");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BSF");
                             
             /* On 64 bits */
@@ -264,23 +264,23 @@ namespace test{
             // bsf 0x80000000
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x80000000));
             engine.run_from(0x1300, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 31)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 31)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSF");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BSF");
                             
             // bsf 0x200000000
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x200000000));
             engine.run_from(0x1300, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 33)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 33)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSF");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BSF");                
             
             // bsf 0
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0));
             engine.run_from(0x1300, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BSF");      
             return nb;
         }
@@ -299,28 +299,28 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400001100));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x00001100));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0x123400000000+ 12)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0x123400000000+ 12)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BSR");
             // bsr 0x0
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BSR");
             // bsr 0x8000
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400000000));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x8000));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0x123400000000+15)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0x123400000000+15)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BSR");
             
             // bsr 0x10000
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x10000));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BSR");
             
             /* On 32 bits */
@@ -332,9 +332,9 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x1234567800000000));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x00001100));
             engine.run_from(0x1200, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 12)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 12)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BSR");
                             
             // On 64 bits 
@@ -346,23 +346,23 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,456864));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x80000001));
             engine.run_from(0x1300, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 31)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 31)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BSR");
                  
             // bsr 0x300000000
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x300000001));
             engine.run_from(0x1300, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 33)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 33)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSR");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BSR");
                             
             // bsr 0
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0));
             engine.run_from(0x1300, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BSR");         
             return nb;
         }
@@ -381,13 +381,13 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x1111000012345678));
             engine.run_from(0x1160, 1);
             
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0x78563412)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0x78563412)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSWAP");
                             
             // bswap 0x100111100
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x100111100));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0x00111100)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0x00111100)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSWAP");
              
             /* On 64 bits */
@@ -398,13 +398,13 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x1111000012345678));
             engine.run_from(0x1170, 1);
             
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0x7856341200001111)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0x7856341200001111)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSWAP");
                             
             // bswap 0x100111100
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x100111100));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint(*engine.vars) == exprcst(64, 0x0011110001000000)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint(*engine.vars) == exprcst(64, 0x0011110001000000)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BSWAP");
 
             return nb;
@@ -425,21 +425,21 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,3));
             engine.cpu.ctx().set(X64::CF, exprcst(64,0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == exprcst(64, 1)->as_uint(*engine.vars),
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == exprcst(64, 1)->as_uint(*engine.vars),
                             "ArchX64: failed to disassembly and/or execute BT");
 
             // bit(0x8, 4)
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x8));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,4));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BT");
                             
             // bit(0x8, 19) --> 19 = 3%16
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x8));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,19));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BT");
             
             // from memory
@@ -452,7 +452,7 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,8));
             engine.cpu.ctx().set(X64::CF, exprcst(64,0));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BT");
                             
             /* On 32 bits */
@@ -464,21 +464,21 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,28));
             engine.cpu.ctx().set(X64::CF, exprcst(64,0));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BT");
                             
             // bit(0x10000000, 29)
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123410000000));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,29));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BT");
                             
             // bit(0x10000000, 60)
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x1234567810000000));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,60));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BT");
                             
             /* With an imm */
@@ -489,7 +489,7 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x2000));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,13));
             engine.run_from(0x1190, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BT");
                             
             code = std::string("\x0F\xBA\xE0\x0C", 4); // bt eax, 12
@@ -499,7 +499,7 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x2000));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,13));
             engine.run_from(0x1200, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BT");
             
             // On 64 bits
@@ -511,21 +511,21 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,44));
             engine.cpu.ctx().set(X64::CF, exprcst(64,0));
             engine.run_from(0x1210, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BT");
                             
             // bit(0x400000001234, 45)
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x400000001234));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,45));
             engine.run_from(0x1210, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 0,
                             "ArchX64: failed to disassembly and/or execute BT");
                             
             // bit(0x100000000, (64+32))
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x100000000));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,96));
             engine.run_from(0x1210, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint(*engine.vars) == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint(*engine.vars) == 1,
                             "ArchX64: failed to disassembly and/or execute BT");
             
             return nb;
@@ -544,28 +544,28 @@ namespace test{
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xff));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
                             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x10ff));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
                             
             code = string("\x3C\x81", 2); // cmp al(0x80), 0x81
@@ -574,15 +574,15 @@ namespace test{
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x80));
             engine.run_from(0x1190, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
             
             
@@ -592,15 +592,15 @@ namespace test{
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x1ffff));
             engine.run_from(0x1000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
                             
             code = string("\x66\x83\xF8\x01", 4); // cmp ax, 1
@@ -609,15 +609,15 @@ namespace test{
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xfa000009));
             engine.run_from(0x1200, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
             
             
@@ -626,15 +626,15 @@ namespace test{
             engine.mem->write_buffer(0x1010+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xff000000));
             engine.run_from(0x1010, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
             
             
@@ -643,15 +643,15 @@ namespace test{
             engine.mem->write_buffer(0x1020+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x10001235));
             engine.run_from(0x1020, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
             
             
@@ -660,15 +660,15 @@ namespace test{
             engine.mem->write_buffer(0x1030+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xffff0000));
             engine.run_from(0x1030, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
                             
             code = string("\x3D\x00\x00\xFF\xFF", 5); // cmp eax, 0xffff0000
@@ -676,15 +676,15 @@ namespace test{
             engine.mem->write_buffer(0x1040+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xff000000));
             engine.run_from(0x1040, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
 
             code = string("\x48\x3D\x00\xF0\xFF\xFF", 6); // cmp rax, -0x1000
@@ -692,15 +692,15 @@ namespace test{
             engine.mem->write_buffer(0x1100+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xf0000000));
             engine.run_from(0x1100, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
 
             /* cmp reg,reg */
@@ -710,15 +710,15 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xf800));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x7900));
             engine.run_from(0x1050, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
 
             code = string("\x48\x39\xd8", 3); // cmp rax, rbx
@@ -728,15 +728,15 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x7900000000001234));
             engine.run_from(0x1090, 1);
             
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");    
 
             /* cmp imm, mem */
@@ -745,15 +745,15 @@ namespace test{
             engine.mem->write_buffer(0x1080+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             engine.mem->write(0x1700, exprcst(64, 0x01f62303));
             engine.run_from(0x1080, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
 
             /* cmp reg,mem */
@@ -764,15 +764,15 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xAAAA));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x1700));
             engine.run_from(0x1060, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
 
             /* cmp mem,reg */
@@ -784,15 +784,15 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400000010));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0xffffffffffffffff));
             engine.run_from(0x1070, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMP");
 
             return nb;
@@ -812,19 +812,19 @@ namespace test{
             engine.cpu.ctx().set(X64::RSI, exprcst(64,0x1000));
             engine.cpu.ctx().set(X64::RDI, exprcst(64,0x1500));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSI)->as_uint() == exprcst(64, 0xfff)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RSI).as_uint() == exprcst(64, 0xfff)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDI)->as_uint() == exprcst(64, 0x14ff)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDI).as_uint() == exprcst(64, 0x14ff)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSB");
             
             engine.mem->write(0x1000, exprcst(8, 0x1));
@@ -833,19 +833,19 @@ namespace test{
             engine.cpu.ctx().set(X64::RSI, exprcst(64,0x1000));
             engine.cpu.ctx().set(X64::RDI, exprcst(64,0x1500));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSI)->as_uint() == exprcst(64, 0x1001)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RSI).as_uint() == exprcst(64, 0x1001)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDI)->as_uint() == exprcst(64, 0x1501)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDI).as_uint() == exprcst(64, 0x1501)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSB");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSB");
             
             return nb;
@@ -865,19 +865,19 @@ namespace test{
             engine.cpu.ctx().set(X64::RSI, exprcst(64,0x1000));
             engine.cpu.ctx().set(X64::RDI, exprcst(64,0x1500));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSI)->as_uint() == exprcst(64, 0xffc)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RSI).as_uint() == exprcst(64, 0xffc)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDI)->as_uint() == exprcst(64, 0x14fc)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDI).as_uint() == exprcst(64, 0x14fc)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSD");
             
             engine.mem->write(0x1000, exprcst(64, 0x1234));
@@ -886,19 +886,19 @@ namespace test{
             engine.cpu.ctx().set(X64::RSI, exprcst(64,0x1000));
             engine.cpu.ctx().set(X64::RDI, exprcst(64,0x1500));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSI)->as_uint() == exprcst(64, 0x1004)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RSI).as_uint() == exprcst(64, 0x1004)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDI)->as_uint() == exprcst(64, 0x1504)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDI).as_uint() == exprcst(64, 0x1504)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSD");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSD");
             
             return nb;
@@ -918,19 +918,19 @@ namespace test{
             engine.cpu.ctx().set(X64::RSI, exprcst(64,0x1000));
             engine.cpu.ctx().set(X64::RDI, exprcst(64,0x1500));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSI)->as_uint() == exprcst(64, 0xff8)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RSI).as_uint() == 0xff8,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDI)->as_uint() == exprcst(64, 0x14f8)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDI).as_uint() == 0x14f8,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
             
             engine.mem->write(0x1000, exprcst(64, 0x1000000000001234));
@@ -939,19 +939,19 @@ namespace test{
             engine.cpu.ctx().set(X64::RSI, exprcst(64,0x1000));
             engine.cpu.ctx().set(X64::RDI, exprcst(64,0x1500));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSI)->as_uint() == exprcst(64, 0x1008)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RSI).as_uint() == 0x1008,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDI)->as_uint() == exprcst(64, 0x1508)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDI).as_uint() == 0x1508,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSQ");
             
             return nb;
@@ -971,19 +971,19 @@ namespace test{
             engine.cpu.ctx().set(X64::RSI, exprcst(64,0x1000));
             engine.cpu.ctx().set(X64::RDI, exprcst(64,0x1500));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSI)->as_uint() == exprcst(64, 0xffe)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RSI).as_uint() == exprcst(64, 0xffe)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDI)->as_uint() == exprcst(64, 0x14fe)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDI).as_uint() == exprcst(64, 0x14fe)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSW");
 
             engine.mem->write(0x1000, exprcst(64, 0x1234));
@@ -992,19 +992,19 @@ namespace test{
             engine.cpu.ctx().set(X64::RSI, exprcst(64,0x1000));
             engine.cpu.ctx().set(X64::RDI, exprcst(64,0x1500));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSI)->as_uint() == exprcst(64, 0x1002)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RSI).as_uint() == exprcst(64, 0x1002)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDI)->as_uint() == exprcst(64, 0x1502)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDI).as_uint() == exprcst(64, 0x1502)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPSW");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPSW");
 
             return nb;
@@ -1023,21 +1023,21 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x2100));
             engine.cpu.ctx().set(X64::RCX, exprcst(64,0x4200));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x1234000021)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x1234000021)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == exprcst(64, 0x4200)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == exprcst(64, 0x4200)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::RCX)->as_uint() == exprcst(64, 0x4200)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RCX).as_uint() == exprcst(64, 0x4200)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
             
             /* On 16 bits */
@@ -1050,21 +1050,21 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x1700));
             engine.cpu.ctx().set(X64::RCX, exprcst(64,0x1000BBBB));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x1111)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x1111)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == exprcst(64, 0x1700)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == exprcst(64, 0x1700)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::RCX)->as_uint() == exprcst(64, 0x1000BBBB)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RCX).as_uint() == exprcst(64, 0x1000BBBB)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
             
             /* On 32 bits */
@@ -1076,21 +1076,21 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x0));
             engine.cpu.ctx().set(X64::RCX, exprcst(64,0x1000BBBB));
             engine.run_from(0x1190, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x0)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x0)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == exprcst(64, 0x0)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == exprcst(64, 0x0)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::RCX)->as_uint() == exprcst(64, 0x1000BBBB)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RCX).as_uint() == exprcst(64, 0x1000BBBB)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CMPXCHG");
             
             return nb;
@@ -1107,25 +1107,25 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x10));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x12345678deadcafe));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x10)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10,
                             "ArchX64: failed to disassembly and/or execute CQO");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == exprcst(64, 0x0)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CQO");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x7f98000000000000));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x888812345678));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x7f98000000000000)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x7f98000000000000,
                             "ArchX64: failed to disassembly and/or execute CQO");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == exprcst(64, 0x0)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CQO");
                             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x8000000000000001));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0xdeadbeef12345678));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x8000000000000001)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x8000000000000001,
                             "ArchX64: failed to disassembly and/or execute CQO");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == exprcst(64, 0xffffffffffffffff)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == 0xffffffffffffffff,
                             "ArchX64: failed to disassembly and/or execute CQO");
 
             return nb;
@@ -1142,33 +1142,33 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x10));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x1234));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x10)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x10)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWD");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == exprcst(64, 0x0)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == exprcst(64, 0x0)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWD");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x7f98));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x1234));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x7f98)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x7f98)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWD");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == exprcst(64, 0x0)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == exprcst(64, 0x0)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWD");
                             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x8000));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x123400001234));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x8000)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x8000)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWD");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == exprcst(64, 0x12340000ffff)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == exprcst(64, 0x12340000ffff)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWD");
                             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x10000106));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x1234));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x10000106)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x10000106)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWD");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute CWD");
 
             return nb;
@@ -1187,22 +1187,22 @@ namespace test{
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x10));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x10)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x10)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWDE");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x7f98));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x7f98)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x7f98)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWDE");
                             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400008000));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0xffff8000)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0xffff8000)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWDE");
                             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xaaa000010000106));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x00000106)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x00000106)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute CWDE");
 
             return nb;
@@ -1223,19 +1223,19 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400000021));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x20)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x20)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::AF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::AF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
             
             
@@ -1243,19 +1243,19 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x1111ffffff01));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0xffffff00)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0xffffff00)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::AF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::AF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
             return nb;
             
@@ -1266,19 +1266,19 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400000022));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x123400000021)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x123400000021)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
-            nb += _assert(  engine.cpu.ctx().get(X64::AF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::AF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute DEC");
             return nb;
         }
@@ -1298,7 +1298,7 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123410000015));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x4));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x123410000105)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x123410000105)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute DIV");
             
             
@@ -1311,9 +1311,9 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x4));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x10000000));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x123410000005)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x123410000005)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute DIV");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == exprcst(64, 0x10000001)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == exprcst(64, 0x10000001)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute DIV");
                             
             /* On 32 bits */
@@ -1326,9 +1326,9 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x1700));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x1234000011111000));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x8e38e39e)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x8e38e39e)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute DIV");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == exprcst(64, 0xb)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == exprcst(64, 0xb)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute DIV");
 
             /* On 64 bits */
@@ -1341,9 +1341,9 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x1700));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x1234000011111000));
             engine.run_from(0x1190, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x110e110e010e0118)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x110e110e010e0118)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute DIV");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == 0x1200000000,
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == 0x1200000000,
                             "ArchX64: failed to disassembly and/or execute DIV");
 
             return nb;
@@ -1361,7 +1361,7 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x10000015));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,-4));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x100001fb)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x100001fb)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute IDIV");
             
             
@@ -1374,18 +1374,18 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x4));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x10000000));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0xffffffffffff3ffa)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0xffffffffffff3ffa)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute IDIV");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == exprcst(64, 0x10000003)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == exprcst(64, 0x10000003)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute IDIV");
                             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,-24));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x67));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x10000000));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0xffffffffffff027c)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0xffffffffffff027c)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute IDIV");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == exprcst(64, 0x10000004)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == exprcst(64, 0x10000004)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute IDIV");
             
             /* On 64 bits */
@@ -1397,9 +1397,9 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,-2));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x1004641651));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x7fffffddffffffff)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x7fffffddffffffff)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute IDIV");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == 0xffffffffffffffff,
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == 0xffffffffffffffff,
                             "ArchX64: failed to disassembly and/or execute IDIV");
 
             return nb;
@@ -1418,20 +1418,20 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,48));
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 4));
             engine.run_from(0x1000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x00C0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 4, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1002, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x00C0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 4, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1002, "ArchX64: failed to disassembly and/or execute IMUL");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x4200fc));
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 4));
             engine.run_from(0x1000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x42fff0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 4, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1002, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x42fff0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 4, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1002, "ArchX64: failed to disassembly and/or execute IMUL");
             
             code = string("\x66\xF7\xEB", 3); // imul bx
             engine.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), 3);
@@ -1442,12 +1442,12 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::RDX, exprcst(64, 0x11001234));
             engine.run_from(0x1010, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xC0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 4, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == 0x11000000, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1013, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xC0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 4, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == 0x11000000, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1013, "ArchX64: failed to disassembly and/or execute IMUL");
             
             code = string("\xF7\xEB", 2); // imul ebx
             engine.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), 2);
@@ -1458,12 +1458,12 @@ namespace test{
             engine.cpu.ctx().set(X64::RDX, exprcst(64, 0x11001234));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1020, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x86635d80, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == -423, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == 0xffffffff, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1022, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x86635d80, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == -423, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == 0xffffffff, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1022, "ArchX64: failed to disassembly and/or execute IMUL");
 
             code = string("\x48\xF7\xEB", 3); // imul rbx
             engine.mem->write_buffer(0x2020, (uint8_t*)code.c_str(), code.size());
@@ -1474,11 +1474,11 @@ namespace test{
             engine.cpu.ctx().set(X64::RDX, exprcst(64, 0x11001234));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x2020, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == -0x6600000000, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 0x3300000000, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX)->as_uint() == -1, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == -0x6600000000, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 0x3300000000, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == -1, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
             
             /* Two-operands */
             code = string("\x66\x0F\xAF\xC3", 4); // imul ax, bx
@@ -1489,11 +1489,11 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 0x1000fffe));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1030, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x12341000fffc, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 0x1000fffe, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1034, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x12341000fffc, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 0x1000fffe, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1034, "ArchX64: failed to disassembly and/or execute IMUL");
             
             code = string("\x0F\xAF\xC3", 3); // imul eax, ebx
             engine.mem->write_buffer(0x1040, (uint8_t*)code.c_str(), 3);
@@ -1503,10 +1503,10 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 0x80000001));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1040, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x00000002, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1043, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x00000002, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1043, "ArchX64: failed to disassembly and/or execute IMUL");
             
             code = string("\x48\x0f\xaf\xc3", 4); // imul rax, rbx
             engine.mem->write_buffer(0x2040, (uint8_t*)code.c_str(), 4);
@@ -1516,9 +1516,9 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64, -0x2));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x2040, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == -0x400000000, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == -0x400000000, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
             
             
             /* Three-operands */
@@ -1530,21 +1530,21 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 0x00100000));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1050, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x00700000, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 0x00100000, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1053, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x00700000, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 0x00100000, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1053, "ArchX64: failed to disassembly and/or execute IMUL");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x12345678));
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 0xffffffff));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1050, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xfffffff9, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 0xffffffff, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1053, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xfffffff9, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 0xffffffff, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1053, "ArchX64: failed to disassembly and/or execute IMUL");
             
             code = string("\x69\xC3\x00\x00\x00\x10", 6); // imul eax, ebx, 0x10000000
             engine.mem->write_buffer(0x1060, (uint8_t*)code.c_str(), 6);
@@ -1554,21 +1554,21 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 17));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1060, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x10000000, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 17, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1066, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10000000, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 17, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1066, "ArchX64: failed to disassembly and/or execute IMUL");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123412345678));
             engine.cpu.ctx().set(X64::RBX, exprcst(64, -1));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1060, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xf0000000, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == -1, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1066, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xf0000000, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == -1, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1066, "ArchX64: failed to disassembly and/or execute IMUL");
             
             code = string("\x48\x6b\xc3\x03", 4); // imul rax, rbx, 3
             engine.mem->write_buffer(0x2060, (uint8_t*)code.c_str(), 4);
@@ -1578,10 +1578,10 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64, 0x33000000001));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x2060, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x99000000003, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 0x33000000001, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x99000000003, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 0x33000000001, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute IMUL");
             
             return nb;
         }
@@ -1597,33 +1597,33 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400000022));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x23)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x23)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
             
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xaa00ffffff01));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0xffffff02)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0xffffff02)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute INC");
             
             code = string("\x48\xff\xc0", 3); // inc rax
@@ -1633,17 +1633,17 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x123400000022));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == exprcst(64, 0x123400000023)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x123400000023)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute INC");
 
             return nb;
@@ -1662,25 +1662,25 @@ namespace test{
             engine.cpu.ctx().set(X64::ZF, exprcst(64,0));
             engine.cpu.ctx().set(X64::CF, exprcst(64,0));
             engine.run_from(0x1000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1012, "ArchX64: failed to disassembly and/or execute JA");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1012, "ArchX64: failed to disassembly and/or execute JA");
             
             /* Not taken */
             engine.cpu.ctx().set(X64::ZF, exprcst(64,1));
             engine.cpu.ctx().set(X64::CF, exprcst(64,0));
             engine.run_from(0x1000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1002, "ArchX64: failed to disassembly and/or execute JA");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1002, "ArchX64: failed to disassembly and/or execute JA");
             
             /* Not taken */
             engine.cpu.ctx().set(X64::ZF, exprcst(64,0));
             engine.cpu.ctx().set(X64::CF, exprcst(64,1));
             engine.run_from(0x1000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1002, "ArchX64: failed to disassembly and/or execute JA");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1002, "ArchX64: failed to disassembly and/or execute JA");
             
             /* Not taken */
             engine.cpu.ctx().set(X64::ZF, exprcst(64,1));
             engine.cpu.ctx().set(X64::CF, exprcst(64,1));
             engine.run_from(0x1000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x1002, "ArchX64: failed to disassembly and/or execute JA");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x1002, "ArchX64: failed to disassembly and/or execute JA");
 
 
             code = string("\x0f\x87\x50\x34\x12\x00", 6 ); // ja 0x123456
@@ -1692,25 +1692,25 @@ namespace test{
             engine.cpu.ctx().set(X64::ZF, exprcst(64,0));
             engine.cpu.ctx().set(X64::CF, exprcst(64,0));
             engine.run_from(0x2000, 1);
-            nb += _assert( engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x125456, "ArchX64: failed to disassembly and/or execute JA");
+            nb += _assert( engine.cpu.ctx().get(X64::RIP).as_uint() == 0x125456, "ArchX64: failed to disassembly and/or execute JA");
             
             /* Not taken */
             engine.cpu.ctx().set(X64::ZF, exprcst(64,1));
             engine.cpu.ctx().set(X64::CF, exprcst(64,0));
             engine.run_from(0x2000, 1);
-            nb += _assert( engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x2006, "ArchX64: failed to disassembly and/or execute JA");
+            nb += _assert( engine.cpu.ctx().get(X64::RIP).as_uint() == 0x2006, "ArchX64: failed to disassembly and/or execute JA");
             
             /* Not taken */
             engine.cpu.ctx().set(X64::ZF, exprcst(64,0));
             engine.cpu.ctx().set(X64::CF, exprcst(64,1));
             engine.run_from(0x2000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x2006, "ArchX64: failed to disassembly and/or execute JA");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x2006, "ArchX64: failed to disassembly and/or execute JA");
             
             /* Not taken */
             engine.cpu.ctx().set(X64::ZF, exprcst(64,1));
             engine.cpu.ctx().set(X64::CF, exprcst(64,1));
             engine.run_from(0x2000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x2006, "ArchX64: failed to disassembly and/or execute JA");
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x2006, "ArchX64: failed to disassembly and/or execute JA");
             
             return nb;
         }
@@ -1746,7 +1746,7 @@ namespace test{
             engine.cpu.ctx().set(X64::MM0, exprcst(64, 0xdeadbeef12121212));
             engine.cpu.ctx().set(X64::MM1, exprcst(64, 0x12345678cafebabe));
             engine.run_from(0x1040, 1);
-            nb += _assert( engine.cpu.ctx().get(X64::MM0)->as_uint() == 0xcafe1212babe1212, "ArchX64: failed to disassembly and/or execute PUNPCKLWD");
+            nb += _assert( engine.cpu.ctx().get(X64::MM0).as_uint() == 0xcafe1212babe1212, "ArchX64: failed to disassembly and/or execute PUNPCKLWD");
             
             code = string("\x0F\x61\x00", 3); // punpcklwd mm0, [rax]
             engine.mem->write_buffer(0x1050, (uint8_t*)code.c_str(), code.size());
@@ -1755,7 +1755,7 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1900));
             engine.mem->write(0x1900, 0xab001200abababab, 8);
             engine.run_from(0x1050, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::MM0)->as_uint() == 0xabab1212abab1212, "ArchX64: failed to disassembly and/or execute PUNPCKLWD");
+            nb += _assert(  engine.cpu.ctx().get(X64::MM0).as_uint() == 0xabab1212abab1212, "ArchX64: failed to disassembly and/or execute PUNPCKLWD");
 
             return nb;
         }
@@ -1772,9 +1772,9 @@ namespace test{
             engine.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
 
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSP)->as_uint() == 0x1800,
+            nb += _assert(  engine.cpu.ctx().get(X64::RSP).as_uint() == 0x1800,
                             "ArchX64: failed to disassembly and/or execute PUSH");
-            nb += _assert(  engine.mem->read(0x1800, 8)->as_uint() == 0xffffffff12345678,
+            nb += _assert(  engine.mem->read(0x1800, 8).as_uint() == 0xffffffff12345678,
                             "ArchX64: failed to disassembly and/or execute PUSH");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x123400001900));
@@ -1785,9 +1785,9 @@ namespace test{
 
             engine.mem->write(0x123400001900, exprcst(16, 0xdead));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSP)->as_uint() == 0x123400001806,
+            nb += _assert(  engine.cpu.ctx().get(X64::RSP).as_uint() == 0x123400001806,
                             "ArchX64: failed to disassembly and/or execute PUSH");
-            nb += _assert(  engine.mem->read(0x123400001806, 2)->as_uint() == 0xdead,
+            nb += _assert(  engine.mem->read(0x123400001806, 2).as_uint() == 0xdead,
                             "ArchX64: failed to disassembly and/or execute PUSH");
 
             return nb;
@@ -1803,7 +1803,7 @@ namespace test{
             engine.cpu.ctx().set(X64::MM0, exprcst(64, 0xffff0000));
             engine.cpu.ctx().set(X64::MM1, exprcst(64, 0xffff0000ffff0000));
             engine.run_from(0x1000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::MM0)->as_uint() == 0xffff000000000000, "ArchX64: failed to disassembly and/or execute PXOR");   
+            nb += _assert(  engine.cpu.ctx().get(X64::MM0).as_uint() == 0xffff000000000000, "ArchX64: failed to disassembly and/or execute PXOR");   
             
             code = string("\x0F\xEF\x00", 3); // pxor mm0, [rax]
             engine.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
@@ -1812,7 +1812,7 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1900));
             engine.mem->write(0x1900, 0xdeadbeef12340000, 8);
             engine.run_from(0x1010, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::MM0)->as_uint() == 0xdeadbeef12340001, "ArchX64: failed to disassembly and/or execute PXOR");
+            nb += _assert(  engine.cpu.ctx().get(X64::MM0).as_uint() == 0xdeadbeef12340001, "ArchX64: failed to disassembly and/or execute PXOR");
 
             return nb;
         }
@@ -1830,15 +1830,15 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x12340000100c0, "ArchX64: failed to disassembly and/or execute RCL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x12340000100c0, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCL");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x10010));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x10800, "ArchX64: failed to disassembly and/or execute RCL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10800, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
 
             code = string("\xD1\x10", 2); // rcl dword ptr [rax], 1
             engine.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -1849,18 +1849,18 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 0));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 0x44444445, "ArchX64: failed to disassembly and/or execute RCL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 0x44444445, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1700));
             engine.mem->write(0x1700, exprcst(64, 0x80000000));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCL");
 
             // On 64 bits
             code = string("\x48\xd3\xd0", 3); // rcl rax, cl
@@ -1871,22 +1871,22 @@ namespace test{
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x3f));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xc000000000000000, "ArchX64: failed to disassembly and/or execute RCL");
-            // Sleigh error on 64 bits in ia.sinc, they have a typo (zero missing in final 0x1000000000.....) nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xc000000000000000, "ArchX64: failed to disassembly and/or execute RCL");
+            // Sleigh error on 64 bits in ia.sinc, they have a typo (zero missing in final 0x1000000000.....) nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x4000000000000001));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x1));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert( engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x8000000000000003, "ArchX64: failed to disassembly and/or execute RCL");
-            // Sleigh bug  nb += _assert( engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert( engine.cpu.ctx().get(X64::RAX).as_uint() == 0x8000000000000003, "ArchX64: failed to disassembly and/or execute RCL");
+            // Sleigh bug  nb += _assert( engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCL");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x12345678deadbeef));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x0));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x12345678deadbeef, "ArchX64: failed to disassembly and/or execute RCL");
-            // Sleigh bug  nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x12345678deadbeef, "ArchX64: failed to disassembly and/or execute RCL");
+            // Sleigh bug  nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCL");
 
             return nb;
         }
@@ -1904,15 +1904,15 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x10224, "ArchX64: failed to disassembly and/or execute RCR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10224, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCR");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x11240));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x10024, "ArchX64: failed to disassembly and/or execute RCR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10024, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCR");
             
             code = string("\xD1\x18", 2); // rcr dword ptr [eax], 1
             engine.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -1923,18 +1923,18 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 0));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 0x91111111, "ArchX64: failed to disassembly and/or execute RCR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 0x91111111, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCR");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1700));
             engine.mem->write(0x1700, exprcst(64, 0x10000001));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 0x08000000, "ArchX64: failed to disassembly and/or execute RCR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 0x08000000, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCR");
 
             // On 64 bits
             code = string("\x48\xd3\xd8", 3); // rcr rax, cl
@@ -1945,22 +1945,22 @@ namespace test{
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x3f));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x3, "ArchX64: failed to disassembly and/or execute RCR");
-            // Sleigh bug, see RCL nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x3, "ArchX64: failed to disassembly and/or execute RCR");
+            // Sleigh bug, see RCL nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute RCR");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x8000000000000001));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x1));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x4000000000000000, "ArchX64: failed to disassembly and/or execute RCR");
-            // Sleigh bug nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x4000000000000000, "ArchX64: failed to disassembly and/or execute RCR");
+            // Sleigh bug nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCR");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0xf2345678deadbeef));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x0));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute RCR");
-            // Sleigh bug  nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute RCR");
+            // Sleigh bug  nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute RCR");
 
             return nb;
         }
@@ -1977,9 +1977,9 @@ namespace test{
             engine.mem->write(0x123400001800, exprcst(64, 0x123400001700));
 
             engine.run_from(0x123400001160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSP)->as_uint() == 0x123400001808,
+            nb += _assert(  engine.cpu.ctx().get(X64::RSP).as_uint() == 0x123400001808,
                             "ArchX64: failed to disassembly and/or execute RET");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x123400001700,
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x123400001700,
                             "ArchX64: failed to disassembly and/or execute RET");
 
             code = string("\xc2\x30\x00", 3); // ret 0x30
@@ -1989,9 +1989,9 @@ namespace test{
             engine.mem->write(0x123400001800, exprcst(64, 0x123400001700));
 
             engine.run_from(0x123400001170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RSP)->as_uint() == 0x123400001838,
+            nb += _assert(  engine.cpu.ctx().get(X64::RSP).as_uint() == 0x123400001838,
                             "ArchX64: failed to disassembly and/or execute RET");
-            nb += _assert(  engine.cpu.ctx().get(X64::RIP)->as_uint() == 0x123400001700,
+            nb += _assert(  engine.cpu.ctx().get(X64::RIP).as_uint() == 0x123400001700,
                             "ArchX64: failed to disassembly and/or execute RET");
 
             return nb;
@@ -2008,14 +2008,14 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x10201));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x10081, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10081, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROL");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x10010));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x10800, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10800, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
             
             code = string("\xD1\x00", 2); // rol dword ptr [eax], 1
             engine.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -2026,18 +2026,18 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 0x44444444, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 0x44444444, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1700));
             engine.mem->write(0x1700, exprcst(64, 0x80000001));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 0));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 3, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 3, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROL");
 
             code = string("\xd3\xc0", 2); // rol eax, cl
             engine.mem->write_buffer(0x1190, (uint8_t*)code.c_str(), code.size());
@@ -2048,9 +2048,9 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1190, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x2222, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x2222, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
             
             // On 64 bits
             code = string("\x48\xd3\xc0", 3); // rol rax, cl
@@ -2061,22 +2061,22 @@ namespace test{
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x3f));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x4000000000000000, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x4000000000000000, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x8000000000000001));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x1));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x3, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x3, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROL");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0xf2345678deadbeef));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x0));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute ROL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute ROL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROL");
 
             return nb;
         }
@@ -2092,14 +2092,14 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x10201));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x10204, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10204, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x10018));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x13000, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x13000, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
             
             code = string("\xD1\x08", 2); // ror dword ptr [eax], 1
             engine.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -2110,18 +2110,18 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 0x11111111, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 0x11111111, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1700));
             engine.mem->write(0x1700, exprcst(64, 0x80000000));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 0x40000000, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 0x40000000, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROR");
 
             code = string("\xd3\xc8", 2); // ror eax, cl
             engine.mem->write_buffer(0x1190, (uint8_t*)code.c_str(), code.size());
@@ -2132,9 +2132,9 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 0));
             engine.run_from(0x1190, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x80000888, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x80000888, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROR");
             
             // On 64 bits
             code = string("\x48\xd3\xc8", 3); // ror rax, cl
@@ -2145,22 +2145,22 @@ namespace test{
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x3f));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x1, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x1, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x8000000000000001));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x1));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xc000000000000000, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xc000000000000000, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute ROR");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0xf2345678deadbeef));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x0));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute ROR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute ROR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute ROR");
 
             return nb;
         }
@@ -2180,12 +2180,12 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1700));
             engine.mem->write(0x1700, exprcst(32, 0x22222222));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 0x11111111, "ArchX64: failed to disassembly and/or execute RORX");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 0x11111111, "ArchX64: failed to disassembly and/or execute RORX");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1700));
             engine.mem->write(0x1700, exprcst(32, 0x80000000));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 0x40000000, "ArchX64: failed to disassembly and/or execute RORX");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 0x40000000, "ArchX64: failed to disassembly and/or execute RORX");
 
             // On 64 bits
             code = string("\xC4\xE3\xFB\xF0\xD8\x3F", 6); // rorx rbx, rax, 0x3f
@@ -2194,18 +2194,18 @@ namespace test{
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x8000000000000000));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 0x1, "ArchX64: failed to disassembly and/or execute RORX");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 0x1, "ArchX64: failed to disassembly and/or execute RORX");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x8000000000000001));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 0x3, "ArchX64: failed to disassembly and/or execute RORX");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 0x3, "ArchX64: failed to disassembly and/or execute RORX");
 
             code = string("\xC4\xE3\xFB\xF0\xD8\x00", 6); // rorx rbx, rax, 0x0
             engine.mem->write_buffer(0x1190, (uint8_t*)code.c_str(), code.size());
             engine.mem->write_buffer(0x1190+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2); 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0xf2345678deadbeef));
             engine.run_from(0x1190, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RBX)->as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute RORX");
+            nb += _assert(  engine.cpu.ctx().get(X64::RBX).as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute RORX");
 
             return nb;
         }
@@ -2222,14 +2222,14 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x10201));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x12010, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x12010, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x11010));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x10100, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10100, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
             
             code = string("\xd1\x20", 2); // sal dword ptr [rax], 1
             engine.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -2240,18 +2240,18 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 0x44444444, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 0x44444444, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1700));
             engine.mem->write(0x1700, exprcst(64, 0x80000001));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 0));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 2, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 2, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
             
             code = string("\xc1\xe0\x0c", 3); // sal eax, 12
             engine.mem->write_buffer(0x1190, (uint8_t*)code.c_str(), code.size());
@@ -2261,9 +2261,9 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1190, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x1000, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x1000, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
             
             // On 64 bits
             code = string("\x48\xd3\xe0", 3); // sal rax, cl
@@ -2275,27 +2275,27 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xc000000000000000, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xc000000000000000, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0xc000000000000001));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x1));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x8000000000000002, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x8000000000000002, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0xf2345678deadbeef));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x0));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 0));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAL");
             
             return nb;
         }
@@ -2311,14 +2311,14 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x10201));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x10020, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10020, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1f008));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.run_from(0x1160, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x1ff00, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x1ff00, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAR");
             
             code = string("\xd1\x38", 2); // sar dword ptr [rax], 1
             engine.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 2);
@@ -2329,18 +2329,18 @@ namespace test{
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 0x11111111, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 0x11111111, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0x1700));
             engine.mem->write(0x1700, exprcst(64, 0x80000001));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.mem->read(0x1700, 4)->as_uint() == 0xc0000000, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.mem->read(0x1700, 4).as_uint() == 0xc0000000, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
 
             // On 64 bits
             code = string("\x48\xd3\xf8", 3); // sar rax, cl
@@ -2351,26 +2351,26 @@ namespace test{
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x2));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xfc00000000000000, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xfc00000000000000, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0xc000000000000001));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x1));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xe000000000000000, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xe000000000000000, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64, 0xf2345678deadbeef));
             engine.cpu.ctx().set(X64::RCX, exprcst(64, 0x0));
             engine.cpu.ctx().set(X64::CF, exprcst(64, 0));
             engine.cpu.ctx().set(X64::OF, exprcst(64, 1));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xf2345678deadbeef, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0, "ArchX64: failed to disassembly and/or execute SAR");
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 1, "ArchX64: failed to disassembly and/or execute SAR");
             
             return nb;
         }
@@ -2387,37 +2387,37 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xff));
             engine.cpu.ctx().set(X64::CF, exprcst(64,0x1));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xf0,
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xf0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::AF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::AF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
                             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x10ff));
             engine.cpu.ctx().set(X64::CF, exprcst(64,1));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x10f0,
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x10f0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::AF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::AF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
                             
             code = string("\x1c\x80", 2); // sbb al(0x80), 0x80
@@ -2427,17 +2427,17 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x80));
             engine.cpu.ctx().set(X64::CF, exprcst(64,1));
             engine.run_from(0x1190, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0xff,
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0xff,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SBB");
             
             
@@ -2448,17 +2448,17 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x1ffff));
             engine.cpu.ctx().set(X64::CF, exprcst(64,1));
             engine.run_from(0x1000, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX)->as_uint() == 0x1ff00,
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == 0x1ff00,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SBB");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SBB");
 
             return nb;
@@ -2477,17 +2477,17 @@ namespace test{
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0xff));
             engine.cpu.ctx().set(X64::RDI, exprcst(64,0x1500));
             engine.run_from(0x1170, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RDI)->as_uint() == exprcst(64, 0x14ff)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDI).as_uint() == 0x14ff,
                             "ArchX64: failed to disassembly and/or execute SCASB");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SCASB");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SCASB");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SCASB");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SCASB");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SCASB");
             
             engine.mem->write(0x1500, exprcst(8, 0xff));
@@ -2496,17 +2496,17 @@ namespace test{
             engine.cpu.ctx().set(X64::RDI, exprcst(64,0x1500));
             engine.run_from(0x1170, 1);
             
-            nb += _assert(  engine.cpu.ctx().get(X64::RDI)->as_uint() == exprcst(64, 0x1501)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RDI).as_uint() == 0x1501,
                             "ArchX64: failed to disassembly and/or execute SCASB");
-            nb += _assert(  engine.cpu.ctx().get(X64::ZF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::ZF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SCASB");
-            nb += _assert(  engine.cpu.ctx().get(X64::CF)->as_uint() == 1,
+            nb += _assert(  engine.cpu.ctx().get(X64::CF).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute SCASB");
-            nb += _assert(  engine.cpu.ctx().get(X64::PF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::PF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SCASB");
-            nb += _assert(  engine.cpu.ctx().get(X64::OF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::OF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SCASB");
-            nb += _assert(  engine.cpu.ctx().get(X64::SF)->as_uint() == 0,
+            nb += _assert(  engine.cpu.ctx().get(X64::SF).as_uint() == 0,
                             "ArchX64: failed to disassembly and/or execute SCASB");
 
             return nb;
@@ -2525,8 +2525,8 @@ namespace test{
             sym.mem->write_buffer(0x1040, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1040+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1040, 1);
-            nb += _assert(  sym.cpu.ctx().get(X64::RAX)->as_uint() ==  0x1, "ArchX64: failed to disassembly and/or execute XCHG"); 
-            nb += _assert(  sym.cpu.ctx().get(X64::RBX)->as_uint() ==  0x23, "ArchX64: failed to disassembly and/or execute XCHG");
+            nb += _assert(  sym.cpu.ctx().get(X64::RAX).as_uint() ==  0x1, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::RBX).as_uint() ==  0x23, "ArchX64: failed to disassembly and/or execute XCHG");
 
             // xchg bx, ax
             code = string("\x66\x93",2);
@@ -2535,8 +2535,8 @@ namespace test{
             sym.mem->write_buffer(0x1050, (uint8_t*)code.c_str(), 2);
             sym.mem->write_buffer(0x1050+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X64::RAX)->as_uint() ==  0xbb01, "ArchX64: failed to disassembly and/or execute XCHG"); 
-            nb += _assert(  sym.cpu.ctx().get(X64::RBX)->as_uint() ==  0xaa23, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::RAX).as_uint() ==  0xbb01, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::RBX).as_uint() ==  0xaa23, "ArchX64: failed to disassembly and/or execute XCHG"); 
 
             // xchg r8w, bx
             code = string("\x66\x41\x87\xD8",4);
@@ -2545,8 +2545,8 @@ namespace test{
             sym.mem->write_buffer(0x1070, (uint8_t*)code.c_str(), 4);
             sym.mem->write_buffer(0x1070+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1070, 1);
-            nb += _assert(  sym.cpu.ctx().get(X64::RBX)->as_uint() ==  0xbb01, "ArchX64: failed to disassembly and/or execute XCHG"); 
-            nb += _assert(  sym.cpu.ctx().get(X64::R8)->as_uint() ==  0xaa23, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::RBX).as_uint() ==  0xbb01, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::R8).as_uint() ==  0xaa23, "ArchX64: failed to disassembly and/or execute XCHG"); 
 
             // xchg r8w, ax
             code = string("\x66\x41\x90",3);
@@ -2555,8 +2555,8 @@ namespace test{
             sym.mem->write_buffer(0x1060, (uint8_t*)code.c_str(), 3);
             sym.mem->write_buffer(0x1060+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             sym.run_from(0x1060, 1);
-            nb += _assert(  sym.cpu.ctx().get(X64::RAX)->as_uint() ==  0xbb01, "ArchX64: failed to disassembly and/or execute XCHG"); 
-            nb += _assert(  sym.cpu.ctx().get(X64::R8)->as_uint() ==  0xaa23, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::RAX).as_uint() ==  0xbb01, "ArchX64: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::R8).as_uint() ==  0xaa23, "ArchX64: failed to disassembly and/or execute XCHG"); 
 
             // xchg DWORD PTR [ecx], ecx 
             code = string("\x67\x87\x09", 3);
@@ -2565,8 +2565,8 @@ namespace test{
             sym.mem->write(0x1700, exprcst(32, 0x12345678));
             sym.cpu.ctx().set(X64::RCX, exprcst(64, 0x1700));
             sym.run_from(0x1100, 1);
-            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4)->as_uint() ==  0x1700, "ArchX86: failed to disassembly and/or execute XCHG"); 
-            nb += _assert(  sym.cpu.ctx().get(X64::RCX)->as_uint() ==  0x12345678, "ArchX86: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  (uint32_t)sym.mem->read(0x1700, 4).as_uint() ==  0x1700, "ArchX86: failed to disassembly and/or execute XCHG"); 
+            nb += _assert(  sym.cpu.ctx().get(X64::RCX).as_uint() ==  0x12345678, "ArchX86: failed to disassembly and/or execute XCHG"); 
 
             /*
             // xchg al, BYTE PTR [bx]
@@ -2577,8 +2577,8 @@ namespace test{
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0xfAA));
             sym.cpu.ctx().set(X86::EBX, exprcst(32, 0x10020));
             sym.run_from(0x1110, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::EAX)->as_uint() ==  0xf12, "ArchX86: failed to disassembly and/or execute XCHG");
-            nb += _assert(  (uint8_t)sym.mem->read(0x20, 1)->as_uint() ==  0xAA, "ArchX86: failed to disassembly and/or execute XCHG");
+            nb += _assert(  sym.cpu.ctx().get(X86::EAX).as_uint() ==  0xf12, "ArchX86: failed to disassembly and/or execute XCHG");
+            nb += _assert(  (uint8_t)sym.mem->read(0x20, 1).as_uint() ==  0xAA, "ArchX86: failed to disassembly and/or execute XCHG");
             */
             return nb;
         }

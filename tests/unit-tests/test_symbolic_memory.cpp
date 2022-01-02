@@ -7,6 +7,7 @@
 #include "exception.hpp"
 #include "simplification.hpp"
 #include "engine.hpp"
+#include "varcontext.hpp"
 
 using std::cout;
 using std::endl; 
@@ -118,16 +119,16 @@ namespace test{
 
             mem.symbolic_ptr_write(addr1, addr1->value_set(), val1, settings);
 
-            nb += _assert(!mem.read(0x10003, 4)->is_symbolic(*varctx),"Failed to read at concrete address within symbolic memory range");
-            nb += _assert(mem.read(0x10002, 4)->is_symbolic(*varctx),"Failed to read at concrete address within symbolic memory range");
-            nb += _assert(mem.read(0x0, 1)->is_symbolic(*varctx),"Failed to read at concrete address within symbolic memory range");
+            nb += _assert(!mem.read(0x10003, 4).is_symbolic(*varctx),"Failed to read at concrete address within symbolic memory range");
+            nb += _assert(mem.read(0x10002, 4).is_symbolic(*varctx),"Failed to read at concrete address within symbolic memory range");
+            nb += _assert(mem.read(0x0, 1).is_symbolic(*varctx),"Failed to read at concrete address within symbolic memory range");
 
             mem.symbolic_ptr_write(addr2, addr2->value_set(), val1, settings);
-            nb += _assert(mem.read(0x10003, 4)->is_symbolic(*varctx),"Failed to read at concrete address within symbolic memory range");
+            nb += _assert(mem.read(0x10003, 4).is_symbolic(*varctx),"Failed to read at concrete address within symbolic memory range");
 
             // Restore snapshot ?
             mem.symbolic_mem_engine.restore_snapshot(1);
-            nb += _assert(!mem.read(0x10003, 4)->is_symbolic(*varctx),"Failed to read at concrete address within symbolic memory range");
+            nb += _assert(!mem.read(0x10003, 4).is_symbolic(*varctx),"Failed to read at concrete address within symbolic memory range");
 
             return nb;
         }
@@ -149,10 +150,10 @@ namespace test{
 
             mem.symbolic_ptr_write(addr1, addr1->value_set(), val1, settings);
 
-            nb += _assert(!mem.read(0x10000, 4)->is_symbolic(*varctx),"Concrete read in symbolic memory failed");
-            nb += _assert(mem.read(0x10000, 4)->as_uint(*varctx) == 0,"Concrete read in symbolic memory failed");
+            nb += _assert(!mem.read(0x10000, 4).is_symbolic(*varctx),"Concrete read in symbolic memory failed");
+            nb += _assert(mem.read(0x10000, 4).as_uint(*varctx) == 0,"Concrete read in symbolic memory failed");
 
-            ite = mem.read(0xf000, 4); // Read in symbolic area
+            ite = mem.read(0xf000, 4).as_expr(); // Read in symbolic area
             nb += _assert(ite->is_symbolic(*varctx),"Concrete read in symbolic memory failed");
 
             mem.symbolic_ptr_write(addr2, addr2->value_set(), val1, settings);
@@ -172,7 +173,7 @@ namespace test{
 
             // Make concrete ptr write in symbolic memory
             mem.write(0xf008, exprcst(64, 0xdeadbeefcafebabe));
-            e = mem.read(0xf008, 4);
+            e = mem.read(0xf008, 4).as_expr();
             nb += _assert(e->size == 32,"Concrete read in symbolic memory failed");
             nb += _assert(e->type != ExprType::ITE,"Concrete read in symbolic memory failed");
             nb += _assert(e->as_uint(*varctx) == 0xcafebabe,"Concrete read in symbolic memory failed");
@@ -180,49 +181,49 @@ namespace test{
             // Test all ptr write overwriting with another concrete one
             mem.write(0xf010, exprcst(64, 0x4142434445464748));
             
-            ite2 = mem.read(0xf00d, 4);
+            ite2 = mem.read(0xf00d, 4).as_expr();
             ite2 = simp->simplify(ite2);
             nb += _assert(ite2->size == 32, "Concrete read in symbolic memory failed");
             nb += _assert(!ite2->is_symbolic(*varctx), "Concrete read in symbolic mempry failed");
             nb += _assert(ite2->as_uint(*varctx) == 0x48deadbe,"Concrete read in symbolic memory failed");
 
-            ite2 = mem.read(0xf00e, 4);
+            ite2 = mem.read(0xf00e, 4).as_expr();
             ite2 = simp->simplify(ite2);
             nb += _assert(ite2->size == 32, "Concrete read in symbolic memory failed");
             nb += _assert(!ite2->is_symbolic(*varctx), "Concrete read in symbolic mempry failed");
             nb += _assert(ite2->as_uint(*varctx) == 0x4748dead,"Concrete read in symbolic memory failed");
 
-            ite2 = mem.read(0xf00f, 4);
+            ite2 = mem.read(0xf00f, 4).as_expr();
             ite2 = simp->simplify(ite2);
             nb += _assert(ite2->size == 32, "Concrete read in symbolic memory failed");
             nb += _assert(!ite2->is_symbolic(*varctx), "Concrete read in symbolic mempry failed");
             nb += _assert(ite2->as_uint(*varctx) == 0x464748de, "Concrete read in symbolic memory failed");
 
-            ite2 = mem.read(0xf010, 4);
+            ite2 = mem.read(0xf010, 4).as_expr();
             ite2 = simp->simplify(ite2);
             nb += _assert(ite2->size == 32, "Concrete read in symbolic memory failed");
             nb += _assert(!ite2->is_symbolic(*varctx), "Concrete read in symbolic mempry failed");
             nb += _assert(ite2->as_uint(*varctx) == 0x45464748, "Concrete read in symbolic memory failed");
 
-            ite2 = mem.read(0xf011, 4);
+            ite2 = mem.read(0xf011, 4).as_expr();
             ite2 = simp->simplify(ite2);
             nb += _assert(ite2->size == 32, "Concrete read in symbolic memory failed");
             nb += _assert(!ite2->is_symbolic(*varctx), "Concrete read in symbolic mempry failed");
             nb += _assert(ite2->as_uint(*varctx) == 0x44454647, "Concrete read in symbolic memory failed");
             
-            ite2 = mem.read(0xf012, 4);
+            ite2 = mem.read(0xf012, 4).as_expr();
             ite2 = simp->simplify(ite2);
             nb += _assert(ite2->size == 32, "Concrete read in symbolic memory failed");
             nb += _assert(!ite2->is_symbolic(*varctx), "Concrete read in symbolic mempry failed");
             nb += _assert(ite2->as_uint(*varctx) == 0x43444546, "Concrete read in symbolic memory failed");
             
-            ite2 = mem.read(0xf013, 4);
+            ite2 = mem.read(0xf013, 4).as_expr();
             ite2 = simp->simplify(ite2);
             nb += _assert(ite2->size == 32, "Concrete read in symbolic memory failed");
             nb += _assert(!ite2->is_symbolic(*varctx), "Concrete read in symbolic mempry failed");
             nb += _assert(ite2->as_uint(*varctx) == 0x42434445, "Concrete read in symbolic memory failed");
 
-            ite2 = mem.read(0xf014, 4);
+            ite2 = mem.read(0xf014, 4).as_expr();
             ite2 = simp->simplify(ite2);
             nb += _assert(ite2->size == 32, "Concrete read in symbolic memory failed");
             nb += _assert(!ite2->is_symbolic(*varctx), "Concrete read in symbolic mempry failed");
@@ -231,13 +232,13 @@ namespace test{
             // With overwrite in middle
             mem.write(0xf011, exprcst(8, 0xaa));
 
-            ite2 = mem.read(0xf010, 4);
+            ite2 = mem.read(0xf010, 4).as_expr();
             ite2 = simp->simplify(ite2);
             nb += _assert(ite2->size == 32, "Concrete read in symbolic memory failed");
             nb += _assert(!ite2->is_symbolic(*varctx), "Concrete read in symbolic mempry failed");
             nb += _assert(ite2->as_uint(*varctx) == 0x4546aa48, "Concrete read in symbolic memory failed");
             
-            ite2 = mem.read(0xf00f, 4);
+            ite2 = mem.read(0xf00f, 4).as_expr();
             ite2 = simp->simplify(ite2);
             nb += _assert(ite2->size == 32, "Concrete read in symbolic memory failed");
             nb += _assert(!ite2->is_symbolic(*varctx), "Concrete read in symbolic mempry failed");
@@ -257,25 +258,28 @@ namespace test{
             Expr addr1 = exprvar(64, "var_0") & 0x000001f,
                  addr2 = exprvar(64, "var_1") | 0x00001100;
             Expr e, ite, ite2;
+            Value val;
             Expr val1 = exprcst(64, 0x12345678deadbeef);
             std::unique_ptr<ExprSimplifier> simp = NewDefaultExprSimplifier();
 
             mem.write(0x10, val1);
             varctx->set("var_0", 0x11);
 
-            e = mem.symbolic_ptr_read(addr1, addr1->value_set(), 4, settings); // Read from symbolic ptr
+            mem.symbolic_ptr_read(val, addr1, addr1->value_set(), 4, settings); // Read from symbolic ptr
+            e = val.as_expr();
             nb += _assert(!e->is_symbolic(*varctx), "Read from concolic pointer failed");
             nb += _assert(e->type == ExprType::ITE, "Read from concolic pointer failed");
             nb += _assert(e->as_uint(*varctx) == 0x78deadbe, "Read from concolic pointer failed");
 
-             e = mem.symbolic_ptr_read(addr1, addr1->value_set(), 8, settings); // Read from symbolic ptr
+            mem.symbolic_ptr_read(val, addr1, addr1->value_set(), 8, settings); // Read from symbolic ptr
+            e = val.as_expr();
             nb += _assert(!e->is_symbolic(*varctx), "Read from concolic pointer failed");
             nb += _assert(e->type == ExprType::ITE, "Read from concolic pointer failed");
             nb += _assert(e->as_uint(*varctx) == 0x12345678deadbe, "Read from concolic pointer failed");
 
             return nb;
         }
-        
+
         unsigned int refine_value_set()
         {
             unsigned int nb = 0;

@@ -1,7 +1,7 @@
 #ifndef MAAT_ENV_LIBRARY_H
 #define MAAT_ENV_LIBRARY_H
 
-#include "expression.hpp"
+#include "value.hpp"
 #include "types.hpp"
 #include <vector>
 #include <string>
@@ -38,8 +38,8 @@ typedef std::vector<size_t> args_spec_t;
 class FunctionCallback
 {
 public:
-    using return_t = std::variant<std::monostate, cst_t, Expr>; ///< Value returned by the function (if any)
-    using native_cb_t = std::add_pointer<return_t(MaatEngine&, const std::vector<Expr>&)>::type; ///< Native C/C++ callback
+    using return_t = std::variant<std::monostate, cst_t, Value>; ///< Value returned by the function (if any)
+    using native_cb_t = std::add_pointer<return_t(MaatEngine&, const std::vector<Value>&)>::type; ///< Native C/C++ callback
 public:
     args_spec_t args_spec; /// Arguments list
 private:
@@ -109,15 +109,15 @@ public:
     Type type() const;
 public:
     /// Set function arguments
-    virtual void prepare_args(MaatEngine& engine, const std::vector<Expr>& args) const;
+    virtual void prepare_args(MaatEngine& engine, const std::vector<Value>& args) const;
     /// Get function arguments
     virtual void get_args(
         MaatEngine& engine,
         const args_spec_t& args_spec,
-        std::vector<Expr>& args
+        std::vector<Value>& args
     ) const;
     /// Get function argument number 'n' (starting at 0)
-    virtual Expr get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
     /// Set a function's return value before it returns
     virtual void set_ret_value(
         MaatEngine& engine,
@@ -153,10 +153,10 @@ public:
     virtual void get_args(
         MaatEngine& engine,
         const args_spec_t& args_spec,
-        std::vector<Expr>& args
+        std::vector<Value>& args
     ) const;
     /// Get function argument number 'n' (starting at 0)
-    virtual Expr get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
     /// Set a function's return value before it returns
     virtual void set_ret_value(
         MaatEngine& engine,
@@ -181,10 +181,10 @@ public:
     virtual void get_args(
         MaatEngine& engine,
         const args_spec_t& args_spec,
-        std::vector<Expr>& args
+        std::vector<Value>& args
     ) const;
     /// Get function argument number 'n' (starting at 0)
-    virtual Expr get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
     /// Set a function's return value before it returns
     virtual void set_ret_value(
         MaatEngine& engine,
@@ -209,10 +209,10 @@ public:
     virtual void get_args(
         MaatEngine& engine,
         const args_spec_t& args_spec,
-        std::vector<Expr>& args
+        std::vector<Value>& args
     ) const;
     /// Get function argument number 'n' (starting at 0)
-    virtual Expr get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
     /// Set a function's return value before it returns
     virtual void set_ret_value(
         MaatEngine& engine,
@@ -235,10 +235,10 @@ public:
     virtual void get_args(
         MaatEngine& engine,
         const args_spec_t& args_spec,
-        std::vector<Expr>& args
+        std::vector<Value>& args
     ) const;
     /// Get function argument number 'n' (starting at 0)
-    virtual Expr get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
 };
 
 /// X64 SYSTEM V ABI
@@ -254,10 +254,10 @@ public:
     virtual void get_args(
         MaatEngine& engine,
         const args_spec_t& args_spec,
-        std::vector<Expr>& args
+        std::vector<Value>& args
     ) const;
     /// Get function argument number 'n' (starting at 0)
-    virtual Expr get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
     /// Set a function's return value before it returns
     virtual void set_ret_value(
         MaatEngine& engine,
@@ -282,10 +282,10 @@ public:
     virtual void get_args(
         MaatEngine& engine,
         const args_spec_t& args_spec,
-        std::vector<Expr>& args
+        std::vector<Value>& args
     ) const;
     /// Get function argument number 'n' (starting at 0)
-    virtual Expr get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
     /// Set a function's return value before it returns
     virtual void set_ret_value(
         MaatEngine& engine,

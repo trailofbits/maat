@@ -20,10 +20,10 @@ static PyObject* Path_get_related_constraints(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    if (PyObject_TypeCheck(arg, (PyTypeObject*)get_Expr_Type()))
+    if (PyObject_TypeCheck(arg, (PyTypeObject*)get_Value_Type()))
     {
         return PyPathIterator_FromWrapper(
-            as_path_object(self).path->get_related_constraints(*as_expr_object(arg).expr)
+            as_path_object(self).path->get_related_constraints(as_value_object(arg).value->as_expr())
         );
     }
     else if (PyObject_TypeCheck(arg, (PyTypeObject*)get_Constraint_Type()))

@@ -8,7 +8,6 @@ namespace callother{
 
 Id mnemonic_to_id(const std::string& mnemonic, const std::string& arch)
 {
-    std::cout << "DEBUG mnem '" << mnemonic << "'\n"; 
     if (mnemonic == "RDTSC") return Id::X86_RDTSC;
     if (mnemonic == "SYSCALL")
         if (arch == "X64") return Id::X64_SYSCALL;
@@ -47,8 +46,8 @@ void X86_LOCK_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
 void X86_RDTSC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     // We put the timestamp counter in the output parameter
-    Expr counter = engine.cpu.ctx().get(engine.arch->tsc());
-    if (inst.out.size() != counter->size)
+    const Value& counter = engine.cpu.ctx().get(engine.arch->tsc());
+    if (inst.out.size() != counter.size())
     {
         throw callother_exception("RDTSC: inconsistent sizes for output parameter and TSC");
     }
@@ -59,8 +58,8 @@ void X86_RDTSC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
 // doesn't have an ITE opcode
 void X86_PMINUB_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    Expr    src1 = pinst.in0.as_expr(),
-            src2 = pinst.in1.as_expr();
+    Expr    src1 = pinst.in0.value().as_expr(),
+            src2 = pinst.in1.value().as_expr();
     Expr res = ITE(
         extract(src1, 7, 0), ITECond::LT, extract(src2, 7, 0),
         extract(src1, 7, 0),
@@ -84,7 +83,7 @@ void X86_CPUID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
      * The area pointed contains: eax:ebx:edx:ecx in this order, 4 bytes each */
     ucst_t eax, ebx, ecx, edx;
     reg_t ax = (engine.arch->type == Arch::Type::X86)? X86::EAX : X64::RAX;
-    ucst_t leaf = engine.cpu.ctx().get(ax)->as_uint(*engine.vars);
+    ucst_t leaf = engine.cpu.ctx().get(ax).as_uint(*engine.vars);
 
     if (leaf == 0)
     {
@@ -179,8 +178,8 @@ void X86_CPUID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
 void X64_SYSCALL_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     // Get syscall number
-    Expr num = engine.cpu.ctx().get(X64::RAX);
-    if (num->is_symbolic(*engine.vars))
+    const Value& num = engine.cpu.ctx().get(X64::RAX);
+    if (num.is_symbolic(*engine.vars))
     {
         throw callother_exception("SYSCALL: syscall number is symbolic!");
     }
@@ -188,7 +187,7 @@ void X64_SYSCALL_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processed
     try
     {
         const env::Function& func = engine.env->get_syscall_func_by_num(
-            num->as_uint(*engine.vars)
+            num.as_uint(*engine.vars)
         );
         // Execute function callback
         switch (func.callback().execute(engine, engine.env->syscall_abi))
@@ -212,15 +211,15 @@ void X64_SYSCALL_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processed
 void X86_INT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     // Get interrupt number
-    cst_t num = pinst.in1.as_expr()->as_uint(*engine.vars);
+    cst_t num = pinst.in1.value().as_uint(*engine.vars);
     if (num != 0x80)
     {
         throw callother_exception("INT: only supported for number 0x80");
     }
 
     // Get syscall number
-    Expr sys_num = engine.cpu.ctx().get(X86::EAX);
-    if (sys_num->is_symbolic(*engine.vars))
+    const Value& sys_num = engine.cpu.ctx().get(X86::EAX);
+    if (sys_num.is_symbolic(*engine.vars))
     {
         throw callother_exception("INT 0x80: syscall number is symbolic!");
     }
@@ -229,7 +228,7 @@ void X86_INT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     try
     {
         const env::Function& func = engine.env->get_syscall_func_by_num(
-            sys_num->as_uint(*engine.vars)
+            sys_num.as_uint(*engine.vars)
         );
         // Execute function callback
         switch (func.callback().execute(engine, env::abi::X86_LINUX_INT80::instance()))
