@@ -160,7 +160,7 @@ std::vector<Value> VarContext::new_symbolic_buffer(
     const std::string& name,
     int nb_elems,
     int elem_size,
-    bool null_terminated
+    std::optional<cst_t> trailing_value
 )
 {
     std::vector<Value> res;
@@ -171,8 +171,8 @@ std::vector<Value> VarContext::new_symbolic_buffer(
         ss << name << "_" << i;
         res.push_back(Value(exprvar(elem_size*8, ss.str())));
     }
-    if (null_terminated)
-        res.push_back(Value(exprcst(elem_size*8, 0)));
+    if (trailing_value)
+        res.push_back(Value(exprcst(elem_size*8, *trailing_value)));
     return res;
 }
 
@@ -181,7 +181,7 @@ std::vector<Value> VarContext::new_concolic_buffer(
     const std::vector<cst_t>& concrete_buffer,
     int nb_elems,
     int elem_size,
-    bool null_terminated
+    std::optional<cst_t> trailing_value
 )
 {
     std::vector<Value> res;
@@ -206,8 +206,8 @@ std::vector<Value> VarContext::new_concolic_buffer(
         res.push_back(Value(exprvar(elem_size*8, var_name)));
         set(var_name, concrete_buffer[i]);
     }
-    if (null_terminated)
-        res.push_back(Value(exprcst(elem_size*8, 0)));
+    if (trailing_value)
+        res.push_back(Value(exprcst(elem_size*8, *trailing_value)));
     return res;
 }
 
