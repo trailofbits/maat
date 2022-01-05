@@ -186,7 +186,9 @@ std::vector<Value> VarContext::new_concolic_buffer(
 {
     std::vector<Value> res;
     std::stringstream ss;
-    if (nb_elems > concrete_buffer.size())
+    if (nb_elems == -1)
+        nb_elems = concrete_buffer.size();
+    else if (nb_elems > concrete_buffer.size())
         throw var_context_exception(
             "VarContext::new_concolic_buffer(): 'nb_elems' is bigger than the concrete buffer size"
         );
@@ -209,6 +211,18 @@ std::vector<Value> VarContext::new_concolic_buffer(
     if (trailing_value)
         res.push_back(Value(exprcst(elem_size*8, *trailing_value)));
     return res;
+}
+
+std::vector<Value> VarContext::new_concolic_buffer(
+        const std::string& name,
+        const std::string& concrete_buffer,
+        std::optional<cst_t> trailing_value
+    )
+{
+    std::vector<cst_t> buf;
+    for (char const& c : concrete_buffer)
+        buf.push_back((cst_t)c);
+    return new_concolic_buffer(name, buf, buf.size(), 1, trailing_value);
 }
 
 void VarContext::remove(const std::string& name)

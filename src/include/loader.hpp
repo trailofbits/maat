@@ -11,6 +11,7 @@
 #include "arch.hpp"
 #include "memory_page.hpp"
 #include "exception.hpp"
+#include "value.hpp"
 
 namespace maat
 {
@@ -46,28 +47,21 @@ class CmdlineArg
 {
 private:
     std::string _value;
-    std::string _name;
+    std::vector<Value> _buffer;
     size_t _len;
-    bool _is_symbolic;
-    bool _is_concolic;
 public:
     /// Create a concrete command-line argument
     CmdlineArg(const std::string& value);
-    /** \brief Create a concolic command-line argument
-     * @param value Concrete value of the argument
-     * @param name Abstract name of the argument */
-    CmdlineArg(const std::string& value, const std::string& name);
-    /** \brief Create a symbolic command-line argument
-     * @param len Maximal concrete length of the argument
-     * @param name Abstract name of the argument */
-    CmdlineArg(size_t len, const std::string& name);
+    /** \brief Create a command-line argument from a buffer
+     * @param arg Argument as a buffer of values. Values in the buffer
+     must have a size of 1 byte. */
+    CmdlineArg(const std::vector<Value>& arg);
 public:
-    const std::string& value() const; ///< Return the argument value (empty for symbolic arguments)
-    const std::string& name() const; ///< Retun the argument symbolic name (empty for concrete arguments)
-    size_t len() const; ///< Return the argument length in bytes, including terminating null byte
-    bool is_symbolic() const; ///< Return true if the argument is symbolic
-    bool is_concrete() const; ///< Return true if the argument is concrete
-    bool is_concolic() const; ///< Return true if the argument is concolic
+    const std::string& string() const; ///< Return the concrete argument string
+    const std::vector<Value>& buffer() const; ///< Retun the abstract argument buffer
+    size_t len() const; ///< Return the argument length in bytes
+    bool is_abstract() const; ///< Return true if the argument is an abstract buffer
+    bool is_concrete() const; ///< Return true if the argument is a concrete string
 };
 
 /// Environment variables for a given process

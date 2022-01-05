@@ -103,7 +103,6 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
     int load_interp = 1; // True by default
     Py_ssize_t i;
 
-    // TODO ADD envp argument as option
     char* keywd[] = {"", "", "base", "args", "envp", "libdirs", "ignore_libs", "virtual_path", "load_interp", NULL};
 
     if( !PyArg_ParseTupleAndKeywords(
@@ -129,11 +128,44 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
         for (i = 0; i < PyList_Size(py_cmdline_args); i++)
         {
             arg = PyList_GetItem(py_cmdline_args, i);
-            if(!PyObject_TypeCheck(arg, (PyTypeObject*)get_CmdlineArg_Type()))
+            if(PyBytes_Check(arg))
             {
-                return PyErr_Format(PyExc_TypeError, "Wrong type for command line argument %d", i);
+                char * arg_bytes = nullptr;
+                Py_ssize_t arg_bytes_len = 0;
+                PyBytes_AsStringAndSize(arg, &arg_bytes, &arg_bytes_len);
+                cmdline_args.push_back(loader::CmdlineArg(std::string(arg_bytes)));
             }
-            cmdline_args.push_back(*(as_arg_object(arg).arg));
+            else if (PyList_Check(arg))
+            {
+                std::vector<Value> arg_buffer;
+                for (int j = 0; j < PyList_Size(arg); j++)
+                {
+                    PyObject * val = PyList_GetItem(arg, j);
+                    if (not PyObject_TypeCheck(val, (PyTypeObject*)get_Value_Type()))
+                    {
+                        return PyErr_Format(
+                            PyExc_TypeError,
+                            "Command line argument specified as a 'list' should only contain 'Value' elements"
+                        );
+                    }
+                    const Value& value = *as_value_object(val).value;
+                    if (value.size() != 8)
+                    {
+                        return PyErr_Format(
+                            PyExc_TypeError,
+                            "Abstract value in command line argument %d should have a size of 8 bits (got %d)",
+                            i,
+                            (int)value.size()
+                        );
+                    }
+                    arg_buffer.push_back(value);
+                }
+                cmdline_args.push_back(loader::CmdlineArg(arg_buffer));
+            }
+            else
+            {
+                return PyErr_Format(PyExc_TypeError, "Command line argument %d is neither 'bytes' nor 'list[Value]'", i);
+            }
         }
     }
 

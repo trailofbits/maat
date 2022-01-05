@@ -16,8 +16,6 @@ PyMethodDef module_methods[] = {
     {"Extract", (PyCFunction)maat_Extract, METH_VARARGS, "Bitfield extract from an abstract expression"},
     // Engine
     {"MaatEngine", (PyCFunction)maat_MaatEngine, METH_VARARGS, "Create a new DSE engine"},
-    // Loader
-    {"Arg", (PyCFunction)maat_Arg, METH_VARARGS, "Create a command-line argument"},
     // Solver
     {"Solver", (PyCFunction)maat_Solver, METH_NOARGS, "Create a constraint solver"},
     {NULL}

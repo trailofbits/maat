@@ -41,7 +41,6 @@ public:
     bool contains(const std::string& var) const; ///< Return true if a concrete value is associated to the symbolic variable
     std::string new_name_from(const std::string& hint) const;
     /** \brief Create a new buffer of symbolic variables.
-     * Returns a pair <buffer_name, buffer>.
      * @param name Base name after whom to name variables
      * @param nb_elems Number of variables in the buffer
      * @param elem_size Size in bytes of each variable
@@ -54,7 +53,6 @@ public:
         std::optional<cst_t> trailing_value=std::nullopt
     );
     /** \brief Create a new buffer of concolic variables.
-     * Returns a pair <buffer_name, buffer>.
      * @param name Base name after whom to name variables
      * @param concrete_buffer The concrete values with whom to initialize variables
      * @param nb_elems Number of variables in the buffer
@@ -64,8 +62,19 @@ public:
     std::vector<Value> new_concolic_buffer(
         const std::string& name,
         const std::vector<cst_t>& concrete_buffer,
-        int nb_elems,
+        int nb_elems=-1,
         int elem_size=1,
+        std::optional<cst_t> trailing_value=std::nullopt
+    );
+    /** \brief Create a new buffer of concolic variables.
+     * @param name Base name after whom to name variables
+     * @param concrete_buffer The concrete values with whom to initialize variables
+     * @param nb_elems Number of variables in the buffer
+     * @param trailing_value Optional concrete value to add at the end of the buffer (not counted by 'nb_elems')
+     */
+    std::vector<Value> new_concolic_buffer(
+        const std::string& name,
+        const std::string& concrete_buffer,
         std::optional<cst_t> trailing_value=std::nullopt
     );
     /** \brief Copy the mapping between concrete values and symbolic variables from 'other'.
