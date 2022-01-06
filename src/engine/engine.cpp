@@ -128,11 +128,10 @@ info::Stop MaatEngine::run(int max_inst)
         }
 
         // Get next instruction to execute
-        if (pending_ir_state)
+        if (current_ir_state.has_value())
         {
-            to_execute = pending_ir_state->addr;
-            ir_inst_id = pending_ir_state->inst_id;
-            pending_ir_state.reset();
+            to_execute = current_ir_state->addr;
+            ir_inst_id = current_ir_state->inst_id;
         }
         else if (not cpu.ctx().get(arch->pc()).is_symbolic(*vars))
         {
@@ -226,6 +225,9 @@ info::Stop MaatEngine::run(int max_inst)
         // Execute the PCODE instructions for the current Asm instruction
         while (ir_inst_id < asm_inst->nb_ir_inst())
         {
+            // Update internal IR state
+            current_ir_state = ir::IRMap::InstLocation(asm_inst->addr(), ir_inst_id);
+
             // Sanity checks
             if (ir_inst_id < 0 or ir_inst_id >= asm_inst->nb_ir_inst())
             {
@@ -369,6 +371,10 @@ info::Stop MaatEngine::run(int max_inst)
             HANDLE_EVENT_ACTION(hooks.after_exec(*this, asm_inst->addr()))
             info.reset();
         }
+
+        // Reset current IR state (we change instruction)
+        current_ir_state.reset();
+
         if (_halt_after_inst)
         {
             info.stop = info::Stop::HOOK;
@@ -387,7 +393,7 @@ info::Stop MaatEngine::run_from(addr_t addr, unsigned int max_inst)
     // Set PC to new location to execute
     cpu.ctx().set(arch->pc(), addr);
     // Reset pending IR state
-    pending_ir_state.reset();
+    current_ir_state.reset();
 
     // Run!
     return run(max_inst);
@@ -955,7 +961,7 @@ MaatEngine::snapshot_t MaatEngine::take_snapshot()
     Snapshot& snapshot = snapshots->emplace_back();
     snapshot.cpu = cpu; // Copy CPU
     snapshot.symbolic_mem = mem->symbolic_mem_engine.take_snapshot();
-    snapshot.pending_ir_state = pending_ir_state;
+    snapshot.pending_ir_state = current_ir_state;
     snapshot.info = info;
     snapshot.process = process;
     snapshot.page_permissions = mem->page_manager.regions();
@@ -997,7 +1003,7 @@ void MaatEngine::restore_last_snapshot(bool remove)
     Snapshot& snapshot = snapshots->back();
     cpu = std::move(snapshot.cpu); // Restore CPU
     mem->symbolic_mem_engine.restore_snapshot(snapshot.symbolic_mem);
-    pending_ir_state.swap(snapshot.pending_ir_state);
+    current_ir_state.swap(snapshot.pending_ir_state);
     info = snapshot.info;
     process = snapshot.process;
     mem->page_manager.set_regions(std::move(snapshot.page_permissions));
@@ -1040,7 +1046,7 @@ void MaatEngine::restore_last_snapshot(bool remove)
 void MaatEngine::terminate_process(Value status)
 {
     info.stop = info::Stop::EXIT;
-    info.exit_status = status.as_expr(); // TODO make exit_status a Value
+    info.exit_status = status;
     process->terminated = true;
 }
 

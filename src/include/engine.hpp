@@ -63,8 +63,8 @@ private:
     /** This field is used when the engine stops running in the middle
      * of a native instruction. It indicates the exact IR instruction 
      * whom to resume execution from. Typically it will only be useful
-     * for INSTANT breakpoints and snapshoting */
-    std::optional<ir::IRMap::InstLocation> pending_ir_state;
+     * for snapshoting */
+    std::optional<ir::IRMap::InstLocation> current_ir_state;
 private:
     std::unordered_map<CPUMode, std::shared_ptr<Lifter>> lifters;
     std::shared_ptr<SnapshotManager<Snapshot>> snapshots;
