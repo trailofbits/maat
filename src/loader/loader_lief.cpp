@@ -106,7 +106,7 @@ void LoaderLIEF::get_arch_special_registers(
         case Arch::Type::X86:
             bp = X86::EBP;
             gs = X86::GS;
-            fs = X86::GS;
+            fs = X86::FS;
             break;
         case Arch::Type::X64:
             bp = X64::RBP;
