@@ -46,7 +46,7 @@ from maat import *
 engine = MaatEngine(ARCH.X86, OS.LINUX)
 
 # Load a binary with one command line argument
-engine.load("./some_binary", BIN.ELF32, args=[Arg("password", 20)])
+engine.load("./some_binary", BIN.ELF32, args=[engine.vars.new_symbolic_buffer("some_arg", 20)])
 
 # Get current eax value
 engine.cpu.eax
