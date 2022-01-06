@@ -159,6 +159,7 @@ namespace code_coverage{
             */
             unsigned int nb = 0;
             MaatEngine engine(Arch::Type::X86);
+            engine.log.set_level(Log::ERROR);
             bool success;
             engine.mem->new_segment(0x0, 0xfff);
             engine.mem->new_segment(0x4000, 0x5fff); // stack
@@ -245,6 +246,7 @@ namespace code_coverage{
             */
             unsigned int nb = 0;
             MaatEngine engine(Arch::Type::X86);
+            engine.log.set_level(Log::ERROR);
             bool success;
             
             engine.mem->new_segment(0x0, 0xfff);

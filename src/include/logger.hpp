@@ -138,6 +138,11 @@ public:
     {
         return log(Log::FATAL, args...);
     }
+
+    void set_level(Log level)
+    {
+        min_level = level;
+    }
 };
 
 
