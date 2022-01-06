@@ -27,6 +27,7 @@ namespace test
         {
             unsigned int nb = 0;
             MaatEngine engine(Arch::Type::X86); // TODO add env::System::LINUX
+            engine.log.set_level(Log::ERROR);
             addr_t tmp;
             engine.load(
                 "tests/ressources/simple_algo_2/simple_algo_2",

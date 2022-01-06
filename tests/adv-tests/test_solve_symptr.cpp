@@ -37,6 +37,7 @@ namespace solve_symbolic_ptr{
         {
             unsigned int nb = 0;
             MaatEngine engine = MaatEngine(Arch::Type::X86);
+            engine.log.set_level(Log::ERROR);
             Expr symarg = exprvar(32, "symarg");
             engine.vars->set("symarg", 1234);
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
@@ -84,6 +85,7 @@ namespace solve_symbolic_ptr{
         {
             unsigned int nb = 0;
             MaatEngine engine = MaatEngine(Arch::Type::X86, env::OS::LINUX);
+            engine.log.set_level(Log::ERROR);
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
 
             std::vector<loader::CmdlineArg> args = {loader::CmdlineArg(engine.vars->new_concolic_buffer("arg", "abcdefghijklm"))};
@@ -135,6 +137,7 @@ namespace solve_symbolic_ptr{
         {
             unsigned int nb = 0;
             MaatEngine engine = MaatEngine(Arch::Type::X86, env::OS::LINUX);
+            engine.log.set_level(Log::ERROR);
             engine.settings.symptr_refine_range = true;
             engine.settings.symptr_limit_range = true;
             engine.settings.symptr_max_range = 100;
@@ -192,6 +195,7 @@ namespace solve_symbolic_ptr{
         {
             unsigned int nb = 0;
             MaatEngine engine = MaatEngine(Arch::Type::X86, env::OS::LINUX);
+            engine.log.set_level(Log::ERROR);
             Expr symarg = exprvar(32, "symarg");
             engine.vars->set("symarg", 1234);
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
@@ -232,6 +236,7 @@ namespace solve_symbolic_ptr{
         unsigned int x86_symbolic_index_read_atoi(){
             unsigned int nb = 0;
             MaatEngine engine = MaatEngine(Arch::Type::X86, env::OS::LINUX);
+            engine.log.set_level(Log::ERROR);
 
             engine.settings.symptr_limit_range = true;
 
@@ -280,6 +285,7 @@ namespace solve_symbolic_ptr{
         {
             unsigned int nb = 0;
             MaatEngine engine = MaatEngine(Arch::Type::X86, env::OS::LINUX);
+            engine.log.set_level(Log::ERROR);
             Expr idx1 = exprvar(32, "idx1"), idx2 = exprvar(32, "idx2");
             engine.vars->set("idx1", 1);
             engine.vars->set("idx2", 19);
