@@ -688,36 +688,13 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
     const char* bytes;
     int bytes_len=0;
     int nb_elems = -1, elem_size =1;
-    int null_terminated=0;
+    PyObject* trailing_value = NULL;
+    std::optional<cst_t> tval = std::nullopt;
 
-    static char* kwlist[] = {"", "", "", "elem_size", "null_terminated", NULL};
+    static char* kwlist[] = {"", "", "", "elem_size", "trailing_value", NULL};
 
-    if( PyArg_ParseTupleAndKeywords(args, keywords, "sO!|iip", kwlist, &name, &PyList_Type, 
-        &py_concrete_buffer , &nb_elems, &elem_size, &null_terminated))
-    {
-        size_t list_len = PyList_Size(py_concrete_buffer);
-        // Buffer = list of concrete vals
-        if (nb_elems == -1)
-        {
-            nb_elems = PyList_Size(py_concrete_buffer);
-        }
-        else if (nb_elems > list_len)
-        {
-            return PyErr_Format(PyExc_TypeError, "Buffer length (%d) exceeds 'nb_elems' (%d)", list_len, nb_elems);
-        }
-
-        for (int i = 0; i < list_len and i < nb_elems; i++)
-        {
-            PyObject* val = PyList_GetItem(py_concrete_buffer, i);
-            if (not PyLong_Check(val))
-            {
-                return PyErr_Format(PyExc_TypeError, "Buffer element %d is not an integer", i);
-            }
-            concrete_buffer.push_back(PyLong_AsLongLong(val));
-        }
-    }
-    else if (PyArg_ParseTupleAndKeywords(args, keywords, "ss#|iip", kwlist, &name, &bytes, 
-        &bytes_len, &nb_elems, &elem_size, &null_terminated))
+    if (PyArg_ParseTupleAndKeywords(args, keywords, "ss#|iiO!", kwlist, &name, &bytes, 
+        &bytes_len, &nb_elems, &elem_size, &PyLong_Type, &trailing_value))
     {
         PyErr_Clear();
         if (nb_elems == -1)
@@ -746,12 +723,39 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
             concrete_buffer.push_back(val);
         }
     }
+    else if( PyArg_ParseTupleAndKeywords(args, keywords, "sO!|iiO!", kwlist, &name, &PyList_Type, 
+        &py_concrete_buffer , &nb_elems, &elem_size, &PyLong_Type, &trailing_value))
+    {
+        PyErr_Clear();
+        size_t list_len = PyList_Size(py_concrete_buffer);
+        // Buffer = list of concrete vals
+        if (nb_elems == -1)
+        {
+            nb_elems = PyList_Size(py_concrete_buffer);
+        }
+        else if (nb_elems > list_len)
+        {
+            return PyErr_Format(PyExc_TypeError, "Buffer length (%d) exceeds 'nb_elems' (%d)", list_len, nb_elems);
+        }
+
+        for (int i = 0; i < list_len and i < nb_elems; i++)
+        {
+            PyObject* val = PyList_GetItem(py_concrete_buffer, i);
+            if (not PyLong_Check(val))
+            {
+                return PyErr_Format(PyExc_TypeError, "Buffer element %d is not an integer", i);
+            }
+            concrete_buffer.push_back(PyLong_AsLongLong(val));
+        }
+    }
     else
     {
-        return PyErr_Format(PyExc_TypeError, "Buffer must be str, bytes, or list[int]");
+        return PyErr_Format(PyExc_TypeError, "Wrong argument types");
     }
 
     std::vector<Value> res;
+    if (trailing_value != NULL)
+        tval = PyLong_AsLongLong(trailing_value);
     try
     {
         res = as_varctx_object(self).ctx->new_concolic_buffer(
@@ -759,7 +763,7 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
             concrete_buffer,
             nb_elems,
             elem_size,
-            (bool)null_terminated
+            tval
         );
     }
     catch(const var_context_exception& e)
@@ -782,6 +786,7 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
             return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
         }
     }
+
     return list;
 }
 
@@ -789,15 +794,19 @@ static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args, 
 {
     const char * name;
     int nb_elems, elem_size =1;
-    int null_terminated=0;
-    
-    static char* kwlist[] = {"", "", "elem_size", "null_terminated", NULL};
+    PyObject* trailing_value=NULL;
+    std::optional<cst_t> tval = std::nullopt;
 
-    if( !PyArg_ParseTupleAndKeywords(args, keywords, "si|ip", kwlist, &name, 
-        &nb_elems, &elem_size, &null_terminated))
+    static char* kwlist[] = {"", "", "elem_size", "trailing_value", NULL};
+
+    if( !PyArg_ParseTupleAndKeywords(args, keywords, "si|iO!", kwlist, &name, 
+        &nb_elems, &elem_size, &PyLong_Type, &trailing_value))
     {
         return NULL;
     }
+
+    if (trailing_value != NULL)
+        tval = PyLong_AsLongLong(trailing_value);
 
     std::vector<Value> res;
     try
@@ -806,7 +815,7 @@ static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args, 
             std::string(name),
             nb_elems,
             elem_size,
-            (bool)null_terminated
+            tval
         );
     }
     catch(const var_context_exception& e)
@@ -822,7 +831,7 @@ static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args, 
     {
         return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
     }
-    for (Value e : res)
+    for (Value& e : res)
     {
         if( PyList_Append(list, PyValue_FromValue(e)) == -1)
         {

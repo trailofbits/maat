@@ -86,7 +86,7 @@ namespace solve_symbolic_ptr{
             MaatEngine engine = MaatEngine(Arch::Type::X86, env::OS::LINUX);
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
 
-            std::vector<loader::CmdlineArg> args = {loader::CmdlineArg("abcdefghijklm", "arg")};
+            std::vector<loader::CmdlineArg> args = {loader::CmdlineArg(engine.vars->new_concolic_buffer("arg", "abcdefghijklm"))};
             engine.load(
                 "tests/ressources/symbolic_ptr_binaries/sym_write_1",
                 loader::Format::ELF32,
@@ -141,7 +141,7 @@ namespace solve_symbolic_ptr{
 
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
 
-            std::vector<loader::CmdlineArg> args = {loader::CmdlineArg("abcdefghijklm", "argv1")};
+            std::vector<loader::CmdlineArg> args = {loader::CmdlineArg(engine.vars->new_concolic_buffer("argv1", "abcdefghijklm"))};
             engine.load(
                 "tests/ressources/symbolic_ptr_binaries/sym_write_2",
                 loader::Format::ELF32,
@@ -236,7 +236,7 @@ namespace solve_symbolic_ptr{
             engine.settings.symptr_limit_range = true;
 
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
-            std::vector<loader::CmdlineArg> args = {loader::CmdlineArg("abcdefghi", "arg")};
+            std::vector<loader::CmdlineArg> args = {loader::CmdlineArg(engine.vars->new_concolic_buffer("arg", "abcdefghi"))};
             engine.load(
                 "tests/ressources/symbolic_ptr_binaries/sym_read_1",
                 loader::Format::ELF32,

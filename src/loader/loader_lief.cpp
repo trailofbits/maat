@@ -193,7 +193,7 @@ void LoaderLIEF::load_cmdline_args(
     argc = 0;
     for (auto arg : cmdline_args)
     {
-        args_total_size += arg.len();
+        args_total_size += arg.len()+1; // +1 for terminating null byte
         argc++;
     }
 
@@ -204,42 +204,25 @@ void LoaderLIEF::load_cmdline_args(
     for (int i = 0; i < cmdline_args.size(); i++)
     {
         const CmdlineArg& arg = cmdline_args[i];
-        // Get arg name
-        ss.str("");
-        ss << "argv" << std::dec << i << "_";
-        arg_name = arg.name().empty() ? ss.str() : arg.name();
         // Align address
         if( mem_arg_addr % 16 != 0 )
         {
             mem_arg_addr += 16 - (mem_arg_addr%16);
         }
         // Write arg in memory
-        for (int j = 0; j < arg.len()-1; j++)
+        if (arg.is_concrete())
         {
-            if (not arg.is_concrete())
-            {
-                ss.str("");
-                ss << std::dec << arg_name << j;
-                var_name = ss.str();
-                engine->mem->write(mem_arg_addr+j, exprvar(8, var_name));
-                
-            }
-            else
-            {
-                engine->mem->write(mem_arg_addr+j, (uint8_t)(arg.value()[j]), 1);
-            }
-
-            if (arg.is_concolic())
-            {
-                engine->vars->set(var_name, (uint8_t)(arg.value()[j]));
-            }
+            engine->mem->write_buffer(mem_arg_addr, (uint8_t*)(arg.string().c_str()), arg.len());
         }
-        engine->mem->write(mem_arg_addr+arg.len()-1, exprcst(8, 0));
-
+        else
+        {
+            engine->mem->write_buffer(mem_arg_addr, arg.buffer()); 
+        }
+        engine->mem->write(mem_arg_addr+arg.len(), 0, 1); // Add terminating null byte
         // Record address
         argv_addresses.push_back(mem_arg_addr);
         // Increment address
-        mem_arg_addr += arg.len();
+        mem_arg_addr += arg.len()+1;
     }
 }
 

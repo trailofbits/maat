@@ -154,14 +154,6 @@ PyObject* PyCPU_FromCPUAndArchAndVarContext(
 // ====================== Loader ========================
 void init_loader(PyObject* module);
 
-typedef struct{
-    PyObject_HEAD
-    loader::CmdlineArg* arg;
-} CmdlineArg_Object;
-PyObject* get_CmdlineArg_Type();
-PyObject* maat_Arg(PyObject* module, PyObject* args, PyObject* keywords);
-#define as_arg_object(x)  (*((CmdlineArg_Object*)x))
-
 // ====================== Settings ======================
 typedef struct{
     PyObject_HEAD

@@ -7,42 +7,33 @@ namespace maat
 namespace loader
 {
     
-/// Create a concrete command-line argument
+
 CmdlineArg::CmdlineArg(const std::string& value):
     _value(value),
-    _len(value.size() + 1),
-    _is_concolic(false),
-    _is_symbolic(false)
+    _len(value.size())
 {}
 
-/** \brief Create a concolic command-line argument. *value* is the concrete
-* value of the argument, *name* is it's symbolic  name */
-CmdlineArg::CmdlineArg(const std::string& value, const std::string& name):
-    _value(value),
-    _name(name),
-    _len(value.size() + 1),
-    _is_concolic(true),
-    _is_symbolic(false)
-{}
 
-/** \brief Create a symbolic command-line argument. *len* is the number
-* of bytes in the argument string (without potential terminating null bytes).
-* *name* is the argument's symbolic name */
-CmdlineArg::CmdlineArg(size_t len, const std::string& name):
-    _name(name),
-    _len(len+1),
-    _is_concolic(true),
-    _is_symbolic(true)
-{}
+CmdlineArg::CmdlineArg(const std::vector<Value>& buffer):
+    _buffer(buffer),
+    _len(buffer.size())
+{
+    // Ensure values are 1-byte values
+    for (const auto& val : _buffer)
+        if (val.size() != 8)
+            throw loader_exception(
+                "CmdlineArg::CmdlineArg(): abstract buffer must contain only 8-bit values"
+            );
+}
 
-const std::string& CmdlineArg::value() const
+const std::string& CmdlineArg::string() const
 {
     return _value;
 }
 
-const std::string& CmdlineArg::name() const
+const std::vector<Value>& CmdlineArg::buffer() const
 {
-    return _name;
+    return _buffer;
 }
 
 size_t CmdlineArg::len() const
@@ -50,19 +41,14 @@ size_t CmdlineArg::len() const
     return _len;
 }
 
-bool CmdlineArg::is_symbolic() const
-{
-    return _is_symbolic;
-}
-
 bool CmdlineArg::is_concrete() const
 {
-    return not (_is_symbolic or _is_concolic); 
+    return _buffer.empty();
 }
 
-bool CmdlineArg::is_concolic() const
+bool CmdlineArg::is_abstract() const
 {
-    return _is_concolic;
+    return not is_concrete();
 }
 
 
