@@ -180,7 +180,7 @@ void LoaderLIEF::load_elf_using_interpreter(
     // Allocate heap after binary
     addr_t heap_base = end_of_segment(*engine->mem, binary_name);
     addr_t heap_size = 0x400000;
-    engine->mem->new_segment(
+    engine->mem->map(
         heap_base,
         heap_base+heap_size-1,
         maat::mem_flag_rw,
@@ -247,7 +247,7 @@ void LoaderLIEF::load_elf_binary(
     // Setup heap
     heap_base = end_of_segment(*engine->mem, binary_name);
     heap_size = 0x400000;
-    engine->mem->new_segment(
+    engine->mem->map(
         heap_base,
         heap_base+heap_size-1,
         maat::mem_flag_rw,
@@ -426,7 +426,7 @@ void LoaderLIEF::map_elf_segments(MaatEngine* engine, addr_t base_address)
             
             flags = get_segment_flags(segment);
             // Create new segment
-            engine->mem->new_segment(aligned_addr, end_addr-1, flags, _elf->name());
+            engine->mem->map(aligned_addr, end_addr-1, flags, _elf->name());
             // Write content
             engine->mem->write_buffer(vaddr, (uint8_t*)segment.content().data(), physical_size, true);
         }
@@ -624,7 +624,7 @@ void LoaderLIEF::load_elf_interpreter(
         interp_loader.binary_name
     );
     addr_t heap_size = 0x400000;
-    engine->mem->new_segment(
+    engine->mem->map(
         heap_base,
         heap_base+heap_size-1,
         maat::mem_flag_rw,

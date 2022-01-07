@@ -289,12 +289,17 @@ void PhysicalFile::record_write(addr_t offset, int nb_bytes)
     }
 }
 
-FileAccessor::FileAccessor(physical_file_t file, filehandle_t handle):
-flags(0), physical_file(file), _handle(handle), deleted(false), _alloc_addr(0)
+FileAccessor::FileAccessor(physical_file_t file, filehandle_t handle, const std::string& name):
+flags(0), physical_file(file), _handle(handle), deleted(false), _alloc_addr(0), _filename(name)
 {
     // Init access state
     state.read_ptr = 0;
     state.write_ptr = 0;
+}
+
+const std::string& FileAccessor::filename() const
+{
+    return _filename;
 }
 
 unsigned int FileAccessor::write_buffer(const std::vector<Value>& buffer)
@@ -793,7 +798,7 @@ filehandle_t FileSystem::new_fa(const std::string& path)
 void FileSystem::_new_fa(const std::string& path, filehandle_t handle)
 {
     physical_file_t file = get_file(path);
-    fa_list.emplace_back(FileAccessor(file, handle));
+    fa_list.emplace_back(FileAccessor(file, handle, path));
 }
 
 FileAccessor& FileSystem::get_fa_by_handle(filehandle_t handle)

@@ -55,6 +55,8 @@ public:
     std::optional<ir::IRMap::InstLocation> pending_ir_state;
     /// Page permissions snapshot
     std::list<PageSet> page_permissions;
+    /// Mappings snapshot
+    std::list<MemMap> mem_mappings;
     /// Path constraints
     PathManager::path_snapshot_t path;
     /// Engine info snapshot

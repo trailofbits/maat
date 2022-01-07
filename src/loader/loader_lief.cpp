@@ -126,13 +126,12 @@ addr_t LoaderLIEF::alloc_segment(
     addr_t prefered_base,
     addr_t size,
     mem_flag_t flags,
-    const std::string& name,
-    bool is_special_segment
+    const std::string& name
 )
 {
     try
     {
-        return engine->mem->allocate_segment(prefered_base, size, 0x1000, flags, name, is_special_segment);
+        return engine->mem->allocate(prefered_base, size, 0x1000, flags, name);
     }
     catch(mem_exception& e)
     {

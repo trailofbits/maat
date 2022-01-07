@@ -329,6 +329,7 @@ FunctionCallback::return_t sys_linux_mmap(
     cst_t aligned_length;
     ucst_t MAP_ANONYMOUS = 0x20, MAP_FIXED=0x10;
     int PROT_EXEC = 0x4, PROT_READ = 0x1, PROT_WRITE = 0x2;
+    std::string map_name = "";
 
     // Mode
     if (prot & PROT_EXEC)
@@ -364,6 +365,9 @@ FunctionCallback::return_t sys_linux_mmap(
         try
         {
             file = engine.env->fs.get_file_by_handle(fd);
+            FileAccessor& fa = engine.env->fs.get_fa_by_handle(fd);
+            if (not fa.filename().empty())
+                map_name = fa.filename(); 
         }
         catch(const env_exception& e)
         {
@@ -378,7 +382,7 @@ FunctionCallback::return_t sys_linux_mmap(
         // Find where to allocate new memory
         addr_t prev_end = 0;
         addr_t map_end_addr = addr + aligned_length -1;
-        engine.mem->map(addr, map_end_addr, mflags, "mmap");
+        engine.mem->map(addr, map_end_addr, mflags, map_name);
         res = addr;
     }
     else
@@ -386,7 +390,7 @@ FunctionCallback::return_t sys_linux_mmap(
         // Try to allocate memory wherever possible
         try
         {
-            res = engine.mem->allocate(addr == 0 ? 0x4000000: addr, aligned_length, 0x1000, mflags, "mmap");
+            res = engine.mem->allocate(addr == 0 ? 0x4000000: addr, aligned_length, 0x1000, mflags, map_name);
         }
         catch(const mem_exception& e)
         {
@@ -492,32 +496,24 @@ FunctionCallback::return_t sys_linux_brk(
     addr_t extend_bytes = 0;
 
     // Find the heap's end address
-    auto heap = engine.mem->get_segment_by_name("Heap");
-    if (heap == nullptr)
-    {
-        throw env_exception("Emulated brk(): didn't find 'Heap' segment!");
-    }
-    end_heap = heap->end+1;
+    const auto& heap = engine.mem->mappings.get_map_by_name("Heap");
+
+    end_heap = heap.end+1;
     // Special behaviour for brk(NULL), return end of Heap
     if (addr == 0)
     {
-        return (cst_t)(heap->end+1);
+        return (cst_t)(end_heap);
     }
     // Try to resize this segment
-    else if (addr > heap->end +1)
+    else if (addr > end_heap)
     {
         // First check if memory is free for extending
-        extend_bytes = addr - heap->end -1;
-        if (not engine.mem->is_free(heap->end+1, heap->end+1+extend_bytes))
+        if (not engine.mem->is_free(end_heap, addr-1))
         {
             return -1; // Memory not free
         }
-        // Then extend
-        prev_end = heap->end+1;
-        heap->extend_after(extend_bytes);
-        end_heap = heap->end+1;
-        // Mark new memory as RW
-        engine.mem->page_manager.set_flags(prev_end, end_heap, maat::mem_flag_rw);
+        // Extend map by remapping
+        engine.mem->map(heap.start, addr-1, maat::mem_flag_rw, "Heap");
         return 0; // Success
     }
 

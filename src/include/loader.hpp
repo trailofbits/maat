@@ -17,6 +17,7 @@ namespace maat
 {
 
     class MaatEngine; // Forward decl
+
 /// Functionalities to load executable files in Maat's engine
 namespace loader
 {
@@ -142,8 +143,7 @@ private:
         addr_t prefered_base,
         addr_t size,
         mem_flag_t flags,
-        const std::string& name = "",
-        bool is_special_segment = false
+        const std::string& name = ""
     );
     void elf_setup_stack(
         MaatEngine* engine,

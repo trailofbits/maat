@@ -212,10 +212,13 @@ std::ostream& operator<<(std::ostream& os, MemPageManager& mem)
     
     for( PageSet& r : mem._regions )
     {
-        os  << std::hex << "0x" << std::left << std::setw(addr_w-2)
-            << r.start << "0x" << std::left << std::setw(addr_w-2)
-            << r.end << _mem_flags_to_string(r.flags)
-            << std::endl;
+        if (r.flags != maat::mem_flag_none)
+        {
+            os  << std::hex << "0x" << std::left << std::setw(addr_w-2)
+                << r.start << "0x" << std::left << std::setw(addr_w-2)
+                << r.end << _mem_flags_to_string(r.flags)
+                << std::endl;
+        }
     }
     return os;
 }
@@ -1148,7 +1151,7 @@ void MemEngine::new_segment(addr_t start, addr_t end, mem_flag_t flags, const st
 {
     std::list<std::shared_ptr<MemSegment>>::iterator it;
 
-    if( !is_free(start, end))
+    if(has_segment_containing(start, end))
         throw mem_exception("Trying to create a segment that overlaps with another segment");
 
     // Else create entire new segment
@@ -1174,38 +1177,51 @@ void MemEngine::map(addr_t start, addr_t end, mem_flag_t mflags, const std::stri
 {
     addr_t prev_end = 0;
     std::vector<std::tuple<addr_t, addr_t, mem_flag_t>> to_create;
-    
+
     if (start > end)
         throw mem_exception("MemEngine::map(): 'start' must be lower than 'end'");
 
-    
-    for (auto& seg : segments())
+    if (
+        segments().empty()
+        or (segments().front()->start > end)
+        or (segments().back()->end < start)
+    )
     {
-        // Check if there is a space between both segments
-        if(prev_end+1 < seg->start)
+        to_create.push_back(std::make_tuple(start, end, mflags));
+    }
+    else
+    {
+        for (auto& seg : segments())
         {
-            // Check if space between segments are contained in the requested mapping
-            if (start <= prev_end+1 && end >= seg->start-1)
-                // Space contained in mapping, fill it completely
-                to_create.push_back(std::make_tuple(prev_end+1, seg->start-1, mflags));
-            else if (start >= prev_end+1 && end <= seg->start-1)
+            // Check if there is a space between both segments
+            if(prev_end+1 < seg->start)
             {
-                // Space contains mapping
-                to_create.push_back(std::make_tuple(start, end, mflags));
-            }
-            else if( start <= prev_end+1 && end >= prev_end+1)
-                // Overlap low part of space between segments
-                to_create.push_back(std::make_tuple(prev_end+1, end, mflags));
-            else if( start <= seg->start-1 && end >= seg->start-1)
-                // Overlap high part of space between segments
-                to_create.push_back(std::make_tuple(start, seg->start-1, mflags));
-            //else
-                // No overlap at all, do nothing
+                // Check if space between segments are contained in the requested mapping
+                if (start <= prev_end+1 && end >= seg->start-1)
+                    // Space contained in mapping, fill it completely
+                    to_create.push_back(std::make_tuple(prev_end+1, seg->start-1, mflags));
+                else if (start >= prev_end+1 && end <= seg->start-1)
+                {
+                    // Space contains mapping
+                    to_create.push_back(std::make_tuple(start, end, mflags));
+                }
+                else if( start <= prev_end+1 && end >= prev_end+1)
+                    // Overlap low part of space between segments
+                    to_create.push_back(std::make_tuple(prev_end+1, end, mflags));
+                else if( start <= seg->start-1 && end >= seg->start-1)
+                    // Overlap high part of space between segments
+                    to_create.push_back(std::make_tuple(start, seg->start-1, mflags));
+                //else
+                    // No overlap at all, do nothing
 
+            }
+            prev_end = seg->end;
+            if (seg->start > end)
+                break;
         }
-        prev_end = seg->end;
-        if (seg->start > end)
-            break;
+        // When it overlaps the last segment
+        if (end > prev_end)
+            to_create.push_back(std::make_tuple(prev_end+1, end, mflags));
     }
 
     for (auto& t : to_create)
@@ -1216,6 +1232,8 @@ void MemEngine::map(addr_t start, addr_t end, mem_flag_t mflags, const std::stri
     // Change memory mapping flags
     page_manager.set_flags(start, end, mflags);
     
+    // Update mappings 
+    mappings.map(MemMap(start, end, mflags, map_name));
 }
 
 addr_t MemEngine::allocate(
@@ -1248,16 +1266,22 @@ void MemEngine::unmap(addr_t start, addr_t end)
         throw mem_exception("MemEngine::unmap(): 'start' must be lower than 'end'");
 
     page_manager.set_flags(start, end, mem_flag_none);
+    mappings.unmap(start, end);
 }
 
 std::shared_ptr<MemSegment> MemEngine::get_segment_containing(addr_t addr)
 {
-    for( auto& it : _segments)
+    for (auto& it : _segments)
     {
-        if( it->start <= addr && it->end >= addr )
+        if (it->start <= addr && it->end >= addr)
             return it;
     }
     return nullptr;
+}
+
+bool MemEngine::is_free(addr_t start, addr_t end)
+{
+    return page_manager.is_unmapped(start, end);
 }
 
 addr_t MemEngine::allocate_segment(
@@ -1274,7 +1298,7 @@ addr_t MemEngine::allocate_segment(
     auto it = _segments.begin();
     do
     {
-        if (is_free(base, base+size-1) and base-1 < max_addr)
+        if (not has_segment_containing(base, base+size-1) and base-1 < max_addr)
         {
             new_segment(base, base+size-1, flags, name, is_special);
             return base;
@@ -1337,14 +1361,14 @@ std::shared_ptr<MemSegment> MemEngine::get_segment_by_name(
         return nullptr;
 }
 
-bool MemEngine::is_free(addr_t start, addr_t end)
+bool MemEngine::has_segment_containing(addr_t start, addr_t end)
 {
     for( auto& segment : _segments )
     {
         if( segment->start <= end && segment->end >= start )
-            return false;
+            return true;
     }
-    return true;
+    return false;
 }
 
 Value MemEngine::read(const Value& addr, unsigned int nb_bytes, bool ignore_flags)
@@ -2258,20 +2282,32 @@ void MemEngine::_clear_pending_x_mem_overwrites()
 std::ostream& operator<<(std::ostream& os, MemEngine& mem)
 {
     static unsigned int addr_w = 20;
-    os << std::endl << "Segments: " << std::endl;
-    os << std::endl << std::left << std::setw(addr_w) << "Start" << std::left << std::setw(addr_w) << "End" 
-       << std::left << std::setw(8) << "Name" << std::endl;
-    os << std::left << std::setw(addr_w) << "-----" << std::left << std::setw(addr_w) << "---" 
-       << std::left << std::setw(8) << "----" << std::endl;
-    for( auto& segment : mem._segments )
+
+    os << mem.mappings << "\n" << mem.page_manager << "\n";
+
+    if (
+        std::find_if(
+            mem._segments.begin(),
+            mem._segments.end(),
+            [](auto& seg){return seg->is_engine_special_segment();}
+        ) != mem._segments.end())
     {
-        os << std::hex << "0x" << std::left << std::setw(addr_w-2) << segment->start << "0x" << std::left << std::setw(addr_w-2) << segment->end;
-        if( !segment->name.empty() )
-            os << segment->name;
-        os << std::endl;
+        // Print special segments
+        os << std::endl << "Special segments: " << std::endl;
+        os << std::endl << std::left << std::setw(addr_w) << "Start" << std::left << std::setw(addr_w) << "End" 
+        << std::left << std::setw(8) << "Name" << std::endl;
+        os << std::left << std::setw(addr_w) << "-----" << std::left << std::setw(addr_w) << "---" 
+        << std::left << std::setw(8) << "----" << std::endl;
+        for( auto& segment : mem._segments )
+        {
+            if (not segment->is_engine_special_segment())
+                continue;
+            os << std::hex << "0x" << std::left << std::setw(addr_w-2) << segment->start << "0x" << std::left << std::setw(addr_w-2) << segment->end;
+            if( !segment->name.empty() )
+                os << segment->name;
+            os << std::endl;
+        }
     }
-    
-    os << mem.page_manager;
 
     return os;
 }

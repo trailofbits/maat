@@ -37,11 +37,12 @@ protected:
     physical_file_t physical_file;
     addr_t _alloc_addr; // Address where the EnvFile's fileno has been allocated in memory ??? TODO
     State state;
+    std::string _filename;
 public:
     bool deleted; /// If file accessor was deleted by the emulated program
 public:
     /// Create a new file 
-    FileAccessor(physical_file_t physical_file, filehandle_t handle);
+    FileAccessor(physical_file_t physical_file, filehandle_t handle, const std::string& filename="");
     /// Write abstract buffer to the file. Return the number of bytes written
     unsigned int write_buffer(const std::vector<Value>& buffer);
     /// Write concrete buffer to the file. Return the number of bytes written
@@ -50,6 +51,7 @@ public:
     unsigned int read_buffer(std::vector<Value>& buffer, unsigned int nb_elems, unsigned int elem_size);
 public:
     filehandle_t handle() const;
+    const std::string& filename() const;
 };
 
 
