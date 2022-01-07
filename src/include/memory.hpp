@@ -366,6 +366,7 @@ private:
 public:
     SymbolicMemEngine symbolic_mem_engine;
     MemPageManager page_manager;
+    MemMapManager mappings;
 public:
     /** \brief Create new memory engine
      * 
@@ -408,8 +409,11 @@ public:
     std::list<std::shared_ptr<MemSegment>>& segments();
     std::shared_ptr<MemSegment> get_segment_containing(addr_t addr);
     std::shared_ptr<MemSegment> get_segment_by_name(const std::string& name);
-    /// Return free if no segment exists between 'start' and 'end'
+    /// Return 'true' if nothing is mapped between 'start' and 'end'
     bool is_free(addr_t start, addr_t end);
+protected:
+    /// Return 'true' if there is a MemSegment that overlaps with [start:end]
+    bool has_segment_containing(addr_t start, addr_t end);
 
 // Main read/Write interface for the core engine operations (most performant functions)
 public:

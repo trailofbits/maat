@@ -2,6 +2,7 @@
 #define MAAT_MEMORY_PAGE_H
 
 #include <list>
+#include <string>
 #include "types.hpp"
 
 namespace maat
@@ -68,6 +69,44 @@ public:
 public:
     friend std::ostream& operator<<(std::ostream& os, MemPageManager& mem);
 };
+
+
+/// A memory mapping
+class MemMap
+{
+public:
+    addr_t start;
+    addr_t end;
+    mem_flag_t flags;
+    std::string name;
+
+    MemMap(addr_t start, addr_t end, mem_flag_t f, std::string name="");
+    bool intersects_with_range(addr_t min, addr_t max) const;
+    bool contains(addr_t addr) const;
+    bool contained_in_range(addr_t min, addr_t max) const;
+    void truncate(std::list<MemMap>& res, addr_t min, addr_t max);
+public:
+    friend bool operator<(const MemMap&, const MemMap&);
+};
+
+/// Basic manager for page permissions
+class MemMapManager
+{
+private:
+    std::list<MemMap> _maps;
+public:
+    void map(MemMap map);
+    void unmap(addr_t start, addr_t end);
+public:
+    const std::list<MemMap>& get_maps() const;
+    void set_maps(std::list<MemMap>&&);
+    const MemMap& get_map_by_name(const std::string& name) const;
+public:
+    friend std::ostream& operator<<(std::ostream&, const MemMapManager&);
+};
+
+// Util function for printing
+std::string _mem_flags_to_string(mem_flag_t flags);
 
 /** \} */ // doxygen memory group
 } // namespace maat
