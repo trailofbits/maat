@@ -1181,6 +1181,13 @@ void MemEngine::map(addr_t start, addr_t end, mem_flag_t mflags, const std::stri
     if (start > end)
         throw mem_exception("MemEngine::map(): 'start' must be lower than 'end'");
 
+    // Adjust map on the page size
+    addr_t page_size = page_manager.page_size();
+    if (end+1 % page_size != 0)
+        end += page_size - (end % page_size) -1;
+    if (start % page_size != 0)
+        start -= (start % page_size);
+
     if (
         segments().empty()
         or (segments().front()->start > end)
@@ -1264,6 +1271,13 @@ void MemEngine::unmap(addr_t start, addr_t end)
 {
     if (start > end)
         throw mem_exception("MemEngine::unmap(): 'start' must be lower than 'end'");
+
+    // Adjust map on the page size
+    addr_t page_size = page_manager.page_size();
+    if (end % page_size != 0)
+        end += page_size - (end % page_size);
+    if (start % page_size != 0)
+        start -= (start % page_size);
 
     page_manager.set_flags(start, end, mem_flag_none);
     mappings.unmap(start, end);
