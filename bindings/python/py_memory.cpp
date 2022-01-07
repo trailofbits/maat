@@ -28,7 +28,7 @@ static PyObject* MemEngine_repr(PyObject* self) {
     return MemEngine_str(self);
 }
 
-static PyObject* MemEngine_new_segment(PyObject* self, PyObject* args, PyObject* keywords) {
+static PyObject* MemEngine_map(PyObject* self, PyObject* args, PyObject* keywords) {
     unsigned long long start, end;
     unsigned short flags = maat::mem_flag_rwx;
     char* name = NULL;
@@ -39,12 +39,13 @@ static PyObject* MemEngine_new_segment(PyObject* self, PyObject* args, PyObject*
     if( !PyArg_ParseTupleAndKeywords(args, keywords, "KK|Hs", keywds, &start, &end, &flags, &name)){
         return NULL;
     }
+
     if( name != NULL){
         name_str = std::string(name);
     }
-    
+
     try{
-        as_mem_object(self).mem->new_segment(start, end, flags, name_str);
+        as_mem_object(self).mem->map(start, end, flags, name_str);
     }catch(mem_exception e){
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
@@ -288,7 +289,7 @@ PyObject* MemEngine_make_symbolic(PyObject* self, PyObject* args){
 
 
 static PyMethodDef MemEngine_methods[] = {
-    {"new_segment", (PyCFunction)MemEngine_new_segment, METH_VARARGS | METH_KEYWORDS, "Allocate a new segment in memory"},
+    {"map", (PyCFunction)MemEngine_map, METH_VARARGS | METH_KEYWORDS, "Map a memory region"},
     {"read", (PyCFunction)MemEngine_read, METH_VARARGS, "Reads memory into an expression"},
     {"read_buffer", (PyCFunction)MemEngine_read_buffer, METH_VARARGS, "Reads a buffer in memory"},
     {"read_str", (PyCFunction)MemEngine_read_str, METH_VARARGS, "Reads a concrete string in memory"},
