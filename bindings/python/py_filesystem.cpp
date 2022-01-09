@@ -389,18 +389,19 @@ static PyObject* File_write_buffer(PyObject* self, PyObject *args)
 
     try
     {
-        if (PyArg_ParseTuple(args, "O!K", &PyList_Type, &buf, &offset))
-        {
-            PyObject* error = generic_buffer_translate(native_buf, buf);
-            if (error != NULL)
-                return error;
-            return PyLong_FromLong(as_file_object(self).file->write_buffer(native_buf, offset));
-        }
-        else if (PyArg_ParseTuple(args, "s#K|i", &bytes, &bytes_len, &offset, &len))
+        if (PyArg_ParseTuple(args, "s#K|i", &bytes, &bytes_len, &offset, &len))
         {
             PyErr_Clear();
             len = (len < 0)? bytes_len : len;
             return PyLong_FromLong(as_file_object(self).file->write_buffer((uint8_t*)bytes, offset, len));
+        }
+        else if (PyArg_ParseTuple(args, "O!K", &PyList_Type, &buf, &offset))
+        {
+            PyErr_Clear();
+            PyObject* error = generic_buffer_translate(native_buf, buf);
+            if (error != NULL)
+                return error;
+            return PyLong_FromLong(as_file_object(self).file->write_buffer(native_buf, offset));
         }
         else
         {

@@ -691,7 +691,7 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
     PyObject* trailing_value = NULL;
     std::optional<cst_t> tval = std::nullopt;
 
-    static char* kwlist[] = {"", "", "", "elem_size", "trailing_value", NULL};
+    static char* kwlist[] = {"", "", "nb_elems", "elem_size", "trailing_value", NULL};
 
     if (PyArg_ParseTupleAndKeywords(args, keywords, "ss#|iiO!", kwlist, &name, &bytes, 
         &bytes_len, &nb_elems, &elem_size, &PyLong_Type, &trailing_value))
@@ -797,7 +797,7 @@ static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args, 
     PyObject* trailing_value=NULL;
     std::optional<cst_t> tval = std::nullopt;
 
-    static char* kwlist[] = {"", "", "elem_size", "trailing_value", NULL};
+    static char* kwlist[] = {"", "nb_elems", "elem_size", "trailing_value", NULL};
 
     if( !PyArg_ParseTupleAndKeywords(args, keywords, "si|iO!", kwlist, &name, 
         &nb_elems, &elem_size, &PyLong_Type, &trailing_value))
