@@ -1,6 +1,7 @@
 #ifndef MAAT_PYTHON_BINDINGS_H
 #define MAAT_PYTHON_BINDINGS_H
 
+#define PY_SSIZE_T_CLEAN // Required by python
 #include "Python.h"
 #include "structmember.h"
 #include "maat.hpp"

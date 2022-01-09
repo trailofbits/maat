@@ -242,7 +242,8 @@ static PyObject* FileAccessor_write_buffer(PyObject* self, PyObject *args)
     PyObject* buf;
     std::vector<Value> native_buf;
     const char* bytes;
-    int bytes_len=0, len=-1;
+    Py_ssize_t bytes_len = 0; 
+    int len = -1;
 
     try
     {
@@ -385,7 +386,8 @@ static PyObject* File_write_buffer(PyObject* self, PyObject *args)
     std::vector<Value> native_buf;
     addr_t offset = 0;
     const char* bytes;
-    int bytes_len=0, len=-1;
+    Py_ssize_t bytes_len = 0;
+    int len = -1;
 
     try
     {

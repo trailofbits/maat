@@ -485,7 +485,7 @@ PyObject* maat_Cst(PyObject* self, PyObject* args, PyObject* keywords)
 PyObject* maat_Var(PyObject* self, PyObject* args, PyObject* keywords)
 {
     const char * name;
-    int name_length;
+    Py_ssize_t name_length;
     int size = 0;
     static char* kwlist[] = {"size", "name", NULL};
     
@@ -686,7 +686,7 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
     std::vector<cst_t> concrete_buffer;
     PyObject* py_concrete_buffer;
     const char* bytes;
-    int bytes_len=0;
+    Py_ssize_t bytes_len=0;
     int nb_elems = -1, elem_size =1;
     PyObject* trailing_value = NULL;
     std::optional<cst_t> tval = std::nullopt;
