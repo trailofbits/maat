@@ -1,0 +1,3 @@
+[submodule "src/third-party/sleigh-cmake"]
+	path = src/third-party/sleigh-cmake
+	url = https://github.com/lifting-bits/sleigh.git

@@ -3,6 +3,7 @@
 
 #include <map>
 #include "number.hpp"
+#include <optional>
 #include <vector>
 
 namespace maat 
