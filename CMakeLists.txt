@@ -103,9 +103,7 @@ target_compile_features(maat_maat PUBLIC cxx_std_17)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 
 find_package(GMP REQUIRED)
-# Need to set this so CMake doesn't yell at us about sleigh
-set(SLEIGH_ENABLE_INSTALL ON)
-add_subdirectory(src/third-party/sleigh-cmake EXCLUDE_FROM_ALL)
+find_package(sleigh REQUIRED)
 target_link_libraries(
     maat_maat
     PUBLIC GMP::GMP
