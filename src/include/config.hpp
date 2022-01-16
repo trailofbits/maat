@@ -2,7 +2,7 @@
 #define MAAT_CONFIG_H
 
 // TODO(ekilmer) #define MAAT_SPECFILE_DIR_PREFIX CMAKE_SPECFILE_DIR_PREFIX
-#define MAAT_SPECFILE_DIR_PREFIX "etc/maat/processors/"
+#define MAAT_SPECFILE_DIR_PREFIX "/etc/maat/processors/"
 
 #include <filesystem>
 #include <list>
@@ -84,7 +84,15 @@ public:
         explicit_files.push_front(std::filesystem::path(dir));
     }
 
-    /** \brief Find sleigh file on the current machine
+    /** Find sleigh file on the current machine.
+     *
+     * This method searches for sleigh in various locations, in the following
+     * order:
+     *     1. Explicit files added with 'add_explicit_sleigh_file'
+     *     2. Explicit directories added with 'add_explicit_sleigh_dir'
+     *     3. Maat install directory, specified with `MAAT_INSTALL_DIR` env variable
+     *     4. Standard locations such as '/usr/local/', '/usr/', ...
+     *
      * @param filename Name of the file to find (e.g, 'x86.sla')
      * @param only_explicit_paths If set to 'True', searches for 'filename'
        only in locations specified with 'add_explicit_sleigh_dir' and
@@ -109,7 +117,17 @@ public:
         }
 
         // 3. Known absolute installation path with env variable
-        // TODO(boyan)
+        char* install_dir = std::getenv("MAAT_INSTALL_DIR");
+        if (install_dir)
+        {
+            if (
+                auto res = find_sleigh_file_in_dir(
+                    filename, 
+                    std::filesystem::path(std::string(install_dir)+MAAT_SPECFILE_DIR_PREFIX)
+                )
+            )
+                return res;
+        }
 
         // 4. Known relative paths
         // TODO(boyan)
