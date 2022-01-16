@@ -1,8 +1,8 @@
 #ifndef MAAT_CONFIG_H
 #define MAAT_CONFIG_H
 
-// TODO(ekilmer) #define MAAT_SPECFILE_DIR_PREFIX CMAKE_SPECFILE_DIR_PREFIX
-#define MAAT_SPECFILE_DIR_PREFIX "/etc/maat/processors/"
+// TODO(ekilmer) static constexpr char* MAAT_SPECFILE_DIR_PREFIX = CMAKE_SPECFILE_DIR_PREFIX;
+static constexpr char* MAAT_SPECFILE_DIR_PREFIX = "/etc/maat/processors/";
 
 #include <filesystem>
 #include <list>
@@ -38,22 +38,7 @@ public:
     }
 
 private:
-    std::optional<std::filesystem::path> find_sleigh_file_in_dir(
-        const std::string& filename,
-        const std::string& dir
-    )
-    {
-        if (!std::filesystem::is_directory(dir))
-        {
-            return std::nullopt;
-        }
-        for (const auto& entry: std::filesystem::directory_iterator(dir))
-            if (entry.path().filename() == filename)
-                return entry.path();
-
-        return std::nullopt;
-    }
-
+    // Search for file 'filename' in directory 'dir'
     std::optional<std::filesystem::path> find_sleigh_file_in_dir(
         const std::string& filename,
         const path_t& dir
@@ -115,6 +100,9 @@ public:
             if (auto res = find_sleigh_file_in_dir(filename, dir))
                 return res;
         }
+
+        if(only_explicit_paths)
+            return std::nullopt;
 
         // 3. Known absolute installation path with env variable
         char* install_dir = std::getenv("MAAT_INSTALL_DIR");
