@@ -17,9 +17,6 @@ void test_snapshots();
 void test_solver();
 void test_loader();
 
-/*
-void test_env();
-void test_archARM64(); */
 
 int main(int argc, char ** argv)
 {
@@ -106,6 +103,7 @@ int main(int argc, char ** argv)
             return 1; 
         }
     }
+
     time_end = std::chrono::steady_clock::now();
     time_total = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_begin).count();
 
