@@ -1,34 +1,44 @@
 #include "lifter.hpp"
+#include "config.hpp"
 #include <string>
+#include <filesystem>
 
 namespace maat
 {
 
 LifterX86::LifterX86(int m): mode(m)
 {
-    std::string slafile;
-    std::string pspecfile;
+    std::optional<std::filesystem::path> slafile, pspecfile;
     std::string arch;
+
+    MaatConfig& config = MaatConfig::instance();
+
     // Init disassembly context
     try
     {
         if (mode == 32)
         {
-            slafile = "/usr/local/etc/maat/processors/x86.sla";
-            pspecfile = "/usr/local/etc/maat/processors/x86.pspec";
+            slafile = config.find_sleigh_file("x86.sla");
+            pspecfile = config.find_sleigh_file("x86.pspec");
             arch = "X86";
         }
         else if (mode == 64)
         {
-            slafile = "/usr/local/etc/maat/processors/x86-64.sla";
-            pspecfile = "/usr/local/etc/maat/processors/x86-64.pspec";
+            slafile = config.find_sleigh_file("x86-64.sla");
+            pspecfile = config.find_sleigh_file("x86-64.pspec");
             arch = "X64";
         }
         else
         {
             throw lifter_exception("LifterX86: supported modes are only '32' and '64'");
         }
-         sleigh_ctx = new_sleigh_ctx(arch, slafile, pspecfile);
+
+        if (not (slafile and pspecfile))
+        {
+            throw lifter_exception("LifterX86: didn't find sleigh files");
+        }
+
+         sleigh_ctx = new_sleigh_ctx(arch, slafile->string(), pspecfile->string());
     }
     catch(std::exception& e)
     {
@@ -43,7 +53,7 @@ LifterX86::LifterX86(int m): mode(m)
     {
         throw lifter_exception(Fmt() 
                 <<"LifterX86: Failed to instanciate SLEIGH context from file: "
-                << slafile
+                << slafile->string()
                 >> Fmt::to_str
               );
     }
