@@ -1,6 +1,6 @@
-#include "cpu.hpp"
-#include "pinst.hpp"
-#include "engine.hpp"
+#include "maat/cpu.hpp"
+#include "maat/pinst.hpp"
+#include "maat/engine.hpp"
 
 namespace maat
 {

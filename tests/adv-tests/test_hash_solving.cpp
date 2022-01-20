@@ -1,7 +1,7 @@
-#include "engine.hpp"
-#include "varcontext.hpp"
-#include "exception.hpp"
-#include "solver.hpp"
+#include "maat/engine.hpp"
+#include "maat/varcontext.hpp"
+#include "maat/exception.hpp"
+#include "maat/solver.hpp"
 #include <cassert>
 #include <iostream>
 #include <string>

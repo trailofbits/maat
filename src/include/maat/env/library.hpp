@@ -1,12 +1,12 @@
 #ifndef MAAT_ENV_LIBRARY_H
 #define MAAT_ENV_LIBRARY_H
 
-#include "value.hpp"
-#include "types.hpp"
+#include "maat/value.hpp"
+#include "maat/types.hpp"
 #include <vector>
 #include <string>
 #include <variant>
-#include "ir.hpp"
+#include "maat/ir.hpp"
 
 namespace maat
 {

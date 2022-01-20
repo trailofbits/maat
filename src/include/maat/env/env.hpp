@@ -1,13 +1,13 @@
 #ifndef MAAT_ENV_H
 #define MAAT_ENV_H
 
-#include "env/library.hpp"
-#include "env/filesystem.hpp"
-#include "env/os.hpp"
-#include "env/syscall.hpp"
-#include "arch.hpp"
-#include "snapshot.hpp"
-#include "process.hpp"
+#include "maat/env/library.hpp"
+#include "maat/env/filesystem.hpp"
+#include "maat/env/os.hpp"
+#include "maat/env/syscall.hpp"
+#include "maat/arch.hpp"
+#include "maat/snapshot.hpp"
+#include "maat/process.hpp"
 
 namespace maat
 {

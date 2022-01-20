@@ -2,10 +2,10 @@
 #define MAAT_EVENT_H
 
 #include <list>
-#include "types.hpp"
-#include "info.hpp"
-#include "arch.hpp"
-#include "pinst.hpp"
+#include "maat/types.hpp"
+#include "maat/info.hpp"
+#include "maat/arch.hpp"
+#include "maat/pinst.hpp"
 
 #ifdef PYTHON_BINDINGS
     #include "Python.h"

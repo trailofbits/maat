@@ -1,4 +1,4 @@
-#include "solver.hpp"
+#include "maat/solver.hpp"
 
 namespace maat
 {

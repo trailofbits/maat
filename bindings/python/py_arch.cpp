@@ -1,5 +1,5 @@
 #include "python_bindings.hpp"
-#include "arch.hpp"
+#include "maat/arch.hpp"
 
 namespace maat{
 namespace py{

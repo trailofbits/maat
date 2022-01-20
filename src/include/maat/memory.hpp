@@ -7,11 +7,11 @@
 #include <iostream>
 #include <iomanip>
 #include <list>
-#include "types.hpp"
-#include "expression.hpp"
-#include "settings.hpp"
-#include "snapshot.hpp"
-#include "memory_page.hpp"
+#include "maat/types.hpp"
+#include "maat/expression.hpp"
+#include "maat/settings.hpp"
+#include "maat/snapshot.hpp"
+#include "maat/memory_page.hpp"
 
 namespace maat
 {

@@ -1,4 +1,4 @@
-#include "ir.hpp"
+#include "maat/ir.hpp"
 #include <vector>
 #include <cstring>
 
