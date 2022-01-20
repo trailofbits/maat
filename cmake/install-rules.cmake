@@ -22,8 +22,13 @@ install(
     COMPONENT maat_Development
 )
 
+set(other_maat_targets)
+if(maat_BUILD_PYTHON_BINDINGS)
+  list(APPEND other_maat_targets maat_python)
+endif()
+
 install(
-    TARGETS maat_maat
+    TARGETS maat_maat ${other_maat_targets}
     EXPORT maatTargets
     RUNTIME #
     COMPONENT maat_Runtime
@@ -32,6 +37,8 @@ install(
     NAMELINK_COMPONENT maat_Development
     ARCHIVE #
     COMPONENT maat_Development
+    LIBRARY #
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     INCLUDES #
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )

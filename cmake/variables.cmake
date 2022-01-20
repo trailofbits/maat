@@ -5,7 +5,7 @@
 # Targets necessary to build the project must be provided unconditionally, so
 # consumers can trivially build and package the project
 if(PROJECT_IS_TOP_LEVEL)
-  option(maat_BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
+  option(maat_BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
   option(maat_DEVELOPER_MODE "Enable developer mode" OFF)
   option(BUILD_SHARED_LIBS "Build shared libs." OFF)
 

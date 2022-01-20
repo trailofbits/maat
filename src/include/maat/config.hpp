@@ -2,7 +2,7 @@
 #define MAAT_CONFIG_H
 
 // TODO(ekilmer) static constexpr char* maat_specfile_dir_prefix = CMAKE_SPECFILE_DIR_PREFIX;
-static constexpr char* maat_specfile_dir_prefix = "/etc/maat/processors/";
+static constexpr char* maat_specfile_dir_prefix = "/share/maat/processors/";
 
 #include <filesystem>
 #include <list>

@@ -19,8 +19,7 @@ include(GNUInstallDirs)
 
 # ---- Declare library ----
 
-add_library(
-    maat_maat
+add_library(maat_maat
     src/ir/asm_inst.cpp
     src/ir/cpu.cpp
     src/ir/instruction.cpp
@@ -76,8 +75,9 @@ endif()
 
 set_target_properties(
     maat_maat PROPERTIES
-    CXX_VISIBILITY_PRESET hidden
-    VISIBILITY_INLINES_HIDDEN YES
+    # TODO: Visibility settings should ideally be hidden
+    #CXX_VISIBILITY_PRESET hidden
+    #VISIBILITY_INLINES_HIDDEN YES
     VERSION "${PROJECT_VERSION}"
     SOVERSION "${PROJECT_VERSION_MAJOR}"
     EXPORT_NAME maat
@@ -112,21 +112,26 @@ target_link_libraries(
     PRIVATE sleigh::sla
 )
 
+# TODO: Should this be REQUIRED or gated by an option?
 find_package(Z3)
 if(Z3_FOUND)
     target_link_libraries(maat_maat PUBLIC z3::libz3)
+    # TODO: Should these definitions be prefixed by MAAT_?
     target_compile_definitions(maat_maat PUBLIC Z3_BACKEND=1 HAS_SOLVER_BACKEND=1)
 endif()
 
+# TODO: Should this be REQUIRED or gated by an option?
 find_package(LIEF)
 if(LIEF_FOUND)
     target_link_libraries(maat_maat PUBLIC LIEF::LIEF)
+    # TODO: Should these definitions be prefixed by MAAT_?
     target_compile_definitions(maat_maat PUBLIC LIEF_BACKEND=1 HAS_LOADER_BACKEND=1)
 endif()
 
-find_package(Python3)
-if(Python3_FOUND AND MAAT_BUILD_PYTHON_BINDINGS)
-    add_subdirectory(bindings)
+if(maat_BUILD_PYTHON_BINDINGS)
+    # NOTE: The way we use the main library's source files means this needs to
+    # be a CMake include rather than add_subdirectory
+    include(bindings/bindings.cmake)
 endif()
 
 # ---- Compile Sleigh data ----
