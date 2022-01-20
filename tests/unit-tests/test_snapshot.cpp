@@ -1,3 +1,4 @@
+#include "config.hpp"
 #include "expression.hpp"
 #include "varcontext.hpp"
 #include "snapshot.hpp"
@@ -250,6 +251,8 @@ void test_snapshots()
     std::cout   << bold << "[" << green << "+" 
                 << def << bold << "]" << def 
                 << " Testing snapshots... " << std::flush;
+
+    maat::MaatConfig::instance().add_explicit_sleigh_dir(MAAT_SLEIGH_DIR);
 
     total += basic();
     total += snapshot_X86();

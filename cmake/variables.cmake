@@ -8,6 +8,12 @@ if(PROJECT_IS_TOP_LEVEL)
   option(maat_BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
   option(maat_DEVELOPER_MODE "Enable developer mode" OFF)
   option(BUILD_SHARED_LIBS "Build shared libs." OFF)
+
+  # Allow package maintainers to freely override data file directory
+  set(
+    CMAKE_INSTALL_DATADIR "share/maat"
+    CACHE PATH "Data file location relative to the install prefix"
+  )
 endif()
 
 # ---- Suppress C4251 on Windows ----

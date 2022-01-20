@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.15)
 
 include(cmake/prelude.cmake)
 
@@ -14,6 +14,8 @@ docs_early_return()
 
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
+
+include(GNUInstallDirs)
 
 # ---- Declare library ----
 
@@ -119,13 +121,50 @@ endif()
 find_package(LIEF)
 if(LIEF_FOUND)
     target_link_libraries(maat_maat PUBLIC LIEF::LIEF)
-    target_compile_definitions(maat_maat PUBLIC LIEF_BACKEND=1)
+    target_compile_definitions(maat_maat PUBLIC LIEF_BACKEND=1 HAS_LOADER_BACKEND=1)
 endif()
 
 find_package(Python3)
 if(Python3_FOUND AND MAAT_BUILD_PYTHON_BINDINGS)
     add_subdirectory(bindings)
 endif()
+
+# ---- Compile Sleigh data ----
+
+set(spec_out_dir "${PROJECT_BINARY_DIR}/sleigh")
+set(spec_log_dir "${PROJECT_BINARY_DIR}/sleigh-log")
+set(spec_dir "${PROJECT_SOURCE_DIR}/src/third-party/sleigh/processors")
+
+add_custom_command(
+  OUTPUT "${spec_out_dir}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${spec_out_dir}"
+)
+add_custom_command(
+  OUTPUT "${spec_log_dir}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${spec_log_dir}"
+)
+
+sleigh_compile(
+  TARGET maat_sleigh_spec_x86-64
+  SLASPEC "${spec_dir}/x86/data/languages/x86-64.slaspec"
+  LOG_FILE "${PROJECT_BINARY_DIR}/sleigh-log/x86-64.log"
+  OUT_FILE "${spec_out_dir}/x86-64.sla"
+)
+configure_file("${spec_dir}/x86/data/languages/x86-64.pspec" "${spec_out_dir}/x86-64.pspec")
+
+sleigh_compile(
+  TARGET maat_sleigh_spec_x86
+  SLASPEC "${spec_dir}/x86/data/languages/x86.slaspec"
+  LOG_FILE "${PROJECT_BINARY_DIR}/sleigh-log/x86.log"
+  OUT_FILE "${spec_out_dir}/x86.sla"
+)
+configure_file("${spec_dir}/x86/data/languages/x86.pspec" "${spec_out_dir}/x86.pspec")
+
+# All of the sla spec targets are combined into this one
+add_custom_target(maat_all_sla_specs ALL DEPENDS
+  maat_sleigh_spec_x86-64
+  maat_sleigh_spec_x86
+)
 
 # ---- Install rules ----
 

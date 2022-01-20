@@ -1,9 +1,4 @@
-if(PROJECT_IS_TOP_LEVEL)
-  set(CMAKE_INSTALL_INCLUDEDIR include/maat CACHE PATH "")
-endif()
-
 include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
 
 # find_package(<package>) call for consumers to find this project
 set(package maat)
@@ -43,7 +38,7 @@ write_basic_package_version_file(
 
 # Allow package maintainers to freely override the path for the configs
 set(
-    maat_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATADIR}/${package}"
+    maat_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATAROOTDIR}/${package}"
     CACHE PATH "CMake package config location relative to the install prefix"
 )
 mark_as_advanced(maat_INSTALL_CMAKEDIR)
@@ -66,6 +61,13 @@ install(
     NAMESPACE maat::
     DESTINATION "${maat_INSTALL_CMAKEDIR}"
     COMPONENT maat_Development
+)
+
+# Install data files
+install(
+  DIRECTORY "${PROJECT_BINARY_DIR}/sleigh/"
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/processors"
+  COMPONENT maat_Runtime
 )
 
 if(PROJECT_IS_TOP_LEVEL)
