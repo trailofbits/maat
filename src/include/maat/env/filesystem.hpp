@@ -2,10 +2,10 @@
 #define MAAT_FS_HPP
 
 #include <memory>
-#include "memory.hpp"
-#include "env/os.hpp"
-#include "snapshot.hpp"
-#include "varcontext.hpp"
+#include "maat/memory.hpp"
+#include "maat/env/os.hpp"
+#include "maat/snapshot.hpp"
+#include "maat/varcontext.hpp"
 
 namespace maat
 {

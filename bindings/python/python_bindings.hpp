@@ -4,7 +4,7 @@
 #define PY_SSIZE_T_CLEAN // Required by python
 #include "Python.h"
 #include "structmember.h"
-#include "maat.hpp"
+#include "maat/maat.hpp"
 #include <memory>
 
 namespace maat

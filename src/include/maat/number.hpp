@@ -2,8 +2,8 @@
 #define MAAT_NUMBER_H
 
 #include <iostream>
-#include "types.hpp"
-#include "exception.hpp"
+#include "maat/types.hpp"
+#include "maat/exception.hpp"
 #include "gmp.h"
 #include "gmpxx.h"
 

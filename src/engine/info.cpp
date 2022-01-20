@@ -1,4 +1,4 @@
-#include "info.hpp"
+#include "maat/info.hpp"
 
 namespace maat{
 namespace info{

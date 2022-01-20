@@ -7,11 +7,11 @@
 
 #include <vector>
 #include <list>
-#include "types.hpp"
-#include "arch.hpp"
-#include "memory_page.hpp"
-#include "exception.hpp"
-#include "value.hpp"
+#include "maat/types.hpp"
+#include "maat/arch.hpp"
+#include "maat/memory_page.hpp"
+#include "maat/exception.hpp"
+#include "maat/value.hpp"
 
 namespace maat
 {

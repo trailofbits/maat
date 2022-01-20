@@ -1,9 +1,9 @@
 #ifndef MAAT_VALUE_H
 #define MAAT_VALUE_H
 
-#include "expression.hpp"
-#include "number.hpp"
-#include "constraint.hpp"
+#include "maat/expression.hpp"
+#include "maat/number.hpp"
+#include "maat/constraint.hpp"
 
 namespace maat
 {

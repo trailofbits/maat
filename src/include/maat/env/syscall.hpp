@@ -1,7 +1,7 @@
 #ifndef MAAT_ENV_SYSCALL_H
 #define MAAT_ENV_SYSCALL_H
 
-#include "env/library.hpp"
+#include "maat/env/library.hpp"
 
 namespace maat
 {

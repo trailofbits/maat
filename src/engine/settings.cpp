@@ -1,4 +1,4 @@
-#include "settings.hpp"
+#include "maat/settings.hpp"
 
 namespace maat
 {

@@ -1,8 +1,8 @@
 #ifndef MAAT_SOLVER_H
 #define MAAT_SOLVER_H
 
-#include "constraint.hpp"
-#include "varcontext.hpp"
+#include "maat/constraint.hpp"
+#include "maat/varcontext.hpp"
 #include <list>
 
 #ifdef Z3_BACKEND

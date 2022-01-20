@@ -1,5 +1,5 @@
-#include "ir.hpp"
-#include "exception.hpp"
+#include "maat/ir.hpp"
+#include "maat/exception.hpp"
 
 #include <cassert>
 #include <iostream>

@@ -1,5 +1,5 @@
-#include "lifter.hpp"
-#include "config.hpp"
+#include "maat/lifter.hpp"
+#include "maat/config.hpp"
 #include <string>
 #include <filesystem>
 

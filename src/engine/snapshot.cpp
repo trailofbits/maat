@@ -1,4 +1,4 @@
-#include "snapshot.hpp"
+#include "maat/snapshot.hpp"
 
 namespace maat
 {
