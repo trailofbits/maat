@@ -1,3 +1,8 @@
+# Intentional duplicate maat/maat directory in installed include directory
+if(PROJECT_IS_TOP_LEVEL)
+  set(CMAKE_INSTALL_INCLUDEDIR include/maat CACHE PATH "")
+endif()
+
 include(CMakePackageConfigHelpers)
 
 # find_package(<package>) call for consumers to find this project
