@@ -9,9 +9,9 @@
 #include <map>
 #include <set>
 #include <variant>
-#include "exception.hpp"
-#include "number.hpp"
-#include "types.hpp"
+#include "maat/exception.hpp"
+#include "maat/number.hpp"
+#include "maat/types.hpp"
 
 namespace maat
 {

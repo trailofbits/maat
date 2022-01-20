@@ -3,11 +3,11 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include "memory.hpp"
-#include "exception.hpp"
-#include "simplification.hpp"
-#include "engine.hpp"
-#include "varcontext.hpp"
+#include "maat/memory.hpp"
+#include "maat/exception.hpp"
+#include "maat/simplification.hpp"
+#include "maat/engine.hpp"
+#include "maat/varcontext.hpp"
 
 using std::cout;
 using std::endl; 

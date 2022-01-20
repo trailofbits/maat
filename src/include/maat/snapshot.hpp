@@ -2,12 +2,12 @@
 #define MAAT_SNAPSHOT_H
 
 #include <vector>
-#include "cpu.hpp"
-#include "types.hpp"
-#include "info.hpp"
-#include "memory_page.hpp"
-#include "path.hpp"
-#include "process.hpp"
+#include "maat/cpu.hpp"
+#include "maat/types.hpp"
+#include "maat/info.hpp"
+#include "maat/memory_page.hpp"
+#include "maat/path.hpp"
+#include "maat/process.hpp"
 
 namespace maat
 {

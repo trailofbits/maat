@@ -1,7 +1,7 @@
 #ifndef SIMPLIFICATION_H
 #define SIMPLIFICATION_H
 
-#include "expression.hpp"
+#include "maat/expression.hpp"
 #include <vector>
 
 

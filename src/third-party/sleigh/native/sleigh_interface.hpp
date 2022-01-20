@@ -6,7 +6,7 @@
 
 #include <string>
 #include <map>
-#include "ir.hpp"
+#include "maat/ir.hpp"
 
 namespace maat
 {

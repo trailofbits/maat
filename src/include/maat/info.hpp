@@ -1,11 +1,11 @@
 #ifndef MAAT_INFO_H
 #define MAAT_INFO_H
 
-#include "types.hpp"
-#include "ir.hpp"
-#include "constraint.hpp"
-#include "arch.hpp"
-#include "value.hpp"
+#include "maat/types.hpp"
+#include "maat/ir.hpp"
+#include "maat/constraint.hpp"
+#include "maat/arch.hpp"
+#include "maat/value.hpp"
 
 namespace maat
 {

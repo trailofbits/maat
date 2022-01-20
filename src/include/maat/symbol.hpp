@@ -1,7 +1,7 @@
 #ifndef MAAT_SYMBOL_H
 #define MAAT_SYMBOL_H
 
-#include "types.hpp"
+#include "maat/types.hpp"
 #include <optional>
 #include <unordered_map>
 #include <vector>

@@ -1,5 +1,5 @@
-#include "symbol.hpp"
-#include "exception.hpp"
+#include "maat/symbol.hpp"
+#include "maat/exception.hpp"
 
 namespace maat
 {

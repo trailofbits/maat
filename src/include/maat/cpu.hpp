@@ -4,12 +4,12 @@
 #include <array>
 #include <vector>
 #include <optional>
-#include "expression.hpp"
-#include "ir.hpp"
-#include "constraint.hpp"
-#include "arch.hpp"
-#include "event.hpp"
-#include "pinst.hpp"
+#include "maat/expression.hpp"
+#include "maat/ir.hpp"
+#include "maat/constraint.hpp"
+#include "maat/arch.hpp"
+#include "maat/event.hpp"
+#include "maat/pinst.hpp"
 
 namespace maat
 {

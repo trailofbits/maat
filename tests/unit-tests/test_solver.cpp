@@ -1,6 +1,6 @@
-#include "expression.hpp"
-#include "solver.hpp"
-#include "exception.hpp"
+#include "maat/expression.hpp"
+#include "maat/solver.hpp"
+#include "maat/exception.hpp"
 #include <iostream>
 #include <string>
 #include <sstream>

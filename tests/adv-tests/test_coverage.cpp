@@ -2,11 +2,11 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include "exception.hpp"
-#include "expression.hpp"
-#include "solver.hpp"
-#include "engine.hpp"
-#include "varcontext.hpp"
+#include "maat/exception.hpp"
+#include "maat/expression.hpp"
+#include "maat/solver.hpp"
+#include "maat/engine.hpp"
+#include "maat/varcontext.hpp"
 #include <fstream>
 
 using std::cout;

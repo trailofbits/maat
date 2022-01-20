@@ -9,10 +9,10 @@
 #include "sleigh_interface.hpp"
 #include "sleigh/types.h"
 
-#include "ir.hpp"
-#include "exception.hpp"
-#include "arch.hpp"
-#include "callother.hpp"
+#include "maat/ir.hpp"
+#include "maat/exception.hpp"
+#include "maat/arch.hpp"
+#include "maat/callother.hpp"
 
 #include <optional>
 

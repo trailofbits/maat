@@ -5,7 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include "expression.hpp"
+#include "maat/expression.hpp"
 
 namespace maat
 {

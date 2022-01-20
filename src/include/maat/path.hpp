@@ -1,7 +1,7 @@
 #ifndef MAAT_PATH_H
 #define MAAT_PATH_H
 
-#include "constraint.hpp"
+#include "maat/constraint.hpp"
 
 namespace maat
 {

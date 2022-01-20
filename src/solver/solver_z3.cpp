@@ -1,6 +1,6 @@
 #ifdef Z3_BACKEND
 
-#include "solver.hpp"
+#include "maat/solver.hpp"
 
 namespace maat
 {
