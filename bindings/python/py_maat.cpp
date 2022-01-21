@@ -43,7 +43,7 @@ PyMODINIT_FUNC PyInit_maat()
 {
     Py_Initialize();
     PyObject* module = PyModule_Create(&maat_module_def);
-    
+
     init_arch(module);
     init_expression(module);
     init_constraint(module);
@@ -52,5 +52,19 @@ PyMODINIT_FUNC PyInit_maat()
     init_event(module);
     init_loader(module);
     init_env(module);
+
+    // Create global config object
+    PyObject* config = maat_Config();
+    // TODO(boyan): we could use PyModule_AddObjectRef to make this code cleaner
+    // but it is not supported prior to Python 3.10, and we don't want to 
+    // force Python 3.10 so early
+    Py_INCREF(config);
+    if (PyModule_AddObject(module, "config", config) < 0)
+    {
+        Py_DECREF(module);
+        Py_DECREF(config);
+        return NULL;
+    }
+
     return module;
 }
