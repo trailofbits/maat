@@ -43,7 +43,7 @@ PyMODINIT_FUNC PyInit_maat()
 {
     Py_Initialize();
     PyObject* module = PyModule_Create(&maat_module_def);
-    
+
     init_arch(module);
     init_expression(module);
     init_constraint(module);
@@ -52,5 +52,7 @@ PyMODINIT_FUNC PyInit_maat()
     init_event(module);
     init_loader(module);
     init_env(module);
+    init_config(module);
+
     return module;
 }

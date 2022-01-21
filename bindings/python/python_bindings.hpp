@@ -242,6 +242,17 @@ PyObject* maat_Solver(PyObject* module);
 #define as_solver_object(x)  (*((Solver_Object*)x))
 #endif
 
+
+// ================= Config =================
+void init_config(PyObject* module);
+typedef struct{
+    PyObject_HEAD
+    maat::MaatConfig* config;
+} Config_Object;
+PyObject* get_Config_Type();
+PyObject* maat_Config();
+#define as_config_object(x)  (*((Config_Object*)x))
+
 } // namespace py
 } // namespace maat
 #endif
