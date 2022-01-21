@@ -31,8 +31,8 @@ static PyObject* Config_add_explicit_sleigh_file(PyObject* self, PyObject* args)
 }
 
 static PyMethodDef Config_methods[] = {
-    {"add_explicit_sleigh_file", (PyCFunction)Config_add_explicit_sleigh_file, METH_VARARGS, "Add an explicit path to a sleigh specification file"},
-    {"add_explicit_sleigh_dir", (PyCFunction)Config_add_explicit_sleigh_dir, METH_VARARGS, "Add an explicit directory where to look for sleigh specification files"},
+    {"add_explicit_sleigh_file", (PyCFunction)Config_add_explicit_sleigh_file, METH_VARARGS | METH_CLASS, "Add an explicit path to a sleigh specification file"},
+    {"add_explicit_sleigh_dir", (PyCFunction)Config_add_explicit_sleigh_dir, METH_VARARGS | METH_CLASS, "Add an explicit directory where to look for sleigh specification files"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -79,6 +79,11 @@ PyTypeObject Config_Type = {
     0,                                        /* tp_new */
 };
 
+PyObject* get_Config_Type()
+{
+    return (PyObject*)&Config_Type;
+}
+
 // Constructor
 PyObject* maat_Config()
 {
@@ -88,6 +93,17 @@ PyObject* maat_Config()
     return (PyObject*)object;
 }
 
-    
+void init_config(PyObject* module)
+{
+    // TODO(boyan): We could use PyModule_AddType(module, get_Config_Type()); instead
+    // of the cumbersome code below but it's not avaialble before Python 3.10 and we
+    // don't want to force Python 3.10 yet
+    PyObject* config_type = get_Config_Type();
+    if (PyType_Ready((PyTypeObject*)config_type) < 0)
+        return;
+    Py_INCREF(config_type);
+    PyModule_AddObject(module, "MaatConfig", config_type);
+}
+
 } // namespace py
 } // namespace maat

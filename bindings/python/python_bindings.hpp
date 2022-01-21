@@ -244,6 +244,7 @@ PyObject* maat_Solver(PyObject* module);
 
 
 // ================= Config =================
+void init_config(PyObject* module);
 typedef struct{
     PyObject_HEAD
     maat::MaatConfig* config;
