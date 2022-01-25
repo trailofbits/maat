@@ -18,6 +18,7 @@
 #include "maat/event.hpp"
 #include "maat/pinst.hpp"
 #include "maat/value.hpp"
+#include "maat/config.hpp"
 
 
 #endif
