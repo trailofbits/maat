@@ -6,6 +6,7 @@ static constexpr char* maat_specfile_dir_prefix = "/etc/maat/processors/";
 
 #include <filesystem>
 #include <list>
+#include <optional>
 
 namespace maat
 {
