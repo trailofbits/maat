@@ -3,6 +3,7 @@
 
 #include <set>
 #include <memory>
+#include <optional>
 #include <string>
 #include "maat/expression.hpp"
 

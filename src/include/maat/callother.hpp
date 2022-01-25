@@ -1,6 +1,7 @@
 #ifndef MAAT_CALLOTHER_H
 #define MAAT_CALLOTHER_H
 
+#include <string>
 #include <unordered_map>
 
 namespace maat

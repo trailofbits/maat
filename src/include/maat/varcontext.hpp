@@ -2,6 +2,7 @@
 #define MAAT_VARCONTEXT_H
 
 #include <map>
+#include <optional>
 #include "maat/number.hpp"
 #include <vector>
 

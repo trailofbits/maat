@@ -2,6 +2,7 @@
 #define MAAT_SYMBOL_H
 
 #include "maat/types.hpp"
+#include <optional>
 #include <unordered_map>
 #include <vector>
 #include <string>
