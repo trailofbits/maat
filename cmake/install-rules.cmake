@@ -3,6 +3,14 @@ if(PROJECT_IS_TOP_LEVEL)
   set(CMAKE_INSTALL_INCLUDEDIR include/maat CACHE PATH "")
 endif()
 
+# Allow package maintainers to freely override data file directory
+set(
+  CMAKE_INSTALL_DATADIR "share/maat"
+  CACHE PATH "Data file location relative to the install prefix"
+)
+
+include(GNUInstallDirs)
+
 include(CMakePackageConfigHelpers)
 
 # find_package(<package>) call for consumers to find this project
