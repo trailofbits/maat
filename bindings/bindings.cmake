@@ -2,26 +2,30 @@
 find_package(Python3 COMPONENTS Development REQUIRED)
 
 # Get the same source files as the main library uses
+# NOTE: These source file paths are relative to where the maat::maat target was
+# declared, so this file needs to be "include"d instead of add_subdirectory by
+# CMake
 get_target_property(maat_sources maat::maat SOURCES)
 
 add_library(maat_python MODULE
-  bindings/python/py_constraint.cpp
-  bindings/python/py_memory.cpp
-  bindings/python/util.cpp
-  bindings/python/py_info.cpp
-  bindings/python/py_env.cpp
-  bindings/python/py_settings.cpp
-  bindings/python/py_path.cpp
-  bindings/python/py_maat.cpp
-  bindings/python/py_cpu.cpp
-  bindings/python/py_value.cpp
   bindings/python/py_arch.cpp
+  bindings/python/py_config.cpp
+  bindings/python/py_constraint.cpp
+  bindings/python/py_cpu.cpp
   bindings/python/py_engine.cpp
-  bindings/python/py_filesystem.cpp
-  bindings/python/py_loader.cpp
+  bindings/python/py_env.cpp
   bindings/python/py_event.cpp
-  bindings/python/py_solver.cpp
+  bindings/python/py_filesystem.cpp
+  bindings/python/py_info.cpp
+  bindings/python/py_loader.cpp
+  bindings/python/py_maat.cpp
+  bindings/python/py_memory.cpp
+  bindings/python/py_path.cpp
   bindings/python/py_process.cpp
+  bindings/python/py_settings.cpp
+  bindings/python/py_solver.cpp
+  bindings/python/py_value.cpp
+  bindings/python/util.cpp
 
   ${maat_sources}
 )
