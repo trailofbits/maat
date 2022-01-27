@@ -1,5 +1,0 @@
-<patternconstraints>
-  <language id="RISCV:LE:*:*">
-    <patternfile>riscv_gc_patterns.xml</patternfile>
-  </language>
-</patternconstraints>

@@ -1,4 +1,0 @@
-
-@define SH_VERSION "1"
-
-@include "superh.sinc"
