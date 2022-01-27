@@ -12,18 +12,18 @@ set(package maat)
 
 # Includes
 install(
-    DIRECTORY
-    src/include/
-    "${PROJECT_BINARY_DIR}/export/"
-    "${PROJECT_BINARY_DIR}/include/"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    COMPONENT maat_Development
+  DIRECTORY
+  src/include/
+  "${PROJECT_BINARY_DIR}/export/"
+  "${PROJECT_BINARY_DIR}/include/"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  COMPONENT maat_Development
 )
 install(
-    FILES
-    src/third-party/sleigh/native/sleigh_interface.hpp
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    COMPONENT maat_Development
+  FILES
+  src/third-party/sleigh/native/sleigh_interface.hpp
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  COMPONENT maat_Development
 )
 
 set(other_maat_targets)
@@ -32,51 +32,51 @@ if(maat_BUILD_PYTHON_BINDINGS)
 endif()
 
 install(
-    TARGETS maat_maat ${other_maat_targets}
-    EXPORT maatTargets
-    RUNTIME #
-    COMPONENT maat_Runtime
-    LIBRARY #
-    COMPONENT maat_Runtime
-    NAMELINK_COMPONENT maat_Development
-    ARCHIVE #
-    COMPONENT maat_Development
-    LIBRARY #
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    INCLUDES #
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  TARGETS maat_maat ${other_maat_targets}
+  EXPORT maatTargets
+  RUNTIME #
+  COMPONENT maat_Runtime
+  LIBRARY #
+  COMPONENT maat_Runtime
+  NAMELINK_COMPONENT maat_Development
+  ARCHIVE #
+  COMPONENT maat_Development
+  LIBRARY #
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  INCLUDES #
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )
 
 write_basic_package_version_file(
-    "${package}ConfigVersion.cmake"
-    COMPATIBILITY SameMajorVersion
+  "${package}ConfigVersion.cmake"
+  COMPATIBILITY SameMajorVersion
 )
 
 # Allow package maintainers to freely override the path for the configs
 set(
-    maat_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATAROOTDIR}/${package}"
-    CACHE PATH "CMake package config location relative to the install prefix"
+  maat_INSTALL_CMAKEDIR "${CMAKE_INSTALL_DATAROOTDIR}/${package}"
+  CACHE PATH "CMake package config location relative to the install prefix"
 )
 mark_as_advanced(maat_INSTALL_CMAKEDIR)
 
 install(
-    FILES cmake/install-config.cmake
-    DESTINATION "${maat_INSTALL_CMAKEDIR}"
-    RENAME "${package}Config.cmake"
-    COMPONENT maat_Development
+  FILES cmake/install-config.cmake
+  DESTINATION "${maat_INSTALL_CMAKEDIR}"
+  RENAME "${package}Config.cmake"
+  COMPONENT maat_Development
 )
 
 install(
-    FILES "${PROJECT_BINARY_DIR}/${package}ConfigVersion.cmake"
-    DESTINATION "${maat_INSTALL_CMAKEDIR}"
-    COMPONENT maat_Development
+  FILES "${PROJECT_BINARY_DIR}/${package}ConfigVersion.cmake"
+  DESTINATION "${maat_INSTALL_CMAKEDIR}"
+  COMPONENT maat_Development
 )
 
 install(
-    EXPORT maatTargets
-    NAMESPACE maat::
-    DESTINATION "${maat_INSTALL_CMAKEDIR}"
-    COMPONENT maat_Development
+  EXPORT maatTargets
+  NAMESPACE maat::
+  DESTINATION "${maat_INSTALL_CMAKEDIR}"
+  COMPONENT maat_Development
 )
 
 # Allow package maintainers to freely override data file directory

@@ -31,9 +31,9 @@ set(pragma_suppress_c4251 "
 set(warning_guard "")
 if(NOT PROJECT_IS_TOP_LEVEL)
   option(
-      maat_INCLUDES_WITH_SYSTEM
-      "Use SYSTEM modifier for maat's includes, disabling warnings"
-      ON
+    maat_INCLUDES_WITH_SYSTEM
+    "Use SYSTEM modifier for maat's includes, disabling warnings"
+    ON
   )
   mark_as_advanced(maat_INCLUDES_WITH_SYSTEM)
   if(maat_INCLUDES_WITH_SYSTEM)
