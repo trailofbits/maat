@@ -1,13 +1,15 @@
 //
 // Minimal SLEIGH library C API, for disassembly and translation to P-code.
 //
+#include "sleigh_interface.hpp"
+
 #include <stdio.h>
 #include <assert.h>
 #include <stdbool.h>
-#include "sleigh/loadimage.hh"
-#include "sleigh/sleigh.hh"
-#include "sleigh_interface.hpp"
-#include "sleigh/types.h"
+
+#include <sleigh/loadimage.hh>
+#include <sleigh/sleigh.hh>
+#include <sleigh/types.h>
 
 #include "maat/ir.hpp"
 #include "maat/exception.hpp"

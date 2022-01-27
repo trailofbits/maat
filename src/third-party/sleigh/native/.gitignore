@@ -1,0 +1,7 @@
+*.java
+Module.manifest
+build.gradle
+certification.manifest
+bin/
+lib/
+csleigh.i
