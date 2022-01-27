@@ -46,3 +46,4 @@ RUN cmake -S . -B /tmp/maat/build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INST
     && \
   cmake --build /tmp/maat/build -j && \
   cmake --install /tmp/maat/build
+env PYTHONPATH=/opt/maat/lib
