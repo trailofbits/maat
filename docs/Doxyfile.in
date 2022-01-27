@@ -7,17 +7,18 @@ PROJECT_NAME = "@PROJECT_NAME@"
 PROJECT_NUMBER = "@PROJECT_VERSION@"
 
 # Add sources
-INPUT = "@PROJECT_SOURCE_DIR@/README.md" "@PROJECT_SOURCE_DIR@/include" "@PROJECT_SOURCE_DIR@/docs/pages"
+INPUT = "@PROJECT_SOURCE_DIR@/README.md" "@PROJECT_SOURCE_DIR@/BUILDING.md" "@PROJECT_SOURCE_DIR@/HACKING.md" "@PROJECT_SOURCE_DIR@/CONTRIBUTING.md" "@PROJECT_SOURCE_DIR@/src/include" "@PROJECT_SOURCE_DIR@/bindings/python/python_bindings.hpp" "@PROJECT_SOURCE_DIR@/src/third-party/sleigh/native/sleigh_interface.hpp" "@PROJECT_SOURCE_DIR@/docs/pages"
 EXTRACT_ALL = YES
 RECURSIVE = YES
 OUTPUT_DIRECTORY = "@DOXYGEN_OUTPUT_DIRECTORY@"
+IMAGE_PATH = "@PROJECT_SOURCE_DIR@/ressources"
 
 # Use the README as a main page
 USE_MDFILE_AS_MAINPAGE = "@PROJECT_SOURCE_DIR@/README.md"
 
 # set relative include paths
 FULL_PATH_NAMES = YES
-STRIP_FROM_PATH = "@PROJECT_SOURCE_DIR@/include" "@PROJECT_SOURCE_DIR@"
+STRIP_FROM_PATH = "@PROJECT_SOURCE_DIR@/src/include" "@PROJECT_SOURCE_DIR@"
 STRIP_FROM_INC_PATH =
 
 # We use m.css to generate the html documentation, so we only need XML output

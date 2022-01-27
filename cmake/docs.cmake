@@ -13,8 +13,8 @@ endmacro()
 include(FetchContent)
 FetchContent_Declare(
   mcss URL
-  https://github.com/friendlyanon/m.css/releases/download/release-1/mcss.zip
-  URL_MD5 00cd2757ebafb9bcba7f5d399b3bec7f
+  https://github.com/mosra/m.css/archive/d44d4609099080f881a656d885232bc51bbf101c.zip
+  URL_MD5 962fb22a6fa82aaa10b3511d4b08bf73
   SOURCE_DIR "${PROJECT_BINARY_DIR}/mcss"
   UPDATE_DISCONNECTED YES
 )
@@ -43,6 +43,14 @@ add_custom_target(
   COMMAND "${CMAKE_COMMAND}" -E remove_directory
   "${DOXYGEN_OUTPUT_DIRECTORY}/html"
   "${DOXYGEN_OUTPUT_DIRECTORY}/xml"
+  # Do these copies to work around potential bug in Doxygen
+  # https://github.com/doxygen/doxygen/issues/6783
+  COMMAND "${CMAKE_COMMAND}" -E copy_directory
+  ${PROJECT_SOURCE_DIR}/ressources
+  "${DOXYGEN_OUTPUT_DIRECTORY}/html/ressources"
+  COMMAND "${CMAKE_COMMAND}" -E copy_directory
+  ${PROJECT_SOURCE_DIR}/ressources
+  "${DOXYGEN_OUTPUT_DIRECTORY}/xml/ressources"
   COMMAND "${Python3_EXECUTABLE}" "${mcss_script}" "${config}"
   COMMENT "Building documentation using Doxygen and m.css"
   WORKING_DIRECTORY "${working_dir}"
