@@ -2,6 +2,8 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(GMP)
 
+# NOTE(ekilmer): This is a private dependency that only needs to be found if we
+# are statically linking
 if(NOT "@BUILD_SHARED_LIBS@")
     find_dependency(sleigh)
 endif()

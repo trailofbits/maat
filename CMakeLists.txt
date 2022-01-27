@@ -134,7 +134,9 @@ endif()
 
 # ---- Compile Sleigh data ----
 
-set(spec_out_dir "${PROJECT_BINARY_DIR}/sleigh")
+# Path created like ${maat_INSTALL_DATADIR}/${spec_out_prefix}
+set(spec_out_prefix "processors")
+set(spec_out_dir "${PROJECT_BINARY_DIR}/${spec_out_prefix}")
 set(spec_log_dir "${PROJECT_BINARY_DIR}/sleigh-log")
 set(spec_dir "${PROJECT_SOURCE_DIR}/src/third-party/sleigh/processors")
 
@@ -147,6 +149,7 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E make_directory "${spec_log_dir}"
 )
 
+# x86-64
 sleigh_compile(
   TARGET maat_sleigh_spec_x86-64
   SLASPEC "${spec_dir}/x86/data/languages/x86-64.slaspec"
@@ -155,6 +158,7 @@ sleigh_compile(
 )
 configure_file("${spec_dir}/x86/data/languages/x86-64.pspec" "${spec_out_dir}/x86-64.pspec")
 
+# x86
 sleigh_compile(
   TARGET maat_sleigh_spec_x86
   SLASPEC "${spec_dir}/x86/data/languages/x86.slaspec"
@@ -174,6 +178,14 @@ add_custom_target(maat_all_sla_specs ALL DEPENDS
 if(NOT CMAKE_SKIP_INSTALL_RULES)
   include(cmake/install-rules.cmake)
 endif()
+
+# Embed hard-coded installation information to help detect "normal" installation
+# paths for locating data files.
+# NOTE(ekilmer): Needs to be after the install rules so that we can get the
+# standard CMake installation locations... not sure how well this works if the
+# project is embedded in a project that turns off the installation rules
+configure_file(generate/src/include/maat/config.hpp.in "${PROJECT_BINARY_DIR}/include/maat/config.hpp" @ONLY)
+target_include_directories(maat_maat PUBLIC "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>")
 
 # ---- Developer mode ----
 

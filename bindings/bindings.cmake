@@ -50,6 +50,7 @@ target_include_directories(
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/sleigh/native>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/murmur3>"
+  "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
 )
 
 target_include_directories(

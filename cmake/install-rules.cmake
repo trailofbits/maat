@@ -3,12 +3,6 @@ if(PROJECT_IS_TOP_LEVEL)
   set(CMAKE_INSTALL_INCLUDEDIR include/maat CACHE PATH "")
 endif()
 
-# Allow package maintainers to freely override data file directory
-set(
-  CMAKE_INSTALL_DATADIR "share/maat"
-  CACHE PATH "Data file location relative to the install prefix"
-)
-
 include(GNUInstallDirs)
 
 include(CMakePackageConfigHelpers)
@@ -16,10 +10,12 @@ include(CMakePackageConfigHelpers)
 # find_package(<package>) call for consumers to find this project
 set(package maat)
 
+# Includes
 install(
     DIRECTORY
     src/include/
     "${PROJECT_BINARY_DIR}/export/"
+    "${PROJECT_BINARY_DIR}/include/"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     COMPONENT maat_Development
 )
@@ -83,10 +79,16 @@ install(
     COMPONENT maat_Development
 )
 
+# Allow package maintainers to freely override data file directory
+set(
+  maat_INSTALL_DATADIR "${CMAKE_INSTALL_DATAROOTDIR}/${package}"
+  CACHE PATH "Data file location relative to the install prefix"
+)
+
 # Install data files
 install(
-  DIRECTORY "${PROJECT_BINARY_DIR}/sleigh/"
-  DESTINATION "${CMAKE_INSTALL_DATADIR}/processors"
+  DIRECTORY "${PROJECT_BINARY_DIR}/${spec_out_prefix}/"
+  DESTINATION "${maat_INSTALL_DATADIR}/${spec_out_prefix}"
   COMPONENT maat_Runtime
 )
 
