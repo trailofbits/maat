@@ -1,5 +1,6 @@
 include(CMakeFindDependencyMacro)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/modules")
 find_dependency(GMP)
 
 # NOTE(ekilmer): This is a private dependency that only needs to be found if we

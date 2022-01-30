@@ -92,6 +92,13 @@ install(
   COMPONENT maat_Runtime
 )
 
+# Install CMake helper for finding GMP
+install(
+  FILES "${PROJECT_SOURCE_DIR}/cmake/modules/FindGMP.cmake"
+  DESTINATION "${maat_INSTALL_CMAKEDIR}/modules"
+  COMPONENT maat_Development
+)
+
 if(PROJECT_IS_TOP_LEVEL)
   include(CPack)
 endif()
