@@ -8,6 +8,7 @@
 #include "maat/memory_page.hpp"
 #include "maat/path.hpp"
 #include "maat/process.hpp"
+#include "maat/exception.hpp"
 
 namespace maat
 {
@@ -106,6 +107,8 @@ public:
     /// Return a reference to the last added snapshot
     T& back()
     {
+        if (not active())
+            throw snapshot_exception("SnashotManager::back(): no active snapshot!");
         return _snapshots.back();
     }
 

@@ -976,10 +976,15 @@ MaatEngine::snapshot_t MaatEngine::take_snapshot()
  * snapshot is removed after being restored */
 void MaatEngine::restore_snapshot(snapshot_t snapshot, bool remove)
 {
-    int idx(snapshot);
+    size_t idx(snapshot);
     if (idx < 0)
     {
         throw snapshot_exception("MaatEngine::restore_snapshot(): called with invalid snapshot parameter!");
+    }
+
+    if (not snapshots->active())
+    {
+        throw snapshot_exception("MaatEngine::restore_snapshot(): No more snapshots to restore");
     }
 
     // idx is the index of the oldest snapshot to restore
@@ -999,9 +1004,15 @@ void MaatEngine::restore_snapshot(snapshot_t snapshot, bool remove)
  * snapshot is removed after being restored */
 void MaatEngine::restore_last_snapshot(bool remove)
 {
-    mem_alert_t mem_alert = maat::mem_alert_none;
+    // Check that there are snapshots
+    if (not snapshots->active())
+    {
+        throw snapshot_exception("MaatEngine::restore_last_snapshot(): No more snapshots to restore");
+    }
 
+    mem_alert_t mem_alert = maat::mem_alert_none;
     Snapshot& snapshot = snapshots->back();
+
     cpu = std::move(snapshot.cpu); // Restore CPU
     mem->symbolic_mem_engine.restore_snapshot(snapshot.symbolic_mem);
     current_ir_state.swap(snapshot.pending_ir_state);
