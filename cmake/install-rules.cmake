@@ -59,8 +59,13 @@ set(
 )
 mark_as_advanced(maat_INSTALL_CMAKEDIR)
 
+configure_file(
+  cmake/install-config.cmake.in
+  "${PROJECT_BINARY_DIR}/install-config.cmake"
+  @ONLY
+)
 install(
-  FILES cmake/install-config.cmake
+  FILES "${PROJECT_BINARY_DIR}/install-config.cmake"
   DESTINATION "${maat_INSTALL_CMAKEDIR}"
   RENAME "${package}Config.cmake"
   COMPONENT maat_Development

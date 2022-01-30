@@ -39,7 +39,7 @@ set_target_properties(
   # See issue https://gitlab.kitware.com/cmake/cmake/-/issues/20782
   #VERSION "${PROJECT_VERSION}"
   #SOVERSION "${PROJECT_VERSION_MAJOR}"
-  EXPORT_NAME maat
+  EXPORT_NAME python
   OUTPUT_NAME maat
   PREFIX ""
 )
