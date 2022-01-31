@@ -153,23 +153,21 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E make_directory "${spec_log_dir}"
 )
 
-# x86-64
-sleigh_compile(
-  TARGET maat_sleigh_spec_x86-64
-  SLASPEC "${spec_dir}/x86/data/languages/x86-64.slaspec"
-  LOG_FILE "${PROJECT_BINARY_DIR}/sleigh-log/x86-64.log"
-  OUT_FILE "${spec_out_dir}/x86-64.sla"
-)
-configure_file("${spec_dir}/x86/data/languages/x86-64.pspec" "${spec_out_dir}/x86-64.pspec")
+macro(maat_sleigh_compile ARCH_DIR ARCH)
+  # ARCH_DIR is the directory that appears in Ghidra's source code hierarchy
+  # ARCH appears in the name of the '.slaspec' and '.pspec' file (they should be the same)
+  # Creates a target maat_sleigh_spec_${ARCH}
+  sleigh_compile(
+    TARGET maat_sleigh_spec_${ARCH}
+    SLASPEC "${spec_dir}/${ARCH_DIR}/data/languages/${ARCH}.slaspec"
+    LOG_FILE "${PROJECT_BINARY_DIR}/sleigh-log/${ARCH}.log"
+    OUT_FILE "${spec_out_dir}/${ARCH}.sla"
+  )
+  configure_file("${spec_dir}/${ARCH_DIR}/data/languages/${ARCH}.pspec" "${spec_out_dir}/${ARCH}.pspec")
+endmacro()
 
-# x86
-sleigh_compile(
-  TARGET maat_sleigh_spec_x86
-  SLASPEC "${spec_dir}/x86/data/languages/x86.slaspec"
-  LOG_FILE "${PROJECT_BINARY_DIR}/sleigh-log/x86.log"
-  OUT_FILE "${spec_out_dir}/x86.sla"
-)
-configure_file("${spec_dir}/x86/data/languages/x86.pspec" "${spec_out_dir}/x86.pspec")
+maat_sleigh_compile(x86 x86-64)
+maat_sleigh_compile(x86 x86)
 
 # All of the sla spec targets are combined into this one
 add_custom_target(maat_all_sla_specs ALL DEPENDS
