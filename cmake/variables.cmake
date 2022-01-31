@@ -10,6 +10,12 @@ if(PROJECT_IS_TOP_LEVEL)
   option(BUILD_SHARED_LIBS "Build shared libs." OFF)
 endif()
 
+# These variables correspond to the dependencies that maat doesn't
+# technically require but are almost always desirable to find. We include
+# these options to let an advanced user implement their own backends
+option(maat_USE_Z3 "Build with Z3 solver backend" ON)
+option(maat_USE_LIEF "Build with LIEF loader backend" ON)
+
 # ---- Suppress C4251 on Windows ----
 
 # Please see include/maat/maat.hpp for more details
