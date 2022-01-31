@@ -156,7 +156,7 @@ static PyTypeObject CPU_Type = {
     0,                                        /* tp_new */
 };
 
-PyObject* PyCPU_FromCPUAndArchAndVarContext(ir::CPU<ir::max_cpu_regs>* cpu, bool is_ref, Arch* arch, std::shared_ptr<VarContext>& ctx)
+PyObject* PyCPU_FromCPUAndArchAndVarContext(ir::CPU* cpu, bool is_ref, Arch* arch, std::shared_ptr<VarContext>& ctx)
 {
     CPU_Object* object;
 

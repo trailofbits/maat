@@ -45,7 +45,7 @@ class Snapshot
 {
 public:
     /// CPU state snapshot
-    ir::CPU<ir::max_cpu_regs> cpu;
+    ir::CPU cpu;
     /// Snapshot id for the symbolic memory engine
     symbolic_mem_snapshot_t symbolic_mem;
     /// Backup of memory overwritten since snapshot

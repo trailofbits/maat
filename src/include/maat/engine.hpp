@@ -75,7 +75,7 @@ public:
     std::shared_ptr<Arch> arch;
     std::shared_ptr<VarContext> vars;
     std::shared_ptr<MemEngine> mem;
-    ir::CPU<ir::max_cpu_regs> cpu;
+    ir::CPU cpu;
     event::EventManager hooks;
     PathManager path;
     std::shared_ptr<env::EnvEmulator> env;
