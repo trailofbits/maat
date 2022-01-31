@@ -18,7 +18,6 @@ include(cmake/variables.cmake)
 add_library(maat_maat
   src/arch/arch.cpp
   src/arch/lifter.cpp
-  src/arch/lifterX86.cpp
   src/engine/callother.cpp
   src/engine/engine.cpp
   src/engine/event.cpp
