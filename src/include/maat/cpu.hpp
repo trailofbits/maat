@@ -33,16 +33,15 @@ namespace ir
 
 /** The CPU context in Maat's IR. It is basically
  * a mapping between abstract expressions and CPU registers */
-template <std::size_t NB_REGS>
 class CPUContext
 {
 private:
-    std::array<Value,NB_REGS> regs;
+    std::vector<Value> regs;
 
 public:
-    CPUContext()
+    CPUContext(int nb_regs)
     {
-        regs.fill(Value());
+        regs = std::vector<Value>(nb_regs);
     }
     CPUContext(const CPUContext& other) = default;
     CPUContext& operator=(const CPUContext& other) = default;
@@ -153,14 +152,10 @@ public:
 
 public:
     /// Print the CPU context to a stream
-    template<size_t T>
-    friend std::ostream& operator<<(std::ostream& os, const CPUContext<T>& ctx)
+    friend std::ostream& operator<<(std::ostream& os, const CPUContext& ctx)
     {
-        for (int i = 0; i < ctx.regs_e.size(); i++)
-            if (ctx.is_abstract(i))
-                os << "REG_" << std::dec << i << ": " << ctx.regs_e[i] << "\n";
-            else
-                os << "REG_" << std::dec << i << ": " << ctx.regs_n[i] << "\n";
+        for (int i = 0; i < ctx.regs.size(); i++)
+            os << "REG_" << std::dec << i << ": " << ctx.regs[i] << "\n";
         return os;
     }
     /// Print the CPU context to a stream with proper register names
@@ -203,17 +198,16 @@ public:
 event::EventManager& get_engine_events(MaatEngine& engine);
 
 /** The CPU is responsible for processing most IR instructions when executing code */
-template <size_t NB_REGS>
 class CPU
 {
 private:
-    CPUContext<NB_REGS> _cpu_ctx; ///< CPU registers context
+    CPUContext _cpu_ctx; ///< CPU registers context
     TmpContext tmp_ctx; ///< Temporary values context
 private:
     ProcessedInst processed_inst; ///< Processed instruction
 
 public:
-    CPU() = default;
+    CPU(int nb_regs=0): _cpu_ctx(CPUContext(nb_regs)){}
     CPU(const CPU& other) = default;
     CPU& operator=(const CPU& other) = default;
 private:
@@ -595,7 +589,7 @@ public:
     }
 public:
     /// Get the current CPU context
-    CPUContext<NB_REGS>& ctx()
+    CPUContext& ctx()
     {
         return _cpu_ctx;
     }

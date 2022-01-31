@@ -50,6 +50,7 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
     simplifier = NewDefaultExprSimplifier();
     callother_handlers = callother::default_handler_map();
     // Initialize all registers to their proper bit-size with value 0
+    cpu = ir::CPU(arch->nb_regs);
     for (reg_t reg = 0; reg < arch->nb_regs; reg++)
         cpu.ctx().set(reg, Number(arch->reg_size(reg), 0));
     // Initialize some variables for execution statefullness
@@ -1013,9 +1014,18 @@ void MaatEngine::restore_last_snapshot(bool remove)
     mem_alert_t mem_alert = maat::mem_alert_none;
     Snapshot& snapshot = snapshots->back();
 
-    cpu = std::move(snapshot.cpu); // Restore CPU
+    if (remove)
+    {
+        // Use move semantics only when the snpashot gets deleted
+        cpu = std::move(snapshot.cpu);
+        current_ir_state.swap(snapshot.pending_ir_state);
+    }
+    else
+    {
+        cpu = snapshot.cpu;
+        current_ir_state = snapshot.pending_ir_state;
+    }
     mem->symbolic_mem_engine.restore_snapshot(snapshot.symbolic_mem);
-    current_ir_state.swap(snapshot.pending_ir_state);
     info = snapshot.info;
     process = snapshot.process;
     mem->page_manager.set_regions(std::move(snapshot.page_permissions));

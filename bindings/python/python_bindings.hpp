@@ -138,14 +138,14 @@ PyObject* PyInfo_FromInfoAndArch(info::Info* info, bool is_ref, Arch* arch);
 
 typedef struct {
     PyObject_HEAD
-    ir::CPU<ir::max_cpu_regs>* cpu;
+    ir::CPU* cpu;
     bool is_ref;
     Arch* arch; // Always ref, needed to get registers by name
     std::shared_ptr<VarContext>* varctx; // Always ref, needed to build expressions
 } CPU_Object;
 
 PyObject* PyCPU_FromCPUAndArchAndVarContext(
-    ir::CPU<ir::max_cpu_regs>* cpu,
+    ir::CPU* cpu,
     bool is_ref,
     Arch* arch,
     std::shared_ptr<VarContext>& varctx
