@@ -8,6 +8,7 @@
 #include "maat/memory_page.hpp"
 #include "maat/path.hpp"
 #include "maat/process.hpp"
+#include "maat/exception.hpp"
 
 namespace maat
 {
@@ -44,7 +45,7 @@ class Snapshot
 {
 public:
     /// CPU state snapshot
-    ir::CPU<ir::max_cpu_regs> cpu;
+    ir::CPU cpu;
     /// Snapshot id for the symbolic memory engine
     symbolic_mem_snapshot_t symbolic_mem;
     /// Backup of memory overwritten since snapshot
@@ -106,6 +107,8 @@ public:
     /// Return a reference to the last added snapshot
     T& back()
     {
+        if (not active())
+            throw snapshot_exception("SnashotManager::back(): no active snapshot!");
         return _snapshots.back();
     }
 

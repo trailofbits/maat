@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include "maat/ir.hpp"
 #include "sleigh_interface.hpp"
+#include "maat/arch.hpp"
 
 namespace maat
 {
@@ -23,8 +24,12 @@ typedef uint8_t* code_t;
 /** \brief The lifter is responsible for translating binary assembly code into Maat's IR */
 class Lifter
 {
+protected:
+    const CPUMode mode;
+    std::shared_ptr<TranslationContext> sleigh_ctx;
 public:
-    virtual ~Lifter();
+    Lifter(CPUMode mode);
+    ~Lifter() = default;
     /** \brief Disassemble instructions until next branch instruction.
      * 
      *  @param ir_map The IR cache where to add lifted instructions
@@ -47,54 +52,10 @@ public:
         bool* is_symbolic=nullptr,
         bool* is_tainted=nullptr,
         bool check_mappings=false
-    ) = 0;
+    );
 
     /** \brief Get assembly string of instruction at address 'addr' */
-    virtual const std::string& get_inst_asm(addr_t addr, code_t inst) = 0;
-
-    /* \brief Dynamically disassemble instructions at a given address.
-     * **WARNING**: this method has very poor performance! */
-    std::vector<std::pair<uintptr_t, std::string>> _raw_read_instr(uintptr_t addr, code_t code, unsigned int nb_instr=1);
-};
-
-/// Lifter for Intel X86 and X86_64 binary code
-class LifterX86: public Lifter
-{
-private:
-    const int mode;
-    std::shared_ptr<TranslationContext> sleigh_ctx;
-public:
-    LifterX86(int mode=32);
-    ~LifterX86() = default;
-    virtual bool lift_block(
-        ir::IRMap& ir_map,
-        uintptr_t addr,
-        code_t code,
-        size_t code_size=0xffffffff,
-        unsigned int nb_instr=0xffffffff,
-        bool* is_symbolic=nullptr,
-        bool* is_tainted=nullptr,
-        bool check_mappings=false
-    );
     virtual const std::string& get_inst_asm(addr_t addr, code_t inst);
-};
-
-// TODO Lifter for ARMv8 64-bits binary code
-class LifterARM64: public Lifter
-{
-public:
-    LifterARM64();
-    ~LifterARM64();
-    virtual bool lift_block(
-        ir::IRMap& ir_map,
-        uintptr_t addr,
-        code_t code,
-        size_t code_size=0xffffffff,
-        unsigned int nb_instr=0xffffffff,
-        bool* is_symbolic=nullptr,
-        bool* is_tainted=nullptr,
-        bool check_mappings=false
-    );
 };
 
 /** \} */ // doxygen group ir
