@@ -13,12 +13,12 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
     {
         case Arch::Type::X86:
             arch = std::make_shared<X86::ArchX86>();
-            lifters[CPUMode::X86] = std::make_shared<LifterX86>(32);
+            lifters[CPUMode::X86] = std::make_shared<Lifter>(CPUMode::X86);
             _current_cpu_mode = CPUMode::X86;
             break;
         case Arch::Type::X64:
             arch = std::make_shared<X64::ArchX64>();
-            lifters[CPUMode::X64] = std::make_shared<LifterX86>(64);
+            lifters[CPUMode::X64] = std::make_shared<Lifter>(CPUMode::X64);
             _current_cpu_mode = CPUMode::X64;
             break;
         /* TODO 
