@@ -3,9 +3,6 @@
 Here is some wisdom to help you build and test this project as a developer and
 potential contributor.
 
-If you plan to contribute, please read the [CONTRIBUTING](CONTRIBUTING.md)
-guide.
-
 ## Developer mode
 
 Build system targets that are only useful for developers of this project are
