@@ -99,7 +99,7 @@ install(
 
 # Install CMake helper for finding GMP
 install(
-  FILES "${PROJECT_SOURCE_DIR}/cmake/modules/FindGMP.cmake"
+  DIRECTORY "${PROJECT_SOURCE_DIR}/cmake/modules/"
   DESTINATION "${maat_INSTALL_CMAKEDIR}/modules"
   COMPONENT maat_Development
 )

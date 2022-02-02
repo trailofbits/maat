@@ -30,12 +30,12 @@ find_path(GMP_CXX_INCLUDES
   DOC "GMP C++ header"
 )
 
-# TODO: We should check we can link some simple code against libgmp and libgmpxx
-
 # Handle QUIET and REQUIRED and check the necessary variables were set and if so
 # set ``GMP_FOUND``
-find_package_handle_standard_args(GMP
-	REQUIRED_VARS GMP_C_LIBRARIES GMP_C_INCLUDES GMP_CXX_LIBRARIES GMP_CXX_INCLUDES)
+find_package_handle_standard_args(
+  GMP
+  REQUIRED_VARS GMP_C_LIBRARIES GMP_C_INCLUDES GMP_CXX_LIBRARIES GMP_CXX_INCLUDES
+)
 
 if (GMP_FOUND)
   set(GMP_INCLUDE_DIRS "${GMP_C_INCLUDES}" "${GMP_CXX_INCLUDES}")
