@@ -38,7 +38,7 @@ set_target_properties(
   #VISIBILITY_INLINES_HIDDEN YES
   # See issue https://gitlab.kitware.com/cmake/cmake/-/issues/20782
   #VERSION "${PROJECT_VERSION}"
-  #SOVERSION "${PROJECT_VERSION_MAJOR}"
+  #SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
   EXPORT_NAME python
   OUTPUT_NAME maat
   PREFIX ""
@@ -48,7 +48,8 @@ target_include_directories(
   maat_python ${warning_guard}
   PRIVATE
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>"
-  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/sleigh/native>"
+  # TODO: Uncomment after workaround to use lifting-bits sleigh
+  #"$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/sleigh/native>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/murmur3>"
   "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
 )

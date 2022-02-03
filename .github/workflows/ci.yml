@@ -22,6 +22,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get install libgmp-dev python3-dev libz3-dev
+        wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+
+    - name: Setup Git User for Sleigh
+      # See this thread for more details https://github.community/t/github-actions-bot-email-address/17204/5
+      run: |
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
 
     - name: Install LCov
       run: sudo apt-get update -q
@@ -50,9 +63,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Setup Git User for Sleigh
+      # See this thread for more details https://github.community/t/github-actions-bot-email-address/17204/5
+      run: |
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get install libgmp-dev python3-dev libz3-dev
+        wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
     - name: Configure
-      env: { CXX: clang++-11 }
+      env: { CC: clang-11, CXX: clang++-11 }
       run: cmake --preset=ci-sanitize
 
     - name: Build
@@ -72,7 +98,11 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [macos, ubuntu, windows]
+        os: [
+          # TODO: windows,
+          # TODO: macos,
+          ubuntu
+        ]
 
         type: [shared, static]
 
@@ -84,6 +114,26 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Setup Git User for Sleigh
+      # See this thread for more details https://github.community/t/github-actions-bot-email-address/17204/5
+      run: |
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+
+    - name: Install Dependencies
+      if: matrix.os == 'ubuntu'
+      run: |
+        sudo apt-get install libgmp-dev python3-dev libz3-dev
+        wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+
+    - name: Install Dependencies
+      if: matrix.os == 'macos'
+      run: |
+        brew install gmp python3 z3
+        wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
     - name: Install static analyzers
       if: matrix.os == 'ubuntu'
@@ -98,6 +148,13 @@ jobs:
 
     - name: Install
       run: cmake --install build --config Release --prefix prefix
+
+    - name: Test install directory
+      working-directory: tests/find-package
+      run: |
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -Dmaat_DIR=${{ github.workspace }}/prefix/share/maat
+        cmake --build build
+        ./build/maat_find_package_test
 
     - name: Test
       working-directory: build

@@ -5,7 +5,7 @@ find_dependency(GMP)
 
 # NOTE(ekilmer): This is a private dependency that only needs to be found if we
 # are statically linking because sleigh is only built statically
-if(NOT "@BUILD_SHARED_LIBS@")
+if(NOT @BUILD_SHARED_LIBS@ AND @maat_USE_EXTERNAL_SLEIGH@)
   find_dependency(sleigh)
 endif()
 

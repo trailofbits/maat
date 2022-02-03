@@ -54,6 +54,14 @@
       }
     },
     {
+      "name": "ci-dependencies",
+      "description": "How to find dependencies in CI",
+      "hidden": true,
+      "cacheVariables": {
+        "maat_USE_EXTERNAL_SLEIGH": "OFF"
+      }
+    },
+    {
       "name": "flags-unix",
       "hidden": true,
       "cacheVariables": {
@@ -71,14 +79,14 @@
       "name": "ci-unix",
       "generator": "Unix Makefiles",
       "hidden": true,
-      "inherits": ["flags-unix", "ci-std"],
+      "inherits": ["flags-unix", "ci-std", "ci-dependencies"],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
       "name": "ci-win64",
-      "inherits": ["flags-windows", "ci-std"],
+      "inherits": ["flags-windows", "ci-std", "ci-dependencies"],
       "generator": "Visual Studio 16 2019",
       "architecture": "x64",
       "hidden": true

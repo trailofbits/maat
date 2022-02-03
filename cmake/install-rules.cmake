@@ -26,9 +26,16 @@ install(
   COMPONENT maat_Development
 )
 
+# Optional targets
 set(other_maat_targets)
 if(maat_BUILD_PYTHON_BINDINGS)
   list(APPEND other_maat_targets maat_python)
+endif()
+
+# Needed only if using vendored library and not building as shared library
+# because sleigh is always a static library
+if(NOT maat_USE_EXTERNAL_SLEIGH AND NOT BUILD_SHARED_LIBS)
+  list(APPEND other_maat_targets sla sleigh_settings)
 endif()
 
 install(
@@ -49,7 +56,7 @@ install(
 
 write_basic_package_version_file(
   "${package}ConfigVersion.cmake"
-  COMPATIBILITY SameMajorVersion
+  COMPATIBILITY SameMinorVersion
 )
 
 # Allow package maintainers to freely override the path for the configs

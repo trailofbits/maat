@@ -80,7 +80,7 @@ set_target_properties(
   #CXX_VISIBILITY_PRESET hidden
   #VISIBILITY_INLINES_HIDDEN YES
   VERSION "${PROJECT_VERSION}"
-  SOVERSION "${PROJECT_VERSION_MAJOR}"
+  SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
   EXPORT_NAME maat
   OUTPUT_NAME maat
 )
@@ -107,7 +107,14 @@ target_compile_features(maat_maat PUBLIC cxx_std_17)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 
 find_package(GMP REQUIRED)
-find_package(sleigh REQUIRED)
+
+if(maat_USE_EXTERNAL_SLEIGH)
+  find_package(sleigh REQUIRED)
+else()
+  set(SLEIGH_ENABLE_TESTS OFF CACHE BOOL "")
+  add_subdirectory(src/third-party/sleigh/sleigh-cmake sleigh EXCLUDE_FROM_ALL)
+endif()
+
 target_link_libraries(
   maat_maat
   PUBLIC GMP::GMP
