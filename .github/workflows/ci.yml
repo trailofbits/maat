@@ -82,7 +82,13 @@ jobs:
       run: cmake --preset=ci-sanitize
 
     - name: Build
-      run: cmake --build build/sanitize -j 2
+      run: |
+        cmake --build build/sanitize -j 2 || true
+        echo "\n********* Cat of x86 sleigh log:"
+        cat build/sanitize/sleigh-log/x86.log || true
+        echo "\n********* Cat of x86-64 sleigh log:"
+        cat build/sanitize/sleigh-log/x86-64.log || true
+        exit 1
 
     - name: Test
       working-directory: build/sanitize
@@ -144,7 +150,7 @@ jobs:
         -D BUILD_SHARED_LIBS=${{ matrix.shared }}
 
     - name: Build
-      run: cmake --build build --config Release -j 2
+      run: cmake --build build --config Release -j 2 || true
 
     - name: Install
       run: cmake --install build --config Release --prefix prefix
