@@ -29,12 +29,7 @@ jobs:
       run: |
         sudo apt-get install libgmp-dev python3-dev libz3-dev
         wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
-
-    - name: Setup Git User for Sleigh
-      # See this thread for more details https://github.community/t/github-actions-bot-email-address/17204/5
-      run: |
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
+        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
     - name: Install LCov
       run: sudo apt-get update -q
@@ -66,16 +61,11 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Setup Git User for Sleigh
-      # See this thread for more details https://github.community/t/github-actions-bot-email-address/17204/5
-      run: |
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
-
     - name: Install Dependencies
       run: |
         sudo apt-get install libgmp-dev python3-dev libz3-dev
         wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
     - name: Configure
       env: { CC: clang-11, CXX: clang++-11 }
@@ -83,12 +73,7 @@ jobs:
 
     - name: Build
       run: |
-        cmake --build build/sanitize -j 2 || true
-        echo "\n********* Cat of x86 sleigh log:"
-        cat build/sanitize/sleigh-log/x86.log || true
-        echo "\n********* Cat of x86-64 sleigh log:"
-        cat build/sanitize/sleigh-log/x86-64.log || true
-        exit 1
+        cmake --build build/sanitize -j 2
 
     - name: Test
       working-directory: build/sanitize
@@ -134,12 +119,14 @@ jobs:
       run: |
         sudo apt-get install libgmp-dev python3-dev libz3-dev
         wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
     - name: Install Dependencies
       if: matrix.os == 'macos'
       run: |
         brew install gmp python3 z3
         wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/macOS-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
     - name: Install static analyzers
       if: matrix.os == 'ubuntu'
