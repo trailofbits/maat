@@ -63,13 +63,22 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt-get install libgmp-dev python3-dev libz3-dev
-        wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
-        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        sudo apt-get install libgmp-dev python3-dev
+        # LIEF
+        wget -O- https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        # Sleigh
+        wget -O- https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        # Z3 Ubuntu 20.04 package doesn't play nice with sanitizers
+        # (also remove top-level directory from zip)
+        wget -O z3.zip https://github.com/Z3Prover/z3/releases/download/z3-4.8.14/z3-4.8.14-x64-glibc-2.31.zip
+        dest=/opt/z3; zip=./z3.zip; \
+          sudo mkdir -p "${dest}" && \
+          sudo unzip -d "${dest}" "${zip}" && \
+            f=("${dest}"/*) && sudo mv "${dest}"/*/* "$dest" && sudo rmdir "${f[@]}"
 
     - name: Configure
       env: { CC: clang-11, CXX: clang++-11 }
-      run: cmake --preset=ci-sanitize
+      run: cmake --preset=ci-sanitize -DZ3_ROOT=/opt/z3
 
     - name: Build
       run: |
