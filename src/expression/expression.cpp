@@ -47,10 +47,10 @@ buffer contents.
 
 /* Set of functions to add a value to be hashed in the hash input buffer
  * 'hash_in' and returns the number of bytes added */ 
-inline int prepare_hash_with_i64(uint8_t* hash_in, int64_t val, int index=0)
+inline int prepare_hash_with_i64(uint8_t* hash_in, uint64_t val, int index=0)
 {
-    for (int i = 0; i < 64; i += 8)
-        *(hash_in+i) = (uint8_t)((val>>i)&0xff);
+    for (int i = 0; i < 8; i++)
+        *(hash_in+index+i) = (uint8_t)((val>>(i*8))&0xff);
     return index + 8; 
 }
 
@@ -60,10 +60,10 @@ inline int prepare_hash_with_str(uint8_t* hash_in, const std::string& str, int i
     return index + str.length();
 }
 
-inline int prepare_hash_with_i32(uint8_t* hash_in, int32_t val, int index=0)
+inline int prepare_hash_with_i32(uint8_t* hash_in, uint32_t val, int index=0)
 {
-    for (int i = 0; i < 32; i += 8)
-        *(hash_in+i) = (uint8_t)((val>>i)&0xff);
+    for (int i = 0; i < 4; i++)
+        *(hash_in+index+i) = (uint8_t)((val>>(i*8))&0xff);
     return (index + 4);
 }
 
