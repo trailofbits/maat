@@ -215,7 +215,7 @@ Expr _atoi_parse_digits(MaatEngine& engine, addr_t addr)
     // Get int
     Expr c;
     Expr res = exprcst(engine.arch->bits(), 0);
-    Expr error_too_big = exprcst(engine.arch->bits(), (1 << (engine.arch->bits()-1)) - 1); // MAX_INT
+    Expr error_too_big = exprcst(engine.arch->bits(), (1ULL << (engine.arch->bits()-1)) - 1); // MAX_INT
     Expr error_invalid = exprcst(engine.arch->bits(), 0);
     bool char_was_enginebolic[11]; // tells if str[i] was enginebolic/concolic (false if concrete)
     Expr tmp_res[11]; // tmp_res[i] = atoi(str) if char number i is null
