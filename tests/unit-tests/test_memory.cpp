@@ -129,18 +129,10 @@ namespace test{
             buf.write(0x20, 0x1234, 2); 
             buf.write(0x30, 0x12345678, 4); 
             buf.write(0x40, 0x1234567812345678, 8);
-            buf.write(0x110, 11, 1);
-            buf.write(0x120, -1111, 2);
-            buf.write(0x130, 11111111, 4);
-            buf.write(0x140, -1111111111111111, 8);
             nb += _assert(buf.read(0x10, 1) == 0x12, "MemConcreteBuffer <write then read> error");
             nb += _assert(buf.read(0x20, 2) == 0x1234, "MemConcreteBuffer <write then read> error");
             nb += _assert(buf.read(0x30, 4) == 0x12345678, "MemConcreteBuffer <write then read> error");
             nb += _assert(buf.read(0x40, 8) == 0x1234567812345678, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read(0x110, 1) == 11, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read(0x120, 2) == -1111, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read(0x130, 4) == 11111111, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read(0x140, 8) == 0xfffc0d7348ea8e39, "MemConcreteBuffer <write then read> error");
             // ! Below tests assume little endian storage
             nb += _assert(buf.read(0x21, 1) == 0x12, "MemConcreteBuffer <write then read> error");
             nb += _assert(buf.read(0x31, 2) == 0x3456, "MemConcreteBuffer <write then read> error");
