@@ -72,6 +72,8 @@ typedef std::unordered_map<std::string, std::string> environ_t;
 class Loader
 {
 public:
+    virtual ~Loader() = default;
+public:
     /** \brief Load a binary in *engine*
      * 
      * @param binary Path of the executable file 
@@ -111,6 +113,8 @@ private:
     std::string binary_name;
     std::optional<addr_t> interpreter_entry;
     std::optional<addr_t> interpreter_base; // For aux vector
+public:
+    virtual ~LoaderLIEF() = default;
 public:
     virtual void load(
         MaatEngine*engine,
