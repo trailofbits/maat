@@ -488,7 +488,7 @@ Expr es_concat_patterns(Expr e)
             }
         }
         
-        if( e->args[0]->as_int() == (((cst_t)-1)<<e->args[1]->args[1]->size))
+        if( e->args[0]->as_int() == (((ucst_t)-1)<<e->args[1]->args[1]->size))
         {
             if( e->args[1]->args[0]->is_type(ExprType::CST) && e->args[1]->args[0]->is_type(ExprType::CST) == 0 ){
                 // concat(0,Y) & 0x111...000 = 0

@@ -49,8 +49,9 @@ buffer contents.
  * 'hash_in' and returns the number of bytes added */ 
 inline int prepare_hash_with_i64(uint8_t* hash_in, int64_t val, int index=0)
 {
-     *(int64_t*)(hash_in+index) = val;
-     return index + 8; 
+    for (int i = 0; i < 64; i += 8)
+        *(hash_in+i) = (uint8_t)((val>>i)&0xff);
+    return index + 8; 
 }
 
 inline int prepare_hash_with_str(uint8_t* hash_in, const std::string& str, int index=0)
@@ -61,8 +62,9 @@ inline int prepare_hash_with_str(uint8_t* hash_in, const std::string& str, int i
 
 inline int prepare_hash_with_i32(uint8_t* hash_in, int32_t val, int index=0)
 {
-    *(int32_t*)(hash_in+index) = val;
-     return (index + 4);
+    for (int i = 0; i < 32; i += 8)
+        *(hash_in+i) = (uint8_t)((val>>i)&0xff);
+    return (index + 4);
 }
 
 inline int prepare_hash_with_op(uint8_t* hash_in, Op op, int index=0)
@@ -1948,7 +1950,7 @@ cst_t cst_sign_extend(size_t size, cst_t c)
 // Clear upper bits to make the constant on 'size' bits
 ucst_t cst_unsign_trunc(size_t size, cst_t c)
 {
-    if( size == sizeof(cst_t)*8)
+    if( size >= sizeof(cst_t)*8)
     {
         return c;
     }
@@ -2033,18 +2035,37 @@ std::string ite_cond_to_string(ITECond c)
 
 bool ite_evaluate(Expr l, ITECond cond, Expr r, const VarContext* ctx)
 {
-    switch (cond)
+    if (ctx)
     {
-        case ITECond::EQ: return l->as_uint(*ctx) == r->as_uint(*ctx);
-        case ITECond::LT: return l->as_uint(*ctx) < r->as_uint(*ctx);
-        case ITECond::LE: return l->as_uint(*ctx) <= r->as_uint(*ctx);
-        case ITECond::FEQ: return l->as_float(*ctx) == r->as_float(*ctx);
-        case ITECond::FLE: return l->as_float(*ctx) <= r->as_float(*ctx);
-        case ITECond::FLT: return l->as_float(*ctx) < r->as_float(*ctx);
-        case ITECond::SLT: return l->as_int(*ctx) < r->as_int(*ctx);
-        case ITECond::SLE: return l->as_int(*ctx) <= r->as_int(*ctx);
-        default: throw runtime_exception("ite_evaluate(): got unknown ITECond");
+        switch (cond)
+        {
+            case ITECond::EQ: return l->as_uint(*ctx) == r->as_uint(*ctx);
+            case ITECond::LT: return l->as_uint(*ctx) < r->as_uint(*ctx);
+            case ITECond::LE: return l->as_uint(*ctx) <= r->as_uint(*ctx);
+            case ITECond::FEQ: return l->as_float(*ctx) == r->as_float(*ctx);
+            case ITECond::FLE: return l->as_float(*ctx) <= r->as_float(*ctx);
+            case ITECond::FLT: return l->as_float(*ctx) < r->as_float(*ctx);
+            case ITECond::SLT: return l->as_int(*ctx) < r->as_int(*ctx);
+            case ITECond::SLE: return l->as_int(*ctx) <= r->as_int(*ctx);
+            default: break;
+        }
     }
+    else
+    {
+        switch (cond)
+        {
+            case ITECond::EQ: return l->as_uint() == r->as_uint();
+            case ITECond::LT: return l->as_uint() < r->as_uint();
+            case ITECond::LE: return l->as_uint() <= r->as_uint();
+            case ITECond::FEQ: return l->as_float() == r->as_float();
+            case ITECond::FLE: return l->as_float() <= r->as_float();
+            case ITECond::FLT: return l->as_float() < r->as_float();
+            case ITECond::SLT: return l->as_int() < r->as_int();
+            case ITECond::SLE: return l->as_int() <= r->as_int();
+            default: break;
+        }
+    }
+    throw runtime_exception("ite_evaluate(): got unknown ITECond");
 }
 
 } // namespace maat
