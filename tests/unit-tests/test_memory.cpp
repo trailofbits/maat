@@ -120,14 +120,10 @@ namespace test{
             unsigned int nb = 0;
             MemConcreteBuffer buf = MemConcreteBuffer(0x10000);
             // Initialized to 0
-            nb += _assert(buf.read_u8(0x0) == 0, "MemConcreteBuffer not initialized with 0's");
-            nb += _assert(buf.read_u16(0x3) == 0, "MemConcreteBuffer not initialized with 0's");
-            nb += _assert(buf.read_u32(0x45) == 0, "MemConcreteBuffer not initialized with 0's");
-            nb += _assert(buf.read_u64(0x4684) == 0, "MemConcreteBuffer not initialized with 0's");
-            nb += _assert(buf.read_i8(0x7fff) == 0, "MemConcreteBuffer not initialized with 0's");
-            nb += _assert(buf.read_i16(0xab45) == 0, "MemConcreteBuffer not initialized with 0's");
-            nb += _assert(buf.read_i32(0xfff0) == 0, "MemConcreteBuffer not initialized with 0's");
-            nb += _assert(buf.read_i64(0x789) == 0, "MemConcreteBuffer not initialized with 0's");
+            nb += _assert(buf.read(0x0, 1) == 0, "MemConcreteBuffer not initialized with 0's");
+            nb += _assert(buf.read(0x3, 2) == 0, "MemConcreteBuffer not initialized with 0's");
+            nb += _assert(buf.read(0x45, 4) == 0, "MemConcreteBuffer not initialized with 0's");
+            nb += _assert(buf.read(0x4684, 8) == 0, "MemConcreteBuffer not initialized with 0's");
             // Write and read back
             buf.write(0x10, 0x12, 1);
             buf.write(0x20, 0x1234, 2); 
@@ -137,22 +133,22 @@ namespace test{
             buf.write(0x120, -1111, 2);
             buf.write(0x130, 11111111, 4);
             buf.write(0x140, -1111111111111111, 8);
-            nb += _assert(buf.read_u8(0x10) == 0x12, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read_u16(0x20) == 0x1234, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read_u32(0x30) == 0x12345678, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read_u64(0x40) == 0x1234567812345678, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read_i8(0x110) == 11, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read_i16(0x120) == -1111, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read_i32(0x130) == 11111111, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read_i64(0x140) == 0xfffc0d7348ea8e39, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x10, 1) == 0x12, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x20, 2) == 0x1234, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x30, 4) == 0x12345678, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x40, 8) == 0x1234567812345678, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x110, 1) == 11, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x120, 2) == -1111, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x130, 4) == 11111111, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x140, 8) == 0xfffc0d7348ea8e39, "MemConcreteBuffer <write then read> error");
             // ! Below tests assume little endian storage
-            nb += _assert(buf.read_u8(0x21) == 0x12, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read_u16(0x31) == 0x3456, "MemConcreteBuffer <write then read> error");
-            nb += _assert(buf.read_u32(0x43) == 0x34567812, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x21, 1) == 0x12, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x31, 2) == 0x3456, "MemConcreteBuffer <write then read> error");
+            nb += _assert(buf.read(0x43, 4) == 0x34567812, "MemConcreteBuffer <write then read> error");
          
             return nb; 
         }
-        
+
         /* Test concrete memory segments resizing */
         unsigned int mem_resize()
         {
