@@ -107,7 +107,7 @@ Expr ExprSimplifier::simplify(Expr e, bool mark_as_simplified)
 
 std::unique_ptr<ExprSimplifier> NewDefaultExprSimplifier()
 {
-    ExprSimplifier* simp = new ExprSimplifier();
+    auto simp = std::make_unique<ExprSimplifier>();
     simp->add(es_constant_folding);
     simp->add(es_neutral_elements);
     simp->add(es_absorbing_elements);
@@ -123,7 +123,7 @@ std::unique_ptr<ExprSimplifier> NewDefaultExprSimplifier()
     //simp->add(es_generic_distribute);
     simp->add(es_generic_factorize);
     //simp->add(es_deep_associative);
-    return std::make_unique<ExprSimplifier>(*simp);
+    return simp;
 }
 
 /* ==================================================
