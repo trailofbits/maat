@@ -8,8 +8,11 @@
 #  Z3_LIBRARY - PATH: The library for z3
 #  z3::libz3 - TARGET: The target to link against
 
-# Try first to find Z3 using its stock cmake files.
-find_package(Z3 QUIET CONFIG)
+# Try first to find Z3 using its stock cmake files unless the user has provided
+# a Z3_ROOT hint that would assume skipping the CONFIG option
+if (NOT DEFINED Z3_ROOT)
+  find_package(Z3 QUIET CONFIG)
+endif()
 
 # If we found with CONFIG mode, then simply finish with everything found
 if (Z3_FOUND)
@@ -18,7 +21,9 @@ if (Z3_FOUND)
 
 # Else do manual finding
 else()
-  find_library(Z3_LIBRARY NAMES z3)
+  # Note: For some reason official Z3 release places the Linux library in 'bin'
+  # directory
+  find_library(Z3_LIBRARY NAMES z3 PATH_SUFFIXES bin)
   find_path(Z3_INCLUDE_DIR NAMES z3++.h PATH_SUFFIXES z3)
   find_program(Z3_EXECUTABLE z3 PATH_SUFFIXES bin)
 

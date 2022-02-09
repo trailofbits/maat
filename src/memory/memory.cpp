@@ -533,14 +533,13 @@ offset_t MemConcreteBuffer::is_identical_until(offset_t start, offset_t end, uin
     return tmp;
 }
 
-uint8_t MemConcreteBuffer::read_u8(offset_t off){return *(uint8_t*)((uint8_t*)_mem+off);}
-uint16_t MemConcreteBuffer::read_u16(offset_t off){return *(uint16_t*)((uint8_t*)_mem+off);}
-uint32_t MemConcreteBuffer::read_u32(offset_t off){return *(uint32_t*)((uint8_t*)_mem+off);}
-uint64_t MemConcreteBuffer::read_u64(offset_t off){return *(uint64_t*)((uint8_t*)_mem+off);}
-int8_t MemConcreteBuffer::read_i8(offset_t off){return *(int8_t*)((uint8_t*)_mem+off);}
-int16_t MemConcreteBuffer::read_i16(offset_t off){return *(int16_t*)((uint8_t*)_mem+off);}
-int32_t MemConcreteBuffer::read_i32(offset_t off){return *(int32_t*)((uint8_t*)_mem+off);}
-int64_t MemConcreteBuffer::read_i64(offset_t off){return *(int64_t*)((uint8_t*)_mem+off);}
+uint64_t MemConcreteBuffer::read(offset_t off, int nb_bytes)
+{
+    uint64_t res = 0;
+    for (int i = 0; i < nb_bytes; i++)
+        res += ((uint64_t)(*(_mem+off+i))) << i*8;
+    return res;
+}
 
 void MemConcreteBuffer::write(offset_t off, int64_t val, int nb_bytes)
 {
@@ -552,6 +551,7 @@ void MemConcreteBuffer::write(offset_t off, int64_t val, int nb_bytes)
             >> Fmt::to_str);
     }
 
+    // Note: this assumes little endian
     for( ; nb_bytes > 0; nb_bytes--)
     {
         *(uint8_t*)((uint8_t*)_mem+off) = val & 0xff;
@@ -785,7 +785,7 @@ void MemSegment::symbolic_ptr_read(Value& result, const Expr& addr, ValueSet& ad
         /* Optimisation to detect huge areas containing only a single byte (typically zeros) */
         if( _bitmap.is_concrete(a-start))
         {
-            a2 = is_identical_until(a, _concrete.read_u8(a-start)) -1; // a2 == last address containing the byte "byte"
+            a2 = is_identical_until(a, _concrete.read(a-start, 1)) -1; // a2 == last address containing the byte "byte"
             if( a2 >= a-1+nb_bytes )
             {
                 // Identical memory region bigger than single read so
@@ -855,52 +855,52 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
             /* Read */
             switch(bytes_to_read)
             {
-                case 1: tmp2.set_cst(8, _concrete.read_i8(from)); break;
-                case 2: tmp2.set_cst(16, _concrete.read_i16(from)); break;
-                case 3: tmp2.set_cst(24, _concrete.read_i32(from) & 0x00ffffff); break; // Assumes little endian
-                case 4: tmp2.set_cst(32, _concrete.read_i32(from)); break;
-                case 5: tmp2.set_cst(40, _concrete.read_i64(from) & 0x000000ffffffffff); break; // Assumes little endian
-                case 6: tmp2.set_cst(48, _concrete.read_i64(from) & 0x0000ffffffffffff); break; // Assumes little endian
-                case 7: tmp2.set_cst(56, _concrete.read_i64(from) & 0x00ffffffffffffff); break;// Assumes little endian
-                case 8: tmp2.set_cst(64, _concrete.read_i64(from)); break;
+                case 1: tmp2.set_cst(8, _concrete.read(from, 1)); break;
+                case 2: tmp2.set_cst(16, _concrete.read(from, 2)); break;
+                case 3: tmp2.set_cst(24, _concrete.read(from, 3)); break; // Assumes little endian
+                case 4: tmp2.set_cst(32, _concrete.read(from, 4)); break;
+                case 5: tmp2.set_cst(40, _concrete.read(from, 5)); break;
+                case 6: tmp2.set_cst(48, _concrete.read(from, 6)); break;
+                case 7: tmp2.set_cst(56, _concrete.read(from, 7)); break;
+                case 8: tmp2.set_cst(64, _concrete.read(from, 8)); break;
                 case 9:
-                    n1.set_cst(64, _concrete.read_i64(from));
-                    n2.set_cst(8, _concrete.read_i8(from+8));
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(8, _concrete.read(from+8, 1));
                     tmp2.set_concat(n2, n1);
                     break;
                 case 10: 
-                    n1.set_cst(64, _concrete.read_i64(from));
-                    n2.set_cst(16, _concrete.read_i16(from+8));
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(16, _concrete.read(from+8, 2));
                     tmp2.set_concat(n2, n1);
                     break;
                 case 11:
-                    n1.set_cst(64, _concrete.read_i64(from));
-                    n2.set_cst(24, _concrete.read_i32(from+8) & 0x00ffffff);
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(24, _concrete.read(from+8, 3));
                     tmp2.set_concat(n2, n1);
                     break;
                 case 12:
-                    n1.set_cst(64, _concrete.read_i64(from));
-                    n2.set_cst(32, _concrete.read_i32(from+8));
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(32, _concrete.read(from+8, 4));
                     tmp2.set_concat(n2, n1);
                     break;
                 case 13:
-                    n1.set_cst(64, _concrete.read_i64(from));
-                    n2.set_cst(40, _concrete.read_i64(from+8) & 0xffffffffff);
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(40, _concrete.read(from+8, 5));
                     tmp2.set_concat(n2, n1);
                     break;
                 case 14:
-                    n1.set_cst(64, _concrete.read_i64(from));
-                    n2.set_cst(48, _concrete.read_i64(from+8) & 0xffffffffffff);
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(48, _concrete.read(from+8, 6));
                     tmp2.set_concat(n2, n1);
                     break;
                 case 15:
-                    n1.set_cst(64, _concrete.read_i64(from));
-                    n2.set_cst(56, _concrete.read_i64(from+8) & 0xffffffffffffff);
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(56, _concrete.read(from+8, 7));
                     tmp2.set_concat(n2, n1);
                     break;
                 case 16:
-                    n1.set_cst(64, _concrete.read_i64(from));
-                    n2.set_cst(64, _concrete.read_i64(from+8));
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
                     tmp2.set_concat(n2, n1);
                     break;
                 default: throw mem_exception("MemSegment: should not be reading more than 16 bytes at a time!");
@@ -945,18 +945,10 @@ cst_t MemSegment::concrete_snapshot(addr_t& addr, int& nb_bytes)
     else
         bytes_to_read = nb_bytes;
 
-    switch(bytes_to_read)
-    {
-        case 1: res = _concrete.read_u8(off); break;
-        case 2: res = _concrete.read_u16(off); break;
-        case 3: res = _concrete.read_u32(off) & 0xffffff; break;
-        case 4: res = _concrete.read_u32(off); break;
-        case 5: res = _concrete.read_u64(off) & 0xffffffffff; break;
-        case 6: res = _concrete.read_u64(off) & 0xffffffffffff; break;
-        case 7: res = _concrete.read_u64(off) & 0xffffffffffffff; break;
-        case 8: res = _concrete.read_u64(off); break;
-        default: throw runtime_exception("MemSegment::concrete_snapshot() called with wrong nb_bytes. Supports only: 1,2,3,4,5,6,7,8");
-    }
+    if (bytes_to_read > 8)
+        throw runtime_exception("MemSegment::concrete_snapshot() called with wrong nb_bytes. Supports only: 1,2,3,4,5,6,7,8");
+    else
+        res = _concrete.read(off, bytes_to_read);
 
     nb_bytes -= bytes_to_read;
     addr += bytes_to_read;

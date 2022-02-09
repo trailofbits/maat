@@ -108,16 +108,9 @@ public:
     /** Extend the buffer to make it represent 'nb_bytes' more bytes of
      * memory. The new bytes are inserted at the beginning of the buffer */
     void extend_before(offset_t nb_bytes);
-    
+
 public:
-    uint8_t read_u8(offset_t off);
-    uint16_t read_u16(offset_t off);
-    uint32_t read_u32(offset_t off);
-    uint64_t read_u64(offset_t off);
-    int8_t read_i8(offset_t off);
-    int16_t read_i16(offset_t off);
-    int32_t read_i32(offset_t off);
-    int64_t read_i64(offset_t off);
+    uint64_t read(offset_t off, int nb_bytes);
     /// Write the value 'val' on 'nb_bytes' starting from offset 'off'
     void write(offset_t off, int64_t val, int nb_bytes);
     /// Write the value 'val' on 'nb_bytes' starting from offset 'off'

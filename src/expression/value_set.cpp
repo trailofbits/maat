@@ -298,7 +298,7 @@ void ValueSet::set_sar(ValueSet& vs1, ValueSet& vs2)
         if( vs2.min >= vs1.size )
             max = cst_mask(vs1.size);
         else
-            max = cst_sign_trunc( vs1.size, (cst_mask(64)<<(vs1.size-vs2.min)) | (vs1.max >> vs2.min));
+            max = cst_sign_trunc( vs1.size, ((ucst_t)cst_mask(64)<<(vs1.size-vs2.min)) | (vs1.max >> vs2.min));
     }else{
         // HSB is 0 so we don't insert 0xffff... when shifting
         if( vs2.min >= vs1.size )

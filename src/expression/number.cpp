@@ -220,7 +220,7 @@ void Number::set_mul(const Number& n1, const Number& n2)
     size = n1.size;
     if (size <= 64)
     {
-        set_cst(n1.cst_ * n2.cst_);
+        set_cst((ucst_t)n1.cst_ * (ucst_t)n2.cst_);
     }
     else
     {
