@@ -45,8 +45,6 @@ target_include_directories(
   maat_python ${warning_guard}
   PRIVATE
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>"
-  # TODO: Uncomment after workaround to use lifting-bits sleigh
-  #"$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/sleigh/native>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/murmur3>"
   "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
 )

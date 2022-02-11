@@ -77,8 +77,6 @@ target_include_directories(
   maat_maat ${warning_guard}
   PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>"
-  # TODO: Uncomment after workaround to use lifting-bits sleigh
-  # "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/sleigh/native>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/murmur3>"
 )
 

@@ -1,7 +1,7 @@
 //
 // Minimal SLEIGH library C API, for disassembly and translation to P-code.
 //
-#include "sleigh_interface.hpp"
+#include "maat/sleigh_interface.hpp"
 
 #include <stdio.h>
 #include <assert.h>
