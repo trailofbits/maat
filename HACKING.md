@@ -24,31 +24,73 @@ You have a few options to pass `maat_DEVELOPER_MODE` to the configure
 command, but this project prefers to use presets.
 
 As a developer, you should create a `CMakeUserPresets.json` file at the root of
-the project:
+the project. The following is a real example of a contributor's user preset (inspect carefully to add, remove, or modify the absolute paths):
 
 ```json
 {
   "version": 2,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 14,
+    "minor": 15,
     "patch": 0
   },
   "configurePresets": [
     {
-      "name": "dev",
-      "binaryDir": "${sourceDir}/build/dev",
-      "inherits": ["dev-mode", "ci-<os>"],
+      "name": "dependencies",
+      "hidden": true,
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "LIEF_DIR": "<prefix>/src/LIEF/install/share/LIEF/cmake",
+        "sleigh_DIR": "<prefix>/src/sleigh/install/lib/cmake/sleigh"
+      }
+    },
+    {
+      "name": "dev-common",
+      "hidden": true,
+      "inherits": [
+        "dependencies", "dev-mode", "ci-unix"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g3",
+        "CMAKE_C_COMPILER_LAUNCHER": "/usr/local/bin/ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "/usr/local/bin/ccache"
+      }
+    },
+    {
+      "name": "dev",
+      "inherits": "dev-common",
+      "binaryDir": "${sourceDir}/build/dev"
+    },
+    {
+      "name": "dev-share",
+      "inherits": "dev-common",
+      "binaryDir": "${sourceDir}/build/dev-share",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": true
+      }
+    },
+    {
+      "name": "dev-sanitize",
+      "inherits": ["dev-common", "ci-sanitize"],
+      "binaryDir": "${sourceDir}/build/sanitize",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "/usr/local/opt/llvm@13/bin/clang++",
+        "CMAKE_C_COMPILER": "/usr/local/opt/llvm@13/bin/clang"
       }
     }
   ],
-  "buildPresets": [
+  "buildPresets":[
     {
       "name": "dev",
-      "configurePreset": "dev",
-      "configuration": "Debug"
+      "configurePreset": "dev"
+    },
+    {
+      "name": "dev-share",
+      "configurePreset": "dev-share"
+    },
+    {
+      "name": "dev-sanitize",
+      "configurePreset": "dev-sanitize"
     }
   ],
   "testPresets": [
@@ -59,14 +101,26 @@ the project:
       "output": {
         "outputOnFailure": true
       }
+    },
+    {
+      "name": "dev-share",
+      "configurePreset": "dev-share",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "dev-sanitize",
+      "configurePreset": "dev-sanitize",
+      "configuration": "Sanitize",
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ]
 }
 ```
-
-You should replace `<os>` in your newly created presets file with the name of
-the operating system you have, which may be `win64` or `unix`. You can see what
-these correspond to in the [`CMakePresets.json`](CMakePresets.json) file.
 
 `CMakeUserPresets.json` is also the perfect place in which you can put all
 sorts of things that you would otherwise want to pass to the configure command
