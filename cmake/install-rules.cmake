@@ -93,7 +93,7 @@ install(
 
 # Allow package maintainers to freely override data file directory
 set(
-  maat_INSTALL_DATADIR "${CMAKE_INSTALL_DATAROOTDIR}/${package}"
+  maat_INSTALL_DATADIR "${CMAKE_INSTALL_DATADIR}/${package}"
   CACHE PATH "Data file location relative to the install prefix"
 )
 
