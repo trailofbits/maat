@@ -137,10 +137,6 @@ jobs:
         wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
         wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/macOS-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
-    - name: Install static analyzers
-      if: matrix.os == 'ubuntu'
-      run: sudo apt-get install clang-tidy cppcheck -y -q
-
     - name: Configure
       run: cmake --preset=ci-${{ matrix.os }}
         -D BUILD_SHARED_LIBS=${{ matrix.shared }}
