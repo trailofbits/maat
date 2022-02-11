@@ -62,23 +62,12 @@ configure_file(src/third-party/sleigh/native/sleigh_interface.cpp "${PROJECT_BIN
 target_sources(maat_maat PRIVATE "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/sleigh_interface.cpp>")
 configure_file(src/third-party/sleigh/native/sleigh_interface.hpp "${PROJECT_BINARY_DIR}/include/sleigh_interface.hpp" COPYONLY)
 
-include(GenerateExportHeader)
-generate_export_header(
-  maat_maat
-  BASE_NAME maat
-  EXPORT_FILE_NAME export/maat/maat_export.hpp
-  CUSTOM_CONTENT_FROM_VARIABLE pragma_suppress_c4251
-)
-
 if(NOT BUILD_SHARED_LIBS)
   target_compile_definitions(maat_maat PUBLIC MAAT_STATIC_DEFINE)
 endif()
 
 set_target_properties(
   maat_maat PROPERTIES
-  # TODO: Visibility settings should ideally be hidden
-  #CXX_VISIBILITY_PRESET hidden
-  #VISIBILITY_INLINES_HIDDEN YES
   VERSION "${PROJECT_VERSION}"
   SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
   EXPORT_NAME maat
@@ -92,12 +81,6 @@ target_include_directories(
   # TODO: Uncomment after workaround to use lifting-bits sleigh
   # "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/sleigh/native>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/murmur3>"
-)
-
-target_include_directories(
-  maat_maat SYSTEM
-  PUBLIC
-  "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/export>"
 )
 
 target_compile_features(maat_maat PUBLIC cxx_std_17)

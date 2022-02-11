@@ -33,9 +33,6 @@ add_library(maat::python ALIAS maat_python)
 
 set_target_properties(
   maat_python PROPERTIES
-  # TODO: Visibility settings should ideally be hidden
-  #CXX_VISIBILITY_PRESET hidden
-  #VISIBILITY_INLINES_HIDDEN YES
   # See issue https://gitlab.kitware.com/cmake/cmake/-/issues/20782
   #VERSION "${PROJECT_VERSION}"
   #SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
@@ -52,12 +49,6 @@ target_include_directories(
   #"$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/sleigh/native>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/murmur3>"
   "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
-)
-
-target_include_directories(
-  maat_python SYSTEM
-  PRIVATE
-  "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/export>"
 )
 
 target_compile_features(maat_python PRIVATE cxx_std_17)

@@ -14,7 +14,6 @@ set(package maat)
 install(
   DIRECTORY
   src/include/
-  "${PROJECT_BINARY_DIR}/export/"
   "${PROJECT_BINARY_DIR}/include/"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   COMPONENT maat_Development
