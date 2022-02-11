@@ -7,7 +7,7 @@
 #include <memory>
 #include <unordered_map>
 #include "maat/ir.hpp"
-#include "sleigh_interface.hpp"
+#include "maat/sleigh_interface.hpp"
 #include "maat/arch.hpp"
 
 namespace maat

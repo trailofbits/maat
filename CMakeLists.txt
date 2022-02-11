@@ -60,7 +60,6 @@ add_library(maat::maat ALIAS maat_maat)
 # TODO: Workaround to use lifting-bits sleigh
 configure_file(src/third-party/sleigh/native/sleigh_interface.cpp "${PROJECT_BINARY_DIR}/src/sleigh_interface.cpp" COPYONLY)
 target_sources(maat_maat PRIVATE "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/sleigh_interface.cpp>")
-configure_file(src/third-party/sleigh/native/sleigh_interface.hpp "${PROJECT_BINARY_DIR}/include/sleigh_interface.hpp" COPYONLY)
 
 if(NOT BUILD_SHARED_LIBS)
   target_compile_definitions(maat_maat PUBLIC MAAT_STATIC_DEFINE)

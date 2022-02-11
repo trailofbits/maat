@@ -18,12 +18,6 @@ install(
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   COMPONENT maat_Development
 )
-install(
-  FILES
-  src/third-party/sleigh/native/sleigh_interface.hpp
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-  COMPONENT maat_Development
-)
 
 # Optional targets
 set(other_maat_targets)
