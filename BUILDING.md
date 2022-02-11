@@ -6,9 +6,13 @@ This project requires a few dependencies:
 
 * [GMP](https://gmplib.org/) - `libgmp` for big-sized arithmetic
 * [Z3](https://github.com/Z3Prover/z3) - for constraint solving
+  * Can be disabled with CMake option `-Dmaat_USE_Z3=OFF` during configuration
 * [LIEF](https://github.com/lief-project/LIEF) - for automatic binary loading
+  * Can be disabled with CMake option `-Dmaat_USE_LIEF=OFF` during configuration
 * [sleigh](https://github.com/lifting-bits/sleigh) - for Ghidra sleigh pcode handling
+  * Vendored version can be built with CMake option `-Dmaat_USE_EXTERNAL_SLEIGH=OFF` during configuration
 * Python3 development headers and library - for Python bindings
+  * Bindings can be skipped with CMake option `-Dmaat_BUILD_PYTHON_BINDINGS=OFF` during configuration
 
 Assuming the above are installed into a system location (where CMake will automatically find them), here are the steps for building in release mode with a single-configuration generator, like the Unix Makefiles one:
 
@@ -25,7 +29,7 @@ cmake -S . -B build
 cmake --build build --config Release
 ```
 
-If the dependencies are installed into a non-system/default directory, then you can [pass hints to CMake][1] on where to find the respective packages
+If the dependencies are installed into a non-system/default directory, then you can [pass hints to CMake][1] on where to find the respective packages (something like `-D<PackageName>_DIR` or `-D<PackageName>_ROOT` depending on what/how the package was installed; see the package's documentation on how to correctly use it with CMake).
 
 ## Install
 
