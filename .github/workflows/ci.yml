@@ -13,12 +13,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
 
-    # To enable coverage, delete the last line from the conditional below and
-    # edit the "<name>" placeholder to your GitHub name.
-    # If you do not wish to use codecov, then simply delete this job from the
-    # workflow.
-    if: github.repository_owner == '<name>'
-      && false
+    if: github.repository_owner == 'trailofbits'
 
     steps:
     - uses: actions/checkout@v2
@@ -48,10 +43,13 @@ jobs:
     - name: Process coverage info
       run: cmake --build build/coverage -t coverage
 
-    - name: Submit to codecov.io
-      uses: codecov/codecov-action@v1
-      with:
-        file: build/coverage/coverage.info
+    - name: Print coverage info
+      run: lcov --summary build/coverage/coverage.info
+
+    #- name: Submit to codecov.io
+    #  uses: codecov/codecov-action@v1
+    #  with:
+    #    file: build/coverage/coverage.info
 
   sanitize:
     runs-on: ubuntu-latest
