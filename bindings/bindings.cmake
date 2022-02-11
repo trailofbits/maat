@@ -62,12 +62,12 @@ target_link_libraries(maat_python PRIVATE
 
 if(maat_USE_Z3)
   target_link_libraries(maat_python PRIVATE z3::libz3)
-  # TODO: Should these definitions be prefixed by MAAT_?
+  # TODO: Prefix with MAAT_
   target_compile_definitions(maat_python PRIVATE Z3_BACKEND=1 HAS_SOLVER_BACKEND=1)
 endif()
 
 if(maat_USE_LIEF)
   target_link_libraries(maat_python PRIVATE LIEF::LIEF)
-  # TODO: Should these definitions be prefixed by MAAT_?
+  # TODO: Prefix with MAAT_
   target_compile_definitions(maat_python PRIVATE LIEF_BACKEND=1 HAS_LOADER_BACKEND=1)
 endif()

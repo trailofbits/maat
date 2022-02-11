@@ -106,14 +106,14 @@ target_link_libraries(
 if(maat_USE_Z3)
   find_package(Z3 REQUIRED)
   target_link_libraries(maat_maat PUBLIC z3::libz3)
-  # TODO: Should these definitions be prefixed by MAAT_?
+  # TODO: Prefix with MAAT_
   target_compile_definitions(maat_maat PUBLIC Z3_BACKEND=1 HAS_SOLVER_BACKEND=1)
 endif()
 
 if(maat_USE_LIEF)
   find_package(LIEF REQUIRED)
   target_link_libraries(maat_maat PUBLIC LIEF::LIEF)
-  # TODO: Should these definitions be prefixed by MAAT_?
+  # TODO: Prefix with MAAT_
   target_compile_definitions(maat_maat PUBLIC LIEF_BACKEND=1 HAS_LOADER_BACKEND=1)
 endif()
 
@@ -170,9 +170,6 @@ endif()
 
 # Embed hard-coded installation information to help detect "normal" installation
 # paths for locating data files.
-# NOTE(ekilmer): Needs to be after the install rules so that we can get the
-# standard CMake installation locations... not sure how well this works if the
-# project is embedded in a project that turns off the installation rules
 configure_file(generate/src/include/maat/config.hpp.in "${PROJECT_BINARY_DIR}/include/maat/config.hpp" @ONLY)
 target_include_directories(maat_maat PUBLIC "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>")
 
