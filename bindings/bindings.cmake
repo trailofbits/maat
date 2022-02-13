@@ -1,5 +1,5 @@
 # ---- Python bindings ----
-find_package(Python3 COMPONENTS Development REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
 # Get the same source files as the main library uses
 # NOTE: These source file paths are relative to where the maat::maat target was
@@ -68,4 +68,31 @@ if(maat_USE_LIEF)
   target_link_libraries(maat_python PRIVATE LIEF::LIEF)
   # TODO: Prefix with MAAT_
   target_compile_definitions(maat_python PRIVATE LIEF_BACKEND=1 HAS_LOADER_BACKEND=1)
+endif()
+
+if(NOT CMAKE_SKIP_INSTALL_RULES)
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -c "if True:
+      import site; import os; import sysconfig as sc
+      if site.ENABLE_USER_SITE:
+        print(site.getusersitepackages().replace(site.getuserbase(), '').lstrip(os.path.sep))
+      else:
+        print(sc.get_path('platlib').replace(sc.get_path('data'), '').lstrip(os.path.sep))"
+    OUTPUT_VARIABLE python_site_rel
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  # Allow package maintainers to freely override the path for the Python module
+  set(
+    maat_INSTALL_PYTHONMODULEDIR "${python_site_rel}"
+    CACHE PATH "Python module directory location relative to install prefix"
+  )
+
+  install(
+    TARGETS maat_python
+    LIBRARY #
+    COMPONENT maat_Python
+    LIBRARY #
+    DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}"
+  )
 endif()

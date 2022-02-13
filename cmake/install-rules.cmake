@@ -21,9 +21,6 @@ install(
 
 # Optional targets
 set(other_maat_targets)
-if(maat_BUILD_PYTHON_BINDINGS)
-  list(APPEND other_maat_targets maat_python)
-endif()
 
 # Needed only if using vendored library and not building as shared library
 # because sleigh is always a static library

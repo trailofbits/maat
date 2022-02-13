@@ -56,5 +56,20 @@ multi-configuration generator, like the Visual Studio ones:
 cmake --install build --config Release
 ```
 
+### Python Module
+
+To install the Python module, make sure that you configured the project with the option `-Dmaat_BUILD_PYTHON_BINDINGS=ON`. You can then build _just_ the Python module and install to the user site-packages location:
+
+```sh
+cmake -S . -B build -Dmaat_BUILD_PYTHON_BINDINGS=ON
+cmake --build build -t maat_python
+# If you've configured outside a virtualenv
+cmake --install build --prefix "$(python3 -m site --user-base)" --component maat_Python
+# If you've configured inside a virtualenv
+cmake --install build --prefix "$(python3 -c "import sysconfig as sc; print(sc.get_path('data'))")" --component maat_Python
+```
+
+NOTE: CMake configuration and installation should both take place either inside or outside of the virtual environment or else the install path for the Python module could be incorrect (especially on macOS).
+
 [1]: https://cmake.org/cmake/help/latest/command/find_package.html#config-mode-search-procedure
 [2]: https://cmake.org/cmake/help/latest/manual/cmake.1.html#install-a-project
