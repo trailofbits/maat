@@ -7,7 +7,7 @@
 #include "maat/arch.hpp"
 #include "maat/pinst.hpp"
 
-#ifdef PYTHON_BINDINGS
+#ifdef MAAT_PYTHON_BINDINGS
     #include "Python.h"
 #endif
 
@@ -138,7 +138,7 @@ public:
     Action execute(maat::MaatEngine& engine) const;
 
 // Callbacks from python
-#ifdef PYTHON_BINDINGS
+#ifdef MAAT_PYTHON_BINDINGS
 public:
     using python_cb_t = PyObject*;
     /// Create a callback calling a python function

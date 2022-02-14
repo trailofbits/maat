@@ -50,7 +50,7 @@ target_include_directories(
 )
 
 target_compile_features(maat_python PRIVATE cxx_std_17)
-target_compile_definitions(maat_python PRIVATE PYTHON_BINDINGS=1)
+target_compile_definitions(maat_python PRIVATE MAAT_PYTHON_BINDINGS=1)
 
 target_link_libraries(maat_python PRIVATE
   Python3::Module

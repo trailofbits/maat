@@ -56,7 +56,7 @@ EventCallback::EventCallback():
     type(EventCallback::Type::NONE),
     native_cb(nullptr)
 {
-#ifdef PYTHON_BINDINGS
+#ifdef MAAT_PYTHON_BINDINGS
     python_cb = nullptr;
 #endif
 }
@@ -65,12 +65,12 @@ EventCallback::EventCallback(native_cb_t cb):
     type(EventCallback::Type::NATIVE),
     native_cb(cb)
 {
-#ifdef PYTHON_BINDINGS
+#ifdef MAAT_PYTHON_BINDINGS
     python_cb = nullptr;
 #endif
 }
 
-#ifdef PYTHON_BINDINGS
+#ifdef MAAT_PYTHON_BINDINGS
 EventCallback::EventCallback(python_cb_t cb):
     type(EventCallback::Type::PYTHON),
     native_cb(nullptr),
@@ -94,7 +94,7 @@ EventCallback& EventCallback::operator=(const EventCallback& other)
 {
     type = other.type;
     native_cb = other.native_cb;
-#ifdef PYTHON_BINDINGS
+#ifdef MAAT_PYTHON_BINDINGS
     python_cb = other.python_cb;
     Py_XINCREF(python_cb);
 #endif
@@ -105,7 +105,7 @@ EventCallback& EventCallback::operator=(EventCallback&& other)
 {
     type = other.type;
     native_cb = other.native_cb;
-#ifdef PYTHON_BINDINGS
+#ifdef MAAT_PYTHON_BINDINGS
     python_cb = other.python_cb;
     Py_XINCREF(python_cb);
 #endif
@@ -114,7 +114,7 @@ EventCallback& EventCallback::operator=(EventCallback&& other)
 
 EventCallback::~EventCallback()
 {
-#ifdef PYTHON_BINDINGS
+#ifdef MAAT_PYTHON_BINDINGS
     Py_XDECREF(python_cb);
     python_cb = nullptr;
 #endif
@@ -144,7 +144,7 @@ Action EventCallback::execute(MaatEngine& engine) const
     else if (type == EventCallback::Type::PYTHON)
     {
         Action res = Action::CONTINUE;
-#ifdef PYTHON_BINDINGS
+#ifdef MAAT_PYTHON_BINDINGS
             // Build args list
             PyObject* argslist = PyTuple_Pack(1, engine.self_python_wrapper_object);
             if( argslist == NULL )
