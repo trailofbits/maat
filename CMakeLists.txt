@@ -52,14 +52,9 @@ add_library(maat_maat
   src/solver/solver.cpp
   src/solver/solver_z3.cpp
   src/third-party/murmur3/murmur3.c
-  # TODO: Uncomment after workaround to use lifting-bits sleigh
-  # src/third-party/sleigh/native/sleigh_interface.cpp
+  src/third-party/sleigh/native/sleigh_interface.cpp
 )
 add_library(maat::maat ALIAS maat_maat)
-
-# TODO: Workaround to use lifting-bits sleigh
-configure_file(src/third-party/sleigh/native/sleigh_interface.cpp "${PROJECT_BINARY_DIR}/src/sleigh_interface.cpp" COPYONLY)
-target_sources(maat_maat PRIVATE "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/sleigh_interface.cpp>")
 
 if(NOT BUILD_SHARED_LIBS)
   target_compile_definitions(maat_maat PUBLIC MAAT_STATIC_DEFINE)
