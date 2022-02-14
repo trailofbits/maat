@@ -1,4 +1,4 @@
-# Building with CMake
+# Building & installing with CMake
 
 ## Build
 
@@ -56,13 +56,13 @@ multi-configuration generator, like the Visual Studio ones:
 cmake --install build --config Release
 ```
 
-### Python Module
+### Python bindings
 
-To install the Python module, make sure that you configured the project with the option `-Dmaat_BUILD_PYTHON_BINDINGS=ON`.
+Python bindings should be built and installed by default. If not, make sure the project is configured with the option `-Dmaat_BUILD_PYTHON_BINDINGS=ON`.
 
 CMake will install the Python module to the location specified by `maat_INSTALL_PYTHONMODULEDIR`; if it is an absolute path, it will be installed to that location, but if it is a relative path, then it will be located relative to the installation prefix.
 
-The default logic is equivalent to the following, which was chosen based on the most common use-case for regular users:
+If `maat_INSTALL_PYTHONMODULEDIR` isn't specified, CMake uses a default location that matches the most common use-case for regular users, in a way that is equivalent to:
 
 ```sh
 # If you're configuring outside a virtualenv
