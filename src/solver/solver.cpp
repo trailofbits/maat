@@ -18,7 +18,7 @@ Solver::~Solver()
 
 std::unique_ptr<Solver> new_solver()
 {
-#ifdef Z3_BACKEND
+#ifdef MAAT_Z3_BACKEND
     return std::make_unique<SolverZ3>();
 #else
     return nullptr;
@@ -27,7 +27,7 @@ std::unique_ptr<Solver> new_solver()
 
 Solver* _new_solver_raw()
 {
-#ifdef Z3_BACKEND
+#ifdef MAAT_Z3_BACKEND
     return new SolverZ3();
 #else
     return nullptr;

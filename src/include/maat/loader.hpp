@@ -1,7 +1,7 @@
 #ifndef MAAT_LOADER_H
 #define MAAT_LOADER_H
 
-#ifdef LIEF_BACKEND
+#ifdef MAAT_LIEF_BACKEND
 #include <LIEF/LIEF.hpp>
 #endif
 
@@ -104,7 +104,7 @@ protected:
     void load_emulated_libs(MaatEngine* engine);
 };
 
-#ifdef LIEF_BACKEND
+#ifdef MAAT_LIEF_BACKEND
 /// Implementation of the Loader interface using LIEF
 class LoaderLIEF : public Loader
 {
@@ -230,7 +230,7 @@ private:
 
 // util function
 mem_flag_t get_segment_flags(LIEF::ELF::Segment& segment);
-#endif // ifdef LIEF_BACKEND
+#endif // ifdef MAAT_LIEF_BACKEND
 
 /** \brief Convenience function returning a loader instance abstracting the
  * underlying backend implementation */

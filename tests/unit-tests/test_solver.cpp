@@ -181,12 +181,12 @@ void test_solver()
     std::string def = "\033[0m";
     std::string bold = "\033[1m";
 
-#ifdef HAS_SOLVER_BACKEND
+#ifdef MAAT_HAS_SOLVER_BACKEND
     std::cout   << bold << "[" << green << "+" 
                 << def << bold << "]" << def 
                 << " Testing solver interface... " << std::flush;
 
-#ifdef Z3_BACKEND
+#ifdef MAAT_Z3_BACKEND
     SolverZ3 solver_z3;
     total += sat_constraints(solver_z3);
     total += unsat_constraints(solver_z3);

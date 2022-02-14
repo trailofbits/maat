@@ -19,7 +19,7 @@ using std::strlen;
 namespace test{
 namespace solve_symbolic_ptr{
 
-#if defined(HAS_SOLVER_BACKEND) and defined(HAS_LOADER_BACKEND)
+#if defined(MAAT_HAS_SOLVER_BACKEND) and defined(MAAT_HAS_LOADER_BACKEND)
 
         using namespace maat;
         using namespace maat::event;
@@ -339,7 +339,7 @@ using namespace test::solve_symbolic_ptr;
 // All unit tests 
 void test_solve_symbolic_ptr()
 {
-#if defined(HAS_SOLVER_BACKEND) && defined(HAS_LOADER_BACKEND) 
+#if defined(MAAT_HAS_SOLVER_BACKEND) && defined(MAAT_HAS_LOADER_BACKEND) 
     unsigned int total = 0;
     string green = "\033[1;32m";
     string def = "\033[0m";

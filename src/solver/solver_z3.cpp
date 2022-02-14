@@ -1,4 +1,4 @@
-#ifdef Z3_BACKEND
+#ifdef MAAT_Z3_BACKEND
 
 #include "maat/solver.hpp"
 
@@ -198,4 +198,4 @@ VarContext* SolverZ3::_get_model_raw()
 
 } // namespace solver
 } // namespace maat
-#endif // #ifdef Z3_BACKEND
+#endif // #ifdef MAAT_Z3_BACKEND

@@ -105,14 +105,14 @@ if(maat_USE_Z3)
   find_package(Z3 REQUIRED)
   target_link_libraries(maat_maat PUBLIC z3::libz3)
   # TODO: Prefix with MAAT_
-  target_compile_definitions(maat_maat PUBLIC Z3_BACKEND=1 HAS_SOLVER_BACKEND=1)
+  target_compile_definitions(maat_maat PUBLIC MAAT_Z3_BACKEND=1 MAAT_HAS_SOLVER_BACKEND=1)
 endif()
 
 if(maat_USE_LIEF)
   find_package(LIEF REQUIRED)
   target_link_libraries(maat_maat PUBLIC LIEF::LIEF)
   # TODO: Prefix with MAAT_
-  target_compile_definitions(maat_maat PUBLIC LIEF_BACKEND=1 HAS_LOADER_BACKEND=1)
+  target_compile_definitions(maat_maat PUBLIC MAAT_LIEF_BACKEND=1 MAAT_HAS_LOADER_BACKEND=1)
 endif()
 
 if(maat_BUILD_PYTHON_BINDINGS)

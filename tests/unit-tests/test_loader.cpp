@@ -13,7 +13,7 @@ namespace test
     {
         using namespace maat;
         using namespace maat::loader;
-#ifdef HAS_LOADER_BACKEND
+#ifdef MAAT_HAS_LOADER_BACKEND
         unsigned int _assert(bool val, const std::string& msg)
         {
             if( !val){
@@ -55,7 +55,7 @@ namespace test
             return nb;
         }
 
-#endif // ifdef HAS_LOADER_BACKEND
+#endif // ifdef MAAT_HAS_LOADER_BACKEND
     }
 }
 
@@ -68,7 +68,7 @@ void test_loader()
     std::string def = "\033[0m";
     std::string bold = "\033[1m";
 
-#ifdef HAS_LOADER_BACKEND
+#ifdef MAAT_HAS_LOADER_BACKEND
     std::cout   << bold << "[" << green << "+" 
                 << def << bold << "]" << def 
                 << " Testing loader interface... " << std::flush;

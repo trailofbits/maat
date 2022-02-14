@@ -1272,7 +1272,7 @@ void MaatEngine::load(
     bool load_interp
 )
 {
-#ifdef HAS_LOADER_BACKEND
+#ifdef MAAT_HAS_LOADER_BACKEND
     std::unique_ptr<loader::Loader> l = loader::new_loader();
     l->load(
         this,
