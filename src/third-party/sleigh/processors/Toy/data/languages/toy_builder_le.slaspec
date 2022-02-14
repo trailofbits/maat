@@ -1,4 +1,0 @@
-@define ENDIAN "little"
-@define SIZE "4"
-
-@include "toy_builder.sinc"

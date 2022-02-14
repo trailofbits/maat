@@ -1,2 +1,0 @@
-@define MC68030 ""
-@include "68000.sinc"

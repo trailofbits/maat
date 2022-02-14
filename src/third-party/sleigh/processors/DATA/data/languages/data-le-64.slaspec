@@ -1,5 +1,0 @@
-@define ENDIAN  "little"
-
-@define RAMSIZE "8"
-
-@include "data.sinc"
