@@ -75,9 +75,9 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
     COMMAND "${Python3_EXECUTABLE}" -c "if True:
       import site; import os; import sysconfig as sc
       if site.ENABLE_USER_SITE:
-        print(site.getusersitepackages().replace(site.getuserbase(), '').lstrip(os.path.sep))
+        print(site.getusersitepackages())
       else:
-        print(sc.get_path('platlib').replace(sc.get_path('data'), '').lstrip(os.path.sep))"
+        print(sc.get_path('platlib'))"
     OUTPUT_VARIABLE python_site_rel
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
