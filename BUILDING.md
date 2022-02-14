@@ -58,7 +58,11 @@ cmake --install build --config Release
 
 ### Python Module
 
-To install the Python module, make sure that you configured the project with the option `-Dmaat_BUILD_PYTHON_BINDINGS=ON`, and install to the user site-packages location:
+To install the Python module, make sure that you configured the project with the option `-Dmaat_BUILD_PYTHON_BINDINGS=ON`.
+
+CMake will install the Python module to the location specified by `maat_INSTALL_PYTHONMODULEDIR`; if it is an absolute path, it will be installed to that location, but if it is a relative path, then it will be located relative to the installation prefix.
+
+The default logic is equivalent to the following, which was chosen based on the most common use-case for regular users:
 
 ```sh
 # If you're configuring outside a virtualenv
@@ -66,12 +70,14 @@ prefix="$(python3 -m site --user-site)"
 # If you're configuring inside a virtualenv
 prefix="$(python3 -c 'import sysconfig as sc; print(sc.get_path("platlib"))')"
 
-cmake -S . -B build -Dmaat_INSTALL_PYTHONMODULEDIR="${prefix}" -Dmaat_BUILD_PYTHON_BINDINGS=ON
+cmake -S . -B build "-Dmaat_INSTALL_PYTHONMODULEDIR=${prefix}" -Dmaat_BUILD_PYTHON_BINDINGS=ON
 cmake --build build
 cmake --install build
 ```
 
 NOTE: CMake configuration and installation should both take place either inside or outside of the virtual environment or else the install path for the Python module could be incorrect (especially on macOS).
+
+If you are packaging this project, you will likely want to change the default value of `maat_INSTALL_PYTHONMODULEDIR`.
 
 [1]: https://cmake.org/cmake/help/latest/command/find_package.html#config-mode-search-procedure
 [2]: https://cmake.org/cmake/help/latest/manual/cmake.1.html#install-a-project
