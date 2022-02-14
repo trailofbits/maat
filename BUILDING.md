@@ -62,11 +62,11 @@ To install the Python module, make sure that you configured the project with the
 
 ```sh
 # If you're configuring outside a virtualenv
-prefix="$(python3 -m site --user-base)"
+prefix="$(python3 -m site --user-site)"
 # If you're configuring inside a virtualenv
 prefix="$(python3 -c "import sysconfig as sc; print(sc.get_path('data'))")"
 
-cmake -S . -B build "-DCMAKE_INSTALL_PREFIX=${prefix}" -Dmaat_BUILD_PYTHON_BINDINGS=ON
+cmake -S . -B build -Dmaat_INSTALL_PYTHONMODULEDIR="${prefix}" -Dmaat_BUILD_PYTHON_BINDINGS=ON
 cmake --build build
 cmake --install build
 ```
