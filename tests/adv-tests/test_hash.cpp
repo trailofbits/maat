@@ -1,3 +1,4 @@
+#include "maat/config.hpp"
 #include "maat/engine.hpp"
 #include "maat/memory.hpp"
 #include "maat/exception.hpp"
@@ -388,6 +389,8 @@ void test_hash()
     string def = "\033[0m";
     string bold = "\033[1m";
     
+    maat::MaatConfig::instance().add_explicit_sleigh_dir(MAAT_SLEIGH_DIR);
+
     // Start testing 
     cout << bold << "[" << green << "+" << def << bold << "]" << def << std::left << std::setw(34) << " Testing hash algos emulation... " << std::flush;  
     total += x86_simple_algo_1();

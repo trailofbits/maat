@@ -1,6 +1,6 @@
 <p align="center" >
      <br><br>
-<img width="45%" src="/ressources/maat_logo.png"/> <br>
+<img width="45%" src="ressources/maat_logo.png"/> <br>
   <!-- TODO
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT"> &nbsp; &nbsp;
    <img src="https://img.shields.io/badge/Build-Linux-green" alt="Build: Linux">  &nbsp; &nbsp;
@@ -26,7 +26,8 @@ Key features:
                       has the potential to emulate many architectures, including exotic ones
 
 # Getting started
-- [Installation](https://maat.re/install.html)
+- [Installation](./BUILDING.md)
+- [Hacking](./HACKING.md)
 - [Tutorials](https://maat.re/tutorials.html)
      - [Getting started](https://maat.re/tutorials/get_started.html)
      - [Event hooking](https://maat.re/tutorials/events.html)
@@ -37,7 +38,7 @@ Key features:
 - [Contact](#contact)
 - [Licence](#licence)
 
-# Example
+# Example      {#example}
 
 ```Python
 from maat import *
@@ -69,9 +70,9 @@ engine.restore_snapshot(snap)
 maat.run() 
 ```
 
-# Contact
+# Contact          {#contact}
 
 **Boyan MILANOV** - boyan.milanov@trailofbits.com
 
-# Licence
+# Licence          {#licence}
 TODO

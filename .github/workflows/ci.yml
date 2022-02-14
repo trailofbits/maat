@@ -1,0 +1,158 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+    - master
+
+  pull_request:
+    branches:
+    - '**'
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    if: github.repository_owner == 'trailofbits'
+      && false
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get install libgmp-dev python3-dev libz3-dev
+        wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+
+    - name: Install LCov
+      run: sudo apt-get update -q
+        && sudo apt-get install lcov -q -y
+
+    - name: Configure
+      run: cmake --preset=ci-coverage
+
+    - name: Build
+      run: cmake --build build/coverage -j 2
+
+    - name: Test
+      working-directory: build/coverage
+      run: ctest --output-on-failure -j 2
+
+    - name: Process coverage info
+      run: cmake --build build/coverage -t coverage
+
+    - name: Print coverage info
+      run: lcov --summary build/coverage/coverage.info
+
+    #- name: Submit to codecov.io
+    #  uses: codecov/codecov-action@v1
+    #  with:
+    #    file: build/coverage/coverage.info
+
+  sanitize:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get install libgmp-dev python3-dev
+        # LIEF
+        wget -O- https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        # Sleigh
+        wget -O- https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        # Z3 Ubuntu 20.04 package doesn't play nice with sanitizers
+        # (also remove top-level directory from zip)
+        wget -O z3.zip https://github.com/Z3Prover/z3/releases/download/z3-4.8.14/z3-4.8.14-x64-glibc-2.31.zip
+        dest=/opt/z3; zip=./z3.zip; \
+          sudo mkdir -p "${dest}" && \
+          sudo unzip -d "${dest}" "${zip}" && \
+            f=("${dest}"/*) && sudo mv "${dest}"/*/* "$dest" && sudo rmdir "${f[@]}"
+
+    - name: Configure
+      env: { CC: clang-11, CXX: clang++-11 }
+      run: cmake --preset=ci-sanitize -DZ3_ROOT=/opt/z3
+
+    - name: Build
+      run: |
+        cmake --build build/sanitize -j 2
+
+    - name: Test
+      working-directory: build/sanitize
+      env:
+        ASAN_OPTIONS: "strict_string_checks=1:\
+          detect_stack_use_after_return=1:\
+          check_initialization_order=1:\
+          strict_init_order=1:\
+          detect_leaks=1"
+        UBSAN_OPTIONS: print_stacktrace=1
+      run: ctest --output-on-failure -j 2
+
+  test:
+    strategy:
+      matrix:
+        os: [
+          # TODO: windows,
+          # TODO: macos,
+          ubuntu
+        ]
+
+        type: [shared, static]
+
+        include:
+        - { type: shared, shared: YES }
+        - { type: static, shared: NO }
+
+    runs-on: ${{ matrix.os }}-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Setup Git User for Sleigh
+      # See this thread for more details https://github.community/t/github-actions-bot-email-address/17204/5
+      run: |
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+
+    - name: Install Dependencies
+      if: matrix.os == 'ubuntu'
+      run: |
+        sudo apt-get install libgmp-dev python3-dev libz3-dev
+        wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+
+    - name: Install Dependencies
+      if: matrix.os == 'macos'
+      run: |
+        brew install gmp python3 z3
+        wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/macOS-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+
+    - name: Configure
+      run: cmake --preset=ci-${{ matrix.os }}
+        -D BUILD_SHARED_LIBS=${{ matrix.shared }}
+
+    - name: Build
+      run: cmake --build build --config Release -j 2 || true
+
+    - name: Install
+      run: cmake --install build --config Release --prefix prefix
+
+    - name: Test install directory
+      working-directory: tests/find-package
+      run: |
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -Dmaat_DIR=${{ github.workspace }}/prefix/share/maat
+        cmake --build build
+        ./build/maat_find_package_test
+
+    - name: Test
+      working-directory: build
+      run: ctest --output-on-failure -C Release -j 2

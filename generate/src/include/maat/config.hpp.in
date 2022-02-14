@@ -1,8 +1,8 @@
 #ifndef MAAT_CONFIG_H
 #define MAAT_CONFIG_H
 
-// TODO(ekilmer) static constexpr char* maat_specfile_dir_prefix = CMAKE_SPECFILE_DIR_PREFIX;
-static constexpr char* maat_specfile_dir_prefix = "/etc/maat/processors/";
+static constexpr char* maat_install_prefix = "@CMAKE_INSTALL_PREFIX@";
+static constexpr char* maat_specfile_dir_prefix = "@maat_INSTALL_DATADIR@/@spec_out_prefix@";
 
 #include <filesystem>
 #include <list>
@@ -24,10 +24,8 @@ private:
 public:
     MaatConfig()
     {
-        std::string prefix(maat_specfile_dir_prefix); 
         standard_locations = {
-            "/usr/local/"+prefix,
-            "/usr/"+prefix
+            path_t(maat_install_prefix) / maat_specfile_dir_prefix
         };
     }
 
@@ -112,7 +110,7 @@ public:
             if (
                 auto res = find_sleigh_file_in_dir(
                     filename, 
-                    std::filesystem::path(std::string(install_dir)+maat_specfile_dir_prefix)
+                    std::filesystem::path(install_dir) / maat_specfile_dir_prefix
                 )
             )
                 return res;

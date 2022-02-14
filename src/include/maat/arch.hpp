@@ -68,6 +68,7 @@ public:
 public:
     /** Constructor */
     Arch(Arch::Type type, int bits, int nb_regs): type(type), _bits(bits), nb_regs(nb_regs){};
+    virtual ~Arch() = default;
     const std::string& reg_name(reg_t num) const; ///< Get name of register 'num'
     reg_t reg_num(const std::string& name) const; ///< Get num of register named 'name'
     virtual size_t reg_size(reg_t reg) const = 0; ///< Get size in bits of register 'reg'
@@ -87,6 +88,7 @@ public:
     {
         available_modes = {CPUMode::NONE};
     };
+    virtual ~ArchNone() = default;
     size_t reg_size(reg_t reg_num) const {return 32;};
     reg_t sp() const {return 19;};
     reg_t pc() const {return 18;};
@@ -185,6 +187,7 @@ namespace X86
     {
     public:
         ArchX86();
+        virtual ~ArchX86() = default;
         size_t reg_size(reg_t reg_num) const;
         reg_t sp() const ;
         reg_t pc() const ;
@@ -304,6 +307,7 @@ namespace X64
     {
     public:
         ArchX64();
+        ~ArchX64() = default;
         size_t reg_size(reg_t reg_num) const ;
         reg_t sp() const ;
         reg_t pc() const ;
@@ -367,6 +371,7 @@ namespace ARM64
     {
     public:
         ArchARM64();
+        virtual ~ArchARM64() = default;
         const std::string& reg_name(reg_t num) const;
         reg_t reg_num(const std::string& name) const;
         size_t reg_size(reg_t reg_num) const;

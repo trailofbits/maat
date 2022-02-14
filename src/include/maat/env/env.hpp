@@ -40,6 +40,7 @@ public:
 public:
     /// Create an emulator for architecture *arch* and system *system*
     EnvEmulator(Arch::Type arch, OS os);
+    virtual ~EnvEmulator() = default;
 // Library functions
 public:
     /// Return **true** if the environment can emulate the library *name*
@@ -68,6 +69,7 @@ class LinuxEmulator: public EnvEmulator
 {
 public:
     LinuxEmulator(Arch::Type arch);
+    virtual ~LinuxEmulator() = default;
 public:
     /// Add a running process to the environment
     virtual void add_running_process(const ProcessInfo& pinfo, const std::string& filepath);
