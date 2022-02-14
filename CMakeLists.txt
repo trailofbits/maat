@@ -155,10 +155,16 @@ maat_sleigh_compile(x86 x86-64)
 maat_sleigh_compile(x86 x86)
 
 # All of the sla spec targets are combined into this one
-add_custom_target(maat_all_sla_specs ALL DEPENDS
+add_custom_target(maat_all_sla_specs DEPENDS
   maat_sleigh_spec_x86-64
   maat_sleigh_spec_x86
 )
+
+# Add sla specs as dependencies to our targets
+add_dependencies(maat_maat maat_all_sla_specs)
+if(maat_BUILD_PYTHON_BINDINGS)
+  add_dependencies(maat_python maat_all_sla_specs)
+endif()
 
 # ---- Install rules ----
 
