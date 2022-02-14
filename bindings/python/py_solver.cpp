@@ -1,4 +1,4 @@
-#ifdef HAS_SOLVER_BACKEND
+#ifdef MAAT_HAS_SOLVER_BACKEND
 
 #include "python_bindings.hpp"
 

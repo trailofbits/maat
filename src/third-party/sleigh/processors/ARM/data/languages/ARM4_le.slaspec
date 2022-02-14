@@ -1,5 +1,0 @@
-
-@define ENDIAN "little"
-
-@include "ARM.sinc"
-

@@ -1,7 +1,0 @@
-@define ENDIAN "little"
-@define SIZE "4"
-
-@define INSTR_PHASE "" # not used by basic toy language
-
-@include "toy.sinc"
-@include "toyInstructions.sinc"

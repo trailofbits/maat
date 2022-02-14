@@ -130,7 +130,7 @@ void Loader::load_emulated_libs(MaatEngine* engine)
 
 std::unique_ptr<Loader> new_loader()
 {
-#if defined(LIEF_BACKEND)
+#if defined(MAAT_LIEF_BACKEND)
     return std::make_unique<LoaderLIEF>();
 #else
     throw loader_exception("new_loader(): No loader backend available!");

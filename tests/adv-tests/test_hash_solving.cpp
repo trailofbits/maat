@@ -20,7 +20,7 @@ namespace solve_hash{
     using namespace maat;
     using namespace maat::event;
 
-#ifdef HAS_SOLVER_BACKEND
+#ifdef MAAT_HAS_SOLVER_BACKEND
     unsigned int _assert(bool val, const string& msg){
         if( !val){
             cout << "\nFail: " << msg << endl << std::flush; 
@@ -211,7 +211,7 @@ using namespace test::solve_hash;
 // All unit tests 
 void test_solve_hash()
 {
-#ifdef HAS_SOLVER_BACKEND    
+#ifdef MAAT_HAS_SOLVER_BACKEND    
     unsigned int total = 0;
     string green = "\033[1;32m";
     string def = "\033[0m";

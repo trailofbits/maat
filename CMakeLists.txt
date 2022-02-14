@@ -52,14 +52,9 @@ add_library(maat_maat
   src/solver/solver.cpp
   src/solver/solver_z3.cpp
   src/third-party/murmur3/murmur3.c
-  # TODO: Uncomment after workaround to use lifting-bits sleigh
-  # src/third-party/sleigh/native/sleigh_interface.cpp
+  src/third-party/sleigh/native/sleigh_interface.cpp
 )
 add_library(maat::maat ALIAS maat_maat)
-
-# TODO: Workaround to use lifting-bits sleigh
-configure_file(src/third-party/sleigh/native/sleigh_interface.cpp "${PROJECT_BINARY_DIR}/src/sleigh_interface.cpp" COPYONLY)
-target_sources(maat_maat PRIVATE "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/sleigh_interface.cpp>")
 
 if(NOT BUILD_SHARED_LIBS)
   target_compile_definitions(maat_maat PUBLIC MAAT_STATIC_DEFINE)
@@ -104,15 +99,13 @@ target_link_libraries(
 if(maat_USE_Z3)
   find_package(Z3 REQUIRED)
   target_link_libraries(maat_maat PUBLIC z3::libz3)
-  # TODO: Prefix with MAAT_
-  target_compile_definitions(maat_maat PUBLIC Z3_BACKEND=1 HAS_SOLVER_BACKEND=1)
+  target_compile_definitions(maat_maat PUBLIC MAAT_Z3_BACKEND=1 MAAT_HAS_SOLVER_BACKEND=1)
 endif()
 
 if(maat_USE_LIEF)
   find_package(LIEF REQUIRED)
   target_link_libraries(maat_maat PUBLIC LIEF::LIEF)
-  # TODO: Prefix with MAAT_
-  target_compile_definitions(maat_maat PUBLIC LIEF_BACKEND=1 HAS_LOADER_BACKEND=1)
+  target_compile_definitions(maat_maat PUBLIC MAAT_LIEF_BACKEND=1 MAAT_HAS_LOADER_BACKEND=1)
 endif()
 
 if(maat_BUILD_PYTHON_BINDINGS)

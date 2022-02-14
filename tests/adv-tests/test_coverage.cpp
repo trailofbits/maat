@@ -15,7 +15,7 @@ using std::string;
 
 namespace test{
 namespace code_coverage{
-#ifdef HAS_SOLVER_BACKEND        
+#ifdef MAAT_HAS_SOLVER_BACKEND        
         
         using namespace maat;
         using namespace maat::event;
@@ -294,7 +294,7 @@ namespace code_coverage{
             
             return nb;
         }
-#endif // ifdef HAS_SOLVER_BACKEND
+#endif // ifdef MAAT_HAS_SOLVER_BACKEND
     }
 }
 
@@ -302,7 +302,7 @@ using namespace test::code_coverage;
 // All unit tests 
 void test_code_coverage()
 {
-#ifdef HAS_SOLVER_BACKEND
+#ifdef MAAT_HAS_SOLVER_BACKEND
     unsigned int total = 0;
     string green = "\033[1;32m";
     string def = "\033[0m";

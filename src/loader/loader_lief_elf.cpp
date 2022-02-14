@@ -1,4 +1,4 @@
-#ifdef LIEF_BACKEND
+#ifdef MAAT_LIEF_BACKEND
 
 #include "maat/loader.hpp"
 #include "maat/engine.hpp"

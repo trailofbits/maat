@@ -232,7 +232,7 @@ PyObject* PyEnv_FromEnvEmulator(env::EnvEmulator* env, bool is_ref);
 #define as_env_object(x)  (*((Env_Object*)x))
 
 // ================= Solver ===================
-#ifdef HAS_SOLVER_BACKEND
+#ifdef MAAT_HAS_SOLVER_BACKEND
 typedef struct{
     PyObject_HEAD
     maat::solver::Solver* solver;

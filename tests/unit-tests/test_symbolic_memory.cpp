@@ -326,7 +326,7 @@ void test_symbolic_memory(){
     total += basic_symbolic_ptr();
     total += basic_symbolic_write();
     total += basic_symbolic_read();
-#ifdef HAS_SOLVER_BACKEND
+#ifdef MAAT_HAS_SOLVER_BACKEND
     total += refine_value_set();
 #endif
     // Return res

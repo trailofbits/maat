@@ -5,7 +5,7 @@
 #include "maat/varcontext.hpp"
 #include <list>
 
-#ifdef Z3_BACKEND
+#ifdef MAAT_Z3_BACKEND
 #include "z3++.h"
 #endif
 
@@ -55,7 +55,7 @@ std::unique_ptr<Solver> new_solver();
 // Mainly for use in python bindings
 Solver* _new_solver_raw();
 
-#ifdef Z3_BACKEND
+#ifdef MAAT_Z3_BACKEND
 class SolverZ3 : public Solver
 {
 private:

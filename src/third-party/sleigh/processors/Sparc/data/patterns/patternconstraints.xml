@@ -1,5 +1,0 @@
-<patternconstraints>
-  <language id="sparc:BE:*:*">
-    <patternfile>SPARC_patterns.xml</patternfile>
-  </language>
-</patternconstraints>

@@ -1,5 +1,0 @@
-
-@define DATA_ENDIAN "big"
-
-@include "AARCH64instructions.sinc"
-
