@@ -36,9 +36,8 @@ Key features:
      - [C++ API](https://maat.re/cpp_api/index.html)
 - [Example](#example)
 - [Contact](#contact)
-- [Licence](#licence)
 
-# Example      {#example}
+# Example
 
 ```Python
 from maat import *
@@ -70,9 +69,9 @@ engine.restore_snapshot(snap)
 maat.run() 
 ```
 
-# Contact          {#contact}
+# Contact
+For general discussions, questions and suggestions, we use [Github Discussions](https://github.com/trailofbits/maat/discussions)
 
-**Boyan MILANOV** - boyan.milanov@trailofbits.com
+For reporting issues and bugs, please use [Github Issues](https://github.com/trailofbits/maat/issues)
 
-# Licence          {#licence}
-TODO
+For anything else, drop an e-mail at boyan.milanov@trailofbits.com
