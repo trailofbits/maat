@@ -99,7 +99,7 @@ jobs:
       matrix:
         os: [
           # TODO: windows,
-          # TODO: macos,
+          macos,
           ubuntu
         ]
 
