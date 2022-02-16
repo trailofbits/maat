@@ -1,0 +1,117 @@
+name: Python bindings CI/CD
+
+# TODO(boyan): run only on release
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  release:
+    types:
+      - published
+
+jobs:
+
+  build_wheels:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - 3.8
+        os:
+          - ubuntu
+          #- macos
+          #- windows
+    name: Build wheels [${{ matrix.os }}]
+    runs-on: ${{ matrix.os }}-latest
+    
+
+    steps:
+
+      - uses: actions/checkout@master
+      - run: git fetch --prune --unshallow
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install cibuildwheel
+        run: python3 -m pip install cibuildwheel
+
+      - name: Install Dependencies
+        if: matrix.os == 'ubuntu'
+        run: |
+          sudo apt-get install libgmp-dev python3-dev libz3-dev
+          wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+          wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+
+      - name: Install Dependencies
+        if: matrix.os == 'macos'
+        run: |
+          brew install gmp python3 z3
+          wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+          wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/macOS-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+
+      - name: Build wheels
+        run: python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
+        env:
+          CIBW_BUILD_VERBOSITY: 1
+          # Build for python 3.7 to 3.10
+          CIBW_BUILD: cp37-manylinux_x86_64 cp38-manylinux_x86_64 cp39-manylinux_x86_64 cp310-manylinux_x86_64
+          # Alternative docker image
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_24
+          # TODO(boyan) CIBW_ENVIRONMENT_LINUX: "AUDITWHEEL_PLAT=manylinux_2_24_x86_64 CC=clang-7 CXX=clang++-7"
+          CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
+
+      - name: Inspect wheelhouse folder
+        run: ls -lah wheelhouse/
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: ./wheelhouse/*.whl
+
+  # TODO(boyan): upload on pypi
+  # upload_pypi:
+  #   needs:
+  #     - build_sdist
+  #     - build_wheels
+  #   runs-on: ubuntu-latest
+  #   environment: pypi
+  #   # Master branch produces pre-releases.
+  #   # GitHub Releases 'vX.Y.Z' produce stable releases.
+
+  #   steps:
+
+  #     - uses: actions/download-artifact@v2
+  #       with:
+  #         name: dist
+  #         path: dist
+
+  #     - name: Inspect dist folder
+  #       run: ls -lah dist/
+
+  #     # Validate the tag accordingly to PEP440
+  #     # From https://stackoverflow.com/a/37972030/12150968
+  #     - name: Check PEP440 compliance
+  #       if: github.event_name == 'release'
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y source-highlight
+  #         last_tag_with_v="$(git describe --abbrev=0 --tags)"
+  #         last_tag=${last_tag_with_v#v}
+  #         rel_regexp='^(\d+!)?(\d+)(\.\d+)+([\.\-\_])?((a(lpha)?|b(eta)?|c|r(c|ev)?|pre(view)?)\d*)?(\.?(post|dev)\d*)?$'
+  #         echo ""
+  #         echo $last_tag
+  #         echo ""
+  #         check-regexp ${rel_regexp} ${last_tag}
+  #         match=$(check-regexp ${rel_regexp} ${last_tag} | grep matches | cut -d ' ' -f 5)
+  #         test $match -eq 1 && true
+  #     - uses: pypa/gh-action-pypi-publish@master
+  #       if: |
+  #         github.repository == 'robotology/yarp' &&
+  #         ((github.event_name == 'release' && github.event.action == 'published') ||
+  #          (github.event_name == 'push' && github.ref == 'refs/heads/master'))
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.PYPI_TOKEN }}
