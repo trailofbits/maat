@@ -6,12 +6,13 @@ import cmake_build_extension
 from setuptools import setup
 
 source_dir = str(Path(".").absolute().parent.parent)
+print(f"setup.py: source directory: {source_dir}")
 
-# TODO(boyan)
-# if "CIBUILDWHEEL" in os.environ and os.environ["CIBUILDWHEEL"] == "1":
-#     CIBW_CMAKE_OPTIONS = ["-DCMAKE_INSTALL_LIBDIR=lib"]
-# else:
-#     CIBW_CMAKE_OPTIONS = []
+
+if "CIBUILDWHEEL" in os.environ and os.environ["CIBUILDWHEEL"] == "1":
+    CIBW_CMAKE_OPTIONS = ["-DCMAKE_INSTALL_LIBDIR=lib"]
+else:
+    CIBW_CMAKE_OPTIONS = []
 
 setup(
     cmdclass=dict(
@@ -22,14 +23,15 @@ setup(
             name="Maat",
             install_prefix="maat",
             disable_editable=True,
-            write_top_level_init="from .maat import *",
+            write_top_level_init=None,
             source_dir=source_dir,
             cmake_configure_options=[
                 f"-DPython3_EXECUTABLE:PATH={sys.executable}",
                 "-DCMAKE_BUILD_TYPE=Release",
-                "-DBUILD_SHARED_LIBS:BOOL=OFF"
+                "-Dmaat_BUILD_PYTHON_BINDINGS:BOOL=ON",
             ]
-            # TODO(boyan) + CIBW_CMAKE_OPTIONS,
+            + CIBW_CMAKE_OPTIONS,
+            cmake_component="maat_Python"
         )
     ],
 )
