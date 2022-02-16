@@ -29,9 +29,9 @@ setup(
                 f"-DPython3_EXECUTABLE:PATH={sys.executable}",
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-Dmaat_BUILD_PYTHON_BINDINGS:BOOL=ON",
+                "-Dmaat_INSTALL_PYTHONMODULEDIR=lib"
             ]
-            + CIBW_CMAKE_OPTIONS,
-            cmake_component="maat_Python"
+            + CIBW_CMAKE_OPTIONS
         )
     ],
 )
