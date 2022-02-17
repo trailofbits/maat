@@ -16,7 +16,7 @@ jobs:
         python-version:
           - 3.8
         os:
-          #TODO: - ubuntu
+          - ubuntu
           - macos
           #- windows
     name: Build wheels [${{ matrix.os }}]
@@ -57,10 +57,18 @@ jobs:
           export MACOSX_DEPLOYMENT_TARGET=10.15
           python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
         env:
-          CIBW_BUILD_VERBOSITY: 10
+          CIBW_BUILD_VERBOSITY: 3
           # Build for 3.8
           CIBW_BUILD: cp38-macosx_x86_64
-          # TODO: this doesn't work because the module isn't generated/installed properly
+          CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
+
+      - name: Build wheels
+        if: matrix.os == 'ubuntu'
+        run: python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
+        env:
+          CIBW_BUILD_VERBOSITY: 3
+          # Build for 3.8
+          CIBW_BUILD: cp38-manylinux_x86_64
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Inspect wheelhouse folder
