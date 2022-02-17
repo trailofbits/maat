@@ -83,6 +83,12 @@ if(maat_PYTHON_PACKAGING)
     EXCLUDE_FROM_ALL 1
     EXCLUDE_FROM_DEFAULT_BUILD 1
   )
+
+  # If packaging python bindings we need to force maat_INSTALL_DATADIR so
+  # that Maat's config gets the proper path prefix for the spec files
+  # directory
+  include(GNUInstallDirs)
+  set(maat_INSTALL_DATADIR "${CMAKE_INSTALL_DATADIR}")
 endif()
 
 # ---- Find our dependencies ----

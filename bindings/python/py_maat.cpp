@@ -1,5 +1,7 @@
 #include "Python.h"
 #include "python_bindings.hpp"
+#include <filesystem>
+#include <optional>
 
 namespace maat
 {
@@ -34,6 +36,21 @@ PyModuleDef maat_module_def = {
     nullptr  // m_free    
 };
 
+std::optional<std::filesystem::path> get_maat_module_directory()
+{
+    // Add a lookup directory for sleigh files based on the module location
+    PyObject* maat_module = PyState_FindModule(&maat_module_def);
+    if (not maat_module)
+        return std::nullopt;
+    PyObject* filename_obj = PyModule_GetFilenameObject(maat_module);
+    if (not filename_obj)
+        return std::nullopt;
+    const char* filename = PyUnicode_AsUTF8(filename_obj);
+    if (not filename)
+        return std::nullopt;
+    return std::filesystem::path(filename).parent_path();
+}
+
 } // namespace py
 } // namespace maat
 
@@ -53,6 +70,8 @@ PyMODINIT_FUNC PyInit_maat()
     init_loader(module);
     init_env(module);
     init_config(module);
+
+    PyState_AddModule(module, &maat_module_def);
 
     return module;
 }

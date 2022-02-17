@@ -7,7 +7,6 @@ import cmake_build_extension
 from setuptools import setup
 
 source_dir = str(Path(".").absolute().parent.parent)
-print(f"setup.py: source directory: {source_dir}")
 
 setup(
     cmdclass=dict(

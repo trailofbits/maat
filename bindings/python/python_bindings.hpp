@@ -6,6 +6,8 @@
 #include "structmember.h"
 #include "maat/maat.hpp"
 #include <memory>
+#include <filesystem>
+#include <optional>
 
 namespace maat
 {
@@ -14,6 +16,7 @@ namespace py
 
 // Util function
 PyObject* create_class(PyObject* name, PyObject* bases, PyObject* dict);
+std::optional<std::filesystem::path> get_maat_module_directory();
 
 // ================= Arch =======================
 void init_arch(PyObject* module);

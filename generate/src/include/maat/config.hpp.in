@@ -8,8 +8,16 @@ static constexpr char* maat_specfile_dir_prefix = "@maat_INSTALL_DATADIR@/@spec_
 #include <list>
 #include <optional>
 
+
 namespace maat
 {
+
+#ifdef MAAT_PYTHON_BINDINGS
+    namespace py
+    {
+        std::optional<std::filesystem::path> get_maat_module_directory();
+    }
+#endif
 
 /// Config interface to find sleigh spec files at runtime
 class MaatConfig
@@ -117,7 +125,20 @@ public:
         }
 
         // 4. Known relative paths
-        // TODO(boyan)
+        // Relative to the python extension module
+#ifdef MAAT_PYTHON_BINDINGS
+        // Note: it would have been best to compute this path when initialising the maat
+        // module and then add the path with `add_explicit_sleigh_dir`. Unfortunately 
+        // PyModule_GetFilenameObject doesn't work when called from the module initialisation
+        // function, so we have to rely on dynamic lookup.
+        std::optional<path_t> rel_dir = maat::py::get_maat_module_directory();
+        if (rel_dir)
+        {
+            auto dir = rel_dir.value() / "maat" / path_t(maat_specfile_dir_prefix);
+            if (auto res = find_sleigh_file_in_dir(filename, dir))
+                    return res;
+        }
+#endif
 
         // 5. Standard locations
         for (const auto& dir : standard_locations)
