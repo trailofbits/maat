@@ -6,6 +6,9 @@
 # consumers can trivially build and package the project
 if(PROJECT_IS_TOP_LEVEL)
   option(maat_BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
+  # The following option is used when packaging the Python bindings
+  option(maat_PYTHON_PACKAGING "Indicative that this build configuration is used during Python packaging" OFF)
+
   option(maat_DEVELOPER_MODE "Enable developer mode" OFF)
   option(BUILD_SHARED_LIBS "Build shared libs." OFF)
 endif()

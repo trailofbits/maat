@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -7,12 +8,6 @@ from setuptools import setup
 
 source_dir = str(Path(".").absolute().parent.parent)
 print(f"setup.py: source directory: {source_dir}")
-
-
-if "CIBUILDWHEEL" in os.environ and os.environ["CIBUILDWHEEL"] == "1":
-    CIBW_CMAKE_OPTIONS = ["-DCMAKE_INSTALL_LIBDIR=lib"]
-else:
-    CIBW_CMAKE_OPTIONS = []
 
 setup(
     cmdclass=dict(
@@ -26,12 +21,14 @@ setup(
             write_top_level_init=None,
             source_dir=source_dir,
             cmake_configure_options=[
+                # Fixed in `master` branch of cmake_build_extension
+                # https://github.com/diegoferigo/cmake-build-extension/commit/8972036d978a83ba77b59e46d4137223d209bffd
+                f"-DCMAKE_MAKE_PROGRAM={shutil.which('ninja')}",
                 f"-DPython3_EXECUTABLE:PATH={sys.executable}",
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-Dmaat_BUILD_PYTHON_BINDINGS:BOOL=ON",
-                "-Dmaat_INSTALL_PYTHONMODULEDIR=lib"
+                "-Dmaat_PYTHON_PACKAGING:BOOL=ON",
             ]
-            + CIBW_CMAKE_OPTIONS
         )
     ],
 )

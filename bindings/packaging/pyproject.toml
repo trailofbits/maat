@@ -5,7 +5,8 @@ requires = [
     "setuptools>=45",
     "setuptools_scm[toml]>=6.0",
     "cmake-build-extension>=0.3.2",
-    "cmake>=3.22.0"
+    "cmake>=3.22.0",
+    "ninja"
 ]
 
 [tool.setuptools_scm]

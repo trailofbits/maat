@@ -77,6 +77,14 @@ target_include_directories(
 
 target_compile_features(maat_maat PUBLIC cxx_std_17)
 
+if(maat_PYTHON_PACKAGING)
+  set_target_properties(
+    maat_maat PROPERTIES
+    EXCLUDE_FROM_ALL 1
+    EXCLUDE_FROM_DEFAULT_BUILD 1
+  )
+endif()
+
 # ---- Find our dependencies ----
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
@@ -106,12 +114,6 @@ if(maat_USE_LIEF)
   find_package(LIEF REQUIRED)
   target_link_libraries(maat_maat PUBLIC LIEF::LIEF)
   target_compile_definitions(maat_maat PUBLIC MAAT_LIEF_BACKEND=1 MAAT_HAS_LOADER_BACKEND=1)
-endif()
-
-if(maat_BUILD_PYTHON_BINDINGS)
-  # NOTE: The way we use the main library's source files means this needs to
-  # be a CMake include rather than add_subdirectory
-  include(bindings/bindings.cmake)
 endif()
 
 # ---- Compile Sleigh data ----
@@ -155,13 +157,19 @@ add_custom_target(maat_all_sla_specs DEPENDS
 
 # Add sla specs as dependencies to our targets
 add_dependencies(maat_maat maat_all_sla_specs)
+
+# ---- Python bindings ----
+
 if(maat_BUILD_PYTHON_BINDINGS)
+  # NOTE: The way we use the main library's source files means this needs to
+  # be a CMake include rather than add_subdirectory
+  include(bindings/bindings.cmake)
   add_dependencies(maat_python maat_all_sla_specs)
 endif()
 
 # ---- Install rules ----
 
-if(NOT CMAKE_SKIP_INSTALL_RULES)
+if(NOT CMAKE_SKIP_INSTALL_RULES AND NOT maat_PYTHON_PACKAGING)
   include(cmake/install-rules.cmake)
 endif()
 
