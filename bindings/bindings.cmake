@@ -80,6 +80,17 @@ endif()
 if(NOT CMAKE_SKIP_INSTALL_RULES)
   include(GNUInstallDirs)
 
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -c "if True:
+      import site; import os; import sysconfig as sc
+      if site.ENABLE_USER_SITE:
+        print(site.getusersitepackages())
+      else:
+        print(sc.get_path('platlib'))"
+    OUTPUT_VARIABLE python_site_rel
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
   if(maat_PYTHON_PACKAGING)
     # For packaging the way we want to use maat, we need to output the native
     # Python module in the 'site-packages' directory, not the
@@ -91,7 +102,7 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
   else()
     # Allow package maintainers to freely override the path for the Python module
     set(
-      maat_INSTALL_PYTHONMODULEDIR "${Python3_SITEARCH}"
+      maat_INSTALL_PYTHONMODULEDIR "${python_site_rel}"
       CACHE PATH "Python module directory location relative to install prefix"
     )
   endif()
