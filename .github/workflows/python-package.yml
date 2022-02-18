@@ -37,18 +37,15 @@ jobs:
         run: python3 -m pip install cibuildwheel
 
       - name: Install Dependencies
-        if: matrix.os == 'ubuntu'
-        run: |
-          sudo apt-get install libgmp-dev python3-dev libz3-dev
-          wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
-          wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
-
-      - name: Install Dependencies
         if: matrix.os == 'macos'
         run: |
           brew install gmp python3 z3
           wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
           wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/macOS-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+
+      - name: Build custom manylinux docker
+        if: matrix.os == 'ubuntu'
+        run: docker image build bindings/packaging -t maat_py_packaging
 
       - name: Build wheels
         if: matrix.os == 'macos'
@@ -69,6 +66,7 @@ jobs:
           CIBW_BUILD_VERBOSITY: 3
           # Build for 3.8
           CIBW_BUILD: cp38-manylinux_x86_64
+          CIBW_MANYLINUX_X86_64_IMAGE: maat_py_packaging
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Inspect wheelhouse folder
