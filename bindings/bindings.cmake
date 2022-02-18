@@ -1,5 +1,9 @@
 # ---- Python bindings ----
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+if(${CMAKE_VERSION} VERSION_LESS "3.18.0")
+  find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+else()
+  find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+endif()
 
 execute_process(
   COMMAND "${Python3_EXECUTABLE}" -c "if True:
