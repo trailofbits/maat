@@ -25,6 +25,7 @@ setup(
                 f"-DCMAKE_MAKE_PROGRAM={shutil.which('ninja')}",
                 f"-DPython3_EXECUTABLE:PATH={sys.executable}",
                 "-DCMAKE_BUILD_TYPE=Release",
+                "-Dmaat_USE_EXTERNAL_SLEIGH=OFF",
                 "-Dmaat_BUILD_PYTHON_BINDINGS:BOOL=ON",
                 "-Dmaat_PYTHON_PACKAGING:BOOL=ON",
             ]

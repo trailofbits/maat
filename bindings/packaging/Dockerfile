@@ -7,8 +7,6 @@ RUN apt-get update && apt-get -y upgrade && \
   apt-get install -y wget findutils build-essential git libgmp-dev python3-dev curl libz3-dev
 
 RUN wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | tar xz -C /usr/local --strip-components=1
-  
-RUN wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | tar xz -C /usr/local --strip-components=1
 
 WORKDIR /tmp
 # Install CMake. Need new version for compiling sleigh
