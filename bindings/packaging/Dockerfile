@@ -23,7 +23,6 @@ RUN curl -LO "https://github.com/Kitware/CMake/releases/download/v3.22.2/cmake-3
 # Done with dev dependencies
 FROM base as dev
 
-# TODO(boyan): remove this
 # Setup git for sleigh
-# RUN git config --global user.email root@buildkitsandbox.fake && \
-#   git config --global user.user root
+RUN git config --global user.email root@buildkitsandbox.fake && \
+    git config --global user.user root
