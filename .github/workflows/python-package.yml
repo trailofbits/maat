@@ -36,6 +36,9 @@ jobs:
       - name: Install cibuildwheel
         run: python3 -m pip install cibuildwheel
 
+      - name: Update sleigh-cmake submodule
+        run: git submodule init && git submodule update
+
       - name: Install Dependencies
         if: matrix.os == 'macos'
         run: |

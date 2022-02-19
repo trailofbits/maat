@@ -6,12 +6,10 @@ FROM quay.io/pypa/manylinux2014_x86_64 as base
 RUN yum groupinstall -y 'Development Tools'
 RUN yum install -y wget findutils git gmp-devel python3-devel curl
 
-# Setup sleigh-cmake submodule
-RUN git submodule init && git submodule update
-
 # Build z3 (this takes A LOT of time)
 RUN wget -O z3.tar.gz https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.14.tar.gz && \
-    mkdir z3 && tar xzvf z3.tar.gz -C z3 --strip-components 1  && cd z3 && mkdir build && cd build && cmake .. && make -j4 && make install
+    mkdir z3 && tar xzvf z3.tar.gz -C z3 --strip-components 1  && cd z3 && mkdir build && \
+    cd build && cmake .. && make -j4 && make install
 
 RUN wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | tar xz -C /usr/local --strip-components=1
   
