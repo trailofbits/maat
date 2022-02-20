@@ -1,6 +1,6 @@
 name: CD
 
-# TODO(boyan): run only on release (and on push to master for nightly builds)
+# TODO(boyan): run only on release (and on tagged commits to master for nightly builds)
 on:
   pull_request:
     branches:
@@ -101,10 +101,9 @@ jobs:
           name: macos-wheels
           path: macos-wheels/
 
-      - uses: pypa/gh-action-pypi-publish@v1.4.2
+      - name: "Upload macOS wheels"
+        uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
           user: __token__
-          # TODO(boyan): use real PyPI API token and URL
-          password: ${{ secrets.TESTPYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
+          password: ${{ secrets.PYPI_API_TOKEN }}
           packages_dir: macos-wheels/
