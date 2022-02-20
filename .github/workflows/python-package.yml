@@ -1,6 +1,6 @@
-name: Python bindings CI/CD
+name: CD
 
-# TODO(boyan): run only on release
+# TODO(boyan): run only on release (and on push to master for nightly builds)
 on:
   pull_request:
   release:
@@ -46,9 +46,15 @@ jobs:
           wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
           wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/macOS-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
-      - name: Build custom manylinux docker
+      - name: Login to docker registry
         if: matrix.os == 'ubuntu'
-        run: docker image build bindings/packaging -t maat_py_packaging
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Pull custom manylinux docker image 
+        if: matrix.os == 'ubuntu'
+        run: |
+          docker pull ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest
+          docker tag ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest maat_py_packaging
 
       - name: Build wheels
         if: matrix.os == 'macos'
@@ -59,7 +65,7 @@ jobs:
         env:
           CIBW_BUILD_VERBOSITY: 3
           # Build for 3.8
-          CIBW_BUILD: cp38-macosx_x86_64
+          CIBW_BUILD: cp38-macosx_x86_64 # TODO(boyan): add python 3.7, 3.9, 3.10
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Build wheels
@@ -68,7 +74,7 @@ jobs:
         env:
           CIBW_BUILD_VERBOSITY: 3
           # Build for 3.8
-          CIBW_BUILD: cp38-manylinux_x86_64
+          CIBW_BUILD: cp38-manylinux_x86_64 # TODO(boyan): add python 3.7, 3.9, 3.10
           CIBW_MANYLINUX_X86_64_IMAGE: maat_py_packaging
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
@@ -80,5 +86,4 @@ jobs:
           name: dist
           path: ./wheelhouse/*.whl
 
-  # TODO: upload on pypi
-  
+  # TODO(boyan): upload on pypi
