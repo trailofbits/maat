@@ -10,7 +10,7 @@ RUN yum install -y wget findutils git gmp-devel python3-devel curl
 # which is incompatible with manylinux wheels
 RUN wget -O lief.tar.gz https://github.com/lief-project/LIEF/releases/download/0.11.5/lief-0.11.5.tar.gz && \
     mkdir lief && tar xzvf lief.tar.gz -C lief --strip-components 1  && cd lief && \
-    mkdir build && cd build && cmake .. && make -j4 && make install && \
+    mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j4 && make install && \
     cd ../.. && rm -rf lief.tar.gz && rm -rf lief
 
 # Build and install z3. We need to build it because there's no z3 package for centOS, and this way
@@ -18,7 +18,7 @@ RUN wget -O lief.tar.gz https://github.com/lief-project/LIEF/releases/download/0
 # After installing z3 we manually remove the /usr/local/bin/z3 binary because it takes 500MB! on the image
 RUN wget -O z3.tar.gz https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.14.tar.gz && \
     mkdir z3 && tar xzvf z3.tar.gz -C z3 --strip-components 1  && cd z3 && \
-    mkdir build && cd build && cmake .. && make -j4 && make install && \
+    mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j4 && make install && \
     cd ../.. && rm -rf z3.tar.gz && rm -rf z3 && rm /usr/local/bin/z3
 
 WORKDIR /tmp
