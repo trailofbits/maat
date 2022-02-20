@@ -5,6 +5,7 @@ on:
   pull_request:
     branches:
     - '**'
+
   release:
     types:
       - published
@@ -92,15 +93,14 @@ jobs:
   upload_to_pypi:
     name: "Upload wheels to PyPI"
     runs-on: ubuntu-latest
-    needs: build_wheels
+    needs: [build_wheels]
     steps:
-      - uses: actions/checkout@v2
-
+  
       # TODO(boyan): add linux wheels
       - uses: actions/download-artifact@v2
-          with:
-            name: macos-wheels
-            path: macos-wheels/
+        with:
+          name: macos-wheels
+          path: macos-wheels/
 
       - uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
