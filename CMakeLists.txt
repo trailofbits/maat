@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 3.15)
 
 include(cmake/prelude.cmake)
 
+file(READ "Version.txt" maat_version)
+
 project(
   maat
-  VERSION 0.1.0
+  VERSION ${maat_version}
   DESCRIPTION "Open-source symbolic execution framework: https://maat.re"
   HOMEPAGE_URL "https://github.com/trailofbits/maat"
   LANGUAGES C CXX
