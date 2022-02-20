@@ -3,6 +3,8 @@ name: CD
 # TODO(boyan): run only on release (and on push to master for nightly builds)
 on:
   pull_request:
+    branches:
+    - '**'
   release:
     types:
       - published
