@@ -27,7 +27,9 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
       - run: git fetch --prune --unshallow
 
       - name: Set up Python
@@ -38,15 +40,11 @@ jobs:
       - name: Install cibuildwheel
         run: python3 -m pip install cibuildwheel
 
-      - name: Update sleigh-cmake submodule
-        run: git submodule init && git submodule update
-
       - name: Install Dependencies
         if: matrix.os == 'macos'
         run: |
           brew install gmp python3 z3
           wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
-          wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/macOS-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
       - name: Login to docker registry
         if: matrix.os == 'ubuntu'
