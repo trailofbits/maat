@@ -66,8 +66,8 @@ jobs:
           python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
         env:
           CIBW_BUILD_VERBOSITY: 3
-          # Build for 3.8
-          CIBW_BUILD: cp38-macosx_x86_64 # TODO(boyan): add python 3.7, 3.9, 3.10
+          # TODO(boyan): add python 3.7, 3.10
+          CIBW_BUILD: cp38-macosx_x86_64 cp39-macosx_x86_64
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Build wheels
