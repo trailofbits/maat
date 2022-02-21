@@ -64,7 +64,7 @@ jobs:
           python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
         env:
           CIBW_BUILD_VERBOSITY: 3
-          CIBW_BUILD: cp37-macosx_x86_64 cp38-macosx_x86_64 cp39-macosx_x86_64 cp310-macosx_x86_64
+          CIBW_BUILD: cp3*-macosx_x86_64
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Build wheels
@@ -73,35 +73,38 @@ jobs:
         env:
           CIBW_BUILD_VERBOSITY: 3
           # Build for 3.8
-          CIBW_BUILD: cp38-manylinux_x86_64 # TODO(boyan): add python 3.7, 3.9, 3.10
+          CIBW_BUILD: cp3*-manylinux_x86_64
           CIBW_MANYLINUX_X86_64_IMAGE: maat_py_packaging
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Inspect wheelhouse folder
         run: ls -lah wheelhouse/
 
-      # TODO(boyan): upload also ubuntu wheels when storage increase is granted
       - uses: actions/upload-artifact@v2
-        if: matrix.os == 'macos'
         with:
-          name: macos-wheels
+          name: ${{ matrix.os }}-wheels
           path: wheelhouse/*.whl
 
   upload_to_pypi:
     name: "Upload wheels to PyPI"
     runs-on: ubuntu-latest
     needs: [build_wheels]
+    strategy:
+      matrix:
+        # The os names must match the ones in the build_wheels job
+        os:
+          - ubuntu
+          - macos
+
     steps:
-  
-      # TODO(boyan): add linux wheels
       - uses: actions/download-artifact@v2
         with:
-          name: macos-wheels
-          path: macos-wheels/
+          name: ${{ matrix.os }}-wheels
+          path: ${{ matrix.os }}-wheels/
 
-      - name: "Upload macOS wheels"
+      - name: "Upload wheels"
         uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: macos-wheels/
+          packages_dir: ${{ matrix.os }}-wheels/
