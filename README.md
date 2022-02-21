@@ -26,16 +26,26 @@ Key features:
                       has the potential to emulate many architectures, including exotic ones
 
 # Getting started
-- [Installation](./BUILDING.md)
+- [Installation](#installation)
 - [Hacking](./HACKING.md)
 - [Tutorials](https://maat.re/tutorials.html)
      - [Getting started](https://maat.re/tutorials/get_started.html)
      - [Event hooking](https://maat.re/tutorials/events.html)
+     - [Dynamic symbolic execution](https://maat.re/tutorials/dse.html)
 - [Documentation](https://maat.re/python_api/index.html)
      - [Python API](https://maat.re/python_api/index.html)
      - [C++ API](https://maat.re/cpp_api/index.html)
 - [Example](#example)
 - [Contact](#contact)
+
+# Installation
+
+To install Maat's python module:
+````
+python3 -m pip install pymaat
+````
+
+To install Maat's native SDK and use the C++ API, check out [BUILDING.md](./BUILDING.md)
 
 # Example
 

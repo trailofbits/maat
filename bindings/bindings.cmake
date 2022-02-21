@@ -1,5 +1,17 @@
 # ---- Python bindings ----
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+if(${CMAKE_VERSION} VERSION_LESS "3.18.0")
+  find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+else()
+  find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+endif()
+
+execute_process(
+  COMMAND "${Python3_EXECUTABLE}" -c "if True:
+    import sysconfig
+    print(sysconfig.get_config_var('EXT_SUFFIX'))"
+  OUTPUT_VARIABLE python_soabi
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
 # Get the same source files as the main library uses
 # NOTE: These source file paths are relative to where the maat::maat target was
@@ -38,6 +50,7 @@ set_target_properties(
   #SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
   EXPORT_NAME python
   OUTPUT_NAME maat
+  SUFFIX "${python_soabi}"
   PREFIX ""
 )
 
@@ -47,6 +60,7 @@ target_include_directories(
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/murmur3>"
   "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
+  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/bindings/python>"
 )
 
 target_compile_features(maat_python PRIVATE cxx_std_17)
@@ -69,6 +83,8 @@ if(maat_USE_LIEF)
 endif()
 
 if(NOT CMAKE_SKIP_INSTALL_RULES)
+  include(GNUInstallDirs)
+
   execute_process(
     COMMAND "${Python3_EXECUTABLE}" -c "if True:
       import site; import os; import sysconfig as sc
@@ -80,11 +96,21 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
-  # Allow package maintainers to freely override the path for the Python module
-  set(
-    maat_INSTALL_PYTHONMODULEDIR "${python_site_rel}"
-    CACHE PATH "Python module directory location relative to install prefix"
-  )
+  if(maat_PYTHON_PACKAGING)
+    # For packaging the way we want to use maat, we need to output the native
+    # Python module in the 'site-packages' directory, not the
+    # CMAKE_INSTALL_PREFIX of 'site-packages/maat'
+    set(
+      maat_INSTALL_PYTHONMODULEDIR ".."
+      CACHE PATH "Python module directory location relative to install prefix"
+    )
+  else()
+    # Allow package maintainers to freely override the path for the Python module
+    set(
+      maat_INSTALL_PYTHONMODULEDIR "${python_site_rel}"
+      CACHE PATH "Python module directory location relative to install prefix"
+    )
+  endif()
 
   install(
     TARGETS maat_python
@@ -92,5 +118,12 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
     COMPONENT maat_Python
     LIBRARY #
     DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}"
+  )
+
+  # Need to also install sleigh files when packaging
+  install(
+    DIRECTORY "${PROJECT_BINARY_DIR}/${spec_out_prefix}/"
+    DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}/maat/${CMAKE_INSTALL_DATADIR}/${spec_out_prefix}"
+    COMPONENT maat_Python
   )
 endif()

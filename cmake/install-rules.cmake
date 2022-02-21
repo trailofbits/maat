@@ -91,7 +91,7 @@ set(
 install(
   DIRECTORY "${PROJECT_BINARY_DIR}/${spec_out_prefix}/"
   DESTINATION "${maat_INSTALL_DATADIR}/${spec_out_prefix}"
-  COMPONENT maat_Slaspecs
+  COMPONENT maat_Runtime
 )
 
 # Install CMake helper for finding GMP
