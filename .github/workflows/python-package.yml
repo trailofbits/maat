@@ -1,11 +1,14 @@
 name: CD
 
-# TODO(boyan): run only on release (and on tagged commits to master for nightly builds)
 on:
-  pull_request:
+  # Run on patches on master (bump patch version number)
+  push:
     branches:
-    - '**'
+      - 'master'
+    paths:
+      - 'Version.txt'
 
+  # Run on official releases (bump minor or major version number)
   release:
     types:
       - published
@@ -21,8 +24,8 @@ jobs:
         os:
           - ubuntu
           - macos
-          #- windows
-    name: Build wheels [${{ matrix.os }}]
+          # - windows
+    name: build wheels
     runs-on: ${{ matrix.os }}-latest
 
     steps:
@@ -86,7 +89,7 @@ jobs:
           path: wheelhouse/*.whl
 
   upload_to_pypi:
-    name: "Upload wheels to PyPI"
+    name: upload wheels to PyPI
     runs-on: ubuntu-latest
     needs: [build_wheels]
     strategy:
