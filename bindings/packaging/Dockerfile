@@ -16,7 +16,6 @@ RUN wget -O lief.tar.gz https://github.com/lief-project/LIEF/releases/download/0
 
 # Build and install z3. We need to build it because there's no z3 package for centOS, and this way
 # we ensure that we link against an old-enough libc version
-# After installing z3 we manually remove the /usr/local/bin/z3 binary because it takes 500MB! on the image
 RUN wget -O z3.tar.gz https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.14.tar.gz && \
     mkdir -p z3/build && tar xzvf z3.tar.gz -C z3 --strip-components 1  && cd z3/build && \
     cmake -DCMAKE_BUILD_TYPE=Release -DZ3_BUILD_EXECUTABLE=FALSE \
