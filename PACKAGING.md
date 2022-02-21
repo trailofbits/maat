@@ -6,9 +6,9 @@ This is a reference for our current packaging and Continuous Delivery workflow
 
 We provide python wheel packages for Maat's python extension module. The current target platforms are **linux** and **macOS**, and we support Python **3.7** to **3.10**.
 
-Python packages are built and uploaded to PyPI using Github Actions. The corresponding workflow file is [python-package.yml](.github/python-package.yml). It uses the `cibuildwheel` tool to build wheels automatically in the CI/CD environment.
+Python packages are built and uploaded to PyPI using Github Actions. The corresponding workflow file is [python-package.yml](.github/python-package.yml). It uses the [`cibuildwheel`](https://cibuildwheel.readthedocs.io/en/stable/) tool to build wheels automatically in the CI/CD environment.
 
-The python module configuration files are found in [bindings/packaging/](./bindings/packaging/). `setup.py` uses the `cmake-build-extension` package in order to build the python module.
+The python module configuration files are found in [bindings/packaging/](./bindings/packaging/). `setup.py` uses the [`cmake-build-extension`](https://github.com/diegoferigo/cmake-build-extension) package in order to build the python module.
 
 ### CMake config for packaging
 
