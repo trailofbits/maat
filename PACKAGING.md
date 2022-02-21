@@ -1,4 +1,4 @@
-# Packaging
+# Packaging
 
 This is a reference for our current packaging and Continuous Delivery workflow
 
