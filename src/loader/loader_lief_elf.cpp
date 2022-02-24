@@ -157,6 +157,17 @@ void LoaderLIEF::load_elf(
     // Parse binary with LIEF
     parse_binary(binary, Format::ELF32);
 
+    // Sanity check: don't allow a non-null base for non-relocatable binaries
+    // Note: Relocatable executables are tagged with ET_DYN and non-relocatable
+    // with ET_EXEC
+    if (_elf->header().file_type() == LIEF::ELF::E_TYPE::ET_EXEC and base != 0)
+    {
+        throw loader_exception(
+            Fmt() << "Error loading " << binary << ": 'base' argument set to 0x"
+            << std::hex << base << " but file is not relocatable" >> Fmt::to_str
+        );
+    }
+
     // Get interpreter
     if (load_interp and _elf->has_interpreter())
     {
