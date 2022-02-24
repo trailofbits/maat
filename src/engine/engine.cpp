@@ -933,15 +933,21 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
         }
         return ir_map->get_inst_at(addr);
     }
-    catch(unsupported_instruction_exception& e)
+    catch(const unsupported_instruction_exception& e)
     {
         this->info.stop = info::Stop::UNSUPPORTED_INST;
         log.error("Lifter error: ", e.what());
         throw lifter_exception("MaatEngine::get_asm_inst(): lifter error");
     }
-    catch(lifter_exception& e)
+    catch(const lifter_exception& e)
     {
         log.fatal("Lifter error: ", e.what());
+        this->info.stop = info::Stop::FATAL;
+        throw lifter_exception("MaatEngine::get_asm_inst(): lifter error");
+    }
+    catch(const mem_exception& e)
+    {
+        log.fatal("Memory exception while trying to lift code: ", e.what());
         this->info.stop = info::Stop::FATAL;
         throw lifter_exception("MaatEngine::get_asm_inst(): lifter error");
     }

@@ -56,10 +56,14 @@ void X86_RDTSC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
 
 // Use a handler for PMINUB instead of adding support in sleigh because pcode
 // doesn't have an ITE opcode
+// Note: PMINUB has been implemented in ghidra upstream, but the implementation
+// results in overly complicated expressions w.r.t to the semantics of the instruction,
+// so for now we do want to keep our own emulation callback for it.
 void X86_PMINUB_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    Expr    src1 = pinst.in0.value().as_expr(),
-            src2 = pinst.in1.value().as_expr();
+    Expr    src1 = pinst.in1.value().as_expr(),
+            src2 = pinst.in2.value().as_expr();
+
     Expr res = ITE(
         extract(src1, 7, 0), ITECond::LT, extract(src2, 7, 0),
         extract(src1, 7, 0),
