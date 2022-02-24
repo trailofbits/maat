@@ -43,7 +43,7 @@ namespace solve_symbolic_ptr{
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
 
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_write_1",
+                "tests/resources/symbolic_ptr_binaries/sym_write_1",
                 loader::Format::ELF32,
                 0,
                 {},
@@ -90,7 +90,7 @@ namespace solve_symbolic_ptr{
 
             std::vector<loader::CmdlineArg> args = {loader::CmdlineArg(engine.vars->new_concolic_buffer("arg", "abcdefghijklm"))};
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_write_1",
+                "tests/resources/symbolic_ptr_binaries/sym_write_1",
                 loader::Format::ELF32,
                 0, 
                 args, {},
@@ -146,7 +146,7 @@ namespace solve_symbolic_ptr{
 
             std::vector<loader::CmdlineArg> args = {loader::CmdlineArg(engine.vars->new_concolic_buffer("argv1", "abcdefghijklm"))};
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_write_2",
+                "tests/resources/symbolic_ptr_binaries/sym_write_2",
                 loader::Format::ELF32,
                 0,
                 args, {},
@@ -200,7 +200,7 @@ namespace solve_symbolic_ptr{
             engine.vars->set("symarg", 1234);
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_read_1",
+                "tests/resources/symbolic_ptr_binaries/sym_read_1",
                 loader::Format::ELF32,
                 0, {}, {}, "", {}, {}
             );
@@ -243,7 +243,7 @@ namespace solve_symbolic_ptr{
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
             std::vector<loader::CmdlineArg> args = {loader::CmdlineArg(engine.vars->new_concolic_buffer("arg", "abcdefghi"))};
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_read_1",
+                "tests/resources/symbolic_ptr_binaries/sym_read_1",
                 loader::Format::ELF32,
                 0,
                 args, {}, "", {}, {}
@@ -292,7 +292,7 @@ namespace solve_symbolic_ptr{
 
             auto sol = solver::new_solver();
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_rw_1",
+                "tests/resources/symbolic_ptr_binaries/sym_rw_1",
                 loader::Format::ELF32,
                 0, {}, {}, "", {}, {}
             );
