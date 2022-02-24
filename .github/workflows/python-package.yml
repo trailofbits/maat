@@ -8,6 +8,8 @@ on:
     paths:
       - 'Version.txt'
 
+  pull_request:
+
   # Run on official releases (bump minor or major version number)
   release:
     types:
@@ -109,5 +111,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
           user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.TESTPYPI_API_TOKEN }}
           packages_dir: ${{ matrix.os }}-wheels/
+          repository_url: https://test.pypi.org/legacy/
