@@ -24,6 +24,7 @@ void LoaderLIEF::load(
     bool load_interp
 )
 {
+    binary_path = binary;
     // Load binary
     switch (type)
     {
