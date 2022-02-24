@@ -1,13 +1,6 @@
 name: CD
 
 on:
-  # Run on patches on master (bump patch version number)
-  push:
-    branches:
-      - 'master'
-    paths:
-      - 'Version.txt'
-
   # Run on official releases (bump minor or major version number)
   release:
     types:
