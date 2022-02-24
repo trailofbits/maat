@@ -4,6 +4,7 @@
 #include "maat/engine.hpp"
 #include <sys/stat.h>
 #include <fstream>
+#include <set>
 
 namespace maat
 {
@@ -98,6 +99,49 @@ std::string find_library_file(
     return ""; // Not found
 }
 
+/* Get all dependencies for a given binary file and add them 
+ * to 'res'. Only the library file names are added to the
+ * result, not the full paths to the library files on disk */
+void get_all_elf_dependencies(
+    MaatEngine* engine,
+    std::set<std::string>& res,
+    const std::string& target,
+    const std::list<std::string>& libdirs,
+    const std::list<std::string>& ignore_libs
+)
+{
+    std::unique_ptr<LIEF::ELF::Binary> _elf = LIEF::ELF::Parser::parse(target);
+    if (_elf == nullptr)
+    {
+        throw loader_exception(
+            Fmt() << "Error parsing dependency file: '" << target
+            << "'" >> Fmt::to_str
+        );
+    }
+
+    for (const std::string& lib_name : _elf->imported_libraries())
+    {
+        if( std::find(ignore_libs.begin(), ignore_libs.end(), lib_name) != ignore_libs.end())
+            continue;
+
+        if (res.count(lib_name) > 0)
+            continue;
+        else
+            res.insert(lib_name);
+
+        std::string lib_path = find_library_file(lib_name, libdirs);
+        if (lib_path.empty())
+        {
+            engine->log.warning("Couldn't find library '", lib_name, "': will not be added to emulated filesytem");
+            continue;
+        }
+        else
+        {
+            get_all_elf_dependencies(engine, res, lib_path, libdirs, ignore_libs);
+        }
+    }
+}
+
 void LoaderLIEF::load_elf(
     MaatEngine* engine,
     const std::string& binary,
@@ -128,6 +172,7 @@ void LoaderLIEF::load_elf(
                 envp,
                 virtual_path,
                 libdirs,
+                ignore_libs,
                 interp_path
             );
         }
@@ -158,6 +203,7 @@ void LoaderLIEF::load_elf_using_interpreter(
     const environ_t& envp,
     const std::string& virtual_path,
     const std::list<std::string>& libdirs,
+    const std::list<std::string>& ignore_libs,
     const std::string& interp_path
 )
 {
@@ -201,7 +247,7 @@ void LoaderLIEF::load_elf_using_interpreter(
     elf_setup_stack(engine, base, args, envp);
 
     // Add the libs in the filesystem so the emulated loader can access them
-    add_elf_dependencies_to_emulated_fs(engine, libdirs);
+    add_elf_dependencies_to_emulated_fs(engine, libdirs, ignore_libs);
 
     // Point PC to interpreter entrypoint
     engine->cpu.ctx().set(reg_pc, interpreter_entry.value());
@@ -516,10 +562,20 @@ void LoaderLIEF::load_elf_dependencies(
 
 void LoaderLIEF::add_elf_dependencies_to_emulated_fs(
     MaatEngine* engine,
-    const std::list<std::string>& libdirs
+    const std::list<std::string>& libdirs,
+    const std::list<std::string>& ignore_libs
 )
 {
-    for (const std::string& lib_name : _elf->imported_libraries())
+    std::set<std::string> all_dependencies;
+    get_all_elf_dependencies(
+        engine,
+        all_dependencies,
+        binary_path,
+        libdirs,
+        ignore_libs
+    );
+
+    for (const std::string& lib_name : all_dependencies)
     {
         std::string lib_path = find_library_file(lib_name, libdirs);
         std::string fs_libdir = "/usr/lib/";
@@ -981,7 +1037,6 @@ void LoaderLIEF::add_elf_symbols(MaatEngine* engine, uint64_t base)
         // TODO data symbols
     }
 }
-
 
 } // namespace loader
 } // namespace maat
