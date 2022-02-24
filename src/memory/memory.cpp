@@ -2235,7 +2235,7 @@ uint8_t* MemEngine::raw_mem_at(addr_t addr)
     /* If addr isn't in any segment, throw exception */
     throw mem_exception(Fmt()
         << "Trying to get raw pointer of address 0x"
-        << std::hex << addr << " not mapped int memory"
+        << std::hex << addr << " not mapped in memory"
         >> Fmt::to_str
     );
 }
