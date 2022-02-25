@@ -1,6 +1,9 @@
 from maat import *
-from maat_test_config import LINUX_LIBS_64_DIR, X64_ELF_DIR
 import pytest
+
+RESOURCES_DIR = "../resources"
+LINUX_LIBS_64_DIR = f"{RESOURCES_DIR}/linux_libs_64/"
+X64_ELF_DIR = f"{RESOURCES_DIR}/x64_elf"
 
 def test_crackme1():
     """This tests the example we give in our dynamic symbolic execution tutorial.
