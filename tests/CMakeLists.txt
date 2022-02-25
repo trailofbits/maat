@@ -62,7 +62,7 @@ add_test(NAME adv-tests
   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.."
 )
 
-if(maat_BUILD_PYTHON_BINDINGS)
+if(maat_BUILD_PYTHON_BINDINGS AND maat_RUN_PYTHON_TESTS)
   # For python tests we explicitely specify the path to the python module, and
   # to the build directory containing compiled sleigh spec files
   add_test(NAME python-tests
