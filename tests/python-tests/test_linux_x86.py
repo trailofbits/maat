@@ -1,7 +1,8 @@
 from maat import *
+from pathlib import Path
 import pytest
 
-RESOURCES_DIR = "../resources"
+RESOURCES_DIR = Path(__file__).resolve().parent.parent / "resources"
 X86_ELF_DIR = f"{RESOURCES_DIR}/x86_elf"
 
 def test_crackme_vm():

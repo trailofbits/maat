@@ -1,7 +1,8 @@
 from maat import *
+from pathlib import Path
 import pytest
 
-RESOURCES_DIR = "../resources"
+RESOURCES_DIR = Path(__file__).resolve().parent.parent / "resources"
 LINUX_LIBS_64_DIR = f"{RESOURCES_DIR}/linux_libs_64/"
 X64_ELF_DIR = f"{RESOURCES_DIR}/x64_elf"
 
