@@ -1,3 +1,5 @@
 RESOURCES_DIR = "../resources"
+
 LINUX_LIBS_64_DIR = f"{RESOURCES_DIR}/linux_libs_64/"
 X64_ELF_DIR = f"{RESOURCES_DIR}/x64_elf"
+X64_ELF_DIR = f"{RESOURCES_DIR}/x86_elf"
