@@ -92,7 +92,9 @@ jobs:
           strict_init_order=1:\
           detect_leaks=1"
         UBSAN_OPTIONS: print_stacktrace=1
-      run: ctest --output-on-failure -j 2
+      run: |
+        python3 -m pip install pytest
+        ctest --output-on-failure -j 2
 
   test:
     strategy:
