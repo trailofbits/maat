@@ -62,5 +62,13 @@ add_test(NAME adv-tests
   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.."
 )
 
+if(maat_BUILD_PYTHON_BINDINGS)
+  add_test(NAME python-tests
+    COMMAND ./run_tests.sh $<TARGET_FILE:maat_python>
+    # Need to run within the python-tests directory
+    WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/python-tests"
+  )
+endif()
+
 #IDE UX
 add_folders(Test)

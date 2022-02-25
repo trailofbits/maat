@@ -222,7 +222,13 @@ namespace hash
         engine.log.set_level(Log::ERROR);
 
         // map md5 function at address 0x08048960
-        std::ifstream file("tests/ressources/md5/md5_0x08048960_546.bin", std::ios::binary | std::ios::ate);
+        std::string file1_path("tests/resources/md5/md5_0x08048960_546.bin");
+        std::ifstream file(file1_path, std::ios::binary | std::ios::ate);
+        if (not file.is_open())
+        {
+            cout << "Failed to open file " << file1_path;
+            throw test_exception();
+        }
         std::streamsize size = file.tellg();
         file.seekg(0, std::ios::beg);
         
@@ -236,7 +242,7 @@ namespace hash
         engine.mem->write_buffer(0x8048960, (uint8_t*)string(buffer.begin(), buffer.end()).c_str(), size);
 
         // memcpy function at address 0x806ae50
-        std::ifstream file2("tests/ressources/md5/memcpy_0x0806ae50_115.bin", std::ios::binary | std::ios::ate);
+        std::ifstream file2("tests/resources/md5/memcpy_0x0806ae50_115.bin", std::ios::binary | std::ios::ate);
         size = file2.tellg();
         file2.seekg(0, std::ios::beg);
         
@@ -250,7 +256,13 @@ namespace hash
         engine.mem->write_buffer(0x806ae50, (uint8_t*)string(buffer.begin(), buffer.end()).c_str(), size);
 
         // many data sections
-        std::ifstream file3("tests/ressources/md5/rodata_0x80ab000_0x2fff.bin", std::ios::binary | std::ios::ate);
+        std::string file3_path = "tests/resources/md5/rodata_0x80ab000_0x2fff.bin";
+        std::ifstream file3(file3_path, std::ios::binary | std::ios::ate);
+        if (not file3.is_open())
+        {
+            cout << "Failed to open file " << file3_path;
+            throw test_exception();
+        }
         size = file3.tellg();
         file3.seekg(0, std::ios::beg);
 
