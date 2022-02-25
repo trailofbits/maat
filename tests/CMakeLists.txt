@@ -62,5 +62,20 @@ add_test(NAME adv-tests
   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.."
 )
 
+if(maat_BUILD_PYTHON_BINDINGS AND maat_RUN_PYTHON_TESTS)
+  include(../cmake/pytest.cmake)
+
+  add_test(NAME python-tests
+    COMMAND ${pytest_command} .
+    # Need to run within the python-tests directory
+    WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/python-tests"
+  )
+
+  # Set environment variables for correct operation
+  set_tests_properties(python-tests PROPERTIES
+    ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:maat_python>;MAAT_SLEIGH_DIR=${spec_out_dir}"
+  )
+endif()
+
 #IDE UX
 add_folders(Test)

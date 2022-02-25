@@ -155,4 +155,6 @@ jobs:
 
     - name: Test
       working-directory: build
-      run: ctest --output-on-failure -C Release -j 2
+      run: |
+        python3 -m pip install pytest
+        ctest --output-on-failure -C Release -j 2

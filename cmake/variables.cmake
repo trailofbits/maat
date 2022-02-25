@@ -10,6 +10,7 @@ if(PROJECT_IS_TOP_LEVEL)
   option(maat_PYTHON_PACKAGING "Indicative that this build configuration is used during Python packaging" OFF)
 
   option(maat_DEVELOPER_MODE "Enable developer mode" OFF)
+  option(maat_RUN_PYTHON_TESTS "Enable running the Python tests" ON)
   option(BUILD_SHARED_LIBS "Build shared libs." OFF)
 endif()
 
