@@ -37,6 +37,11 @@ private:
 public:
     MaatStats()
     {
+        reset();
+    }
+
+    void reset()
+    {
         _symptr_read_total_time = 0;
         _symptr_read_average_range = 0;
         _symptr_read_count = 0;
@@ -131,8 +136,8 @@ public:
     /// Record a symbolic read
     void add_symptr_read(unsigned int range)
     {
-        _symptr_read_average_range = 
-            (_symptr_read_average_range*_symptr_read_count)+range / 
+        _symptr_read_average_range =
+            (_symptr_read_average_range*_symptr_read_count)+range /
             (_symptr_read_count+1);
         _symptr_read_count++;
     }
@@ -150,8 +155,8 @@ public:
     /// Record a symbolic read
     void add_symptr_write(unsigned int range)
     {
-        _symptr_write_average_range = 
-            (_symptr_write_average_range*_symptr_write_count)+range / 
+        _symptr_write_average_range =
+            (_symptr_write_average_range*_symptr_write_count)+range /
             (_symptr_write_count+1);
         _symptr_write_count++;
     }
@@ -163,10 +168,15 @@ public:
     void inc_created_exprs() {_created_expr_count++;}
     void inc_created_absract_values() {_created_abstract_values_count++;}
 
-    /// Add a solving time (in milliseconds) for the solver AND increments the solver calls count
-    void add_solver_call(unsigned int time)
+    /// Notify that we started to solve constraints with the solver
+    void start_solving()
     {
-        _solver_total_time += time;
+        _record_current_time();
+    }
+    /// Notify that we finished to solve constraints with the solver
+    void done_solving()
+    {
+        _solver_total_time += _get_elapsed_time();
         _solver_calls_count++;
     }
 
