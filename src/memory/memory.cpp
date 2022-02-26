@@ -1,5 +1,6 @@
 #include "maat/memory.hpp"
 #include "maat/exception.hpp"
+#include "maat/stats.hpp"
 #include "maat/varcontext.hpp"
 #include <cassert>
 #include <iostream>
@@ -1541,17 +1542,6 @@ void MemEngine::symbolic_ptr_read(Value& res, Expr addr, const ValueSet& range, 
         addr_value_set = range;
     }
 
-    // Update average pointer range size
-    // TODO ??
-    /*
-    if( _sym ){
-        // Moyenne ponderee
-        _sym->stats.symbolic_ptr_read_average_range = ((_sym->stats.symbolic_ptr_read_average_range*_sym->stats.symbolic_ptr_read_count)+addr_value_set.range())/(1+_sym->stats.symbolic_ptr_read_count);
-        // Incremente le compteur de lectures symboliques
-        _sym->stats.symbolic_ptr_read_count++;
-    }
-    */
-
     // Get the base value if read over concrete writes
     // We consider each possible memory segment
     for( auto& segment: _segments)
@@ -1574,6 +1564,9 @@ void MemEngine::symbolic_ptr_read(Value& res, Expr addr, const ValueSet& range, 
     {
         res = symbolic_mem_engine.symbolic_ptr_read(addr, addr_value_set, nb_bytes, res.as_expr());
     }
+
+    // Record symbolic read in statistics
+    MaatStats::instance().add_symptr_read(addr_value_set.range());
 }
 
 std::vector<Value> MemEngine::read_buffer(addr_t addr, unsigned int nb_elems, unsigned int elem_size)
@@ -1758,18 +1751,6 @@ void MemEngine::symbolic_ptr_write(Expr addr, const ValueSet& range, const Value
         addr_min = range.min;
         addr_max = range.max;
     }
-
-    // TODO Update average pointer range size
-    // TODO in engine ?
-    /*
-    if (_sym)
-    {
-        // Moyenne ponderee
-        _sym->stats.symbolic_ptr_write_average_range = ((_sym->stats.symbolic_ptr_write_average_range*_sym->stats.symbolic_ptr_write_count)+(addr_max-addr_min+1))/(1+_sym->stats.symbolic_ptr_read_count);
-        // Incremente le compteur de lectures symboliques
-        _sym->stats.symbolic_ptr_write_count++;
-    }
-    */
 
     if( alert != nullptr )
     {

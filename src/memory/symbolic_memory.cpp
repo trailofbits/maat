@@ -1,4 +1,5 @@
 #include "maat/memory.hpp"
+#include "maat/stats.hpp"
 #include <algorithm>
 #include <list>
 #include <memory>
@@ -154,6 +155,9 @@ void SymbolicMemEngine::symbolic_ptr_write(const Expr& addr, const Value& val, a
     write_intervals.add_interval(min, max - 1 + (val.size()/8), write_count);
     // Add write to the list of writes
     writes.push_back(SymbolicMemWrite(addr, val, refined_vs));
+
+    // Record the write in statistics
+    MaatStats::instance().add_symptr_write(refined_vs.range());
 }
 
 void SymbolicMemEngine::concrete_ptr_write(Expr addr, const Value& val)

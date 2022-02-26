@@ -654,7 +654,9 @@ bool MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
             ValueSet range = load_addr->value_set();
             if (settings.symptr_refine_range)
             {
+                MaatStats::instance().start_refine_symptr_read();
                 range = refine_value_set(load_addr);
+                MaatStats::instance().done_refine_symptr_read();
             }
             mem->symbolic_ptr_read(loaded, load_addr, range, load_size, settings);
         }
@@ -816,7 +818,9 @@ bool MaatEngine::process_store(
             ValueSet range = abstract_store_addr->value_set();
             if (settings.symptr_refine_range)
             {
+                MaatStats::instance().start_refine_symptr_write();
                 range = refine_value_set(abstract_store_addr);
+                MaatStats::instance().start_refine_symptr_write();
             }
             mem->symbolic_ptr_write(abstract_store_addr, range, to_store, settings, &mem_alert, true);
         }
@@ -1253,8 +1257,6 @@ ValueSet MaatEngine::refine_value_set(Expr e)
         }
     }
     new_max = max;
-    // Record this refinement
-    // TODO stats.record_ptr_refinement(used_time);
 
     // Return refined range
     res.set(new_min, new_max, e->value_set().stride);
