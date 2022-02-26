@@ -1,7 +1,15 @@
 #ifndef MAAT_STATS_H
 #define MAAT_STATS_H
 
+#include <iostream>
+
 namespace maat{
+
+/** \defgroup stats Stats 
+ * \brief Statistics and introspection features */
+
+/** \addtogroup stats
+ * \{ */
 
 /** Global stats recorded by Maat to be used for introspection
  * and optimisations */
@@ -19,6 +27,9 @@ private:
     int _executed_ir_inst_count;
     int _created_expr_count;
     int _created_abstract_values_count;
+    int _solver_total_time;
+    int _solver_calls_count;
+    // TODO(boyan): total/average time spent simplifying symbolic expressions?
 
 public:
     MaatStats()
@@ -47,44 +58,67 @@ public:
 
 public:
     // Get API
-    int symptr_read_total_time() const; ///< Total time spent refining symbolic pointer reads (in milliseconds)
-    int symptr_read_average_time() const; ///< Average time spend refining symbolic pointer reads (in milliseconds)
-    int symptr_read_average_range() const; ///< Average memory range for symbolic pointer reads 
-    int symptr_read_count() const; ///< Total number of symbolic pointer reads
+    /// Total time spent refining symbolic pointer reads (in milliseconds)
+    int symptr_read_total_time() const;
+    /// Average time spend refining symbolic pointer reads (in milliseconds)
+    int symptr_read_average_time() const;
+    /// Average memory range for symbolic pointer reads 
+    int symptr_read_average_range() const;
+    /// Total number of symbolic pointer reads
+    int symptr_read_count() const;
 
-    int symptr_write_total_time() const; ///< Total time spent refining symbolic pointer writes (in milliseconds)
-    int symptr_write_average_time() const; ///< Average time spend refining symbolic pointer writes (in milliseconds)
-    int symptr_write_average_range() const; ///< Average memory range for symbolic pointer writes
-    int symptr_write_count() const; ///< Total number of symbolic pointer writes
+    /// Total time spent refining symbolic pointer writes (in milliseconds)
+    int symptr_write_total_time() const;
+    /// Average time spend refining symbolic pointer writes (in milliseconds)
+    int symptr_write_average_time() const;
+    /// Average memory range for symbolic pointer writes
+    int symptr_write_average_range() const;
+    /// Total number of symbolic pointer writes
+    int symptr_write_count() const;
 
-    int executed_insts() const; ///< Total number of ASM instructions executed
-    int lifted_insts() const; ///< Total number of ASM instructions lifted to IR
-    int executed_ir_insts() const; ///< Total number of IR instructions executed
+    /// Total number of ASM instructions executed
+    int executed_insts() const {return _executed_inst_count;}
+    /// Total number of ASM instructions lifted to IR
+    int lifted_insts() const {return _lifted_inst_count;}
+    /// Total number of IR instructions executed
+    int executed_ir_insts() const {return _executed_ir_inst_count;}
 
-    int created_exprs() const; ///< Total number of Expr instances created
-    int created_abstract_values() const; ///< Total number of Value instances created
+    /// Total number of Expr instances created
+    int created_exprs() const;
+    /// Total number of Value instances created
+    int created_abstract_values() const; 
 
-    int solver_total_time() const; ///< Total time spent solving symbolic constraints (in milliseconds)
-    int solver_average_time() const; ///< Average time spent per call to the solver (in milliseconds)
-    int solver_calls_count() const; ///< Total number of calls to the solver
+    /// Total time spent solving symbolic constraints (in milliseconds)
+    int solver_total_time() const;
+    /// Average time spent per call to the solver (in milliseconds)
+    int solver_average_time() const;
+    /// Total number of calls to the solver
+    int solver_calls_count() const;
 
 public: 
     // Set API
-    void add_symptr_read_time(int ms); ///< Record a refinement time for a symbolic read 
-    void add_symptr_read_range(int range); ///< Record a range for a symbolic read
-    void inc_symptr_read_count(); ///< Increment number of symbolic reads
+    /// Record a refinement time for a symbolic read 
+    void add_symptr_read_time(int ms);
+    /// Record a range for a symbolic read
+    void add_symptr_read_range(int range);
+    /// Increment number of symbolic reads
+    void inc_symptr_read_count();
 
-    void add_symptr_write_time(int ms); ///< Record a refinement time for a symbolic write
-    void add_symptr_write_range(int range); ///< Record a range for a symbolic write
-    void inc_symptr_write_count(); ///< Increment number of symbolic writes
+    /// Record a refinement time for a symbolic write
+    void add_symptr_write_time(int ms);
+    /// Record a range for a symbolic write
+    void add_symptr_write_range(int range);
+    /// Increment number of symbolic writes
+    void inc_symptr_write_count();
 
-    void inc_executed_insts();
-    void inc_lifted_insts();
-    void inc_executed_ir_insts();
+    void inc_executed_insts() {_executed_inst_count++;}
+    void inc_lifted_insts() {_lifted_inst_count++;}
+    void inc_executed_ir_insts() {_executed_ir_inst_count++;}
     void inc_created_exprs();
     void inc_created_absract_values();
+
     /// Add a solving time (in milliseconds) for the solver AND increments the solver calls count
-    void add_solver_call(int time); 
+    void add_solver_call(int time);
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const MaatStats& stats)
@@ -114,6 +148,8 @@ public:
         return os;
     }
 };
+
+/** \} */ // doxygen stats group
 
 } // namespace maat
 

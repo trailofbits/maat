@@ -15,6 +15,7 @@
 #include "maat/exception.hpp"
 #include "maat/arch.hpp"
 #include "maat/callother.hpp"
+#include "maat/stats.hpp"
 
 #include <optional>
 
@@ -415,6 +416,9 @@ public:
                 // Create AsmInst
                 ir::AsmInst asm_inst(address+offset, ilen);
                 asm_inst.add_insts(m_pcode.get_pcode_instructions());
+
+                // Record lifted instruction in statistics
+                MaatStats::instance().inc_lifted_insts();
 
                 // Increment offset to point to next instruction
                 offset += ilen;

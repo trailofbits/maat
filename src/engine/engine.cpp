@@ -1,6 +1,6 @@
 #include "maat/engine.hpp"
 #include "maat/solver.hpp"
-#include <chrono>
+#include "maat/stats.hpp"
 
 namespace maat
 {
@@ -201,7 +201,6 @@ info::Stop MaatEngine::run(int max_inst)
         _previous_halt_before_exec = -1;
 
         // TODO: periodically increment tsc() ?
-        // TODO: increment stats with instr count
 
         // Get the PCODE IR
         const ir::AsmInst* asm_inst = nullptr;
@@ -335,6 +334,9 @@ info::Stop MaatEngine::run(int max_inst)
             )
             info.reset(); // Reset info here because the CPU can not do it
 
+            // Record executed IR instruction in statistics
+            MaatStats::instance().inc_executed_ir_insts();
+
             // Manage branching
             if (branch_type == MaatEngine::branch_native)
             {
@@ -359,6 +361,9 @@ info::Stop MaatEngine::run(int max_inst)
             // been updated by process_branch(), so do nothing and 
             // just loop again
         }
+
+        // Record executed instruction in statistics
+        MaatStats::instance().inc_executed_insts();
 
         // Update PC for NOPs....
         if (asm_inst->instructions().empty())
