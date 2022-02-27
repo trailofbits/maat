@@ -28,7 +28,7 @@ private:
     unsigned int _executed_inst_count;
     unsigned int _lifted_inst_count;
     unsigned int _executed_ir_inst_count;
-    unsigned int _created_expr_count;
+    unsigned long long _created_expr_count;
     unsigned int _solver_total_time;
     unsigned int _solver_calls_count;
     // TODO(boyan): total/average time spent simplifying symbolic expressions?
@@ -102,7 +102,7 @@ public:
     unsigned int executed_ir_insts() const {return _executed_ir_inst_count;}
 
     /// Total number of Expr instances created
-    unsigned int created_exprs() const {return _created_expr_count;}
+    unsigned long long created_exprs() const {return _created_expr_count;}
 
     /// Total time spent solving symbolic constraints (in milliseconds)
     unsigned int solver_total_time() const {return _solver_total_time;}

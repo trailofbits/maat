@@ -250,11 +250,19 @@ PyObject* maat_Solver(PyObject* module);
 void init_config(PyObject* module);
 typedef struct{
     PyObject_HEAD
-    maat::MaatConfig* config;
 } Config_Object;
 PyObject* get_Config_Type();
 PyObject* maat_Config();
 #define as_config_object(x)  (*((Config_Object*)x))
+
+// ================= Stats ==================
+void init_stats(PyObject* module);
+typedef struct{
+    PyObject_HEAD
+} Stats_Object;
+PyObject* get_Stats_Type();
+PyObject* maat_Stats();
+#define as_stats_object(x)  (*((Stats_Object*)x))
 
 } // namespace py
 } // namespace maat
