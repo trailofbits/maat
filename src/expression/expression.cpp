@@ -1,6 +1,7 @@
 #include "maat/expression.hpp"
 #include "maat/varcontext.hpp"
 #include "maat/exception.hpp"
+#include "maat/stats.hpp"
 #include <cstring>
 #include "murmur3.h"
 #include <algorithm>
@@ -99,6 +100,8 @@ ExprObject::ExprObject(ExprType t, size_t _size, bool _is_simp, Taint _t, ucst_t
     _concrete(_size)
 {
     _value_set = ValueSet(_size);
+    // Record expr creation in statistics
+    MaatStats::instance().inc_created_exprs();
 }
 
 

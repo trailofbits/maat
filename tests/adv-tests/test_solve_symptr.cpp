@@ -352,7 +352,7 @@ void test_solve_symbolic_ptr()
     total += x86_symbolic_index_read();
     total += x86_symbolic_index_read_atoi();
     total += x86_symbolic_index_rw();
-    // Return res
+    // Print res
     cout << total << "/" << total << green << "\t\tOK" << def << endl;
 #endif
 }

@@ -29,7 +29,6 @@ private:
     unsigned int _lifted_inst_count;
     unsigned int _executed_ir_inst_count;
     unsigned int _created_expr_count;
-    unsigned int _created_abstract_values_count;
     unsigned int _solver_total_time;
     unsigned int _solver_calls_count;
     // TODO(boyan): total/average time spent simplifying symbolic expressions?
@@ -52,7 +51,6 @@ public:
         _lifted_inst_count = 0;
         _executed_ir_inst_count = 0;
         _created_expr_count = 0;
-        _created_abstract_values_count = 0;
         _solver_total_time = 0;
         _solver_calls_count = 0;
     }
@@ -105,8 +103,6 @@ public:
 
     /// Total number of Expr instances created
     unsigned int created_exprs() const {return _created_expr_count;}
-    /// Total number of Value instances created
-    unsigned int created_abstract_values() const {return _created_abstract_values_count;}
 
     /// Total time spent solving symbolic constraints (in milliseconds)
     unsigned int solver_total_time() const {return _solver_total_time;}
@@ -166,7 +162,6 @@ public:
     void inc_executed_ir_insts() {_executed_ir_inst_count++;}
 
     void inc_created_exprs() {_created_expr_count++;}
-    void inc_created_absract_values() {_created_abstract_values_count++;}
 
     /// Notify that we started to solve constraints with the solver
     void start_solving()
@@ -201,8 +196,7 @@ public:
         os << "Lifted insts: " << stats.lifted_insts() << "\n"; 
         os << "Executed IR insts: " << stats.executed_ir_insts() << "\n\n";
 
-        os << "Symbolic expr created: " << stats.created_exprs() << "\n";
-        os << "Abstract values created: " << stats.created_abstract_values() << "\n\n";
+        os << "Created symbolic expresssions: " << stats.created_exprs() << "\n\n";
 
         os << "Solver total time: " << stats.solver_total_time() << " ms \n";
         os << "Solver average time: " << stats.solver_average_time() << " ms \n";
