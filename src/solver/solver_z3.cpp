@@ -1,6 +1,7 @@
 #ifdef MAAT_Z3_BACKEND
 
 #include "maat/solver.hpp"
+#include "maat/stats.hpp"
 
 namespace maat
 {
@@ -153,12 +154,17 @@ void SolverZ3::pop()
 
 bool SolverZ3::check()
 {
+
     // If already has model, don't recompute it
     if (has_model)
         return true;
 
     // Reset solver
     sol->reset();
+
+    // Statistics
+    MaatStats::instance().start_solving();
+
     // Add constraints to the solver
     for (const auto& constr : constraints)
     {
@@ -168,6 +174,10 @@ bool SolverZ3::check()
     p.set(":timeout", static_cast<unsigned>(timeout));
     sol->set(p);
     has_model =  (sol->check() == z3::check_result::sat);
+
+    // Statistics
+    MaatStats::instance().done_solving();
+
     return has_model;
 }
 

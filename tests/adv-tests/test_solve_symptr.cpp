@@ -121,7 +121,7 @@ namespace solve_symbolic_ptr{
             engine.vars->update_from(*model);
 
             // Re-run program
-            engine.settings.symptr_refine_timeout = 0; // Don't loose time to refine symbolic accesses, we just want a concrete run
+            engine.settings.symptr_refine_range = false; // Don't loose time to refine symbolic accesses, we just want a concrete run
             engine.run();
 
             nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to re-run the target program to check solution ");
@@ -272,7 +272,7 @@ namespace solve_symbolic_ptr{
             engine.vars->update_from(*model);
 
             // Re-run program
-            engine.settings.symptr_refine_timeout = 0; // Don't loose time to refine symbolic accesses, we just want a concrete run
+            engine.settings.symptr_refine_range = false; // Don't loose time to refine symbolic accesses, we just want a concrete run
             engine.run();
 
             nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to re-run the target program to check solution ");
@@ -352,7 +352,7 @@ void test_solve_symbolic_ptr()
     total += x86_symbolic_index_read();
     total += x86_symbolic_index_read_atoi();
     total += x86_symbolic_index_rw();
-    // Return res
+    // Print res
     cout << total << "/" << total << green << "\t\tOK" << def << endl;
 #endif
 }

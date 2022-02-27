@@ -1,6 +1,6 @@
 #include "maat/engine.hpp"
 #include "maat/solver.hpp"
-#include <chrono>
+#include "maat/stats.hpp"
 
 namespace maat
 {
@@ -21,7 +21,7 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
             lifters[CPUMode::X64] = std::make_shared<Lifter>(CPUMode::X64);
             _current_cpu_mode = CPUMode::X64;
             break;
-        /* TODO 
+        /* TODO
         case Arch::Type::ARM64:
             arch = std::make_shared<ARM64::ArchARM64>();
             break; */
@@ -201,7 +201,6 @@ info::Stop MaatEngine::run(int max_inst)
         _previous_halt_before_exec = -1;
 
         // TODO: periodically increment tsc() ?
-        // TODO: increment stats with instr count
 
         // Get the PCODE IR
         const ir::AsmInst* asm_inst = nullptr;
@@ -335,6 +334,9 @@ info::Stop MaatEngine::run(int max_inst)
             )
             info.reset(); // Reset info here because the CPU can not do it
 
+            // Record executed IR instruction in statistics
+            MaatStats::instance().inc_executed_ir_insts();
+
             // Manage branching
             if (branch_type == MaatEngine::branch_native)
             {
@@ -359,6 +361,9 @@ info::Stop MaatEngine::run(int max_inst)
             // been updated by process_branch(), so do nothing and 
             // just loop again
         }
+
+        // Record executed instruction in statistics
+        MaatStats::instance().inc_executed_insts();
 
         // Update PC for NOPs....
         if (asm_inst->instructions().empty())
@@ -649,7 +654,9 @@ bool MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
             ValueSet range = load_addr->value_set();
             if (settings.symptr_refine_range)
             {
+                MaatStats::instance().start_refine_symptr_read();
                 range = refine_value_set(load_addr);
+                MaatStats::instance().done_refine_symptr_read();
             }
             mem->symbolic_ptr_read(loaded, load_addr, range, load_size, settings);
         }
@@ -811,7 +818,9 @@ bool MaatEngine::process_store(
             ValueSet range = abstract_store_addr->value_set();
             if (settings.symptr_refine_range)
             {
+                MaatStats::instance().start_refine_symptr_write();
                 range = refine_value_set(abstract_store_addr);
+                MaatStats::instance().done_refine_symptr_write();
             }
             mem->symbolic_ptr_write(abstract_store_addr, range, to_store, settings, &mem_alert, true);
         }
@@ -1248,8 +1257,6 @@ ValueSet MaatEngine::refine_value_set(Expr e)
         }
     }
     new_max = max;
-    // Record this refinement
-    // TODO stats.record_ptr_refinement(used_time);
 
     // Return refined range
     res.set(new_min, new_max, e->value_set().stride);
