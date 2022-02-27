@@ -820,7 +820,7 @@ bool MaatEngine::process_store(
             {
                 MaatStats::instance().start_refine_symptr_write();
                 range = refine_value_set(abstract_store_addr);
-                MaatStats::instance().start_refine_symptr_write();
+                MaatStats::instance().done_refine_symptr_write();
             }
             mem->symbolic_ptr_write(abstract_store_addr, range, to_store, settings, &mem_alert, true);
         }
