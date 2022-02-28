@@ -132,8 +132,23 @@ For a model of how to write unit-tests for an architecture, you can check out th
 - we've written a lot of tests for X86 and X64. That was very useful for early testing, but for new architecture there's no need to write tests for every single instruction! To some extend we can trust Ghidra's lifting. We recommend to write tests for a subset of the most common instructions, branching instructions, some conditional instructions, and for behaviours that are very arch specific (for example switching between ARM/THUMB on 32-bits ARM)
 
 ### 5. (Optional) Handle unsupported instructions
-TODO
 
+Using Ghidra's sleigh to lift instructions is great. However, there are some instructions whose semantics can not be described in their IR, _p-code_. The most obvious examples would the `syscall` or `cpuid` Intel instructions. For unsupported instructions, sleigh will emit a special _p-code_ operation: 
+
+```
+CALLOTHER <NUM>
+```
+
+`CALLOTHER` means "I can't model this instruction, please do it yourself using a callback". `NUM` uniquely identifies the unsupported instruction for which this `CALLOTHER` has been emitted.
+
+It is possible to add callbacks in Maat to execute `CALLOTHER` IR instructions. To do so, following the instructions below:
+
+1. Add a unique identifier for an unsupported instruction to the `Id` enum in `src/include/maat/callother.hpp`, e.g `Id::X64_SYSCAL`
+2. Update the `mnemonic_to_id()` function in `src/engine/callother.cpp`. This function takes an architecture and a mnemonic and returns the correspondign `Id` value (for `Arch::Type::X64` and `"SYSCALL"` it would return `Id::X64_SYSCALL`). This function is used by the sleigh interface when generating _p-code_
+3. Write an emulation callback for the unsupported instruction in `src/engine/callother.cpp` 
+4. Don't forget to update the `default_handler_map()` function with the new instruction and handler
+
+**Note**: depending on the instruction complexity it can be pretty touchy to correctly implement the emulation callback. Moreover, writing a `CALLOTHER` callback often requires using the internals, which can be tricky at first. Don't hesitate to reach out to a maintainer for guidance!
 
 
 ## <a name="support-new-os"></a> Supporting a new environment / operating system
@@ -150,8 +165,6 @@ TODO
 
 
 ## Writing tests
-
-Here are some guidelines for writing tests for Maat.
 
 ### Native tests
 Native tests are where 99% of Maat's testing is done. There are two types of native tests:
