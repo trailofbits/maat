@@ -2,8 +2,6 @@
 
 **Last updated**: 02/28/2020
 
-Here are some guidelines that will help you contribute to Maat.
-
 - [General guidelines](#general-guidelines)
 - [Supporting a new architecture](#support-new-arch)
 - [Supporting a new environment/OS](#support-new-os)
@@ -11,7 +9,7 @@ Here are some guidelines that will help you contribute to Maat.
 
 ## General guidelines
 
-Here are the main steps to follow to contribute to Maat:
+First of all, thank you for being interested in contributing to Maat! Here are the general steps to follow:
 
 - clone Maat's repository on your development machine
 - follow instructions in [HACKING.md](./HACKING.md) to build and test Maat in developer mode
@@ -20,7 +18,7 @@ Here are the main steps to follow to contribute to Maat:
 
 If you're wondering whether a given feature is worth implementing, or if you're unsure about how it should be integrated in the existing code-base, feel free to [open a discussion](https://github.com/trailofbits/maat/discussions) on our Github so that we can talk about it beforehand.
 
-Similarly, if you're forking on a new feature and questions arise before the it is ready, make sure to open a _draft_ pull request for it. We'll use it to answer questions you might have, give traceable feedback, and make code comments and suggestions.
+Similarly, if you're forking on a new feature and questions arise before it is ready for review, don't hesitate to open a _draft_ pull request for it. We'll use it to answer questions you might have, give traceable feedback, and make code comments and suggestions.
 
 
 ## <a name="support-new-arch"></a> Supporting a new architecture
