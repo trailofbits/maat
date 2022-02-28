@@ -54,6 +54,7 @@ add_library(maat_maat
   src/solver/solver.cpp
   src/solver/solver_z3.cpp
   src/third-party/murmur3/murmur3.c
+  src/third-party/sleigh/native/reg_translator.cpp
   src/third-party/sleigh/native/sleigh_interface.cpp
 )
 add_library(maat::maat ALIAS maat_maat)
