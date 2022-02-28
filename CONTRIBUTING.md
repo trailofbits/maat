@@ -1,9 +1,13 @@
 # Contributing
 
+**Last updated**: 02/28/2020
+
 Here are some guidelines that will help you contribute to Maat.
 
 - [General guidelines](#general-guidelines)
 - [Supporting a new architecture](#support-new-arch)
+- [Supporting a new environment/OS](#support-new-os)
+- [Writing tests](#writing-tests)
 
 ## General guidelines
 
@@ -25,7 +29,7 @@ If you're interested in adding an interface for a new architecture in Maat, here
 
 This guide takes the example of the `X86` architecture.
 
-### Specifying the new architecture
+### 1. Specifying the new architecture
 
 The first step is to add the architecture definition in `src/include/maat/arch.hpp`.
 
@@ -64,7 +68,7 @@ Also don't forget to register the new architecture by adding the appropriate lin
 `bindings/python/py_arch.cpp` so that the architecture becomes available in Python bindings
 in the `ARCH` enumeration.
 
-### Integrating the new architecture
+### 2. Integrating the new architecture
 
 Now that the new architecture is specified, we need to integrate it in various places
 in the source code.
@@ -87,7 +91,7 @@ maat_sleigh_compile(x86 x86)
 ````
 
 
-### Writing the register translator
+### 3. Writing the register translator
 
 To finish integrating the new architecture in Maat, you have to declare a new register translator function in `src/include/maat/sleigh_interface.hpp`.  It is a function that takes a register name (as defined by Ghidra's processor specification files), and returns the corresponding Maat register. For example for X86 we have:
 
@@ -108,11 +112,68 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
 
 Finally, update the `reg_name_to_maat_reg()` function in `src/third-party/sleigh/native/sleigh_interface.cpp` to make it call your register translator function for the new architecture.
 
-### Environment/ABI
+### 4. Write tests
+
+After the new architecture is implemented, we recommend to add some unit tests to check that
+instructions are properly emulated. This will help catch various errors that might have gone
+under the radar during implementation.
+
+Unitary tests live in the `tests/unit-tests/` folder. You can create a new test file (e.g `test_archX86.cpp`) in this folder with a method that run all tests we want on the architecture (e.g `void test_archX86();`). For guidance on how we write tests, checkout the [Writing tests](#writing-tests) section.
+
+What we usually do is writing a small dedicated test function for each assembly instruction we want to test. This test function runs the instruction with given inputs and checks that
+the outputs (CPU & memory changed) are correct w.r.t the instruction semantics. It can run
+the instruction several times on different inputs, or several variants of the instruction
+(for instance switching between register, immediate, and memory operands).
+
+For a model of how to write unit-tests for an architecture, you can check out the tests we wrote for X64 in `tests/unit-tests/test_archX64.cpp`. **Please read the following important information before writing any arch testing code**:
+
+- at the time of writing, we only have testing code for X86 and X64. The arch testing code is huge and for the most part consists in old legacy code. It has undergone several API changes and thus can contain some awkward coding patterns, many of whom would require too much time to be rewritten. When writing tests for a new architecture, please feel free to come up with your own cleaner testing code and patterns
+
+- we've written a lot of tests for X86 and X64. That was very useful for early testing, but for new architecture there's no need to write tests for every single instruction! To some extend we can trust Ghidra's lifting. We recommend to write tests for a subset of the most common instructions, branching instructions, some conditional instructions, and for behaviours that are very arch specific (for example switching between ARM/THUMB on 32-bits ARM)
+
+### 5. (Optional) Handle unsupported instructions
 TODO
 
-### Callother
+
+
+## <a name="support-new-os"></a> Supporting a new environment / operating system
 TODO
 
-### Write tests
+### 1. Adding a new environment emulator
 TODO
+
+### 2. Adding new function call ABIs
+TODO
+
+### 3. Supporting system calls
+TODO
+
+
+## Writing tests
+
+Here are some guidelines for writing tests for Maat.
+
+### Native tests
+Native tests are where 99% of Maat's testing is done. There are two types of native tests:
+
+- unitary tests: they test basic low-level functionalities of the framework. The test files live in the `tests/unit-tests/` folder
+- advanced tests: they test Maat's API globally, often using Maat to perform some symbolic analysis on small programs and crackmes. They can be found in `tests/adv-tests`
+
+For each type of tests, there's a `test_all.cpp` file with a `main()` function that calls other test functions defined in the other test files.
+
+Both tests are compiled as test binaries named `unit-tests` and `adv-tests` respectively. Run the binaries to run the tests. If tests are successful, the binaries exit properly. If any test fails, it will raise a `maat::test_exception()` with an error message, which will abort the test binary and display the error message.
+
+For examples of how to write tests, just take a look at the existing tests in `tests/unit-tests/`.
+
+### Python tests
+Python tests are using `pytest` and are written using Maat's Python API. They are used only for two things:
+
+- verify that we didn't introduce breaking changes in the Python bindings
+- serve as implicit reference scripts for how to use the Python bindings
+
+Python tests mostly consist in crackmes, challenges, and small programs, on which we run advanced symbolic analysis. They are the Python counterpart of the native _advanced tests_ we mentioned above. 
+
+No goals of Python tests include:
+
+- unit-testing of bindings implementation
+- unit-testing of Maat functionalities
