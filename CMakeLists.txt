@@ -18,7 +18,7 @@ include(cmake/variables.cmake)
 # ---- Declare library ----
 
 add_library(maat_maat
-  src/arch/arch.cpp
+  src/arch/arch_X86.cpp
   src/arch/lifter.cpp
   src/engine/callother.cpp
   src/engine/engine.cpp

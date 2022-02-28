@@ -57,6 +57,10 @@ Finally you can implement the `Arch` subclass (e.g `ArchX86`) in the `src/arch/`
 Once the architecture is implemented, don't forget to add the corresponding file in the
 source files list in the top-level [CMakeLists.txt](./CMakeLists.txt).
 
+Also don't forget to register the new architecture by adding the appropriate line in
+`bindings/python/py_arch.cpp` so that the architecture becomes available in Python bindings
+in the `ARCH` enumeration.
+
 ### Integrate the new architecture
 
 Now that the new architecture is specified, we need to integrate it in various places

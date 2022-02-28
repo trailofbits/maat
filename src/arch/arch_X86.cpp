@@ -220,13 +220,7 @@ namespace X86
         return X86::TSC;
     }
 } // namespace X86
-    
-    
-std::unordered_map<std::string, reg_t> _x64_reg_map
-{
-    {"rax", X64::RAX},
-    {"rbx", X64::RBX}
-};
+
 
 namespace X64
 {
