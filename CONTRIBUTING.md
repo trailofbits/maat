@@ -1,4 +1,4 @@
-# Contributing
+# Contributing
 
 Here are some guidelines that will help you contribute to Maat.
 
@@ -64,7 +64,7 @@ Also don't forget to register the new architecture by adding the appropriate lin
 `bindings/python/py_arch.cpp` so that the architecture becomes available in Python bindings
 in the `ARCH` enumeration.
 
-### Integrate the new architecture
+### Integrating the new architecture
 
 Now that the new architecture is specified, we need to integrate it in various places
 in the source code.
@@ -86,7 +86,8 @@ maat_sleigh_compile(x86 x86-64)
 maat_sleigh_compile(x86 x86)
 ````
 
-### Write Translator in sleigh_interface
+
+### Writing the register translator
 
 To finish integrating the new architecture in Maat, you have to declare a new register translator function in `src/include/maat/sleigh_interface.hpp`.  It is a function that takes a register name (as defined by Ghidra's processor specification files), and returns the corresponding Maat register. For example for X86 we have:
 
@@ -107,10 +108,10 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
 
 Finally, update the `reg_name_to_maat_reg()` function in `src/third-party/sleigh/native/sleigh_interface.cpp` to make it call your register translator function for the new architecture.
 
-### Environment/ABI
+### Environment/ABI
 TODO
 
-### Callother
+### Callother
 TODO
 
 ### Write tests
