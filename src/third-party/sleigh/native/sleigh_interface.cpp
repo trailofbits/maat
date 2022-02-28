@@ -289,10 +289,10 @@ public:
     unique_ptr<Sleigh>  m_sleigh;
     string              m_register_name_cache;
     TmpCache            tmp_cache;
-    const std::string   arch;
+    maat::Arch::Type    arch;
     AssemblyEmitCacher  asm_cache;
 
-    TranslationContext(const std::string a, const std::string& slafile, const std::string& pspecfile): arch(a)
+    TranslationContext(maat::Arch::Type a, const std::string& slafile, const std::string& pspecfile): arch(a)
     {
         if (not loadSlaFile(slafile.c_str()))
         {
@@ -505,7 +505,7 @@ public:
 };
 
 // Translate a sleigh register name into a maat::ir::Param register
-maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string& reg_name);
+maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name);
 // Translate a pcode varnode into an parameter and add it to inst
 maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
 {
@@ -549,11 +549,11 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
     return maat::ir::Param::None();
 }
 
-maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string& reg_name)
+maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name)
 {
-    if (arch == "X86")
+    if (arch == Arch::Type::X86)
         return sleigh_reg_translate_X86(reg_name);
-    else if (arch == "X64")
+    else if (arch == Arch::Type::X64)
         return sleigh_reg_translate_X64(reg_name);
     else
         throw maat::runtime_exception("Register translation from SLEIGH to MAAT not implemented for this architecture!");
@@ -561,7 +561,7 @@ maat::ir::Param reg_name_to_maat_reg(const std::string& arch, const std::string&
 
 
 std::shared_ptr<TranslationContext> new_sleigh_ctx(
-    const std::string arch,
+    maat::Arch::Type arch,
     const std::string& slafile,
     const std::string& pspecfile
 )

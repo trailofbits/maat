@@ -6,6 +6,7 @@
 
 #include <string>
 #include <map>
+#include "maat/arch.hpp"
 #include "maat/ir.hpp"
 
 namespace maat
@@ -14,7 +15,7 @@ namespace maat
     class TranslationContext;
 
     std::shared_ptr<TranslationContext> new_sleigh_ctx(
-        const std::string arch,
+        const Arch::Type arch,
         const std::string& slafile,
         const std::string& pspecfile
     );

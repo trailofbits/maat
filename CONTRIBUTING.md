@@ -2,6 +2,9 @@
 
 Here are some guidelines that will help you contribute to Maat.
 
+- [General guidelines](#general-guidelines)
+- [Supporting a new architecture](#support-new-arch)
+
 ## General guidelines
 
 Here are the main steps to follow to contribute to Maat:
@@ -16,7 +19,7 @@ If you're wondering whether a given feature is worth implementing, or if you're 
 Similarly, if you're forking on a new feature and questions arise before the it is ready, make sure to open a _draft_ pull request for it. We'll use it to answer questions you might have, give traceable feedback, and make code comments and suggestions.
 
 
-## Adding support for a new architecture
+## <a name="support-new-arch"></a> Supporting a new architecture
 
 If you're interested in adding an interface for a new architecture in Maat, here are some pointers and general steps to follow. (Please note that here we're talking about adding architectures that are _already supported by Ghidra_ to Maat, not writing a specification for an all new architecture).
 
@@ -84,7 +87,25 @@ maat_sleigh_compile(x86 x86)
 ````
 
 ### Write Translator in sleigh_interface
-TODO
+
+To finish integrating the new architecture in Maat, you have to declare a new register translator function in `src/include/maat/sleigh_interface.hpp`.  It is a function that takes a register name (as defined by Ghidra's processor specification files), and returns the corresponding Maat register. For example for X86 we have:
+
+```
+maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name);
+```
+
+Then implement the function in `src/third-party/sleigh/native/reg_translator.cpp`:
+
+```
+maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
+{
+    if (reg_name == "AL") return maat::ir::Reg(maat::X86::EAX, 7, 0);
+    if (reg_name == "AH") return maat::ir::Reg(maat::X86::EAX, 15, 8);
+    ...
+}
+```
+
+Finally, update the `reg_name_to_maat_reg()` function in `src/third-party/sleigh/native/sleigh_interface.cpp` to make it call your register translator function for the new architecture.
 
 ### Environment/ABI
 TODO
