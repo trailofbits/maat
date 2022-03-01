@@ -1,6 +1,7 @@
 name: CD
 
 on:
+  # TODO(boyan): remove running on PR when this is working
   pull_request:
   # Run on official releases (bump minor or major version number)
   release:
@@ -54,6 +55,7 @@ jobs:
           docker pull ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest
           docker tag ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest maat_py_packaging
 
+      #TODO(boyan): factorize this and x86 wheels when its working
       - name: Build wheels arm64
         if: matrix.os == 'macos'
         # Force macOS target version for C++17 support
@@ -63,6 +65,7 @@ jobs:
         env:
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD: cp3*-macosx_arm64
+          CIBW_ARCHS_MACOS: "arm64"
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Build wheels x86-64
