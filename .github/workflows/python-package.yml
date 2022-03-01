@@ -1,6 +1,7 @@
 name: CD
 
 on:
+  pull_request:
   # Run on official releases (bump minor or major version number)
   release:
     types:
@@ -10,7 +11,7 @@ jobs:
 
   build_wheels:
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         python-version:
           - 3.8
@@ -18,6 +19,8 @@ jobs:
           - ubuntu
           - macos
           # - windows
+        target_arch:
+
     name: build wheels
     runs-on: ${{ matrix.os }}-latest
 
@@ -52,7 +55,18 @@ jobs:
           docker pull ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest
           docker tag ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest maat_py_packaging
 
-      - name: Build wheels
+      - name: Build wheels arm64
+        if: matrix.os == 'macos'
+        # Force macOS target version for C++17 support
+        run: |
+          export MACOSX_DEPLOYMENT_TARGET=10.15
+          python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
+        env:
+          CIBW_BUILD_VERBOSITY: 3
+          CIBW_BUILD: cp3*-macosx_arm64
+          CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
+
+      - name: Build wheels x86-64
         if: matrix.os == 'macos'
         # Force macOS target version for C++17 support
         run: |
@@ -81,26 +95,26 @@ jobs:
           name: ${{ matrix.os }}-wheels
           path: wheelhouse/*.whl
 
-  upload_to_pypi:
-    name: upload wheels to PyPI
-    runs-on: ubuntu-latest
-    needs: [build_wheels]
-    strategy:
-      matrix:
-        # The os names must match the ones in the build_wheels job
-        os:
-          - ubuntu
-          - macos
+  # upload_to_pypi:
+  #   name: upload wheels to PyPI
+  #   runs-on: ubuntu-latest
+  #   needs: [build_wheels]
+  #   strategy:
+  #     matrix:
+  #       # The os names must match the ones in the build_wheels job
+  #       os:
+  #         - ubuntu
+  #         - macos
 
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: ${{ matrix.os }}-wheels
-          path: ${{ matrix.os }}-wheels/
+  #   steps:
+  #     - uses: actions/download-artifact@v2
+  #       with:
+  #         name: ${{ matrix.os }}-wheels
+  #         path: ${{ matrix.os }}-wheels/
 
-      - name: "Upload wheels"
-        uses: pypa/gh-action-pypi-publish@v1.4.2
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: ${{ matrix.os }}-wheels/
+  #     - name: "Upload wheels"
+  #       uses: pypa/gh-action-pypi-publish@v1.4.2
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.PYPI_API_TOKEN }}
+  #         packages_dir: ${{ matrix.os }}-wheels/
