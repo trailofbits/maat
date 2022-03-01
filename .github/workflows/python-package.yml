@@ -19,7 +19,6 @@ jobs:
           - ubuntu
           - macos
           # - windows
-        target_arch:
 
     name: build wheels
     runs-on: ${{ matrix.os }}-latest
