@@ -28,6 +28,7 @@ Key features:
 # Getting started
 - [Installation](#installation)
 - [Hacking](./HACKING.md)
+- [Contributing](./CONTRIBUTING.md)
 - [Tutorials](https://maat.re/tutorials.html)
      - [Getting started](https://maat.re/tutorials/get_started.html)
      - [Event hooking](https://maat.re/tutorials/events.html)
