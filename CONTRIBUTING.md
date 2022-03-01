@@ -150,16 +150,58 @@ It is possible to add callbacks in Maat to execute `CALLOTHER` IR instructions. 
 
 
 ## <a name="support-new-os"></a> Supporting a new environment / operating system
-TODO
 
 ### 1. Adding a new environment emulator
-TODO
+
+Maat has the possibility to emulate to some extend the environment in which a process is running. It has a built-in `EnvEmulator` class defined in `src/include/maat/env/env.hpp`. The
+default `EnvEmulator` has the following essential information:
+
+- a simple symbolic filesystem 
+- default ABIs to use for function calls and system calls
+- a map of syscall numbers to callback functions used to emulated system calls
+
+To add support for an new environment in Maat, you can simply create an emulator that inherits from `EnvEmulator`. For instance, we implemented `LinuxEmulator` defined in
+`src/include/maat/env/env.hpp` and implemented in `src/env/env_linux.cpp`.
+
+It is also possible to extend an existing environment implementation to support a new architecture. For instance, adding ARM support for the existing `LinuxEmulator`.
 
 ### 2. Adding new function call ABIs
-TODO
+
+When implementing a new environment, you'll likely need to specify one or several calling conventions for functions and syscalls.
+
+Start by adding the new ABI in the `maat::env::abi::Type` enum defined in `src/include/maat/env/library.hpp`. Then create a class that inherits from the `ABI` class and implements the
+required methods to get/set arguments, return values, etc.
+
+Note that ABI classes are intended to be used following a [singleton pattern](https://stackoverflow.com/questions/1008019/c-singleton-design-pattern) and need to implement the `static const ABI& instance();` method.
+
+Once the ABI class is implemented in `src/env/abi.cpp`, don't forget to update the `_get_default_abi()` and `_get_syscall_abi()` methods in `src/env/env.cpp` to return the new ABI for the relevant architecture/OS combination.
+
 
 ### 3. Supporting system calls
-TODO
+
+Once you created a new environment and added new ABIs, you can write custom callbacks to emulate system calls on this environment. A syscall callback must have the following prototype:
+
+```
+FunctionCallback::return_t my_callback(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+```
+
+It takes a reference to the `MaatEngine` that is executing the syscall, and a list of values for the syscall parameters. Thanks to the `ABI` class added earlier, Maat will automatically resolve the parameter values and seemlessly pass them to the callback. This way we abstract the underlying architecture from the callback, and only need to change the ABI to make the
+callback work for another architecture.
+
+The callback returns a `FunctionCallback::return_t` which is defined as a `std::variant<>` and can be either:
+
+- nothing (`std::monostate`)
+- a concrete integer value
+- a `Value` instance (which can hold symbolic data)
+
+For examples of implemented system calls, check out `src/env/emulated_syscalls/linux_syscalls.cpp`.
+
+Finally, after implementing syscall callbacks, make sure to add them to the new environment.
+For example, for Linux we're doing it as a mapping `{syscall_num:callback_function}`. We have a helper function `syscall_func_map_t linux_x86_syscall_map()` implemented in `src/env/emulated_syscalls/linux_syscalls.cpp` and defined in `src/include/maat/env/syscalls.hpp` that
+generates the syscall map and that is called from `LinuxEmulator`'s constructor.
 
 
 ## Writing tests
@@ -184,7 +226,7 @@ Python tests are using `pytest` and are written using Maat's Python API. They ar
 
 Python tests mostly consist in crackmes, challenges, and small programs, on which we run advanced symbolic analysis. They are the Python counterpart of the native _advanced tests_ we mentioned above. 
 
-No goals of Python tests include:
+No-goals of Python tests include:
 
 - unit-testing of bindings implementation
 - unit-testing of Maat functionalities

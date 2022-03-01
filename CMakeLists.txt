@@ -33,6 +33,7 @@ add_library(maat_maat
   src/env/emulated_libs/libc.cpp
   src/env/emulated_syscalls/linux_syscalls.cpp
   src/env/env.cpp
+  src/env/env_linux.cpp
   src/env/filesystem.cpp
   src/env/library.cpp
   src/expression/constraint.cpp
