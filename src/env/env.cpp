@@ -1,9 +1,7 @@
 #include "maat/env/env.hpp"
 
-namespace maat
-{
-namespace env
-{
+namespace maat{
+namespace env{
 
 const abi::ABI& _get_default_abi(Arch::Type arch, OS os)
 {
@@ -104,55 +102,6 @@ EnvEmulator::snapshot_t EnvEmulator::take_snapshot()
 void EnvEmulator::restore_snapshot(snapshot_t snapshot, bool remove)
 {
     return fs.restore_snapshot(snapshot, remove);
-}
-
-
-LinuxEmulator::LinuxEmulator(Arch::Type arch): EnvEmulator(arch, OS::LINUX)
-{
-    // Load emulated libraries
-    switch (arch)
-    {
-        case Arch::Type::X86:
-            _libraries.push_back(env::emulated::linux_x86_libc());
-            _syscall_func_map = env::emulated::linux_x86_syscall_map();
-            break;
-        case Arch::Type::X64:
-            _libraries.push_back(env::emulated::linux_x64_libc());
-            _syscall_func_map = env::emulated::linux_x64_syscall_map();
-            break;
-        case Arch::Type::NONE:
-        default:
-            break;
-    }
-}
-
-void LinuxEmulator::add_running_process(const ProcessInfo& pinfo, const std::string& filepath)
-{
-    // Create actual file
-    fs.create_file(pinfo.binary_path, true); // create_path = true
-    physical_file_t file = fs.get_file(pinfo.binary_path);
-    file->copy_real_file(filepath);
-
-    // Set symbolic links to loaded binary in /proc/<pid>/exe
-    // and /proc/self/exe
-    std::stringstream ss;
-    ss << "/proc/" << std::dec << pinfo.pid << "/exe";
-    fs.create_symlink(ss.str(), pinfo.binary_path, true);
-    fs.create_symlink("/proc/self/exe", pinfo.binary_path, true);
-
-    // Create stdin,stdout,stderr, for this process
-    std::string stdin = fs.get_stdin_for_pid(pinfo.pid);
-    std::string stdout = fs.get_stdout_for_pid(pinfo.pid);
-    std::string stderr = fs.get_stderr_for_pid(pinfo.pid);
-
-    fs.create_file(stdin);
-    fs.create_file(stdout);
-    fs.create_file(stderr);
-    fs._new_fa(stdin, 0);
-    fs._new_fa(stdout, 1);
-    fs._new_fa(stderr, 2);
-    fs.get_file_by_handle(1)->flush_stream = std::ref(std::cout);
-    fs.get_file_by_handle(2)->flush_stream = std::ref(std::cerr);
 }
 
 } // namespace env

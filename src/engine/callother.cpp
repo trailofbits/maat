@@ -6,15 +6,23 @@
 namespace maat{
 namespace callother{
 
-Id mnemonic_to_id(const std::string& mnemonic, const std::string& arch)
+Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
 {
-    if (mnemonic == "RDTSC") return Id::X86_RDTSC;
-    if (mnemonic == "SYSCALL")
-        if (arch == "X64") return Id::X64_SYSCALL;
-    if (mnemonic == "CPUID") return Id::X86_CPUID;
-    if (mnemonic == "PMINUB") return Id::X86_PMINUB;
-    if (mnemonic == "INT") return Id::X86_INT;
-    if (mnemonic == "LOCK") return Id::X86_LOCK;
+    switch (arch)
+    {
+        case Arch::Type::X86:
+        case Arch::Type::X64:
+            if (mnemonic == "RDTSC") return Id::X86_RDTSC;
+            if (mnemonic == "SYSCALL")
+                if (arch == Arch::Type::X64) return Id::X64_SYSCALL;
+            if (mnemonic == "CPUID") return Id::X86_CPUID;
+            if (mnemonic == "PMINUB") return Id::X86_PMINUB;
+            if (mnemonic == "INT") return Id::X86_INT;
+            if (mnemonic == "LOCK") return Id::X86_LOCK;
+            break;
+        default:
+            break;
+    }
     return Id::UNSUPPORTED;
 }
 
