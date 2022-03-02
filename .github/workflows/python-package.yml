@@ -94,13 +94,13 @@ jobs:
         run: python3 -m pip install cibuildwheel
 
       - name: Install Dependencies
-        if: target_arch == 'x86_64'
+        if: matrix.target_arch == 'x86_64'
         run: |
           brew install gmp python3 z3
           wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
       - name: Install Dependencies
-        if: target_arch == 'arm64'
+        if: matrix.target_arch == 'arm64'
         run: |
           wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-arm64.tar.gz | sudo tar xz -C /usr/local --strip-components=1 &&
           wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz | sudo tar xz -C /tmp/gmp/ --strip-components=1 && cd /tmp/gmp
