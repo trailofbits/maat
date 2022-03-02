@@ -103,11 +103,14 @@ jobs:
         if: matrix.target_arch == 'arm64'
         run: |
           wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-arm64.tar.gz | sudo tar xz -C /usr/local --strip-components=1 &&
-          wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz | sudo tar xz -C /tmp/gmp/ --strip-components=1 && cd /tmp/gmp
-          && mkdir build && ../configure  --host arm64-apple-macos11 --disable-assembly --prefix="/opt/gmp-arm64" --enable-cxx
-          && make && make check && make install
 
-      - name: Build wheels arm64
+          wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz && mkdir -p gmp/build && tar xzvf gmp-6.2.1.tar.lz -C gmp --strip-components 1
+          cd gmp/build && ../configure  --host arm64-apple-macos11 --disable-assembly --enable-cxx && make && make check && sudo make install
+
+          
+
+      - name: Build wheels
+        if: matrix.target_arch == 'arm64'
         # Force macOS target version for C++17 support
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
@@ -119,7 +122,8 @@ jobs:
           CIBW_BEFORE_BUILD: export MAAT_GMP_INSTALL_DIR="/opt/gmp-arm64"
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
-      - name: Build wheels x86-64
+      - name: Build wheels
+        if: matrix.target_arch == 'x86_64'
         # Force macOS target version for C++17 support
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
