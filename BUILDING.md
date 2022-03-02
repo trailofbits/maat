@@ -14,7 +14,7 @@ This project requires a few dependencies:
 * Python3 development headers and library - for Python bindings
   * Bindings can be skipped with CMake option `-Dmaat_BUILD_PYTHON_BINDINGS=OFF` during configuration
 
-You can use our [Dockerfile](Dockerfile) as a reference for how to download and install dependencies.
+You can use our [Dockerfile](Dockerfile) as a reference for how to download and install dependencies. Note that if building the Dockerfile, it uses a submodule'd [sleigh project](https://github.com/lifting-bits/sleigh), so you must either clone Maat with `git clone --recursive ...` or run `git submodule update --init --recursive` after cloning before building the Docker image.
 
 Assuming the above are installed into a system location (where CMake will automatically find them), here are the steps for building in release mode with a single-configuration generator, like the Unix Makefiles one:
 
