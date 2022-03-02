@@ -105,7 +105,8 @@ jobs:
           wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-arm64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
           wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz && mkdir -p gmp/build && tar xzvf gmp-6.2.1.tar.lz -C gmp --strip-components 1
-          cd gmp/build && ../configure  --host arm64-apple-macos11 --disable-assembly --enable-cxx && make && make check && sudo make install
+          cd gmp/build && ../configure CFLAGS='-target arm64-apple-macos11' CXXFLAGS='-target arm64-apple-macos11' --host arm64-apple-macos11  --build=aarch64-apple-macos11 --disable-assembly --enable-cxx
+          make && make check && sudo make install
 
           wget -O z3.tar.gz https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.14.tar.gz && mkdir -p z3/build && tar xzvf z3.tar.gz -C z3 --strip-components 1
           cd z3/build && CFLAGS="-target aarch64-apple-macos11" CXXFLAGS="-target aarch64-apple-macos11" cmake -DCMAKE_BUILD_TYPE=Release -DZ3_BUILD_EXECUTABLE=FALSE -DZ3_BUILD_TEST_EXECUTABLES=FALSE -DZ3_ENABLE_EXAMPLE_TARGETS=FALSE ..
@@ -143,26 +144,28 @@ jobs:
           name: ${{ matrix.os }}-wheels
           path: wheelhouse/*.whl
 
-  # upload_to_pypi:
-  #   name: upload wheels to PyPI
-  #   runs-on: ubuntu-latest
-  #   needs: [build_wheels]
-  #   strategy:
-  #     matrix:
-  #       # The os names must match the ones in the build_wheels job
-  #       os:
-  #         - ubuntu
-  #         - macos
+  # TODO(boyan): upload to real PyPI once this works
+  upload_to_pypi:
+    name: upload wheels to PyPI
+    runs-on: ubuntu-latest
+    needs: [build_wheels_linux, build_wheels_macos]
+    strategy:
+      matrix:
+        # The os names must match the ones in the build_wheels job
+        os:
+          - ubuntu
+          - macos
 
-  #   steps:
-  #     - uses: actions/download-artifact@v2
-  #       with:
-  #         name: ${{ matrix.os }}-wheels
-  #         path: ${{ matrix.os }}-wheels/
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.os }}-wheels
+          path: ${{ matrix.os }}-wheels/
 
-  #     - name: "Upload wheels"
-  #       uses: pypa/gh-action-pypi-publish@v1.4.2
-  #       with:
-  #         user: __token__
-  #         password: ${{ secrets.PYPI_API_TOKEN }}
-  #         packages_dir: ${{ matrix.os }}-wheels/
+      - name: "Upload wheels"
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          user: __token__
+          password: ${{ secrets.TESTPYPI_API_TOKEN }}
+          packages_dir: ${{ matrix.os }}-wheels/
+          repository_url: https://test.pypi.org/legacy/ 
