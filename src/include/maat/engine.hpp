@@ -134,7 +134,7 @@ public:
      * @param type Executable format of the file to load
      * @param base Base address where to load the binary  (used for relocatable binaries and position independent code)
      * @param args Command line arguments with whom to invoke the loaded executable
-     * @param virtual_path Path of the loaded binary in the emulated file system
+     * @param virtual_fs Name:Path of loaded objects in the emulated file system
      * @param libdirs Directories where to search for shared objects the binary might depend on
      * @param ignore_libs List of libraries to **NOT** load even though the binary lists them as dependencies. This option has no effect when 'load_interp' is 'true'
      * @param load_interp If set to <code>True</code>, load and emulate the interpreter and let it load
@@ -148,7 +148,7 @@ public:
         addr_t base,
         const std::vector<loader::CmdlineArg>& args,
         const loader::environ_t& envp,
-        const std::string& virtual_path,
+        const std::unordered_map<std::string, std::string>& virtual_fs,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs,
         bool load_interp = true

@@ -310,6 +310,8 @@ public:
 
     node_status_t get_node_status(const std::string& path);
 
+    std::string get_path_separator(void) const;
+
 public:
     /// Return the stdin file for process with PID 'pid'
     std::string get_stdin_for_pid(int pid);

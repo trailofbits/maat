@@ -18,7 +18,7 @@ void LoaderLIEF::load(
     addr_t base,
     const std::vector<CmdlineArg>& args,
     const environ_t& envp,
-    const std::string& virtual_path,
+    const std::unordered_map<std::string, std::string>& virtual_fs,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs,
     bool load_interp
@@ -30,7 +30,7 @@ void LoaderLIEF::load(
     {
         case loader::Format::ELF32:
         case loader::Format::ELF64:
-            load_elf(engine, binary, base, args, envp, virtual_path, libdirs, ignore_libs, load_interp);
+            load_elf(engine, binary, base, args, envp, virtual_fs, libdirs, ignore_libs, load_interp);
             break;
         default: 
             throw loader_exception("LoaderLIEF::load(): Unsupported executable format");
@@ -38,14 +38,36 @@ void LoaderLIEF::load(
     // Init environment
     // Set process info
     env::fspath_t vfspath;
-    if (virtual_path.empty())
-        vfspath = {binary_name}; // Put it at root
-    else
-    {
-        vfspath = engine->env->fs.fspath_from_path(virtual_path);
-        vfspath.push_back(binary_name);
+    
+    if (virtual_fs.find(binary_name) != virtual_fs.end()) {
+        // We have been provided a path to override the default one
+        // Make sure that if path_separator is something crazy like '-SEPARATOR-' that we don't
+        // read out of bounds here
+        if (virtual_fs.at(binary_name).size() 
+            >= engine->env->fs.get_path_separator().size()) {
+            // If the provided path ends with '/' assume it is a directory
+            if (virtual_fs.at(binary_name).substr(
+                virtual_fs.at(binary_name).size() 
+                    - engine->env->fs.get_path_separator().size(),
+                engine->env->fs.get_path_separator().size()
+            ) == engine->env->fs.get_path_separator()) {
+                vfspath = engine->env->fs.fspath_from_path(virtual_fs.at(binary_name) 
+                    + binary_name);
+            } else {
+                vfspath = engine->env->fs.fspath_from_path(virtual_fs.at(binary_name));
+            }
+
+        } else {
+            // It's shorter than the separator so it definitely doesn't end with it...
+            // We'll just use the provided path as is in this case.
+            vfspath = engine->env->fs.fspath_from_path(virtual_fs.at(binary_name));
+
+        }
+    } else {
+        vfspath = {binary_name};
     }
     std::string vpath = engine->env->fs.path_from_fspath(vfspath);
+    engine->log.info("Loading binary '" + binary_name + "' from path '" + vpath + "'");
     engine->process->pid = 1234;
     engine->process->binary_path = vpath;
     env::fspath_t pwd = engine->env->fs.fspath_from_path(vpath);

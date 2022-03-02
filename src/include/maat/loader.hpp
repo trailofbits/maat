@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <list>
+#include <unordered_map>
 #include "maat/types.hpp"
 #include "maat/arch.hpp"
 #include "maat/memory_page.hpp"
@@ -80,7 +81,7 @@ public:
      * @param type Executable format of the executable to load
      * @param base Base address where to load the binary (used if relocatable or position independent code)
      * @param args Command line arguments with whom to invoke the executable
-     * @param virtual_path Path of the loaded binary in the emulated file system
+     * @param virtual_fs Mapping of Name:Path of loaded binary in the emulated file system
      * @param libdirs Directories where to search for shared objects the binary might depend on
      * @param ignore_libs List of libraries to **NOT** load even though the binary lists them as dependencies. This option has no effect when 'interpreter' is 'true'
      * @param interpreter If set to <code>True</code>, load and emulate the interpreter and let it load
@@ -95,7 +96,7 @@ public:
         addr_t base,
         const std::vector<CmdlineArg>& args,
         const environ_t& envp,
-        const std::string& virtual_path,
+        const std::unordered_map<std::string, std::string>& virtual_fs,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs,
         bool interpreter = true
@@ -124,7 +125,7 @@ public:
         addr_t base,
         const std::vector<CmdlineArg>& args,
         const environ_t& envp,
-        const std::string& virtual_path,
+        const std::unordered_map<std::string, std::string>& virtual_fs,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs,
         bool interpreter = true
@@ -163,7 +164,7 @@ private:
         addr_t base,
         std::vector<CmdlineArg> args,
         const environ_t& envp,
-        const std::string& virtual_path,
+        const std::unordered_map<std::string, std::string>& virtual_fs,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs,
         bool load_interp
@@ -174,7 +175,7 @@ private:
         addr_t base,
         std::vector<CmdlineArg> args,
         const environ_t& envp,
-        const std::string& virtual_path,
+        const std::unordered_map<std::string, std::string>& virtual_fs,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs
     );
@@ -184,7 +185,7 @@ private:
         addr_t base,
         std::vector<CmdlineArg> args,
         const environ_t& envp,
-        const std::string& virtual_path,
+        const std::unordered_map<std::string, std::string>& virtual_fs,
         const std::list<std::string>& libdirs,
         const std::list<std::string>& ignore_libs,
         const std::string& interp_path
@@ -192,7 +193,8 @@ private:
     void add_elf_dependencies_to_emulated_fs(
         MaatEngine* engine,
         const std::list<std::string>& libdirs,
-        const std::list<std::string>& ignore_libs
+        const std::list<std::string>& ignore_libs,
+        const std::unordered_map<std::string, std::string>& virtual_fs
     );
     // Return the base address for the loaded lib
     addr_t load_elf_library(

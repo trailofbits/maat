@@ -964,6 +964,10 @@ node_status_t FileSystem::get_node_status(const std::string& path)
     return dir.get_node_status(fspath_from_path(path));
 }
 
+std::string FileSystem::get_path_separator(void) const {
+    return path_separator;
+}
+
 filehandle_t FileSystem::get_free_handle()
 {
     while (std::find(

@@ -148,7 +148,7 @@ void LoaderLIEF::load_elf(
     addr_t base,
     std::vector<CmdlineArg> args,
     const environ_t& envp,
-    const std::string& virtual_path,
+    const std::unordered_map<std::string, std::string>& virtual_fs,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs,
     bool load_interp
@@ -181,7 +181,7 @@ void LoaderLIEF::load_elf(
                 base,
                 args,
                 envp,
-                virtual_path,
+                virtual_fs,
                 libdirs,
                 ignore_libs,
                 interp_path
@@ -200,7 +200,7 @@ void LoaderLIEF::load_elf(
         base,
         args,
         envp,
-        virtual_path,
+        virtual_fs,
         libdirs,
         ignore_libs
     );
@@ -212,7 +212,7 @@ void LoaderLIEF::load_elf_using_interpreter(
     addr_t base,
     std::vector<CmdlineArg> args,
     const environ_t& envp,
-    const std::string& virtual_path,
+    const std::unordered_map<std::string, std::string>& virtual_fs,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs,
     const std::string& interp_path
@@ -258,7 +258,7 @@ void LoaderLIEF::load_elf_using_interpreter(
     elf_setup_stack(engine, base, args, envp);
 
     // Add the libs in the filesystem so the emulated loader can access them
-    add_elf_dependencies_to_emulated_fs(engine, libdirs, ignore_libs);
+    add_elf_dependencies_to_emulated_fs(engine, libdirs, ignore_libs, virtual_fs);
 
     // Point PC to interpreter entrypoint
     engine->cpu.ctx().set(reg_pc, interpreter_entry.value());
@@ -270,7 +270,7 @@ void LoaderLIEF::load_elf_binary(
     addr_t base,
     std::vector<CmdlineArg> args,
     const environ_t& envp,
-    const std::string& virtual_path,
+    const std::unordered_map<std::string, std::string>& virtual_fs,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs
 )
@@ -574,7 +574,8 @@ void LoaderLIEF::load_elf_dependencies(
 void LoaderLIEF::add_elf_dependencies_to_emulated_fs(
     MaatEngine* engine,
     const std::list<std::string>& libdirs,
-    const std::list<std::string>& ignore_libs
+    const std::list<std::string>& ignore_libs,
+    const std::unordered_map<std::string, std::string>& virtual_fs
 )
 {
     std::set<std::string> all_dependencies;
@@ -589,15 +590,56 @@ void LoaderLIEF::add_elf_dependencies_to_emulated_fs(
     for (const std::string& lib_name : all_dependencies)
     {
         std::string lib_path = find_library_file(lib_name, libdirs);
-        std::string fs_libdir = "/usr/lib/";
+
         if (lib_path.empty())
         {
             engine->log.warning("Couldn't find library '", lib_name, "': not adding it to emulated filesystem");
             continue;
         }
 
+        // Override FS_LIBDIR if present in virtual_fs
+        std::string fs_libdir = "/usr/lib/";
+
+        if (virtual_fs.find(lib_name) != virtual_fs.end()) {
+            if (virtual_fs.at(lib_name).size() 
+                >= engine->env->fs.get_path_separator().size()) {
+                // If the provided path ends with '/' assume it is a directory
+                if (virtual_fs.at(lib_name).substr(
+                    virtual_fs.at(lib_name).size() 
+                        - engine->env->fs.get_path_separator().size(),
+                    engine->env->fs.get_path_separator().size()
+                ) == engine->env->fs.get_path_separator()) {
+                    // We can just use this as fs_libdir in this case
+                    fs_libdir = virtual_fs.at(lib_name);
+                } else {
+                    // It doesn't end with a '/' so we need to get up to the last occurrence of
+                    // the path separator and use that as the fs_libdir
+                    size_t found = virtual_fs.at(lib_name).find_last_of(
+                        engine->env->fs.get_path_separator());
+
+                    if (found != std::string::npos) {
+                        // We found a path separator, so we can use the string up to that as the
+                        // fs_libdir
+                        fs_libdir = virtual_fs.at(lib_name).substr(0, found);
+                    } else {
+                        // No path separator found, so we should error out here, it needs
+                        // to be an absolute path
+                        throw loader_exception(
+                            "LoaderLIEF::add_elf_dependencies_to_emulated_fs(): "
+                            + virtual_fs.at(lib_name) + " is not an absolute path");
+                    }
+                }
+            } else {
+                throw loader_exception(
+                    "LoaderLIEF::add_elf_dependencies_to_emulated_fs(): "
+                    + virtual_fs.at(lib_name) + " is not an absolute path");
+            }
+        }
+
         // Create file in fs
         std::string virtual_path = fs_libdir + lib_name;
+        engine->log.info("Adding library '" + lib_name 
+            + "' to emulated filesystem at '" + virtual_path + "'");
         engine->env->fs.create_file(virtual_path, true);
         env::physical_file_t pfile = engine->env->fs.get_file(virtual_path);
         if (pfile == nullptr)

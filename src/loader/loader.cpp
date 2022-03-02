@@ -59,7 +59,7 @@ void Loader::load(
     addr_t base,
     const std::vector<CmdlineArg>& args,
     const environ_t& envp,
-    const std::string& virtual_path,
+    const std::unordered_map<std::string, std::string>& virtual_fs,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs,
     bool interpreter
