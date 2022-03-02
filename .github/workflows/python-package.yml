@@ -117,12 +117,13 @@ jobs:
         # Force macOS target version for C++17 support
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
+          export CFLAGS='-target arm64-apple-macos11'
+          export CXXFLAGS='-target arm64-apple-macos11'
           python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
         env:
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD: cp38-macosx_arm64 # TODO(boyan): add other python versions
           CIBW_ARCHS_MACOS: "arm64"
-          CIBW_BEFORE_BUILD: export MAAT_GMP_INSTALL_DIR="/opt/gmp-arm64"
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Build wheels

@@ -9,13 +9,6 @@ from setuptools import setup
 
 source_dir = str(Path(".").absolute().parent.parent)
 
-# Allow users to specify library locations using env variables
-custom_gmp_dir = os.getenv("MAAT_GMP_INSTALL_DIR")
-cmake_install_dir_options = []
-
-if custom_gmp_dir:
-    cmake_install_dir_options.append(f"-DGMP_DIR={custom_gmp_dir}")
-
 setup(
     cmdclass=dict(
         build_ext=cmake_build_extension.BuildExtension
@@ -36,7 +29,7 @@ setup(
                 "-Dmaat_USE_EXTERNAL_SLEIGH=OFF",
                 "-Dmaat_BUILD_PYTHON_BINDINGS:BOOL=ON",
                 "-Dmaat_PYTHON_PACKAGING:BOOL=ON",
-            ] + cmake_install_dir_options
+            ]
         )
     ],
 )
