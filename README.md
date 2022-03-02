@@ -77,7 +77,7 @@ snap = engine.take_snapshot()
 engine.restore_snapshot(snap)
 
 # Run the binary
-maat.run() 
+engine.run()
 ```
 
 # Contact
