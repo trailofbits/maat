@@ -106,7 +106,7 @@ jobs:
 
           wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz && mkdir -p gmp/build && tar xzvf gmp-6.2.1.tar.lz -C gmp --strip-components 1
           cd gmp/build && ../configure CFLAGS='-target arm64-apple-macos11' CXXFLAGS='-target arm64-apple-macos11' --host arm64-apple-macos11  --build=aarch64-apple-macos11 --disable-assembly --enable-cxx
-          make && make check && sudo make install
+          make && sudo make install
 
           wget -O z3.tar.gz https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.14.tar.gz && mkdir -p z3/build && tar xzvf z3.tar.gz -C z3 --strip-components 1
           cd z3/build && CFLAGS="-target aarch64-apple-macos11" CXXFLAGS="-target aarch64-apple-macos11" cmake -DCMAKE_BUILD_TYPE=Release -DZ3_BUILD_EXECUTABLE=FALSE -DZ3_BUILD_TEST_EXECUTABLES=FALSE -DZ3_ENABLE_EXAMPLE_TARGETS=FALSE ..
