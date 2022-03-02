@@ -10,7 +10,7 @@ on:
 
 jobs:
 
-  build_wheels:
+  build_wheels_linux:
     strategy:
       fail-fast: true
       matrix:
@@ -18,8 +18,62 @@ jobs:
           - 3.8
         os:
           - ubuntu
+
+    name: build wheels
+    runs-on: ${{ matrix.os }}-latest
+
+    steps:
+
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - run: git fetch --prune --unshallow
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install cibuildwheel
+        run: python3 -m pip install cibuildwheel
+
+      - name: Login to docker registry
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Pull custom manylinux docker image
+        run: |
+          docker pull ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest
+          docker tag ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest maat_py_packaging
+
+      - name: Build wheels
+        if: matrix.os == 'ubuntu'
+        run: python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
+        env:
+          CIBW_BUILD_VERBOSITY: 3
+          # Build for 3.8
+          CIBW_BUILD: cp3*-manylinux_x86_64
+          CIBW_MANYLINUX_X86_64_IMAGE: maat_py_packaging
+          CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
+
+      - name: Inspect wheelhouse folder
+        run: ls -lah wheelhouse/
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os }}-wheels
+          path: wheelhouse/*.whl
+
+  build_wheels_macos:
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version:
+          - 3.8
+        os:
           - macos
-          # - windows
+        target_arch:
+          - arm64
+          - x86_64
 
     name: build wheels
     runs-on: ${{ matrix.os }}-latest
@@ -40,36 +94,32 @@ jobs:
         run: python3 -m pip install cibuildwheel
 
       - name: Install Dependencies
-        if: matrix.os == 'macos'
+        if: target_arch == 'x86_64'
         run: |
           brew install gmp python3 z3
           wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
-      - name: Login to docker registry
-        if: matrix.os == 'ubuntu'
-        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Pull custom manylinux docker image 
-        if: matrix.os == 'ubuntu'
+      - name: Install Dependencies
+        if: target_arch == 'arm64'
         run: |
-          docker pull ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest
-          docker tag ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest maat_py_packaging
+          wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-arm64.tar.gz | sudo tar xz -C /usr/local --strip-components=1 &&
+          wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz | sudo tar xz -C /tmp/gmp/ --strip-components=1 && cd /tmp/gmp
+          && mkdir build && ../configure  --host arm64-apple-macos11 --disable-assembly --prefix="/opt/gmp-arm64" --enable-cxx
+          && make && make check && make install
 
-      #TODO(boyan): factorize this and x86 wheels when its working
       - name: Build wheels arm64
-        if: matrix.os == 'macos'
         # Force macOS target version for C++17 support
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
           python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
         env:
           CIBW_BUILD_VERBOSITY: 3
-          CIBW_BUILD: cp3*-macosx_arm64
+          CIBW_BUILD: cp38-macosx_arm64 # TODO(boyan): add other python versions
           CIBW_ARCHS_MACOS: "arm64"
+          CIBW_BEFORE_BUILD: export MAAT_GMP_INSTALL_DIR="/opt/gmp-arm64"
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Build wheels x86-64
-        if: matrix.os == 'macos'
         # Force macOS target version for C++17 support
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
@@ -77,16 +127,6 @@ jobs:
         env:
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD: cp3*-macosx_x86_64
-          CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
-
-      - name: Build wheels
-        if: matrix.os == 'ubuntu'
-        run: python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
-        env:
-          CIBW_BUILD_VERBOSITY: 3
-          # Build for 3.8
-          CIBW_BUILD: cp3*-manylinux_x86_64
-          CIBW_MANYLINUX_X86_64_IMAGE: maat_py_packaging
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Inspect wheelhouse folder
