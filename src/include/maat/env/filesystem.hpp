@@ -113,7 +113,9 @@ public:
         IOSTREAM, ///< Stream (reads consume data from the beginning, writes append data at the end)
         SYMLINK ///< Symbolic link to another file
     };
-
+private:
+    static unsigned int _uuid_cnt;
+    unsigned int _uuid;
 protected:
     std::shared_ptr<MemSegment> data;
     int flags;
@@ -154,7 +156,9 @@ public:
     bool is_symlink();
     /// If symlink, returns the file it points to
     const std::string& symlink();
-
+public:
+    /// Return the file uuid
+    unsigned int uuid();
 private:
     // Used by streams
     void _adjust_read_offset(addr_t& offset);
