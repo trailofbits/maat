@@ -9,6 +9,16 @@ namespace env
 namespace abi
 {
 
+// Apply extract on a value to reduce its size if needed
+// 'size' is passed in bytes, it must be inferior or equal to the size of 'val'
+Value _adjust_value_to_size(Value& val, size_t size, MaatEngine& engine)
+{
+    if (val.is_concrete(*engine.vars))
+        return Value(size*8, maat::cst_extract(val.as_uint(*engine.vars), size*8-1, 0));
+    else
+        return (val.size()/8 == size) ? val : extract(val, size*8-1, 0);
+}
+
 // ========== ABI generic class ============
 ABI::ABI(Type t): _type(t) 
 {}
@@ -93,7 +103,7 @@ Value X86_CDECL::get_arg(MaatEngine& engine, int n, size_t arg_size) const
     // Regs on the stack, pushed right to left
     arg_size = ABI::real_arg_size(engine, arg_size);
     Value res = engine.mem->read(engine.cpu.ctx().get(X86::ESP).as_uint() + 4 + 4*n, 4);
-    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    return _adjust_value_to_size(res, arg_size, engine);
 }
 
 void X86_CDECL::set_ret_value(
@@ -149,7 +159,7 @@ Value X86_STDCALL::get_arg(MaatEngine& engine, int n, size_t arg_size) const
     // Regs on the stack, pushed right to left
     arg_size = ABI::real_arg_size(engine, arg_size);
     Value res = engine.mem->read(engine.cpu.ctx().get(X86::ESP).as_uint() + 4 + 4*n, 4);
-    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    return _adjust_value_to_size(res, arg_size, engine);
 }
 
 void X86_STDCALL::set_ret_value(
@@ -215,7 +225,7 @@ Value X86_LINUX_SYSENTER::get_arg(MaatEngine& engine, int n, size_t arg_size) co
         res = engine.mem->read(engine.cpu.ctx().get(X86::EBP).as_uint(), 4);
 
     arg_size = ABI::real_arg_size(engine, arg_size);
-    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    return _adjust_value_to_size(res, arg_size, engine);
 }
 
 // ========== ABI X64 SYSTEM V ============
@@ -255,7 +265,7 @@ Value X64_SYSTEM_V::get_arg(MaatEngine& engine, int n, size_t arg_size) const
     }
     // TODO(boyan): this assumes little endian if we read arguments
     // from the stack
-    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    return _adjust_value_to_size(res, arg_size, engine);
 }
 
 void X64_SYSTEM_V::prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const
@@ -318,7 +328,7 @@ Value X64_LINUX_SYSCALL::get_arg(MaatEngine& engine, int n, size_t arg_size) con
     {
         res = engine.cpu.ctx().get(arg_regs[n]).as_expr();
     }
-    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    return _adjust_value_to_size(res, arg_size, engine);
 }
 
 void X64_LINUX_SYSCALL::set_ret_value(
@@ -373,7 +383,7 @@ Value X86_LINUX_INT80::get_arg(MaatEngine& engine, int n, size_t arg_size) const
     {
         res = engine.cpu.ctx().get(arg_regs[n]);
     }
-    return (res.size()/8 == arg_size) ? res : extract(res, arg_size*8-1, 0);
+    return _adjust_value_to_size(res, arg_size, engine);
 }
 
 void X86_LINUX_INT80::set_ret_value(

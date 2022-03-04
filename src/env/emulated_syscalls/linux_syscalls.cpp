@@ -176,7 +176,7 @@ FunctionCallback::return_t _stat(
     // Order of the fields in the stat struct also come from the reverse on my own machine
     engine.mem->write(statbuf, 0x16, long_size); // st_dev
     statbuf += long_size;
-    engine.mem->write(statbuf, 0x4, long_size); // st_ino
+    engine.mem->write(statbuf, file->uuid(), long_size); // st_ino
     statbuf += long_size;
     engine.mem->write(statbuf, 0x1, long_size); // st_nlink
     statbuf += long_size;
@@ -706,6 +706,7 @@ FunctionCallback::return_t sys_linux_openat(
     int flags = args[2].as_int(*engine.vars);
     bool absolute_path = pathname[0] == '/';
     std::string filepath = "";
+
     // Get filepath
     if (absolute_path)
     {
@@ -722,6 +723,7 @@ FunctionCallback::return_t sys_linux_openat(
             throw env_exception("Emulated openat(): not supported for arbitrary dirfd");
         }
     }
+
     return linux_generic_open(engine, filepath, flags);
 }
 

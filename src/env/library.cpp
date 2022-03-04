@@ -1,5 +1,8 @@
 #include "maat/env/library.hpp"
 #include "maat/engine.hpp"
+#include "maat/logger.hpp"
+#include "maat/util.hpp"
+#include <sstream>
 
 namespace maat
 {
@@ -20,15 +23,53 @@ FunctionCallback::~FunctionCallback()
     // TODO PyDecREF Python callback if any
 }
 
-Action FunctionCallback::execute(MaatEngine& engine, const abi::ABI& abi) const
+void _log_function_call(
+    maat::Logger& logger,
+    const std::string& func_name,
+    const std::vector<Value>& args,
+    FunctionCallback::return_t return_value,
+    uint64_t current_pc
+)
+{
+    std::stringstream ss;
+    ss << "0x" << std::hex << current_pc << ": ";
+    ss << func_name << "(";
+    // Log parameters
+    for (auto it{args.begin()}; it != args.end() and it != std::prev(args.end()); it++)
+    {
+        const Value& val = *it;
+        ss << val << ", ";
+    }
+    if (not args.empty())
+        ss << args.back();
+    ss << ")";
+    ss << " -> ";
+    // Log return value
+    std::visit(maat::util::overloaded{
+        [&ss](std::monostate arg){ss << "void";}, // no return value
+        [&ss](auto arg){ss << std::dec << arg;}
+    }, return_value);
+    // Write logs
+    logger.info(ss.str());
+}
+
+Action FunctionCallback::execute(
+    MaatEngine& engine,
+    const abi::ABI& abi,
+    std::optional<std::string> func_wrapper_name
+) const
 {
     if (native_callback != nullptr)
-        return _execute_native(engine, abi);
+        return _execute_native(engine, abi, func_wrapper_name);
     else
         return _execute_python(engine, abi);
 }
 
-Action FunctionCallback::_execute_native(MaatEngine& engine, const abi::ABI& abi) const
+Action FunctionCallback::_execute_native(
+    MaatEngine& engine,
+    const abi::ABI& abi,
+    std::optional<std::string> func_wrapper_name
+) const
 {
     std::vector<Value> args;
     try
@@ -37,6 +78,16 @@ Action FunctionCallback::_execute_native(MaatEngine& engine, const abi::ABI& abi
         return_t ret_value = native_callback(engine, args);
         abi.set_ret_value(engine, ret_value);
         abi.ret(engine);
+        if (func_wrapper_name.has_value())
+        {
+            _log_function_call(
+                engine.log,
+                func_wrapper_name.value(),
+                args,
+                ret_value,
+                engine.cpu.ctx().get(engine.arch->pc()).as_uint()
+            );
+        }
         return Action::CONTINUE;
     }
     catch(const std::exception& e)

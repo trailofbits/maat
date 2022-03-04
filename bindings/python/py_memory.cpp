@@ -371,9 +371,8 @@ void init_memory(PyObject* module)
     PyDict_SetItemString(mem_enum, "RX", PyLong_FromLong(maat::mem_flag_rx));
     PyDict_SetItemString(mem_enum, "WX", PyLong_FromLong(maat::mem_flag_wx));
     PyDict_SetItemString(mem_enum, "RWX", PyLong_FromLong(maat::mem_flag_rwx));
-    PyObject* mem_class = create_class(PyUnicode_FromString("MEM"), PyTuple_New(0), mem_enum);
-    PyModule_AddObject(module, "MEM", mem_class);
-    
+    PyObject* perm_class = create_class(PyUnicode_FromString("PERM"), PyTuple_New(0), mem_enum);
+    PyModule_AddObject(module, "PERM", perm_class);
 };
 
 } // namespace py
