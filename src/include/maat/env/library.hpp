@@ -55,11 +55,24 @@ public:
     FunctionCallback& operator=(FunctionCallback&& other) = default; ///< Move assignment
     ~FunctionCallback();
 public:
-    /// Run the function callback assuming abi *abi*
-    env::Action execute(MaatEngine& engine, const abi::ABI& abi) const;
+    /** Run the function callback
+    * 
+    * @param abi ABI to use to get function arguments and return from the function
+    * @param func_wrapper_name Optional function name to use to log the function call. If
+    * unspecified the call will not be logged
+    */
+    env::Action execute(
+        MaatEngine& engine,
+        const abi::ABI& abi,
+        std::optional<std::string> func_wrapper_name = std::nullopt
+    ) const;
 private:
     /// Execute native callback
-    env::Action _execute_native(MaatEngine& engine, const abi::ABI& abi) const;
+    env::Action _execute_native(
+        MaatEngine& engine,
+        const abi::ABI& abi,
+        std::optional<std::string> func_wrapper_name = std::nullopt
+    ) const;
     /// Execute python callack
     env::Action _execute_python(MaatEngine& engine, const abi::ABI& abi) const;
 };
