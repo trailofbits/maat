@@ -1,5 +1,4 @@
 import os
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -8,6 +7,12 @@ import cmake_build_extension
 from setuptools import setup
 
 source_dir = str(Path(".").absolute().parent.parent)
+
+additional_cmake_configure_options = []
+
+sleigh_compiler = os.getenv("MAAT_SLEIGH_COMPILER")
+if sleigh_compiler is not None:
+    additional_cmake_configure_options += [f"-Dmaat_SLEIGH_COMPILER:PATH={sleigh_compiler}"]
 
 setup(
     cmdclass=dict(
@@ -29,7 +34,7 @@ setup(
                 "-Dmaat_USE_EXTERNAL_SLEIGH=OFF",
                 "-Dmaat_BUILD_PYTHON_BINDINGS:BOOL=ON",
                 "-Dmaat_PYTHON_PACKAGING:BOOL=ON",
-            ]
+            ] + additional_cmake_configure_options
         )
     ],
 )
