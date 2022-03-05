@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+#include "maat/arch.hpp"
 
 namespace maat
 {
@@ -37,7 +38,7 @@ enum class Id
 
 /** \brief Return the Id corresponding to the occurence of CALLOTHER in
   * assembly instruction 'mnemonic' */
-Id mnemonic_to_id(const std::string& mnemonic, const std::string& arch);
+Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch);
 
 /// A mapping between CALLOTHER occurences and their handler
 class HandlerMap

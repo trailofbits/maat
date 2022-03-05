@@ -18,7 +18,7 @@ include(cmake/variables.cmake)
 # ---- Declare library ----
 
 add_library(maat_maat
-  src/arch/arch.cpp
+  src/arch/arch_X86.cpp
   src/arch/lifter.cpp
   src/engine/callother.cpp
   src/engine/engine.cpp
@@ -33,6 +33,7 @@ add_library(maat_maat
   src/env/emulated_libs/libc.cpp
   src/env/emulated_syscalls/linux_syscalls.cpp
   src/env/env.cpp
+  src/env/env_linux.cpp
   src/env/filesystem.cpp
   src/env/library.cpp
   src/expression/constraint.cpp
@@ -54,6 +55,7 @@ add_library(maat_maat
   src/solver/solver.cpp
   src/solver/solver_z3.cpp
   src/third-party/murmur3/murmur3.c
+  src/third-party/sleigh/native/reg_translator.cpp
   src/third-party/sleigh/native/sleigh_interface.cpp
 )
 add_library(maat::maat ALIAS maat_maat)

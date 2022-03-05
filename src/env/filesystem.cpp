@@ -5,8 +5,13 @@ namespace maat
 {
 namespace env
 {
-   
+
 // ================ PhysicalFile =====================
+// Init uuids at some random value, because they can be
+// used to simulate the inode number on Linux and I don't know
+// what happens for a null inode number.
+unsigned int PhysicalFile::_uuid_cnt = 5;
+
 PhysicalFile::PhysicalFile(SnapshotManager<env::Snapshot>* s, PhysicalFile::Type t):
 type(t), snapshots(s)
 {
@@ -14,6 +19,12 @@ type(t), snapshots(s)
     deleted = false;
     _size = 0;
     istream_read_offset = 0;
+    _uuid = _uuid_cnt++;
+}
+
+unsigned int PhysicalFile::uuid()
+{
+    return _uuid;
 }
 
 unsigned int PhysicalFile::size()
@@ -28,7 +39,9 @@ unsigned int PhysicalFile::copy_real_file(const std::string& filename)
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
     std::vector<char> buffer(size);
-    if (file.read(buffer.data(), size))
+    file.read(buffer.data(), size);
+
+    if (file.good())
     {
         addr_t offset = 0;
         return write_buffer((uint8_t*)buffer.data(), offset, size);
@@ -659,13 +672,16 @@ void Directory::print(std::ostream& os, const std::string& indent_string) const
         file++
     )
     {
-        os << indent_string << " \u251C" << "\u2500\u2500";
-        os << " " << file->first << std::endl;
+        os << indent_string << " \u251C" << "\u2500\u2500"
+           << " " << file->first << " (" << std::dec << file->second->size()
+           << " bytes) \n";
     }
     // Print last file
     if (not files.empty())
     {
-        os << indent_string << " \u2514" << "\u2500\u2500 " << files.rbegin()->first << std::endl;
+        os << indent_string << " \u2514" << "\u2500\u2500 "
+        << files.rbegin()->first << " (" << std::dec << files.rbegin()->second->size()
+        << " bytes) \n";
     }
 }
 
@@ -829,6 +845,9 @@ void FileSystem::delete_fa(filehandle_t handle, bool weak)
 
 std::string FileSystem::path_from_fspath(const fspath_t& path)
 {
+    if (path.empty())
+        return rootdir_prefix;
+
     std::string res = "";
     for (const auto& s : path)
     {
@@ -860,13 +879,17 @@ fspath_t FileSystem::fspath_from_path_relative_to(std::string rel_path, fspath_t
     std::string s;
     bool empty;
     int i = 0, pos;
-    
+
     // Orphan file
     if (rel_path[0] == orphan_file_wildcard)
     {
         rel_path.erase(0,1);
         return {rel_path};
     }
+
+    // Special case of rel_path being the fs root 
+    if (rel_path == rootdir_prefix)
+        return {};
 
     // Parse filename for delimiter
     while ((pos = rel_path.find(path_separator)) != std::string::npos)
@@ -904,7 +927,7 @@ fspath_t FileSystem::fspath_from_path_relative_to(std::string rel_path, fspath_t
     {
         // No final filename after last delimiter
         throw env_exception(
-            Fmt() << "FileSystem::fspath_from_path(): invalid filename '"
+            Fmt() << "FileSystem::fspath_from_path_relative_to(): invalid filename '"
             << rel_path << "'" >> Fmt::to_str
         );
     }

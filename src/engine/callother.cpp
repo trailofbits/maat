@@ -6,15 +6,23 @@
 namespace maat{
 namespace callother{
 
-Id mnemonic_to_id(const std::string& mnemonic, const std::string& arch)
+Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
 {
-    if (mnemonic == "RDTSC") return Id::X86_RDTSC;
-    if (mnemonic == "SYSCALL")
-        if (arch == "X64") return Id::X64_SYSCALL;
-    if (mnemonic == "CPUID") return Id::X86_CPUID;
-    if (mnemonic == "PMINUB") return Id::X86_PMINUB;
-    if (mnemonic == "INT") return Id::X86_INT;
-    if (mnemonic == "LOCK") return Id::X86_LOCK;
+    switch (arch)
+    {
+        case Arch::Type::X86:
+        case Arch::Type::X64:
+            if (mnemonic == "RDTSC") return Id::X86_RDTSC;
+            if (mnemonic == "SYSCALL")
+                if (arch == Arch::Type::X64) return Id::X64_SYSCALL;
+            if (mnemonic == "CPUID") return Id::X86_CPUID;
+            if (mnemonic == "PMINUB") return Id::X86_PMINUB;
+            if (mnemonic == "INT") return Id::X86_INT;
+            if (mnemonic == "LOCK") return Id::X86_LOCK;
+            break;
+        default:
+            break;
+    }
     return Id::UNSUPPORTED;
 }
 
@@ -187,20 +195,31 @@ void X64_SYSCALL_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processed
     {
         throw callother_exception("SYSCALL: syscall number is symbolic!");
     }
+
     // Get function to emulate syscall
     try
     {
         const env::Function& func = engine.env->get_syscall_func_by_num(
             num.as_uint(*engine.vars)
         );
+
+        // Set a function name for logging the syscall
+        std::optional<std::string> func_name;
+        if (engine.settings.log_calls)
+            func_name = func.name();
+
         // Execute function callback
-        switch (func.callback().execute(engine, engine.env->syscall_abi))
+        switch (func.callback().execute(engine, engine.env->syscall_abi, func_name))
         {
             case env::Action::CONTINUE:
                 break;
             case env::Action::ERROR:
                 throw callother_exception(
                     "SYSCALL: Emulation callback signaled an error"
+                );
+            default:
+                throw callother_exception(
+                    "SYSCALL: Unsupported env::Action value returned by emulation callback"
                 );
         }
     }

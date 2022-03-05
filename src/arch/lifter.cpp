@@ -1,5 +1,6 @@
 #include "maat/lifter.hpp"
 #include "maat/config.hpp"
+#include "maat/arch.hpp"
 #include <string>
 #include <filesystem>
 
@@ -9,7 +10,7 @@ namespace maat
 Lifter::Lifter(CPUMode m): mode(m)
 {
     std::optional<std::filesystem::path> slafile, pspecfile;
-    std::string arch;
+    Arch::Type arch;
 
     MaatConfig& config = MaatConfig::instance();
 
@@ -20,13 +21,13 @@ Lifter::Lifter(CPUMode m): mode(m)
         {
             slafile = config.find_sleigh_file("x86.sla");
             pspecfile = config.find_sleigh_file("x86.pspec");
-            arch = "X86";
+            arch = Arch::Type::X86;
         }
         else if (mode == CPUMode::X64)
         {
             slafile = config.find_sleigh_file("x86-64.sla");
             pspecfile = config.find_sleigh_file("x86-64.pspec");
-            arch = "X64";
+            arch = Arch::Type::X64;
         }
         else
         {

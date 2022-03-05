@@ -21,10 +21,6 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
             lifters[CPUMode::X64] = std::make_shared<Lifter>(CPUMode::X64);
             _current_cpu_mode = CPUMode::X64;
             break;
-        /* TODO
-        case Arch::Type::ARM64:
-            arch = std::make_shared<ARM64::ArchARM64>();
-            break; */
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
             _current_cpu_mode = CPUMode::NONE;
