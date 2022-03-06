@@ -163,6 +163,12 @@ public:
     explicit callother_exception(std::string msg): generic_exception(msg){};
 };
 
+/** Serialization exception */
+class serialize_exception: public generic_exception {
+public:
+    explicit serialize_exception(std::string msg): generic_exception(msg){};
+};
+
 /** Test exception */ 
 class test_exception : public std::exception {
    const char * what () const throw () {

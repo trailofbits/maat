@@ -12,6 +12,7 @@
 #include "maat/exception.hpp"
 #include "maat/number.hpp"
 #include "maat/types.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -50,7 +51,7 @@ enum class ExprType
 bool operator<(ExprType t1, ExprType t2);
 
 /** The conditions for ITE expressions */
-enum class ITECond
+enum class ITECond : uint8_t
 {
     EQ, ///< Equal
     LT, ///< Unsigned Lesser Than
@@ -64,7 +65,7 @@ enum class ITECond
 
 /** Types of operations that can be applied on expressions */
 // TODO, remove THE MULH/SMULH ???
-enum class Op
+enum class Op : uint8_t
 {
     ADD=0, ///< Addition
     MUL, ///< Unsigned multiply (lower half)
@@ -182,7 +183,10 @@ typedef std::shared_ptr<ExprObject> Expr;
 The different types are implemented in separate classes inheriting from
 ExprObject: ExprCst, ExprVar, ExprMem, etc. They have specific fields and
 methods */
-class ExprObject
+using maat::serial::Serializer;
+using maat::serial::Deserializer;
+using maat::serial::uuid_t;
+class ExprObject : public serial::Serializable
 {
 friend class ExprSimplifier;
 
@@ -222,8 +226,8 @@ protected:
     virtual const maat::Number& concretize(const VarContext* ctx = nullptr){throw runtime_exception("No implementation");};
 
 public:
-    const ExprType type; ///< Expression type
-    const size_t size; ///< Expression size in bits
+    ExprType type; ///< Expression type
+    size_t size; ///< Expression size in bits
     std::vector<Expr> args; ///< Expression arguments (sub-expressions)
 
 public:
@@ -310,7 +314,13 @@ public:
     virtual Expr if_false(){throw runtime_exception("No implementation");};
     virtual ITECond cond_op(){throw runtime_exception("No implementation");};
     virtual Expr base_expr(){throw runtime_exception("No implementation");};
-    
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(Serializer& s) const;
+    virtual void load(Deserializer& d);
+
+public:
     // Printing
     virtual void print(std::ostream& out){out << "???";};
 };
@@ -323,6 +333,7 @@ protected:
     virtual const Number& concretize(const VarContext* ctx=nullptr);
 
 public:
+    ExprCst();
     /// Constructor for constants on 64 bits or less
     ExprCst(size_t size, cst_t cst);
     /// Constructor for constants on more than 64 bits. 
@@ -337,19 +348,25 @@ public:
     
     virtual ExprStatus status(const VarContext& ctx);
     virtual ValueSet& value_set();
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(Serializer& s) const;
+    virtual void load(Deserializer& d);
 };
 
 /// Abstract variable
 class ExprVar: public ExprObject
 {
 private:
-    const std::string _name;
+    std::string _name;
     static const int max_name_length = 1024;
 
 protected:
     virtual const Number& concretize(const VarContext* ctx=nullptr);
 
 public:
+    ExprVar();
     /// Constructor
     ExprVar(size_t size, std::string name, Taint tainted=Taint::NOT_TAINTED);
     virtual ~ExprVar() = default;
@@ -360,6 +377,11 @@ public:
     virtual bool is_tainted(ucst_t taint_mask=maat::default_expr_taint_mask);
     virtual ExprStatus status(const VarContext& ctx);
     virtual ValueSet& value_set();
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(Serializer& s) const;
+    virtual void load(Deserializer& d);
 };
 
 class ExprMem: public ExprObject
@@ -388,6 +410,11 @@ public:
     unsigned int access_count();
     virtual ValueSet& value_set();
     Expr base_expr();
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(Serializer& s) const;
+    virtual void load(Deserializer& d);
 };
 
 /// Unary operation
@@ -400,6 +427,7 @@ protected:
     virtual const Number& concretize(const VarContext* ctx=nullptr);
 
 public:
+    ExprUnop();
     /// Constructor
     ExprUnop(Op op, Expr arg);
     virtual ~ExprUnop() = default;
@@ -410,6 +438,11 @@ public:
     virtual bool is_tainted(ucst_t taint_mask=maat::default_expr_taint_mask);
     virtual ExprStatus status(const VarContext& ctx);
     virtual ValueSet& value_set();
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(Serializer& s) const;
+    virtual void load(Deserializer& d);
 };
 
 /// Binary operation
@@ -422,6 +455,7 @@ protected:
     virtual const Number& concretize(const VarContext* ctx=nullptr);
 
 public:
+    ExprBinop();
     /// Constructor
     ExprBinop(Op op, Expr left, Expr right);
     virtual ~ExprBinop() = default;
@@ -434,6 +468,11 @@ public:
     virtual bool is_tainted(ucst_t taint_mask=maat::default_expr_taint_mask);
     virtual ExprStatus status(const VarContext& ctx);
     virtual ValueSet& value_set();
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(Serializer& s) const;
+    virtual void load(Deserializer& d);
 };
 
 /// Bitfield extract
@@ -443,6 +482,7 @@ protected:
     virtual const Number& concretize(const VarContext* ctx=nullptr);
 
 public:
+    ExprExtract();
     /// Constructor
     ExprExtract(Expr arg, Expr higher, Expr lower);
     virtual ~ExprExtract() = default;
@@ -451,6 +491,11 @@ public:
     virtual bool is_tainted(ucst_t taint_mask=maat::default_expr_taint_mask);
     virtual ExprStatus status(const VarContext& ctx);
     virtual ValueSet& value_set();
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(Serializer& s) const;
+    virtual void load(Deserializer& d);
 };
 
 /// Concatenation of two expressions
@@ -460,6 +505,7 @@ protected:
     virtual const Number& concretize(const VarContext* ctx=nullptr);
 
 public:
+    ExprConcat();
     /// Constructor
     ExprConcat(Expr upper, Expr lower);
     virtual ~ExprConcat() = default;
@@ -468,6 +514,11 @@ public:
     virtual bool is_tainted(ucst_t taint_mask=maat::default_expr_taint_mask);
     virtual ExprStatus status(const VarContext& ctx);
     virtual ValueSet& value_set();
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(Serializer& s) const;
+    virtual void load(Deserializer& d);
 };
 
 /// If-Then-Else expression
@@ -479,6 +530,7 @@ protected:
     virtual const Number& concretize(const VarContext* ctx=nullptr);
 
 public:
+    ExprITE();
     /// Constructor
     ExprITE(Expr cond1, ITECond cond_op, Expr cond2, Expr if_true, Expr if_false);
     virtual ~ExprITE() = default;
@@ -493,6 +545,11 @@ public:
     virtual bool is_tainted(ucst_t taint_mask=maat::default_expr_taint_mask);
     virtual ExprStatus status(const VarContext& ctx);
     virtual ValueSet& value_set();
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(Serializer& s) const;
+    virtual void load(Deserializer& d);
 };
 
 

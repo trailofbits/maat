@@ -19,6 +19,7 @@ add_executable(unit-tests
   unit-tests/test_ir.cpp
   unit-tests/test_loader.cpp
   unit-tests/test_memory.cpp
+  unit-tests/test_serialization.cpp
   unit-tests/test_simplification.cpp
   unit-tests/test_snapshot.cpp
   unit-tests/test_solver.cpp

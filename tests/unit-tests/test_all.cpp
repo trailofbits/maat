@@ -16,6 +16,7 @@ void test_events();
 void test_snapshots();
 void test_solver();
 void test_loader();
+void test_serialization();
 
 
 int main(int argc, char ** argv)
@@ -51,6 +52,7 @@ int main(int argc, char ** argv)
                 test_archX64();
                 test_solver();
                 test_loader();
+                test_serialization();
                 
                 /* TODO
                 test_archARM64();
@@ -84,6 +86,8 @@ int main(int argc, char ** argv)
                         test_solver();
                     else if( !strcmp(argv[i], "loader"))
                         test_loader();
+                    else if( !strcmp(argv[i], "serial"))
+                        test_serialization();
                     /*
                     else if( !strcmp(argv[i], "ARM64"))
                         test_archARM64();

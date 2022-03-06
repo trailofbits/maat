@@ -52,6 +52,8 @@ add_library(maat_maat
   src/memory/memory.cpp
   src/memory/memory_map.cpp
   src/memory/symbolic_memory.cpp
+  src/serialization/deserializer.cpp
+  src/serialization/serializer.cpp
   src/solver/solver.cpp
   src/solver/solver_z3.cpp
   src/third-party/murmur3/murmur3.c
