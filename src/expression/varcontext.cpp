@@ -34,14 +34,14 @@ cst_t VarContext::get(const std::string& name) const
     if((it = varmap.find(name)) == varmap.end())
     {
         throw var_context_exception(Fmt()
-            << "Trying to access variable '" 
-            << name << "' which is unknown in context"
+            << "Variable '"
+            << name << "' has no concrete value in context"
             >> Fmt::to_str);
     }
     if (it->second.size > 64)
     {
         throw var_context_exception(Fmt()
-            << "Trying to get variable '" 
+            << "Trying to get variable '"
             << name << "' as native integer but its value is on more than 64 bits"
             >> Fmt::to_str);
     }
@@ -55,8 +55,8 @@ const maat::Number& VarContext::get_as_number(const std::string& name) const
     if((it = varmap.find(name)) == varmap.end())
     {
         throw var_context_exception(Fmt()
-            << "Trying to access variable '" 
-            << name << "' which is unknown in context"
+            << "Variable '"
+            << name << "' has no concrete value in context"
             >> Fmt::to_str);
     }
     return it->second;
@@ -129,7 +129,7 @@ std::string VarContext::new_name_from(const std::string& name) const
     if( name.empty() )
     {
         throw var_context_exception(Fmt()
-            << "VarContext::new_name_from(): Got empty name "
+            << "VarContext::new_name_from(): Called with empty name "
             << name
             >> Fmt::to_str);
     }
