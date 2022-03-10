@@ -11,8 +11,12 @@ source_dir = str(Path(".").absolute().parent.parent)
 additional_cmake_configure_options = []
 
 sleigh_compiler = os.getenv("MAAT_SLEIGH_COMPILER")
-if sleigh_compiler is not None:
+if sleigh_compiler:
     additional_cmake_configure_options += [f"-Dmaat_SLEIGH_COMPILER:PATH={sleigh_compiler}"]
+
+prefix_path = os.getenv("CMAKE_PREFIX_PATH")
+if prefix_path:
+    additional_cmake_configure_options += [f"-DCMAKE_PREFIX_PATH:PATH={prefix_path}"]
 
 setup(
     cmdclass=dict(
