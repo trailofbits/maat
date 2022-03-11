@@ -115,7 +115,7 @@ jobs:
           cmake --build z3/build -j4 && cmake --install z3/build --prefix "${{ github.workspace }}/arm64-cross"
 
           # Native sleigh for running the sleigh compiler
-          wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/macOS-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+          wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/macOS-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
 
       - name: Build wheels
