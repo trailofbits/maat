@@ -4,6 +4,7 @@
 #include "maat/expression.hpp"
 #include "maat/number.hpp"
 #include "maat/constraint.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -14,10 +15,10 @@ namespace maat
 The data can be either concrete, or abstract. The underlying implementation
 uses the `Expr` and `Number` classes to represent abstract and concrete values.
 */
-class Value
+class Value: public serial::Serializable
 {
 public:
-    enum class Type
+    enum class Type : uint8_t
     {
         NONE,
         ABSTRACT,
@@ -105,8 +106,12 @@ public:
     void set_bool_and(const Value& n1, const Value& n2, size_t size);
     void set_bool_or(const Value& n1, const Value& n2, size_t size);
     void set_bool_xor(const Value& n1, const Value& n2, size_t size);
-
+public:
     friend std::ostream& operator<<(std::ostream& os, const Value& val);
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 // Overloaded native operators

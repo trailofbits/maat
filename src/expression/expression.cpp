@@ -108,7 +108,6 @@ ExprObject::ExprObject(ExprType t, size_t _size, bool _is_simp, Taint _t, ucst_t
 
 void ExprObject::dump(Serializer& s) const
 {
-    // TODO maybe << _simplified_expr is enough???
     s   << bits(_hashed) << bits(_hash) 
         << _simplified_expr
         << bits(_is_simplified) << bits(_simplifier_id)
@@ -121,11 +120,8 @@ void ExprObject::dump(Serializer& s) const
 
 void ExprObject::load(Deserializer& d)
 {
-    // TODO: DEBUG
-    std::shared_ptr<Serializable> debug(_simplified_expr);
-
     d   >> bits(_hashed) >> bits(_hash)
-        >> debug
+        >> _simplified_expr
         >> bits(_is_simplified) >> bits(_simplifier_id)
         >> _concrete >> bits(_concrete_ctx_id)
         >> bits(_status) >> bits(_status_ctx_id)

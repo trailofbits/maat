@@ -5,6 +5,7 @@
 #include <queue>
 #include <string>
 #include <iostream>
+#include <set>
 #include "maat/exception.hpp"
 
 namespace maat{
@@ -33,7 +34,8 @@ enum ClassId : uuid_t
     EXPR_ITE,
     EXPR_UNOP,
     EXPR_VAR,
-    NUMBER
+    NUMBER,
+    VALUE
 };
 
 
@@ -220,11 +222,15 @@ public:
         // Map used for creating new shared pointers for objects which already have
         // a shared pointer to them
         std::unordered_map<Serializable*, std::shared_ptr<Serializable>> obj_to_shared_ptr;
+        // Map used to keep track of raw pointers that were used to create a unique_ptr
+        std::set<Serializable*> already_has_unique_ptr;
     public:
         /// Allocate new object of a given class
         Serializable* new_object(uuid_t class_uuid);
         /// Create new shared pointer for a given object
         std::shared_ptr<Serializable> new_shared_ptr(Serializable* raw_ptr);
+        /// Create new unique_ptr for a given object
+        std::unique_ptr<Serializable> new_unique_ptr(Serializable* raw_ptr);
     };
 
 private:
@@ -238,7 +244,13 @@ public:
 protected:
     Stream& stream();
 public:
-    // must be called only once
+    // deserialize() methods must be called only once
+    /// Deserialize object
+    template <typename T> void deserialize(std::unique_ptr<T>& dest)
+    {
+        dest = std::unique_ptr<T>(reinterpret_cast<T*>(_deserialize()));
+    }
+
     /// Deserialize object into a shared pointer
     template <typename T> void deserialize(std::shared_ptr<T>& dest)
     {
@@ -291,7 +303,6 @@ public:
         stream() >> bits(size);
         for (size_t i = 0; i < size; i++)
         {
-            std::cout << "DEBUG vector element at " << stream().current_pos() << "\n";
             T& t = container.emplace_back();
             *this >> t;
         }

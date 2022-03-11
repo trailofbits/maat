@@ -1,5 +1,4 @@
 #include "maat/serializer.hpp"
-#include "maat/exception.hpp"
 #include "maat/maat.hpp"
 
 namespace maat{
@@ -51,13 +50,17 @@ Serializable* Deserializer::_deserialize()
             Serializable* obj = data_pos_to_object.at(stream().current_pos());
             obj->load(*this);
         }
-        // Return root object
-        return uuid_to_object.at(root_obj_uuid);
     }
     catch (const std::out_of_range&)
     {
         throw serialize_exception("Deserializer::deserialize(): data position in stream doesn't correspond to an object");
     }
+
+    // TODO(boyan): check that every raw pointer now has an owner 
+    // (either unique_ptr or shared_ptr)
+
+    // Return root object
+    return uuid_to_object.at(root_obj_uuid);
 }
 
 Deserializer& Deserializer::operator>>(std::string& str)
@@ -89,6 +92,8 @@ Serializable* Deserializer::Factory::new_object(uuid_t class_uuid)
             return new ExprUnop();
         case ClassId::EXPR_VAR:
             return new ExprVar();
+        case ClassId::VALUE:
+            return new Value();
         default:
             throw serialize_exception("Deserializer::Factory::new_object: unsupported class UUID");
     }
@@ -96,6 +101,11 @@ Serializable* Deserializer::Factory::new_object(uuid_t class_uuid)
 
 std::shared_ptr<Serializable> Deserializer::Factory::new_shared_ptr(Serializable* raw_ptr)
 {
+    if (already_has_unique_ptr.find(raw_ptr) != already_has_unique_ptr.end())
+        throw serialize_exception(
+            "Trying to create shared_ptr from raw pointer that was already used to create a unique_ptr"
+        );
+
     auto it = obj_to_shared_ptr.find(raw_ptr);
     if (it != obj_to_shared_ptr.end())
         return it->second;

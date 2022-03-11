@@ -1,6 +1,5 @@
 #include "maat/serializer.hpp"
-#include "maat/expression.hpp"
-#include "maat/exception.hpp"
+#include "maat/maat.hpp"
 #include <fstream>
 #include <string>
 #include <iomanip>
@@ -22,8 +21,8 @@ namespace test
             return 1; 
         }
 
-        template <typename T>
-        void _dump_and_load(const T& src, T& dst)
+        template <typename T, typename U>
+        void _dump_and_load(const T& src, U& dst)
         {
             std::string serial_file("/tmp/test_serialization");
             std::ofstream out(serial_file, std::ios_base::binary);
@@ -58,6 +57,28 @@ namespace test
             return res;
         }
 
+        unsigned int serialize_value()
+        {
+            unsigned int res = 0;
+            Expr    var1 = exprvar(32, "var1"),
+                    var2 = exprvar(32, "var2");
+            Expr    e1 = extract(~(var1 + 4), 25, 0);
+            Value   v1(e1);
+            Value   v2(Number(32, 123456));
+            std::unique_ptr<Value>   tmp;
+
+            _dump_and_load(v1, tmp);
+            res += _assert(tmp != nullptr, "Serializer: failed to deserialize Value into unique_ptr");
+            res += _assert(tmp->is_abstract(), "Serializer: failed to dump and load abstract Value");
+            res += _assert(tmp->expr()->eq(e1), "Serializer: failed to dump and load abstract Value");
+        
+            _dump_and_load(v2, tmp);
+            res += _assert(tmp != nullptr, "Serializer: failed to deserialize Value into unique_ptr");
+            res += _assert(not tmp->is_abstract(), "Serializer: failed to dump and load concrete Value");
+            res += _assert(tmp->as_uint(123456), "Serializer: failed to dump and load concrete Value");
+        
+            return res;
+        }
     }
 }
 
@@ -76,6 +97,7 @@ void test_serialization()
                 << " Testing serializer... " << std::flush;
 
     total += serialize_expr();
+    total += serialize_value();
 
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;
