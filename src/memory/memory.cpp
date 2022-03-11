@@ -524,10 +524,14 @@ void MemConcreteBuffer::extend_before(addr_t nb_bytes)
 offset_t MemConcreteBuffer::is_identical_until(offset_t start, offset_t end, uint8_t val)
 {
     offset_t tmp = start;
+
+    if (start == end)
+        return start;
+
     while( *(uint8_t*)((uint8_t*)_mem+(tmp)) == val)
     {
         tmp++;
-        if( tmp > end )
+        if (tmp >= end)
             break;
     };
     return tmp;
@@ -786,7 +790,7 @@ void MemSegment::symbolic_ptr_read(Value& result, const Expr& addr, ValueSet& ad
         if( _bitmap.is_concrete(a-start))
         {
             a2 = is_identical_until(a, _concrete.read(a-start, 1)) -1; // a2 == last address containing the byte "byte"
-            if( a2 >= a-1+nb_bytes )
+            if (a2 >= a-1+nb_bytes)
             {
                 // Identical memory region bigger than single read so
                 // use interval instead
@@ -1106,16 +1110,16 @@ addr_t MemSegment::is_abstract_until(addr_t addr1, addr_t max)
 
 addr_t MemSegment::is_concrete_until(addr_t addr1, addr_t max)
 {
-    addr_t adjusted_max = (max < end-start)? max: end-start;
+    addr_t adjusted_max = (max < end-addr1)? max: end-addr1;
     return start + _bitmap.is_concrete_until(addr1-start, adjusted_max);
 }
 
 // Return first address where the byte is different than "byte"
 addr_t MemSegment::is_identical_until(addr_t addr, cst_t byte)
 {
-    addr_t max_addr = is_concrete_until(start, end);
-    addr_t res = _concrete.is_identical_until(addr-start, max_addr-start, (uint8_t)byte);
-    return res + start;
+    addr_t max_addr = is_concrete_until(addr, end-addr+1);
+    addr_t offset = _concrete.is_identical_until(addr-start, max_addr-start, (uint8_t)byte);
+    return offset + start;
 }
 
 

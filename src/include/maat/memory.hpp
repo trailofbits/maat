@@ -117,7 +117,7 @@ public:
     void write(offset_t off, const Number& val, int nb_bytes);
     void write_buffer(offset_t off, uint8_t* buf, int buf_len);
 
-    /** \brief Returns the closest offset from 'start' and before 'end' which 
+    /** \brief Returns the closest offset from 'start' and before 'end' (included) which 
      * holds a value different from 'val' */
     offset_t is_identical_until(offset_t start, offset_t end, uint8_t val);
 
