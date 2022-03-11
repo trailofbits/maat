@@ -48,7 +48,7 @@ namespace test
         {
             string code;
             MaatEngine sym = MaatEngine(Arch::Type::X86);
-            sym.mem->new_segment(0x1000, 0x2000);
+            sym.mem->map(0x1000, 0x2000);
             code = string("\x11\xD8", 2); // adc eax, ebx
             sym.mem->write_buffer(0x1150, (uint8_t*)code.c_str(), 2);
             code = string("\x66\x0F\x38\xF6\xC3", 5); // adcx eax, ebx
@@ -9091,8 +9091,8 @@ void test_archX86(){
     cout << bold << "[" << green << "+" << def << bold << "]" << def << std::left << std::setw(34) << " Testing arch X86 support... " << std::flush;  
 
     MaatEngine engine(Arch::Type::X86);
-    engine.mem->new_segment(0x0, 0x11000);
-    engine.mem->new_segment(0x110000, 0x130000);
+    engine.mem->map(0x0, 0x11000);
+    engine.mem->map(0x110000, 0x130000);
 
     total += reg_translation();
 

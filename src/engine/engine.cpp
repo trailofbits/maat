@@ -903,6 +903,24 @@ bool MaatEngine::process_callback_emulated_function(addr_t addr)
     return true;
 }
 
+// Return the number of bytes from 'addr' to the end of the mapping
+// that contains addr
+int _get_distance_till_end_of_map(MemEngine& mem, addr_t addr)
+{
+    int res = 0;
+    addr_t tmp_end = 0;
+    for (const auto& map : mem.mappings.get_maps())
+    {
+        if (map.contains(addr))
+            res = map.end - addr + 1;
+        else if (map.start == tmp_end+1 and res != 0)
+            res += map.end - map.start + 1;
+        else if (map.start > addr)
+            break;
+        tmp_end = map.end;
+    }
+    return res;
+}
 
 const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
 {
@@ -912,13 +930,16 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
     // The code hasn't been lifted yet so we disassemble it
     try
     {
+        // Get the size of mapped code from the requested address
+        size_t code_size = _get_distance_till_end_of_map(*mem, addr);
+
         // TODO: check if code region is symbolic
         if (
             not lifters[_current_cpu_mode]->lift_block(
                 *ir_map,
                 addr,
                 mem->raw_mem_at(addr),
-                0xfffffff,
+                code_size,
                 0xffffffff,
                 nullptr, // is_symbolic
                 nullptr, // is_tainted

@@ -94,11 +94,11 @@ namespace solve_hash{
         */
         
         // code
-        engine.mem->new_segment(0x0, 0x1000);
+        engine.mem->map(0x0, 0x1000);
         engine.mem->write_buffer(0x56d, code, 43);
         // stack
-        engine.mem->new_segment(0x3000, 0x10000);
-        
+        engine.mem->map(0x3000, 0x10000);
+
         nb += _x86_assert_algo_2(engine, _x86_revert_hash_algo_2(engine, 0x9c594849), 0x9c594849);
         nb += _x86_assert_algo_2(engine, _x86_revert_hash_algo_2(engine, 0x9cdd4849), 0x9cdd4849);
         nb += _x86_assert_algo_2(engine, _x86_revert_hash_algo_2(engine, 0x9d514849), 0x9d514849);

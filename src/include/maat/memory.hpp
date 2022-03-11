@@ -371,8 +371,8 @@ public:
 
     /** \brief Map memory from 'start' to 'end' (included), with permissions 'mflags'. 
     Necessary segments are created in order to fill the map. The map is NOT initialised with zeros */
-    void map(addr_t start, addr_t end, mem_flag_t mflags, const std::string& map_name);
-    /** \brief Allocate a new memory map of 'size' bytes. The map will
+    void map(addr_t start, addr_t end, mem_flag_t mflags = mem_flag_rwx, const std::string& map_name = "");
+    /** \brief Allocate a new memory map of 'size' bytes. The map wills
      * be aligned according to the 'align' value. Returns the start address of the map */
     addr_t allocate(
         addr_t init_base, addr_t size, addr_t align,
