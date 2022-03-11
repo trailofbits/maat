@@ -102,25 +102,34 @@ jobs:
       - name: Install Dependencies
         if: matrix.target_arch == 'arm64'
         run: |
-          wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-arm64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+          mkdir -p "${{ github.workspace }}/arm64-cross"
+          wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-arm64.tar.gz | tar xz -C "${{ github.workspace }}/arm64-cross" --strip-components=1
 
-          wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz && mkdir -p gmp/build && tar xzvf gmp-6.2.1.tar.lz -C gmp --strip-components 1
-          cd gmp/build && ../configure CFLAGS='-target arm64-apple-macos11' CXXFLAGS='-target arm64-apple-macos11' --host arm64-apple-macos11  --build=aarch64-apple-macos11 --disable-assembly --enable-cxx
-          make && sudo make install
+          wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz && mkdir -p gmp/build && tar --lzip -xvf gmp-6.2.1.tar.lz -C gmp --strip-components 1
+          cd gmp/build && ../configure --enable-shared --disable-static CFLAGS='-arch arm64 -mmacosx-version-min=11.0' CXXFLAGS='-arch arm64 -mmacosx-version-min=11.0' LDFLAGS='-arch arm64 -mmacosx-version-min=11.0' --build=x86_64-apple-darwin --host=aarch64-apple-darwin --target=aarch64-apple-darwin --disable-assembly --enable-cxx "--prefix=${{ github.workspace }}/arm64-cross"
+          make && make install
+          cd ../../
 
-          wget -O z3.tar.gz https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.14.tar.gz && mkdir -p z3/build && tar xzvf z3.tar.gz -C z3 --strip-components 1
-          cd z3/build && CFLAGS="-target aarch64-apple-macos11" CXXFLAGS="-target aarch64-apple-macos11" cmake -DCMAKE_BUILD_TYPE=Release -DZ3_BUILD_EXECUTABLE=FALSE -DZ3_BUILD_TEST_EXECUTABLES=FALSE -DZ3_ENABLE_EXAMPLE_TARGETS=FALSE ..
-          make -j4 && make install
+          wget -O z3.tar.gz https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.14.tar.gz && mkdir z3 && tar xzvf z3.tar.gz -C z3 --strip-components 1
+          cmake -B z3/build -S z3 -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DCMAKE_BUILD_TYPE=Release -DZ3_BUILD_LIBZ3_SHARED=NO -DZ3_BUILD_EXECUTABLE=FALSE -DZ3_BUILD_TEST_EXECUTABLES=FALSE -DZ3_ENABLE_EXAMPLE_TARGETS=FALSE
+          cmake --build z3/build -j4 && cmake --install z3/build --prefix "${{ github.workspace }}/arm64-cross"
+
+          # Native sleigh for running the sleigh compiler
+          wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/macOS-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+
 
       - name: Build wheels
         if: matrix.target_arch == 'arm64'
         # Force macOS target version for C++17 support
         run: |
-          export MACOSX_DEPLOYMENT_TARGET=10.15
-          export CFLAGS='-target arm64-apple-macos11'
-          export CXXFLAGS='-target arm64-apple-macos11'
+          export "CMAKE_PREFIX_PATH=${{ github.workspace }}/arm64-cross"
+          export MACOSX_DEPLOYMENT_TARGET=11.0
+          export CFLAGS='-arch arm64 -mmacosx-version-min=11.0'
+          export CXXFLAGS='-arch arm64 -mmacosx-version-min=11.0'
+          export LDFLAGS='-arch arm64 -mmacosx-version-min=11.0'
           python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
         env:
+          MAAT_SLEIGH_COMPILER: "/usr/local/bin/sleigh_opt"
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD: cp38-macosx_arm64 # TODO(boyan): add other python versions
           CIBW_ARCHS_MACOS: "arm64"

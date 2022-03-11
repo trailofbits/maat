@@ -143,12 +143,26 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E make_directory "${spec_log_dir}"
 )
 
+# Allow user to override sleigh compiler to support cross-compilation. Default
+# location is the one imported when we found the sleigh package
+if(CMAKE_CROSSCOMPILING)
+  find_program(maat_SLEIGH_COMPILER "sleigh_opt"
+    DOC "Sleigh compiler executable"
+  )
+  if(NOT maat_SLEIGH_COMPILER)
+    message(FATAL_ERROR "Maat needs a sleigh compiler. Specify path manually by setting 'maat_SLEIGH_COMPILER'")
+  endif()
+else()
+  set(maat_SLEIGH_COMPILER "$<TARGET_FILE:sleigh::sleigh_opt>" CACHE PATH "Sleigh compiler executable")
+endif()
+
 macro(maat_sleigh_compile ARCH_DIR ARCH)
   # ARCH_DIR is the directory that appears in Ghidra's source code hierarchy
   # ARCH appears in the name of the '.slaspec' and '.pspec' file (they should be the same)
   # Creates a target maat_sleigh_spec_${ARCH}
   sleigh_compile(
     TARGET maat_sleigh_spec_${ARCH}
+    COMPILER "${maat_SLEIGH_COMPILER}"
     SLASPEC "${spec_dir}/${ARCH_DIR}/data/languages/${ARCH}.slaspec"
     LOG_FILE "${PROJECT_BINARY_DIR}/sleigh-log/${ARCH}.log"
     OUT_FILE "${spec_out_dir}/${ARCH}.sla"
