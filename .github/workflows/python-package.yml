@@ -96,8 +96,17 @@ jobs:
       - name: Install Dependencies
         if: matrix.target_arch == 'x86_64'
         run: |
-          brew install gmp python3 z3
+          brew install python3
           wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+
+          wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz && mkdir -p gmp/build && tar --lzip -xvf gmp-6.2.1.tar.lz -C gmp --strip-components 1
+          cd gmp/build && ../configure --enable-shared --disable-static CFLAGS='-mmacosx-version-min=10.15' CXXFLAGS='-mmacosx-version-min=10.15' LDFLAGS='-mmacosx-version-min=10.15' --build=x86_64-apple-darwin --disable-assembly --enable-cxx
+          make "-j$(sysctl -n hw.logicalcpu)" && sudo make install
+          cd ../../
+
+          wget -O z3.tar.gz https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.14.tar.gz && mkdir z3 && tar xzvf z3.tar.gz -C z3 --strip-components 1
+          cmake -B z3/build -S z3 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_BUILD_TYPE=Release -DZ3_BUILD_LIBZ3_SHARED=NO -DZ3_BUILD_EXECUTABLE=FALSE -DZ3_BUILD_TEST_EXECUTABLES=FALSE -DZ3_ENABLE_EXAMPLE_TARGETS=FALSE
+          cmake --build z3/build "-j$(sysctl -n hw.logicalcpu)" && sudo cmake --install z3/build
 
       - name: Install Dependencies
         if: matrix.target_arch == 'arm64'
@@ -107,12 +116,12 @@ jobs:
 
           wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz && mkdir -p gmp/build && tar --lzip -xvf gmp-6.2.1.tar.lz -C gmp --strip-components 1
           cd gmp/build && ../configure --enable-shared --disable-static CFLAGS='-arch arm64 -mmacosx-version-min=11.0' CXXFLAGS='-arch arm64 -mmacosx-version-min=11.0' LDFLAGS='-arch arm64 -mmacosx-version-min=11.0' --build=x86_64-apple-darwin --host=aarch64-apple-darwin --target=aarch64-apple-darwin --disable-assembly --enable-cxx "--prefix=${{ github.workspace }}/arm64-cross"
-          make && make install
+          make "-j$(sysctl -n hw.logicalcpu)" && make install
           cd ../../
 
           wget -O z3.tar.gz https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.14.tar.gz && mkdir z3 && tar xzvf z3.tar.gz -C z3 --strip-components 1
           cmake -B z3/build -S z3 -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DCMAKE_BUILD_TYPE=Release -DZ3_BUILD_LIBZ3_SHARED=NO -DZ3_BUILD_EXECUTABLE=FALSE -DZ3_BUILD_TEST_EXECUTABLES=FALSE -DZ3_ENABLE_EXAMPLE_TARGETS=FALSE
-          cmake --build z3/build -j4 && cmake --install z3/build --prefix "${{ github.workspace }}/arm64-cross"
+          cmake --build z3/build "-j$(sysctl -n hw.logicalcpu)" && cmake --install z3/build --prefix "${{ github.workspace }}/arm64-cross"
 
           # Native sleigh for running the sleigh compiler
           wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/macOS-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
