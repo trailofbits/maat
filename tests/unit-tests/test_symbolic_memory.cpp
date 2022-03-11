@@ -112,7 +112,7 @@ namespace test{
             auto varctx = std::make_shared<VarContext>();
             Settings settings;
             MemEngine mem(varctx, 32);
-            mem.new_segment(0x0, 0x20000, maat::mem_flag_rwx);
+            mem.map(0x0, 0x20000, maat::mem_flag_rwx);
             Expr addr1 = exprvar(32, "var_0") & 0xffff,
                  addr2 = exprvar(32, "var_1") | 0x00000100;
             Expr val1 = exprcst(32, 0x12345678);
@@ -140,7 +140,7 @@ namespace test{
             auto varctx = std::make_shared<VarContext>();
             MemEngine mem(varctx, 32);
             Settings settings;
-            mem.new_segment(0x0, 0x100000, maat::mem_flag_rwx);
+            mem.map(0x0, 0x100000, maat::mem_flag_rwx);
 
             Expr addr1 = exprvar(32, "var_0") & 0x0000ff00,
                  addr2 = exprvar(32, "var_1") | 0x00001100;
@@ -254,7 +254,7 @@ namespace test{
             auto varctx = std::make_shared<VarContext>(0);
             MemEngine mem(varctx, 64);
             Settings settings;
-            mem.new_segment(0x0, 0x100000, maat::mem_flag_rwx);
+            mem.map(0x0, 0x100000, maat::mem_flag_rwx);
             Expr addr1 = exprvar(64, "var_0") & 0x000001f,
                  addr2 = exprvar(64, "var_1") | 0x00001100;
             Expr e, ite, ite2;
