@@ -46,11 +46,9 @@ jobs:
           docker tag ghcr.io/trailofbits/maat/manylinux2014-x86_64:latest maat_py_packaging
 
       - name: Build wheels
-        if: matrix.os == 'ubuntu'
         run: python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
         env:
           CIBW_BUILD_VERBOSITY: 3
-          # Build for 3.8
           CIBW_BUILD: cp3*-manylinux_x86_64
           CIBW_MANYLINUX_X86_64_IMAGE: maat_py_packaging
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
@@ -187,4 +185,4 @@ jobs:
           user: __token__
           password: ${{ secrets.TESTPYPI_API_TOKEN }}
           packages_dir: ${{ matrix.os }}-wheels/
-          repository_url: https://test.pypi.org/legacy/ 
+          repository_url: https://test.pypi.org/legacy/
