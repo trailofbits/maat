@@ -127,7 +127,7 @@ jobs:
 
       - name: Build wheels
         if: matrix.target_arch == 'arm64'
-        # Force macOS target version for C++17 support
+        # Force minimum macOS target version 11.0 for M1 support
         run: |
           export "CMAKE_PREFIX_PATH=${{ github.workspace }}/arm64-cross"
           export MACOSX_DEPLOYMENT_TARGET=11.0
@@ -138,13 +138,13 @@ jobs:
         env:
           MAAT_SLEIGH_COMPILER: "/usr/local/bin/sleigh_opt"
           CIBW_BUILD_VERBOSITY: 3
-          CIBW_BUILD: cp38-macosx_arm64 # TODO(boyan): add other python versions
+          CIBW_BUILD: cp3*-macosx_arm64
           CIBW_ARCHS_MACOS: "arm64"
           CIBW_TEST_COMMAND: "python3 -c 'from maat import *; m = MaatEngine(ARCH.X86)'"
 
       - name: Build wheels
         if: matrix.target_arch == 'x86_64'
-        # Force macOS target version for C++17 support
+        # Force minimum macOS target version 10.15 for C++17 support
         run: |
           export MACOSX_DEPLOYMENT_TARGET=10.15
           python3 -m cibuildwheel --output-dir wheelhouse bindings/packaging
