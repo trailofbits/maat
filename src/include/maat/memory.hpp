@@ -216,7 +216,10 @@ public:
      * 'addr' and 'nb_bytes' are updated to finish the snapshot in the next segment. Shouldn't be
      * called with nb_bytes > 8 */
     cst_t concrete_snapshot(addr_t& addr, int& nb_bytes);
+    // Restores memory saved by a concrete snapshot. It will ignore the write if the
+    // segment written to has been deleted
     void write_from_concrete_snapshot(addr_t addr, cst_t val, int nb_bytes);
+    // Same as write_from_concrete_snapshot() but for symbolic snapshots
     void write_from_abstract_snapshot(addr_t addr, abstract_mem_chunk_t& snap);
 
     /** \brief  Returns a raw pointer to the concrete memory buffer at address 'addr' */

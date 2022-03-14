@@ -2171,7 +2171,7 @@ void MemEngine::write_from_concrete_snapshot(addr_t addr, cst_t val, int nb_byte
     int bytes_to_write = 0;
     for (auto& segment : _segments)
     {
-        if( segment->contains(addr) )
+        if (segment->contains(addr))
         {
             // Check if contains all bytes or just a few
             if (addr + nb_bytes -1 > segment->end)
@@ -2192,12 +2192,9 @@ void MemEngine::write_from_concrete_snapshot(addr_t addr, cst_t val, int nb_byte
         }
     }
 
-    /* If addr isn't in any segment, throw exception */
-    throw runtime_exception(Fmt()
-        << "Trying to restore from concrete-snapshot at address 0x"
-        << std::hex << addr << " not mapped int memory"
-        >> Fmt::to_str
-    );
+    // If address is not in any segment, then the segment was deleted by restoring
+    // the snapshot and we don't care to write back its contents
+    return;
 }
 
 
@@ -2217,15 +2214,9 @@ void MemEngine::write_from_abstract_snapshot(addr_t addr, abstract_mem_chunk_t& 
         }
     }
 
-    if( !snap.empty())
-    {
-        /* If addr isn't in any segment, throw exception */
-        throw runtime_exception(Fmt()
-            << "Trying to restore from symbolic-snapshot at address 0x"
-            << std::hex << addr << " not mapped int memory"
-            >> Fmt::to_str
-        );
-    }
+    // If address is not in any segment, then the segment was deleted by restoring
+    // the snapshot and we don't care to write back its contents
+    return;
 }
 
 uint8_t* MemEngine::raw_mem_at(addr_t addr)
