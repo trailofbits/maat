@@ -2171,7 +2171,7 @@ void MemEngine::write_from_concrete_snapshot(addr_t addr, cst_t val, int nb_byte
     int bytes_to_write = 0;
     for (auto& segment : _segments)
     {
-        if( segment->contains(addr) )
+        if (segment->contains(addr))
         {
             // Check if contains all bytes or just a few
             if (addr + nb_bytes -1 > segment->end)
@@ -2192,12 +2192,9 @@ void MemEngine::write_from_concrete_snapshot(addr_t addr, cst_t val, int nb_byte
         }
     }
 
-    /* If addr isn't in any segment, throw exception */
-    throw runtime_exception(Fmt()
-        << "Trying to restore from concrete-snapshot at address 0x"
-        << std::hex << addr << " not mapped int memory"
-        >> Fmt::to_str
-    );
+    // If address is not in any segment, then the segment was deleted by restoring
+    // the snapshot and we don't care to write back its contents
+    return;
 }
 
 
@@ -2217,15 +2214,9 @@ void MemEngine::write_from_abstract_snapshot(addr_t addr, abstract_mem_chunk_t& 
         }
     }
 
-    if( !snap.empty())
-    {
-        /* If addr isn't in any segment, throw exception */
-        throw runtime_exception(Fmt()
-            << "Trying to restore from symbolic-snapshot at address 0x"
-            << std::hex << addr << " not mapped int memory"
-            >> Fmt::to_str
-        );
-    }
+    // If address is not in any segment, then the segment was deleted by restoring
+    // the snapshot and we don't care to write back its contents
+    return;
 }
 
 uint8_t* MemEngine::raw_mem_at(addr_t addr)
@@ -2329,6 +2320,25 @@ void MemEngine::record_mem_write(addr_t addr, int nb_bytes)
     /* If snapshots enabled record the write */
     if (_snapshots->active())
     {
+        // If we just created a segment and write to it, we don't care about
+        // snapshoting its content because it will be deleted when rewinding the
+        // last snapshot anyway. It'll be costly to check the segment we're 
+        // snapshoting every time, but for big memory writes (like mmaping a file, etc)
+        // it's worth doing
+        if (nb_bytes > 256)
+        {
+            for (addr_t segment_start : _snapshots->back().created_segments)
+            {
+                std::shared_ptr<MemSegment> segment = get_segment_containing(segment_start);
+                if (segment == nullptr)
+                    throw mem_exception("MemEngine::record_mem_write(): couldn't find created segment!");
+                if (segment->contains(addr))
+                    // Skip recording this write
+                    return;
+            }
+        }
+
+        
         // Do snapshots by chunks of 8, it's more efficient this way
         // than using a single multi-precision number
         while (nb_bytes > 0)
