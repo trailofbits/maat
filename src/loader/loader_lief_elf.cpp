@@ -663,11 +663,13 @@ void LoaderLIEF::load_elf_interpreter(
     std::string interp_name = _clean_interpreter_name(top_loader._elf->interpreter());
 
     // Parse binary with LIEF
+    // Note(boyan):
     interp_loader.parse_binary(interp_path, Format::ELF32);
 
     // Find available base address
     uint64_t vsize = interp_loader._elf->virtual_size();
-    addr_t base_address = find_free_space(engine, 0x1000, vsize);
+    addr_t heap_size = 0x400000;
+    addr_t base_address = find_free_space(engine, 0x1000, vsize+heap_size);
     if (base_address == 0)
     {
         throw loader_exception(
@@ -690,7 +692,6 @@ void LoaderLIEF::load_elf_interpreter(
         *engine->mem,
         interp_loader.binary_name
     );
-    addr_t heap_size = 0x400000;
     engine->mem->map(
         heap_base,
         heap_base+heap_size-1,

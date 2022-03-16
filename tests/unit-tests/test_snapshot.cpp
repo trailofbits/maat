@@ -39,7 +39,7 @@ namespace test
             engine.vars->set("var0", 0x41414141);
             engine.cpu.ctx().set(0, e1);
             engine.cpu.ctx().set(1, e2);
-            engine.mem->new_segment(0x2000, 0x2fff);
+            engine.mem->map(0x2000, 0x2fff);
             engine.mem->write(0x21b4, e2);
             
             // Snapshot
@@ -49,8 +49,8 @@ namespace test
             engine.mem->write(0x21b6, c1);
             engine.mem->write(0x21b4, e1);
             //  Create some segments
-            engine.mem->new_segment(0x3000, 0x3fff);
-            engine.mem->new_segment(0x5000, 0x5fff);
+            engine.mem->map(0x3000, 0x3fff);
+            engine.mem->map(0x5000, 0x5fff);
             engine.restore_snapshot(s1);
             // Rewind
             nb += _assert(engine.mem->read(0x21b4, 8).as_expr()->eq(e2), "SnapshotManager rewind failed to reset engine.memory correctly"); 
@@ -96,8 +96,8 @@ namespace test
             nb += _assert(engine.mem->read(0x2300, 8).as_expr()->eq(concat( exprcst(16, 0x1234), concat(e1, extract(e2, 63, 48)))), "SnapshotManager: rewind failed for mixed symbolic and concrete writes");
             
             //  Create some segments to test snapshot on overlapping memory accesses
-            engine.mem->new_segment(0x3000, 0x3fff);
-            engine.mem->new_segment(0x4000, 0x5fff);
+            engine.mem->map(0x3000, 0x3fff);
+            engine.mem->map(0x4000, 0x5fff);
             engine.mem->write(0x3ffd, 0xabcdef11deadbeef, 8);
             engine.take_snapshot();
             engine.mem->write(0x3ffc, e2);
@@ -138,11 +138,11 @@ namespace test
             engine.cpu.ctx().set(X86::EDX, exprcst(32, 4));
             engine.cpu.ctx().set(X86::ESP, exprcst(32, 0x4000));
 
-            engine.mem->new_segment(0x0000, 0x3fff);
+            engine.mem->map(0x0000, 0x3fff);
             engine.mem->write(0x2000, exprcst(32, 0x12345678));
             engine.mem->write(0x3000, exprcst(32, 0x87654321));
 
-            engine.mem->new_segment(0x5000, 0x50ff);
+            engine.mem->map(0x5000, 0x50ff);
             engine.mem->write_buffer(0x5000, code, sizeof(code));
 
             /* Set breakpoint */

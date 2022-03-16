@@ -495,9 +495,9 @@ using namespace test::events;
 void test_events()
 {
     maat::MaatEngine engine(maat::Arch::Type::NONE);
-    engine.mem->new_segment(0x60000, 0x70000);
-    engine.mem->new_segment(0x120000, 0x124000);
-    engine.mem->new_segment(0x0, 0x2000);
+    engine.mem->map(0x60000, 0x70000);
+    engine.mem->map(0x120000, 0x124000);
+    engine.mem->map(0x0, 0x2000);
 
     unsigned int total = 0;
     std::string green = "\033[1;32m";

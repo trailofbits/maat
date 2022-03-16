@@ -195,20 +195,31 @@ void X64_SYSCALL_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processed
     {
         throw callother_exception("SYSCALL: syscall number is symbolic!");
     }
+
     // Get function to emulate syscall
     try
     {
         const env::Function& func = engine.env->get_syscall_func_by_num(
             num.as_uint(*engine.vars)
         );
+
+        // Set a function name for logging the syscall
+        std::optional<std::string> func_name;
+        if (engine.settings.log_calls)
+            func_name = func.name();
+
         // Execute function callback
-        switch (func.callback().execute(engine, engine.env->syscall_abi))
+        switch (func.callback().execute(engine, engine.env->syscall_abi, func_name))
         {
             case env::Action::CONTINUE:
                 break;
             case env::Action::ERROR:
                 throw callother_exception(
                     "SYSCALL: Emulation callback signaled an error"
+                );
+            default:
+                throw callother_exception(
+                    "SYSCALL: Unsupported env::Action value returned by emulation callback"
                 );
         }
     }

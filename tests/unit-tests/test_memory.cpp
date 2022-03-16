@@ -370,8 +370,8 @@ namespace test{
             std::shared_ptr<VarContext> ctx = std::make_shared<VarContext>(0);
             MemEngine mem(ctx, 64);
 
-            mem.new_segment(0x1000, 0x1fff, maat::mem_flag_rw);
-            mem.new_segment(0x3000, 0x5fff, maat::mem_flag_rwx);
+            mem.map(0x1000, 0x1fff, maat::mem_flag_rw);
+            mem.map(0x3000, 0x5fff, maat::mem_flag_rwx);
 
             mem_alert_t alert;
             Expr    e1 = exprvar(8, "var1", Taint::TAINTED),
@@ -445,7 +445,7 @@ namespace test{
             /* Test the make_symbolic, make_tainted interface */
             std::string name;
             std::stringstream ss;
-            mem.new_segment(0x6000, 0x7000);
+            mem.map(0x6000, 0x7000);
             
             // Make symbolic
             name = mem.make_symbolic(0x6000, 4, 4, "buffer0");
@@ -487,7 +487,7 @@ namespace test{
             std::shared_ptr<VarContext> ctx = std::make_shared<VarContext>(0);
             MemEngine mem(ctx, 64);
 
-            mem.new_segment(0x1000, 0x1fff, maat::mem_flag_rw);
+            mem.map(0x1000, 0x1fff, maat::mem_flag_rw);
             mem.write(0x1000, 0x12345678deadbeef, 8);
             mem.write(0x1008, 0xaaaabbbbccccdddd, 8);
             
@@ -536,8 +536,8 @@ namespace test{
             std::shared_ptr<VarContext> ctx = std::make_shared<VarContext>(0);
             MemEngine mem(ctx, 64);
 
-            mem.new_segment(0x1000, 0x1fff, maat::mem_flag_rwx);
-            mem.new_segment(0x2000, 0x2fff, maat::mem_flag_rwx);
+            mem.map(0x1000, 0x1fff, maat::mem_flag_rwx);
+            mem.map(0x2000, 0x2fff, maat::mem_flag_rwx);
 
             // With concrete write
             mem.write(0x1ffe, 0x12345678deadbeef, 8);

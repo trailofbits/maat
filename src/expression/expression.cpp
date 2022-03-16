@@ -468,9 +468,18 @@ const Number& ExprVar::concretize(const VarContext* ctx)
     }
     else if( _concrete_ctx_id != ctx->id )
     {
-         _concrete_ctx_id = ctx->id;
-         _concrete = ctx->get_as_number(_name);
-         _concrete.size = this->size; // Ajust size because VarContext doesn't keep size info
+        try
+        {
+            _concrete_ctx_id = ctx->id;
+            _concrete = ctx->get_as_number(_name);
+            _concrete.size = this->size; // Ajust size because VarContext doesn't keep size info
+        }
+        catch (const var_context_exception& e)
+        {
+            throw expression_exception(
+                Fmt() << "Concretization error: " << e.what() >> Fmt::to_str
+            );
+        }
     }
     return _concrete;
 }

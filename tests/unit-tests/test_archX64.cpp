@@ -2599,9 +2599,9 @@ void test_archX64(){
          << " Testing arch X64 support... " << std::flush;
 
     MaatEngine engine(Arch::Type::X64);
-    engine.mem->new_segment(0x0, 0x11000);
-    engine.mem->new_segment(0x110000, 0x130000);
-    engine.mem->new_segment(0x123400000000, 0x123400003000);
+    engine.mem->map(0x0, 0x11000);
+    engine.mem->map(0x110000, 0x130000);
+    engine.mem->map(0x123400000000, 0x123400003000);
 
     total += reg_translation();
     /* 
