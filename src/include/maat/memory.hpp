@@ -98,7 +98,7 @@ For performance reasons, no checks are performed on the read/write operations
 to make sure that they don't overflow the bounds of the buffer. It is up
 to the caller to verify that the arguments passed are consistent.
 */
-class MemConcreteBuffer
+class MemConcreteBuffer: public serial::Serializable
 {
 private:
     unsigned int _size;
@@ -128,6 +128,11 @@ public:
 
     /// Returns a raw pointer to the concrete memory buffer at offset 'off'
     uint8_t* raw_mem_at(offset_t off);
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** This class represents a memory area where abstract expressions are stored.

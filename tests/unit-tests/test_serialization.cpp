@@ -99,6 +99,24 @@ namespace test
 
             return res;
         }
+
+        unsigned int serialize_mem_concrete_buffer()
+        {
+            unsigned int res = 0;
+            MemConcreteBuffer b1(1000);
+            std::unique_ptr<MemConcreteBuffer> b2;
+
+            b1.write(10, 1236456, 8);
+            b1.write(101, 64651132, 4);
+            b1.write(999, 7, 1);
+
+            _dump_and_load(b1, b2);
+            res += _assert(b2->read(10, 8) == 1236456, "Serializer: failed to dump and load MemConcreteBuffer");
+            res += _assert(b2->read(101, 4) == 64651132, "Serializer: failed to dump and load MemConcreteBuffer");
+            res += _assert(b2->read(999, 1) == 7, "Serializer: failed to dump and load MemConcreteBuffer");
+
+            return res;
+        }
     }
 }
 
@@ -119,6 +137,7 @@ void test_serialization()
     total += serialize_expr();
     total += serialize_value();
     total += serialize_mem_status_bitmap();
+    total += serialize_mem_concrete_buffer();
 
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;

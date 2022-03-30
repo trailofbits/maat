@@ -612,6 +612,24 @@ uint8_t* MemConcreteBuffer::raw_mem_at(offset_t off)
     return reinterpret_cast<uint8_t*>(_mem) + off;
 }
 
+uuid_t MemConcreteBuffer::class_uuid() const
+{
+    return serial::ClassId::MEM_CONCRETE_BUFFER;
+}
+
+void MemConcreteBuffer::dump(Serializer& s) const
+{
+    s << bits(_size);
+    s << serial::buffer((char*)_mem, _size);
+}
+
+void MemConcreteBuffer::load(Deserializer& d)
+{
+    d >> bits(_size);
+    _mem = new uint8_t[_size];
+    d >> serial::buffer((char*)_mem, _size);
+}
+
 /* Memory abstract buffer 
    ======================
 Abstract expressions are stored in a hashmap <offset : (expr, byte_num)>. 
