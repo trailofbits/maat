@@ -23,8 +23,9 @@ namespace serial{
 typedef uint16_t uuid_t;
 
 
-/** UUID for Maat classes. The UUID is used to store the class of a serialized object
- * and reconstruct the appropriate object when deserializing */
+/** UUID for Maat classes. The UID is used to store the class of a serialized object
+ * and reconstruct the appropriate object when deserializing. NULL UID is reserved 
+ * for error detection */
 enum ClassId : uuid_t
 {
     EXPR_BINOP=1,
@@ -34,6 +35,7 @@ enum ClassId : uuid_t
     EXPR_ITE,
     EXPR_UNOP,
     EXPR_VAR,
+    MEM_STATUS_BITMAP,
     NUMBER,
     VALUE
 };
@@ -141,6 +143,13 @@ public:
 public:
     /// Dump primitive type by reference
     template <typename T> Serializer& operator<<(Bits<T&> obj)
+    {
+        stream() << obj;
+        return *this;
+    }
+
+    /// Dump raw buffer
+    template <typename T> Serializer& operator<<(Buffer<T> obj)
     {
         stream() << obj;
         return *this;
@@ -259,6 +268,13 @@ public:
 public:
     /// Load primitive type by reference
     template <typename T> Deserializer& operator>>(Bits<T&> obj)
+    {
+        stream() >> obj;
+        return *this;
+    }
+
+    /// Load raw buffer
+    template <typename T> Deserializer& operator>>(Buffer<T> obj)
     {
         stream() >> obj;
         return *this;

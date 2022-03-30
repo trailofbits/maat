@@ -12,6 +12,7 @@
 #include "maat/settings.hpp"
 #include "maat/snapshot.hpp"
 #include "maat/memory_page.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -54,7 +55,7 @@ to write only a few bytes. Therefore, for performance reasons, it is possible
 for the functions to return an offset bigger than off+nb_bytes-1, just
 keep that in mind when using it.
 */
-class MemStatusBitmap
+class MemStatusBitmap: public serial::Serializable
 {
 private:
     uint8_t* _bitmap;
@@ -84,6 +85,10 @@ public:
     bool is_concrete(offset_t off);
     offset_t is_abstract_until(offset_t off, offset_t max=0xffffffff);
     offset_t is_concrete_until(offset_t off, offset_t max=0xffffffff);
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /**This class represents a concrete memory area. It's basically a wrapper 

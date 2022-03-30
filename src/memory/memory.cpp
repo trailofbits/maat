@@ -9,6 +9,7 @@
 namespace maat
 {
 
+using serial::bits;
 
 PageSet::PageSet(addr_t s, addr_t e, mem_flag_t f, bool was_once_exec): 
     start(s), end(e), flags(f)
@@ -455,6 +456,23 @@ offset_t MemStatusBitmap::is_concrete_until(offset_t off, offset_t max )
     return res;
 }
 
+uuid_t MemStatusBitmap::class_uuid() const
+{
+    return serial::ClassId::MEM_STATUS_BITMAP;
+}
+
+void MemStatusBitmap::dump(Serializer& s) const
+{
+    s << bits(_size);
+    s << serial::buffer((char*)_bitmap, _size);
+}
+
+void MemStatusBitmap::load(Deserializer& d)
+{
+    d >> bits(_size);
+    _bitmap = new uint8_t[_size];
+    d >> serial::buffer((char*)_bitmap, _size);
+}
 
 MemConcreteBuffer::MemConcreteBuffer():_mem(nullptr){}
 MemConcreteBuffer::MemConcreteBuffer(offset_t nb_bytes)

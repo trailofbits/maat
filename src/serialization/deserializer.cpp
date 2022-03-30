@@ -92,6 +92,8 @@ Serializable* Deserializer::Factory::new_object(uuid_t class_uuid)
             return new ExprUnop();
         case ClassId::EXPR_VAR:
             return new ExprVar();
+        case ClassId::MEM_STATUS_BITMAP:
+            return new MemStatusBitmap();
         case ClassId::VALUE:
             return new Value();
         default:

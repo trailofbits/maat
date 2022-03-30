@@ -79,6 +79,26 @@ namespace test
         
             return res;
         }
+
+        unsigned int serialize_mem_status_bitmap()
+        {
+            unsigned int res = 0;
+            MemStatusBitmap b1(1000);
+            std::unique_ptr<MemStatusBitmap> b2;
+
+            b1.mark_as_abstract(10, 12);
+            b1.mark_as_abstract(101, 396);
+            b1.mark_as_abstract(999);
+
+            _dump_and_load(b1, b2);
+            res += _assert(b2->is_abstract_until(10, 100) == 13, "Serializer: failed to dump and load MemStatusBitmap");
+            res += _assert(b2->is_abstract_until(101, 500) == 397, "Serializer: failed to dump and load MemStatusBitmap");
+            res += _assert(b2->is_abstract_until(999, 100) == 1000, "Serializer: failed to dump and load MemStatusBitmap");
+            res += _assert(b2->is_concrete_until(0, 100) == 10, "Serializer: failed to dump and load MemStatusBitmap");
+            res += _assert(b2->is_concrete_until(999, 100) == 999, "Serializer: failed to dump and load MemStatusBitmap");
+
+            return res;
+        }
     }
 }
 
@@ -98,6 +118,7 @@ void test_serialization()
 
     total += serialize_expr();
     total += serialize_value();
+    total += serialize_mem_status_bitmap();
 
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;
