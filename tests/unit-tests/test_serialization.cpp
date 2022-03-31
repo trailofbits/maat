@@ -117,6 +117,50 @@ namespace test
 
             return res;
         }
+
+        unsigned int serialize_mem_abstract_buffer()
+        {
+            unsigned int res = 0;
+            MemAbstractBuffer b1;
+            std::unique_ptr<MemAbstractBuffer> b2;
+
+            Expr    e1 = exprcst(32, 0xaaaa),
+                    e2 = exprvar(64, "A");
+            
+            b1.write(0x12345678, e1);
+            b1.write(101, e2);
+
+            _dump_and_load(b1, b2);
+            res += _assert(b2->read(0x12345678, 4)->eq(e1), "Serializer: failed to dump and load MemAbstractBuffer");
+            res += _assert(b2->read(101, 8)->eq(e2), "Serializer: failed to dump and load MemAbstractBuffer");
+
+            return res;
+        }
+
+        unsigned int serialize_mem_segment()
+        {
+            unsigned int res = 0;
+            MemSegment s1(10, 0x3fff, "mysegment");
+            std::unique_ptr<MemSegment> s2;
+            VarContext ctx;
+
+            Expr    e1 = exprcst(32, 0xaaaa),
+                    e2 = exprvar(64, "A");
+            
+            s1.write(12, 123456, 4);
+            s1.write(101, Value(e1), ctx);
+            s1.write(0x1000, Value(e2), ctx);
+
+            _dump_and_load(s1, s2);
+            res += _assert(s2->start == 10, "Serializer: failed to dump and load MemSegment");
+            res += _assert(s2->end == 0x3fff, "Serializer: failed to dump and load MemSegment");
+            res += _assert(s2->name == "mysegment", "Serializer: failed to dump and load MemSegment");
+            res += _assert(s2->read(0x1000, 8).as_expr()->eq(e2), "Serializer: failed to dump and load MemSegment");
+            res += _assert(s2->read(101, 4).as_expr()->eq(e1), "Serializer: failed to dump and load MemSegment");
+            res += _assert(s2->read(12, 4).as_uint() == 123456, "Serializer: failed to dump and load MemSegment");
+
+            return res;
+        }
     }
 }
 
@@ -138,6 +182,8 @@ void test_serialization()
     total += serialize_value();
     total += serialize_mem_status_bitmap();
     total += serialize_mem_concrete_buffer();
+    total += serialize_mem_abstract_buffer();
+    total += serialize_mem_segment();
 
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;

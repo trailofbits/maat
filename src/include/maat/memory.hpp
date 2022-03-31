@@ -159,7 +159,7 @@ expressions stored in memory, the class automatically concatenates/extracts
 the corresponding parts
 */
 
-class MemAbstractBuffer
+class MemAbstractBuffer: public serial::Serializable
 {
 public:
     // TODO: use std::map, and use iterator successors in read() implementation
@@ -172,6 +172,10 @@ public:
     void write(offset_t off, Expr val); ///< Write an abstract value at offset 'off'
     std::pair<Expr, uint8_t>& at(offset_t off); ///< Return the abstract value pair stored at offset 'off'
     void set(offset_t off, std::pair<Expr, uint8_t>& pair); ///< Set the abstract value pair at offset 'off' 
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** This class is a wrapper that represents a mapped memory area. It can
@@ -179,7 +183,7 @@ be used transparently to write and read both abstract and concrete values.
 To do so, it uses a concrete buffer, an abstract buffer, and a memory status
 bitmap to keep track of what is abstract and what is concrete 
 */
-class MemSegment
+class MemSegment: public serial::Serializable
 {
 private:
     MemStatusBitmap _bitmap;
@@ -242,6 +246,11 @@ public:
     /** \brief Finds the first address holding a value different that 'byte' 
      * starting from 'start' */
     addr_t is_identical_until(addr_t start, cst_t byte);
+
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 

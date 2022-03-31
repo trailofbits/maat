@@ -469,6 +469,9 @@ void MemStatusBitmap::dump(Serializer& s) const
 
 void MemStatusBitmap::load(Deserializer& d)
 {
+    if (_bitmap != nullptr)
+        delete [] _bitmap;
+
     d >> bits(_size);
     _bitmap = new uint8_t[_size];
     d >> serial::buffer((char*)_bitmap, _size);
@@ -625,6 +628,9 @@ void MemConcreteBuffer::dump(Serializer& s) const
 
 void MemConcreteBuffer::load(Deserializer& d)
 {
+    if (_mem != nullptr)
+        delete [] _mem;
+
     d >> bits(_size);
     _mem = new uint8_t[_size];
     d >> serial::buffer((char*)_mem, _size);
@@ -735,6 +741,36 @@ void MemAbstractBuffer::write(offset_t off, Expr e)
 {
     for( offset_t i = 0; i < (e->size/8); i++ )
         _mem[off+i] = std::make_pair(e, i);
+}
+
+uuid_t MemAbstractBuffer::class_uuid() const
+{
+    return serial::ClassId::MEM_ABSTRACT_BUFFER;
+}
+
+void MemAbstractBuffer::dump(Serializer& s) const
+{
+    s << bits(_mem.size());
+    for (auto const& [key, val]: _mem)
+    {
+        s << bits(key) // offset
+          << val.first // expr
+          << bits(val.second); // selected byte in expr
+    }
+}
+
+void MemAbstractBuffer::load(Deserializer& d)
+{
+    size_t nb_elems;
+    offset_t off;
+    uint8_t byte;
+    Expr expr;
+    d >> bits(nb_elems);
+    for (int i = 0; i < nb_elems; i++)
+    {
+        d >> bits(off) >> expr >> bits(byte);
+        _mem[off] = std::make_pair(expr, byte); 
+    }
 }
 
 
@@ -1155,6 +1191,25 @@ addr_t MemSegment::is_identical_until(addr_t addr, cst_t byte)
     return res + start;
 }
 
+
+uuid_t MemSegment::class_uuid() const
+{
+    return serial::ClassId::MEM_SEGMENT;
+}
+
+void MemSegment::dump(Serializer& s) const
+{
+    s << _bitmap << _concrete << _abstract
+      << bits(_is_engine_special_segment)
+      << bits(start) << bits(end) << name;
+}
+
+void MemSegment::load(Deserializer& d)
+{
+    d >> _bitmap >> _concrete >> _abstract
+      >> bits(_is_engine_special_segment)
+      >> bits(start) >> bits(end) >> name;
+}
 
 
 MemEngine::MemEngine(

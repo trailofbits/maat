@@ -35,7 +35,9 @@ enum ClassId : uuid_t
     EXPR_ITE,
     EXPR_UNOP,
     EXPR_VAR,
+    MEM_ABSTRACT_BUFFER,
     MEM_CONCRETE_BUFFER,
+    MEM_SEGMENT,
     MEM_STATUS_BITMAP,
     NUMBER,
     VALUE
