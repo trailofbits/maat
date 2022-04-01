@@ -5,6 +5,8 @@
 namespace maat
 {
 
+using serial::bits;
+
 // Var Context implementation
 /* ====================================== */
 unsigned int VarContext::_id_cnt = 0;
@@ -262,6 +264,34 @@ std::ostream& operator<<(std::ostream& os, const VarContext& c)
 {
     c.print(os);
     return os;
+}
+
+serial::uuid_t VarContext::class_uuid() const
+{
+    return serial::ClassId::VAR_CONTEXT;
+}
+
+void VarContext::dump(Serializer& s) const
+{
+    s << bits(_id_cnt);
+    s << bits(varmap.size());
+    for (const auto& [key,val] : varmap)
+    {
+        s << key << val;
+    }
+}
+
+void VarContext::load(Deserializer& d)
+{
+    size_t size;
+    d >> bits(_id_cnt) >> bits(size);
+    for (int i = 0; i < size; i++)
+    {
+        std::string key;
+        Number val;
+        d >> key >> val;
+        varmap[key] = val;
+    }
 }
 
 } // namespace maat

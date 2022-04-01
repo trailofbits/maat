@@ -92,6 +92,8 @@ Serializable* Deserializer::Factory::new_object(uuid_t class_uuid)
             return new ExprUnop();
         case ClassId::EXPR_VAR:
             return new ExprVar();
+        case ClassId::INTERVAL_TREE:
+            return new IntervalTree();
         case ClassId::MEM_ABSTRACT_BUFFER:
             return new MemAbstractBuffer();
         case ClassId::MEM_CONCRETE_BUFFER:
@@ -100,8 +102,12 @@ Serializable* Deserializer::Factory::new_object(uuid_t class_uuid)
             return new MemSegment(0, 0);
         case ClassId::MEM_STATUS_BITMAP:
             return new MemStatusBitmap();
+        case ClassId::SYMBOLIC_MEM_ENGINE:
+            return new SymbolicMemEngine(0, nullptr);
         case ClassId::VALUE:
             return new Value();
+        case ClassId::VAR_CONTEXT:
+            return new VarContext();
         default:
             throw serialize_exception("Deserializer::Factory::new_object: unsupported class UUID");
     }
@@ -111,7 +117,7 @@ std::shared_ptr<Serializable> Deserializer::Factory::new_shared_ptr(Serializable
 {
     if (already_has_unique_ptr.find(raw_ptr) != already_has_unique_ptr.end())
         throw serialize_exception(
-            "Trying to create shared_ptr from raw pointer that was already used to create a unique_ptr"
+            "Deserializer: Trying to create shared_ptr from raw pointer that was already used to create a unique_ptr"
         );
 
     auto it = obj_to_shared_ptr.find(raw_ptr);
@@ -121,6 +127,25 @@ std::shared_ptr<Serializable> Deserializer::Factory::new_shared_ptr(Serializable
     {
         obj_to_shared_ptr[raw_ptr] = std::shared_ptr<Serializable>(raw_ptr);
         return obj_to_shared_ptr[raw_ptr];
+    }
+}
+
+std::unique_ptr<Serializable> Deserializer::Factory::new_unique_ptr(Serializable* raw_ptr)
+{
+    if (already_has_unique_ptr.find(raw_ptr) != already_has_unique_ptr.end())
+        throw serialize_exception(
+            "Deserializer: Trying to create unique_ptr from raw pointer that was already used to create another unique_ptr"
+        );
+
+    auto it = obj_to_shared_ptr.find(raw_ptr);
+    if (it != obj_to_shared_ptr.end())
+        throw serialize_exception(
+            "Deserializer: Trying to create unique_ptr from raw pointer that was already used to create a shared_ptr"
+        );
+    else
+    {
+        already_has_unique_ptr.insert(raw_ptr);
+        return std::unique_ptr<Serializable>(raw_ptr);
     }
 }
 

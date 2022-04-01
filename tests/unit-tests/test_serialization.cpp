@@ -161,6 +161,47 @@ namespace test
 
             return res;
         }
+
+        unsigned int serialize_var_context()
+        {
+            unsigned int res = 0;
+            VarContext v1;
+            std::unique_ptr<VarContext> v2;
+
+            v1.set("a", 123456);
+            v1.set("b", 0xaaaaaaaabbbbbbbb);
+
+            _dump_and_load(v1, v2);
+            res += _assert(v2->get("a") == 123456, "Serializer: failed to dump and load VarContext");
+            res += _assert(v2->get("b") == 0xaaaaaaaabbbbbbbb, "Serializer: failed to dump and load VarContext");
+
+            return res;
+        }
+
+        unsigned int serialize_symbolic_mem_engine()
+        {
+            unsigned int res = 0;
+            auto ctx = std::make_shared<VarContext>();
+            SymbolicMemEngine e1(64, ctx);
+            std::unique_ptr<SymbolicMemEngine> e2;
+
+            ctx->set("a", 123456);
+            ctx->set("b", 0xaaaaaaaabbbbbbbb);
+
+            e1.concrete_ptr_write(exprcst(64, 10), Value(32, 1234));
+            e1.concrete_ptr_write(exprcst(64, 100000000), Value(3, 1));
+            e1.symbolic_ptr_write(exprvar(64, "c"), Value(64, 0xaaaaaaaaaa), 0, 0xffffffffffff);
+
+            _dump_and_load(e1, e2);
+            
+            res += _assert(e2->concrete_ptr_read(exprcst(64, 10), 4, exprcst(32, 0xabcd))->eq(
+                    e1.concrete_ptr_read(exprcst(64, 10), 4, exprcst(32, 0xabcd))
+                ),
+                "Serializer: failed to dump and load SymbolicMemEngine"
+            );
+
+            return res;
+        }
     }
 }
 
@@ -184,6 +225,8 @@ void test_serialization()
     total += serialize_mem_concrete_buffer();
     total += serialize_mem_abstract_buffer();
     total += serialize_mem_segment();
+    total += serialize_var_context();
+    total += serialize_symbolic_mem_engine();
 
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;

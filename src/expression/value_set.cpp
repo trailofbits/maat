@@ -4,6 +4,8 @@
 
 namespace maat
 {
+
+using serial::bits;
     
 ValueSet::ValueSet():size(-1){}
 ValueSet::ValueSet(size_t s):size(s), min(ValueSet::vs_min), max(ValueSet::vs_max), stride(1){}
@@ -385,6 +387,21 @@ void ValueSet::set_union(ValueSet& vs1, ValueSet& vs2)
     min = vs1.min < vs2.min ? vs1.min : vs2.min;
     max = vs1.max > vs2.max ? vs1.max : vs2.max;
     set(min, max, 1); // TODO: properly analyse resulting stride instead of "1"
+}
+
+uuid_t ValueSet::class_uuid() const
+{
+    return serial::ClassId::VALUE_SET;
+}
+
+void ValueSet::dump(Serializer& s) const
+{
+    s << bits(size) << bits(min) << bits(max) << bits(stride);
+}
+
+void ValueSet::load(Deserializer& d)
+{
+    d >> bits(size) >> bits(min) >> bits(max) >> bits(stride);
 }
 
 } // namespace maat

@@ -77,6 +77,12 @@ Serializer& Serializer::operator<<(const std::shared_ptr<Serializable>& s)
     return *this;
 }
 
+Serializer& Serializer::operator<<(const Serializable* s)
+{
+    stream() << bits(ptr(s));
+    return *this;
+}
+
 void Serializer::dump_index()
 {
     for (const auto & [p,entry] : object_index)

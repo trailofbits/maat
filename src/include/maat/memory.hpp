@@ -17,6 +17,8 @@
 namespace maat
 {
 
+using serial::bits;
+
 /** \defgroup memory Memory 
  * \brief Modeling a process's main memory.
  * 
@@ -255,12 +257,14 @@ public:
 
 
 /** \brief Represents a symbolic pointer memory write */
-class SymbolicMemWrite
+class SymbolicMemWrite: public serial::Serializable
 {
 public:
     Expr addr; ///< Address of the write (symbolic pointer)
     Value value; ///< Value written
     ValueSet refined_value_set;
+    /// Dummy constructor used for deserialization
+    SymbolicMemWrite(): addr(nullptr) {} 
     SymbolicMemWrite(Expr a, const Value& val, ValueSet& vs): addr(a), value(val), refined_value_set(vs){};
     SymbolicMemWrite(addr_t a, size_t size, const Value& val)
     {
@@ -269,19 +273,46 @@ public:
         refined_value_set.size = size;
         refined_value_set.set_cst(a);
     };
+
+public:
+    virtual uuid_t class_uuid() const
+    {
+        return serial::ClassId::SYMBOLIC_MEM_WRITE;
+    }
+    virtual void dump(serial::Serializer& s) const
+    {
+        s << addr << value << refined_value_set;
+    }
+    virtual void load(serial::Deserializer& d)
+    {
+        d >> addr >> value >> refined_value_set;
+    }
 };
 
 /** \brief Class used internally for symbolic memory management */
-class SimpleInterval
+class SimpleInterval: public serial::Serializable
 {
 public:
     ucst_t min, max;
     int write_count;
-    SimpleInterval(ucst_t a, ucst_t b, int wc):min(a), max(b), write_count(wc){};
+    SimpleInterval(ucst_t a=0, ucst_t b=0, int wc=0):min(a), max(b), write_count(wc){};
     bool contains(ucst_t val)
     {
         return min <= val && max >= val;
     };
+public:
+    virtual uuid_t class_uuid() const
+    {
+        return serial::ClassId::SIMPLE_INTERVAL;
+    }
+    virtual void dump(serial::Serializer& s) const
+    {
+        s << bits(min) << bits(max) << bits(write_count);
+    }
+    virtual void load(serial::Deserializer& d)
+    {
+        d >> bits(min) >> bits(max) >> bits(write_count);
+    }
 };
 
 /** \brief Class used internally for symbolic memory management.
@@ -296,7 +327,7 @@ Binary tree of intervals, for each node:
     - match_max is the list of intervals containing 'center' ordered
       by their higher value
 */
-class IntervalTree
+class IntervalTree: public serial::Serializable
 {
 public:
     ucst_t center;
@@ -311,6 +342,10 @@ public:
     bool contains_interval(ucst_t min, ucst_t max, unsigned int max_count=0xffffffff);
     void restore(int write_count);
     ~IntervalTree();
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 
@@ -318,7 +353,7 @@ class MaatEngine;
 
 /** \brief Dedicated memory engine handling the 'symbolic' memory state resulting from symbolic
  * pointer writes */
-class SymbolicMemEngine
+class SymbolicMemEngine: public serial::Serializable
 {
 private:
     unsigned int write_count; ///< Number of symbolic writes that have been performed
@@ -327,8 +362,10 @@ private:
 private:
     std::shared_ptr<VarContext> _varctx;
 public:
-    Expr _unfold_concrete_ptr_exprmem(Expr expr, bool force_aligned=false);
-    Expr _unfold_symbolic_ptr_exprmem(Expr expr, bool force_aligned=false);
+    /** \brief If set to **true**, force symbolic pointers to be aligned with the
+     * size of the memory access. This can be used to reduce the set of
+     * possible ways memory content is affected by symbolic stores */
+    bool symptr_force_aligned;
 
 public:
     SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContext> varctx);
@@ -351,10 +388,12 @@ public:
     symbolic_mem_snapshot_t take_snapshot();
     void restore_snapshot(symbolic_mem_snapshot_t id);
 public:
-    /** \brief If set to **true**, force symbolic pointers to be aligned with the
-     * size of the memory access. This can be used to reduce the set of
-     * possible ways memory content is affected by symbolic stores */
-    bool symptr_force_aligned;
+    Expr _unfold_concrete_ptr_exprmem(Expr expr, bool force_aligned=false);
+    Expr _unfold_symbolic_ptr_exprmem(Expr expr, bool force_aligned=false);
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 

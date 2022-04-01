@@ -17,6 +17,10 @@
 namespace maat
 {
 
+using maat::serial::Serializer;
+using maat::serial::Deserializer;
+using maat::serial::uuid_t;
+
 /** \defgroup expression Expressions
  * \brief Creating and manipulating abstract expressions.
  * 
@@ -120,7 +124,7 @@ static const uint64_t default_expr_taint_mask = 0xffffffffffffffff;
 /** A value set is a strided interval used to represent the 
 * possible range of values that an expression can take. The range is
 * represented by lower and higher bounds that are unsigned values */
-class ValueSet
+class ValueSet: public serial::Serializable
 {
     protected:
     static const uint64_t vs_min  = 0; ///< Minimal lower bound
@@ -163,6 +167,10 @@ class ValueSet
     void set_concat(ValueSet& high, ValueSet& low);    
     void set_union(ValueSet& vs1, ValueSet& vs2);
 
+public:
+    virtual uuid_t class_uuid() const;
+    virtual void dump(Serializer& s) const;
+    virtual void load(Deserializer& d);
 };
 
 
@@ -183,9 +191,6 @@ typedef std::shared_ptr<ExprObject> Expr;
 The different types are implemented in separate classes inheriting from
 ExprObject: ExprCst, ExprVar, ExprMem, etc. They have specific fields and
 methods */
-using maat::serial::Serializer;
-using maat::serial::Deserializer;
-using maat::serial::uuid_t;
 class ExprObject : public serial::Serializable
 {
 friend class ExprSimplifier;

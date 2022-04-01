@@ -23,7 +23,7 @@ namespace serial{
 typedef uint16_t uuid_t;
 
 
-/** UUID for Maat classes. The UID is used to store the class of a serialized object
+/** UID for Maat classes. The UID is used to store the class of a serialized object
  * and reconstruct the appropriate object when deserializing. NULL UID is reserved 
  * for error detection */
 enum ClassId : uuid_t
@@ -35,12 +35,18 @@ enum ClassId : uuid_t
     EXPR_ITE,
     EXPR_UNOP,
     EXPR_VAR,
+    INTERVAL_TREE,
     MEM_ABSTRACT_BUFFER,
     MEM_CONCRETE_BUFFER,
     MEM_SEGMENT,
     MEM_STATUS_BITMAP,
     NUMBER,
-    VALUE
+    SIMPLE_INTERVAL,
+    SYMBOLIC_MEM_ENGINE,
+    SYMBOLIC_MEM_WRITE,
+    VALUE,
+    VALUE_SET,
+    VAR_CONTEXT
 };
 
 
@@ -180,6 +186,9 @@ public:
     /// Dump shared_ptr of serializable 
     Serializer& operator<<(const std::shared_ptr<Serializable>& s);
 
+    /// Dump ptr of serializable 
+    Serializer& operator<<(const Serializable* s);
+
     /// Dump serializable object
     Serializer& operator<<(const Serializable& s)
     {
@@ -310,6 +319,32 @@ public:
             s = reinterpret_pointer_cast<T>(
                 _factory.new_shared_ptr(obj)
             );
+        }
+        return *this;
+    }
+
+    /// Load ptr of serializable
+    template <typename T>
+    typename std::enable_if<std::is_base_of<Serializable, T>::value, Deserializer&>::type
+    operator>>(T*& s)
+    {
+        uuid_t obj_uuid = 0;
+        stream() >> bits(obj_uuid);
+        // if null uuid, null pointer
+        if (obj_uuid == 0)
+        {
+            s = nullptr;
+        }
+        else
+        {
+            // Get object for this uuid
+            auto it = uuid_to_object.find(obj_uuid);
+            if (it == uuid_to_object.end())
+                throw serialize_exception("Error deserializing shared_ptr: can't map uuid to object");
+            Serializable* obj = it->second;
+            // We should be OK forcing the cast to child class T here since
+            // the template is enabled only if T derives from Serializable
+            s = reinterpret_cast<T*>(obj);
         }
         return *this;
     }
