@@ -246,17 +246,15 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
         Py_ssize_t pos = 0;
         while (PyDict_Next(py_virtual_fs, &pos, &key, &value))
         {
-            if (not PyUnicode_Check(key))
+            const char *key_str = nullptr, *value_str = nullptr;
+            if ((key_str = PyUnicode_AsUTF8(key)) == nullptr)
             {
-                return PyErr_Format(PyExc_TypeError, "'virtual_fs' keys must be str");
+                return PyErr_Format(PyExc_TypeError, "couldn't translate 'virtual_fs' key to string");
             }
-            if (not PyUnicode_Check(value))
+            if ((value_str = PyUnicode_AsUTF8(value)) == nullptr)
             {
-                return PyErr_Format(PyExc_TypeError, "'virtual_fs' values must be str");
+                return PyErr_Format(PyExc_TypeError, "couldn't translate 'virtual_fs' value to string");
             }
-            const char *key_str, *value_str;
-            key_str = PyUnicode_AsUTF8(key);
-            value_str = PyUnicode_AsUTF8(value);
             virtual_fs[std::string(key_str)] = std::string(value_str);
         }
     }
