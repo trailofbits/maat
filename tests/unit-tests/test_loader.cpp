@@ -35,7 +35,7 @@ namespace test
                 0x56555000,
                 std::vector<CmdlineArg>{CmdlineArg("12345678")},
                 {},
-                "",
+                {},
                 {},
                 {}
             );

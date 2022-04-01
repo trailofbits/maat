@@ -1275,7 +1275,7 @@ void MaatEngine::load(
     addr_t base,
     const std::vector<loader::CmdlineArg>& args,
     const loader::environ_t& envp,
-    const std::string& virtual_path,
+    const std::unordered_map<std::string, std::string>& virtual_fs,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs,
     bool load_interp
@@ -1290,7 +1290,7 @@ void MaatEngine::load(
         base,
         args,
         envp,
-        virtual_path,
+        virtual_fs,
         libdirs,
         ignore_libs,
         load_interp
