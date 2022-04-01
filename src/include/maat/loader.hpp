@@ -81,7 +81,9 @@ public:
      * @param type Executable format of the executable to load
      * @param base Base address where to load the binary (used if relocatable or position independent code)
      * @param args Command line arguments with whom to invoke the executable
-     * @param virtual_fs Mapping of Name:Path of loaded binary in the emulated file system
+     * @param virtual_fs Location of loaded binaries and libraries in the emulated filesystem.
+     *   Maps the object(s) filenames to their path(s) in the virtual filesystem, eg:
+     *   { "libc.so.6": "/usr/lib" }
      * @param libdirs Directories where to search for shared objects the binary might depend on
      * @param ignore_libs List of libraries to **NOT** load even though the binary lists them as dependencies. This option has no effect when 'interpreter' is 'true'
      * @param interpreter If set to <code>True</code>, load and emulate the interpreter and let it load
@@ -103,6 +105,11 @@ public:
     );
 protected:
     void load_emulated_libs(MaatEngine* engine);
+    const std::string get_path_in_virtual_fs(
+        MaatEngine * engine,
+        const std::unordered_map<std::string, std::string>& virtual_fs,
+        const std::string& filename,
+        const std::string& default_dir = "/");
 };
 
 #ifdef MAAT_LIEF_BACKEND

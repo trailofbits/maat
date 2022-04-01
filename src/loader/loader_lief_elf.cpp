@@ -597,58 +597,17 @@ void LoaderLIEF::add_elf_dependencies_to_emulated_fs(
             continue;
         }
 
-        // Override FS_LIBDIR if present in virtual_fs
-        std::string fs_libdir = "/usr/lib/";
-
-        if (virtual_fs.find(lib_name) != virtual_fs.end()) {
-            if (virtual_fs.at(lib_name).size() 
-                >= engine->env->fs.get_path_separator().size()) {
-                // If the provided path ends with '/' assume it is a directory
-                if (virtual_fs.at(lib_name).substr(
-                    virtual_fs.at(lib_name).size() 
-                        - engine->env->fs.get_path_separator().size(),
-                    engine->env->fs.get_path_separator().size()
-                ) == engine->env->fs.get_path_separator()) {
-                    // We can just use this as fs_libdir in this case
-                    fs_libdir = virtual_fs.at(lib_name);
-                } else {
-                    // It doesn't end with a '/' so we need to get up to the last occurrence of
-                    // the path separator and use that as the fs_libdir
-                    size_t found = virtual_fs.at(lib_name).find_last_of(
-                        engine->env->fs.get_path_separator());
-
-                    if (found != std::string::npos) {
-                        // We found a path separator, so we can use the string up to that as the
-                        // fs_libdir
-                        fs_libdir = virtual_fs.at(lib_name).substr(0, found);
-                    } else {
-                        // No path separator found, so we should error out here, it needs
-                        // to be an absolute path
-                        throw loader_exception(
-                            "LoaderLIEF::add_elf_dependencies_to_emulated_fs(): "
-                            + virtual_fs.at(lib_name) + " is not an absolute path");
-                    }
-                }
-            } else {
-                throw loader_exception(
-                    "LoaderLIEF::add_elf_dependencies_to_emulated_fs(): "
-                    + virtual_fs.at(lib_name) + " is not an absolute path");
-            }
-        }
-
-        // Create file in fs
-        std::string virtual_path = fs_libdir + lib_name;
-        engine->log.info("Adding library '" + lib_name 
-            + "' to emulated filesystem at '" + virtual_path + "'");
-        engine->env->fs.create_file(virtual_path, true);
-        env::physical_file_t pfile = engine->env->fs.get_file(virtual_path);
-        if (pfile == nullptr)
-        {
+        const std::string lib_fs_path =
+            get_path_in_virtual_fs(engine, virtual_fs, lib_name, "/usr/lib/");
+        const env::fspath_t virtual_path =
+            engine->env->fs.fspath_from_path(lib_fs_path);
+        engine->env->fs.create_file(lib_fs_path, true);
+        env::physical_file_t pfile = engine->env->fs.get_file(lib_fs_path);
+        if (pfile == nullptr) {
             throw loader_exception(
                 Fmt() << "Error getting file in emulated filesystem: "
-                << virtual_path
-                >> Fmt::to_str
-            );
+                        << lib_fs_path >>
+                Fmt::to_str);
         }
         addr_t offset = 0;
         pfile->copy_real_file(lib_path);

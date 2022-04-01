@@ -223,7 +223,7 @@ friend class LinuxEmulator;
 
 private:
     filehandle_t _handle_cnt;
-    std::string path_separator;
+    std::string _path_separator;
     std::string rootdir_prefix;
     char orphan_file_wildcard;
     Directory root;
@@ -310,7 +310,7 @@ public:
 
     node_status_t get_node_status(const std::string& path);
 
-    std::string get_path_separator(void) const;
+    const std::string& path_separator(void) const;
 
 public:
     /// Return the stdin file for process with PID 'pid'

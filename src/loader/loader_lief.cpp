@@ -37,53 +37,19 @@ void LoaderLIEF::load(
     }
     // Init environment
     // Set process info
-    env::fspath_t vfspath;
-    
-    if (virtual_fs.find(binary_name) != virtual_fs.end()) {
-        // We have been provided a path to override the default one
-        // Make sure that if path_separator is something crazy like '-SEPARATOR-' that we don't
-        // read out of bounds here
-        if (virtual_fs.at(binary_name).size() 
-            >= engine->env->fs.get_path_separator().size()) {
-            // If the provided path ends with '/' assume it is a directory
-            if (virtual_fs.at(binary_name).substr(
-                virtual_fs.at(binary_name).size() 
-                    - engine->env->fs.get_path_separator().size(),
-                engine->env->fs.get_path_separator().size()
-            ) == engine->env->fs.get_path_separator()) {
-                vfspath = engine->env->fs.fspath_from_path(virtual_fs.at(binary_name) 
-                    + binary_name);
-            } else {
-                vfspath = engine->env->fs.fspath_from_path(virtual_fs.at(binary_name));
-            }
-
-        } else {
-            // It's shorter than the separator so it definitely doesn't end with it...
-            // We'll just use the provided path as is in this case.
-            vfspath = engine->env->fs.fspath_from_path(virtual_fs.at(binary_name));
-
-        }
-    } else {
-        vfspath = {binary_name};
-    }
-    std::string vpath = engine->env->fs.path_from_fspath(vfspath);
-    engine->log.info("Loading binary '" + binary_name + "' from path '" + vpath + "'");
+    std::string vpath = get_path_in_virtual_fs(engine, virtual_fs, binary_name);
     engine->process->pid = 1234;
     engine->process->binary_path = vpath;
     env::fspath_t pwd = engine->env->fs.fspath_from_path(vpath);
     pwd.pop_back();
     engine->process->pwd = engine->env->fs.path_from_fspath(pwd);
     // Add binary to filesystem
-    try
-    {
+    try {
         engine->env->add_running_process(*engine->process, binary);
-    }
-    catch(const env_exception& e)
-    {
-        engine->log.warning(
-            "Failed to add the binary in the virtual filesystem due to the following error: ",
-            e.what()
-        );
+    } catch (const env_exception &e) {
+        engine->log.warning("Failed to add the binary in the virtual "
+                            "filesystem due to the following error: ",
+                            e.what());
     }
 }
 
