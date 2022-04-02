@@ -114,8 +114,8 @@ public:
         SYMLINK ///< Symbolic link to another file
     };
 private:
-    static unsigned int _uuid_cnt;
-    unsigned int _uuid;
+    static unsigned int _uid_cnt;
+    unsigned int _uid;
 protected:
     std::shared_ptr<MemSegment> data;
     int flags;
@@ -157,8 +157,8 @@ public:
     /// If symlink, returns the file it points to
     const std::string& symlink();
 public:
-    /// Return the file uuid
-    unsigned int uuid();
+    /// Return the file uid
+    unsigned int uid();
 private:
     // Used by streams
     void _adjust_read_offset(addr_t& offset);

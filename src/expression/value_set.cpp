@@ -389,7 +389,7 @@ void ValueSet::set_union(ValueSet& vs1, ValueSet& vs2)
     set(min, max, 1); // TODO: properly analyse resulting stride instead of "1"
 }
 
-uuid_t ValueSet::class_uuid() const
+uid_t ValueSet::class_uid() const
 {
     return serial::ClassId::VALUE_SET;
 }

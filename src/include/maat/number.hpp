@@ -110,7 +110,7 @@ public:
     /// Print number to a stream
     friend std::ostream& operator<<(std::ostream& os, const Number& n);
 public:
-    virtual serial::uuid_t class_uuid() const;
+    virtual serial::uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
     virtual void load(serial::Deserializer& d);
 };

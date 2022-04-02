@@ -129,9 +129,9 @@ void ExprObject::load(Deserializer& d)
         >> args;
 }
 
-uuid_t ExprObject::class_uuid() const 
+uid_t ExprObject::class_uid() const 
 {
-    throw serialize_exception("class_uuid() shouldn't be called from ExprObject base class");
+    throw serialize_exception("class_uid() shouldn't be called from ExprObject base class");
 }
 
 bool ExprObject::is_type(ExprType t, Op op)
@@ -383,7 +383,7 @@ void ExprCst::load(Deserializer& d)
     ExprObject::load(d);
 }
 
-uuid_t ExprCst::class_uuid() const {return ClassId::EXPR_CST;}
+uid_t ExprCst::class_uid() const {return ClassId::EXPR_CST;}
 
 ExprCst::ExprCst(size_t s, const std::string& value, int base): ExprObject(ExprType::CST, s, true, Taint::NOT_TAINTED)
 {
@@ -493,7 +493,7 @@ void ExprVar::load(Deserializer& d)
     d >> _name;
 }
 
-uuid_t ExprVar::class_uuid() const {return ClassId::EXPR_VAR;}
+uid_t ExprVar::class_uid() const {return ClassId::EXPR_VAR;}
 
 hash_t ExprVar::hash()
 {
@@ -574,9 +574,9 @@ void ExprMem::load(Deserializer& d)
     throw serialize_exception("load() not implemented for ExprMem");
 }
 
-uuid_t ExprMem::class_uuid() const
+uid_t ExprMem::class_uid() const
 {
-    throw serialize_exception("class_uuid() not implemented for ExprMem");
+    throw serialize_exception("class_uid() not implemented for ExprMem");
 }
 
 ExprMem::ExprMem(size_t s, Expr addr, unsigned int ac, Expr base, ValueSet& vs):
@@ -669,7 +669,7 @@ void ExprUnop::load(Deserializer& d)
     d >> bits(_op);
 }
 
-uuid_t ExprUnop::class_uuid() const {return ClassId::EXPR_UNOP;}
+uid_t ExprUnop::class_uid() const {return ClassId::EXPR_UNOP;}
 
 hash_t ExprUnop::hash()
 {
@@ -805,7 +805,7 @@ void ExprBinop::load(Deserializer& d)
     d >> bits(_op);
 }
 
-uuid_t ExprBinop::class_uuid() const {return ClassId::EXPR_BINOP;}
+uid_t ExprBinop::class_uid() const {return ClassId::EXPR_BINOP;}
 
 hash_t ExprBinop::hash()
 {
@@ -1120,7 +1120,7 @@ void ExprExtract::load(Deserializer& d)
     ExprObject::load(d);
 }
 
-uuid_t ExprExtract::class_uuid() const {return ClassId::EXPR_EXTRACT;}
+uid_t ExprExtract::class_uid() const {return ClassId::EXPR_EXTRACT;}
 
 hash_t ExprExtract::hash()
 {
@@ -1223,7 +1223,7 @@ void ExprConcat::load(Deserializer& d)
     ExprObject::load(d);
 }
 
-uuid_t ExprConcat::class_uuid() const {return ClassId::EXPR_CONCAT;}
+uid_t ExprConcat::class_uid() const {return ClassId::EXPR_CONCAT;}
 
 hash_t ExprConcat::hash()
 {
@@ -1347,7 +1347,7 @@ void ExprITE::load(Deserializer& d)
     d >> bits(_cond_op);
 }
 
-uuid_t ExprITE::class_uuid() const {return ClassId::EXPR_ITE;}
+uid_t ExprITE::class_uid() const {return ClassId::EXPR_ITE;}
 
 
 hash_t ExprITE::hash()

@@ -9,6 +9,7 @@
 #include "maat/path.hpp"
 #include "maat/process.hpp"
 #include "maat/exception.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {

@@ -13,7 +13,7 @@ void Deserializer::init()
     // Read index info
     int index_pos, index_cnt;
     stream() >> bits(index_pos) >> bits(index_cnt);
-    uuid_to_object.reserve(index_cnt);
+    uid_to_object.reserve(index_cnt);
     data_pos_to_object.reserve(index_cnt);
 
     // Go through every index entry and create empty object
@@ -21,14 +21,14 @@ void Deserializer::init()
     for (int i = 0; i < index_cnt; i++)
     {
         Serializer::IndexEntry entry{0,0,0};
-        stream() >> bits(entry.obj_uuid) >> bits(entry.class_uuid) >> bits(entry.data_pos);
-        // Make sure that uuid is unique
-        if (uuid_to_object.find(entry.obj_uuid) != uuid_to_object.end())
-            throw serialize_exception("Deserializer::init(): got non unique uuid!");
+        stream() >> bits(entry.obj_uid) >> bits(entry.class_uid) >> bits(entry.data_pos);
+        // Make sure that uid is unique
+        if (uid_to_object.find(entry.obj_uid) != uid_to_object.end())
+            throw serialize_exception("Deserializer::init(): got non unique uid!");
         // Create object
-        Serializable* obj_ptr = _factory.new_object(entry.class_uuid);
-        // Associate uuid to real object
-        uuid_to_object[entry.obj_uuid] = obj_ptr;
+        Serializable* obj_ptr = _factory.new_object(entry.class_uid);
+        // Associate uid to real object
+        uid_to_object[entry.obj_uid] = obj_ptr;
         data_pos_to_object[entry.data_pos] = obj_ptr;
     }
 }
@@ -36,12 +36,12 @@ void Deserializer::init()
 Serializable* Deserializer::_deserialize()
 {
     int index_pos = 0, index_cnt = 0;
-    uuid_t root_obj_uuid = 0;
+    uid_t root_obj_uid = 0;
     // Initialise the objects
     init();
     // Set stream to beginning of data (skip index_pos, index_cnt)
     stream().set_pos(0);
-    stream() >> bits(index_pos) >> bits(index_cnt) >> bits(root_obj_uuid);
+    stream() >> bits(index_pos) >> bits(index_cnt) >> bits(root_obj_uid);
     // Load all object contents
     try
     {
@@ -60,7 +60,7 @@ Serializable* Deserializer::_deserialize()
     // (either unique_ptr or shared_ptr)
 
     // Return root object
-    return uuid_to_object.at(root_obj_uuid);
+    return uid_to_object.at(root_obj_uid);
 }
 
 Deserializer& Deserializer::operator>>(std::string& str)
@@ -74,9 +74,9 @@ Deserializer& Deserializer::operator>>(std::string& str)
 }
 
 
-Serializable* Deserializer::Factory::new_object(uuid_t class_uuid)
+Serializable* Deserializer::Factory::new_object(uid_t class_uid)
 {
-    switch (class_uuid)
+    switch (class_uid)
     {
         case ClassId::EXPR_BINOP:
             return new ExprBinop();
@@ -109,7 +109,7 @@ Serializable* Deserializer::Factory::new_object(uuid_t class_uuid)
         case ClassId::VAR_CONTEXT:
             return new VarContext();
         default:
-            throw serialize_exception("Deserializer::Factory::new_object: unsupported class UUID");
+            throw serialize_exception("Deserializer::Factory::new_object: unsupported class uid");
     }
 }
 

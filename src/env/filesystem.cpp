@@ -7,10 +7,10 @@ namespace env
 {
 
 // ================ PhysicalFile =====================
-// Init uuids at some random value, because they can be
+// Init uids at some random value, because they can be
 // used to simulate the inode number on Linux and I don't know
 // what happens for a null inode number.
-unsigned int PhysicalFile::_uuid_cnt = 5;
+unsigned int PhysicalFile::_uid_cnt = 5;
 
 PhysicalFile::PhysicalFile(SnapshotManager<env::Snapshot>* s, PhysicalFile::Type t):
 type(t), snapshots(s)
@@ -19,12 +19,12 @@ type(t), snapshots(s)
     deleted = false;
     _size = 0;
     istream_read_offset = 0;
-    _uuid = _uuid_cnt++;
+    _uid = _uid_cnt++;
 }
 
-unsigned int PhysicalFile::uuid()
+unsigned int PhysicalFile::uid()
 {
-    return _uuid;
+    return _uid;
 }
 
 unsigned int PhysicalFile::size()

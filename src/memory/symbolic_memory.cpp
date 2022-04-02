@@ -133,7 +133,7 @@ IntervalTree::~IntervalTree()
     // deleted automatically
 }
 
-uuid_t IntervalTree::class_uuid() const
+uid_t IntervalTree::class_uid() const
 {
     return serial::ClassId::INTERVAL_TREE;
 }
@@ -383,7 +383,7 @@ void SymbolicMemEngine::restore_snapshot(symbolic_mem_snapshot_t id)
 }
 
 
-uuid_t SymbolicMemEngine::class_uuid() const
+uid_t SymbolicMemEngine::class_uid() const
 {
     return serial::ClassId::SYMBOLIC_MEM_ENGINE;
 }

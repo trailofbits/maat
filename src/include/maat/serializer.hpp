@@ -20,13 +20,13 @@ namespace serial{
  * \{ */
 
 /// Unique identifier of a serialized object
-typedef uint16_t uuid_t;
+typedef uint16_t uid_t;
 
 
 /** UID for Maat classes. The UID is used to store the class of a serialized object
  * and reconstruct the appropriate object when deserializing. NULL UID is reserved 
  * for error detection */
-enum ClassId : uuid_t
+enum ClassId : uid_t
 {
     EXPR_BINOP=1,
     EXPR_CONCAT,
@@ -38,9 +38,13 @@ enum ClassId : uuid_t
     INTERVAL_TREE,
     MEM_ABSTRACT_BUFFER,
     MEM_CONCRETE_BUFFER,
+    MEM_MAP,
+    MEM_MAP_MANAGER,
+    MEM_PAGE_MANAGER,
     MEM_SEGMENT,
     MEM_STATUS_BITMAP,
     NUMBER,
+    PAGE_SET,
     SIMPLE_INTERVAL,
     SYMBOLIC_MEM_ENGINE,
     SYMBOLIC_MEM_WRITE,
@@ -82,8 +86,8 @@ class Deserializer;
 class Serializable
 {
 public:
-    /// Return the class uuid (see ClassId enum)
-    virtual uuid_t class_uuid() const = 0; 
+    /// Return the class uid (see ClassId enum)
+    virtual uid_t class_uid() const = 0; 
     /// Dump the object contents in a serializer stream
     virtual void dump(Serializer&) const = 0; 
     /// Restore an object from a deserializer stream
@@ -122,17 +126,17 @@ public:
     /// Index entry used to keep track of an object being serialized
     struct IndexEntry
     {
-        uuid_t obj_uuid;
-        uuid_t class_uuid;
+        uid_t obj_uid;
+        uid_t class_uid;
         int data_pos; // Data position for object in stream
     };
 
 private:
     // Unique object ID counter
-    uuid_t _uuid_cnt;
+    uid_t _uid_cnt;
     // Out stream
     Stream _stream;
-    // Map objects to their uuid
+    // Map objects to their uid
     std::unordered_map<const void*, IndexEntry> object_index;
     // Objects waiting to be serialized
     std::queue<const Serializable*> serialization_queue;
@@ -146,9 +150,9 @@ public:
     void serialize(const Serializable& obj);
     /// Serialize object from shared pointer
     void serialize(const std::shared_ptr<Serializable>& obj);
-    /** Add an object to the serialization queue and return it's object uuid. This
+    /** Add an object to the serialization queue and return it's object uid. This
      * method is intended to be used from within the Serializable::dump() overloads */
-    uuid_t ptr(const Serializable* obj);
+    uid_t ptr(const Serializable* obj);
 public:
     /// Dump primitive type by reference
     template <typename T> Serializer& operator<<(Bits<T&> obj)
@@ -199,7 +203,7 @@ public:
 private:
     // Get index entry for object
     IndexEntry& get_index_entry(const Serializable*);
-    uuid_t new_uuid();
+    uid_t new_uid();
     // Write index data to stream
     void dump_index();
     // Dump the index, write index info at the beginning of the stream
@@ -247,7 +251,7 @@ public:
         std::set<Serializable*> already_has_unique_ptr;
     public:
         /// Allocate new object of a given class
-        Serializable* new_object(uuid_t class_uuid);
+        Serializable* new_object(uid_t class_uid);
         /// Create new shared pointer for a given object
         std::shared_ptr<Serializable> new_shared_ptr(Serializable* raw_ptr);
         /// Create new unique_ptr for a given object
@@ -255,7 +259,7 @@ public:
     };
 
 private:
-    std::unordered_map<uuid_t, Serializable*> uuid_to_object;
+    std::unordered_map<uid_t, Serializable*> uid_to_object;
     std::unordered_map<int, Serializable*> data_pos_to_object;
     // In stream
     Stream _stream;
@@ -300,19 +304,19 @@ public:
     typename std::enable_if<std::is_base_of<Serializable, T>::value, Deserializer&>::type
     operator>>(std::shared_ptr<T>& s)
     {
-        uuid_t obj_uuid = 0;
-        stream() >> bits(obj_uuid);
-        // if null uuid, null pointer
-        if (obj_uuid == 0)
+        uid_t obj_uid = 0;
+        stream() >> bits(obj_uid);
+        // if null uid, null pointer
+        if (obj_uid == 0)
         {
             s = nullptr;
         }
         else
         {
-            // Get object for this uuid
-            auto it = uuid_to_object.find(obj_uuid);
-            if (it == uuid_to_object.end())
-                throw serialize_exception("Error deserializing shared_ptr: can't map uuid to object");
+            // Get object for this uid
+            auto it = uid_to_object.find(obj_uid);
+            if (it == uid_to_object.end())
+                throw serialize_exception("Error deserializing shared_ptr: can't map uid to object");
             Serializable* obj = it->second;
             // We should be OK forcing the cast to child class T here since
             // the template is enabled only if T derives from Serializable
@@ -328,19 +332,19 @@ public:
     typename std::enable_if<std::is_base_of<Serializable, T>::value, Deserializer&>::type
     operator>>(T*& s)
     {
-        uuid_t obj_uuid = 0;
-        stream() >> bits(obj_uuid);
-        // if null uuid, null pointer
-        if (obj_uuid == 0)
+        uid_t obj_uid = 0;
+        stream() >> bits(obj_uid);
+        // if null uid, null pointer
+        if (obj_uid == 0)
         {
             s = nullptr;
         }
         else
         {
-            // Get object for this uuid
-            auto it = uuid_to_object.find(obj_uuid);
-            if (it == uuid_to_object.end())
-                throw serialize_exception("Error deserializing shared_ptr: can't map uuid to object");
+            // Get object for this uid
+            auto it = uid_to_object.find(obj_uid);
+            if (it == uid_to_object.end())
+                throw serialize_exception("Error deserializing shared_ptr: can't map uid to object");
             Serializable* obj = it->second;
             // We should be OK forcing the cast to child class T here since
             // the template is enabled only if T derives from Serializable

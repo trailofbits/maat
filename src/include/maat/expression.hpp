@@ -19,7 +19,7 @@ namespace maat
 
 using maat::serial::Serializer;
 using maat::serial::Deserializer;
-using maat::serial::uuid_t;
+using maat::serial::uid_t;
 
 /** \defgroup expression Expressions
  * \brief Creating and manipulating abstract expressions.
@@ -168,7 +168,7 @@ class ValueSet: public serial::Serializable
     void set_union(ValueSet& vs1, ValueSet& vs2);
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(Serializer& s) const;
     virtual void load(Deserializer& d);
 };
@@ -321,7 +321,7 @@ public:
     virtual Expr base_expr(){throw runtime_exception("No implementation");};
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(Serializer& s) const;
     virtual void load(Deserializer& d);
 
@@ -355,7 +355,7 @@ public:
     virtual ValueSet& value_set();
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(Serializer& s) const;
     virtual void load(Deserializer& d);
 };
@@ -384,7 +384,7 @@ public:
     virtual ValueSet& value_set();
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(Serializer& s) const;
     virtual void load(Deserializer& d);
 };
@@ -417,7 +417,7 @@ public:
     Expr base_expr();
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(Serializer& s) const;
     virtual void load(Deserializer& d);
 };
@@ -445,7 +445,7 @@ public:
     virtual ValueSet& value_set();
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(Serializer& s) const;
     virtual void load(Deserializer& d);
 };
@@ -475,7 +475,7 @@ public:
     virtual ValueSet& value_set();
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(Serializer& s) const;
     virtual void load(Deserializer& d);
 };
@@ -498,7 +498,7 @@ public:
     virtual ValueSet& value_set();
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(Serializer& s) const;
     virtual void load(Deserializer& d);
 };
@@ -521,7 +521,7 @@ public:
     virtual ValueSet& value_set();
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(Serializer& s) const;
     virtual void load(Deserializer& d);
 };
@@ -552,7 +552,7 @@ public:
     virtual ValueSet& value_set();
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(Serializer& s) const;
     virtual void load(Deserializer& d);
 };

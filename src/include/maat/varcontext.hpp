@@ -89,7 +89,7 @@ public:
     void print(std::ostream& os) const; ///< Print the context to a stream
 
 public:
-    virtual serial::uuid_t class_uuid() const;
+    virtual serial::uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
     virtual void load(serial::Deserializer& d);
 };

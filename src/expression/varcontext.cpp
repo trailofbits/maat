@@ -266,7 +266,7 @@ std::ostream& operator<<(std::ostream& os, const VarContext& c)
     return os;
 }
 
-serial::uuid_t VarContext::class_uuid() const
+serial::uid_t VarContext::class_uid() const
 {
     return serial::ClassId::VAR_CONTEXT;
 }

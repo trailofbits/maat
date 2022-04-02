@@ -1406,7 +1406,7 @@ Value concat(const Value& upper, const Value& lower)
     return res;
 }
 
-uuid_t Value::class_uuid() const
+uid_t Value::class_uid() const
 {
     return serial::ClassId::VALUE;
 }

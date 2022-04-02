@@ -33,7 +33,7 @@ Number::Number(size_t bits): size(bits), cst_(0), mpz_(0){}
 
 Number::~Number(){}
 
-uuid_t Number::class_uuid() const {return ClassId::NUMBER;}
+uid_t Number::class_uid() const {return ClassId::NUMBER;}
 
 void Number::dump(Serializer& s) const
 {

@@ -109,7 +109,7 @@ public:
 public:
     friend std::ostream& operator<<(std::ostream& os, const Value& val);
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
     virtual void load(serial::Deserializer& d);
 };

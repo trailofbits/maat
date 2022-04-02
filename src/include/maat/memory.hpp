@@ -88,7 +88,7 @@ public:
     offset_t is_abstract_until(offset_t off, offset_t max=0xffffffff);
     offset_t is_concrete_until(offset_t off, offset_t max=0xffffffff);
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
     virtual void load(serial::Deserializer& d);
 };
@@ -132,7 +132,7 @@ public:
     uint8_t* raw_mem_at(offset_t off);
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
     virtual void load(serial::Deserializer& d);
 };
@@ -175,7 +175,7 @@ public:
     std::pair<Expr, uint8_t>& at(offset_t off); ///< Return the abstract value pair stored at offset 'off'
     void set(offset_t off, std::pair<Expr, uint8_t>& pair); ///< Set the abstract value pair at offset 'off' 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
     virtual void load(serial::Deserializer& d);
 };
@@ -250,7 +250,7 @@ public:
     addr_t is_identical_until(addr_t start, cst_t byte);
 
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
     virtual void load(serial::Deserializer& d);
 };
@@ -275,7 +275,7 @@ public:
     };
 
 public:
-    virtual uuid_t class_uuid() const
+    virtual uid_t class_uid() const
     {
         return serial::ClassId::SYMBOLIC_MEM_WRITE;
     }
@@ -301,7 +301,7 @@ public:
         return min <= val && max >= val;
     };
 public:
-    virtual uuid_t class_uuid() const
+    virtual uid_t class_uid() const
     {
         return serial::ClassId::SIMPLE_INTERVAL;
     }
@@ -343,7 +343,7 @@ public:
     void restore(int write_count);
     ~IntervalTree();
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
     virtual void load(serial::Deserializer& d);
 };
@@ -391,7 +391,7 @@ public:
     Expr _unfold_concrete_ptr_exprmem(Expr expr, bool force_aligned=false);
     Expr _unfold_symbolic_ptr_exprmem(Expr expr, bool force_aligned=false);
 public:
-    virtual uuid_t class_uuid() const;
+    virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
     virtual void load(serial::Deserializer& d);
 };

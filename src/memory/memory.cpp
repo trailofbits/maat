@@ -11,6 +11,9 @@ namespace maat
 
 using serial::bits;
 
+PageSet::PageSet(): start(0), end(0), flags(maat::mem_flag_none), was_once_executable(false)
+{}
+
 PageSet::PageSet(addr_t s, addr_t e, mem_flag_t f, bool was_once_exec): 
     start(s), end(e), flags(f)
 {
@@ -25,6 +28,21 @@ bool PageSet::intersects_with_range(addr_t min, addr_t max) const
 bool PageSet::contains(addr_t addr)
 {
     return start <= addr && end >= addr;
+}
+
+uid_t PageSet::class_uid() const
+{
+    return serial::ClassId::PAGE_SET;
+}
+
+void PageSet::dump(serial::Serializer& s) const
+{
+    s << bits(start) << bits(end)  << bits(flags) << bits(was_once_executable);
+}
+
+void PageSet::load(serial::Deserializer& d)
+{
+    d >> bits(start) >> bits(end) >> bits(flags) >> bits(was_once_executable);
 }
 
 
@@ -181,6 +199,21 @@ const std::list<PageSet>& MemPageManager::regions()
 void MemPageManager::set_regions(std::list<PageSet>&& regions)
 {
     _regions = regions;
+}
+
+uid_t MemPageManager::class_uid() const
+{
+    return serial::ClassId::MEM_PAGE_MANAGER;
+}
+
+void MemPageManager::dump(serial::Serializer& s) const
+{
+    s << bits(_page_size) << _regions;
+}
+
+void MemPageManager::load(serial::Deserializer& d)
+{
+    d >> bits(_page_size) >> _regions;
 }
 
 std::string _mem_flags_to_string(mem_flag_t flags)
@@ -456,7 +489,7 @@ offset_t MemStatusBitmap::is_concrete_until(offset_t off, offset_t max )
     return res;
 }
 
-uuid_t MemStatusBitmap::class_uuid() const
+uid_t MemStatusBitmap::class_uid() const
 {
     return serial::ClassId::MEM_STATUS_BITMAP;
 }
@@ -615,7 +648,7 @@ uint8_t* MemConcreteBuffer::raw_mem_at(offset_t off)
     return reinterpret_cast<uint8_t*>(_mem) + off;
 }
 
-uuid_t MemConcreteBuffer::class_uuid() const
+uid_t MemConcreteBuffer::class_uid() const
 {
     return serial::ClassId::MEM_CONCRETE_BUFFER;
 }
@@ -743,7 +776,7 @@ void MemAbstractBuffer::write(offset_t off, Expr e)
         _mem[off+i] = std::make_pair(e, i);
 }
 
-uuid_t MemAbstractBuffer::class_uuid() const
+uid_t MemAbstractBuffer::class_uid() const
 {
     return serial::ClassId::MEM_ABSTRACT_BUFFER;
 }
@@ -1192,7 +1225,7 @@ addr_t MemSegment::is_identical_until(addr_t addr, cst_t byte)
 }
 
 
-uuid_t MemSegment::class_uuid() const
+uid_t MemSegment::class_uid() const
 {
     return serial::ClassId::MEM_SEGMENT;
 }
