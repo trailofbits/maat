@@ -30,6 +30,8 @@ enum ClassId : uid_t
 {
     BRANCH=1,
     CONSTRAINT,
+    CPU,
+    CPU_CONTEXT,
     EXPR_BINOP,
     EXPR_CONCAT,
     EXPR_CST,
@@ -54,6 +56,7 @@ enum ClassId : uid_t
     SIMPLE_INTERVAL,
     SYMBOLIC_MEM_ENGINE,
     SYMBOLIC_MEM_WRITE,
+    TMP_CONTEXT,
     VALUE,
     VALUE_SET,
     VAR_CONTEXT

@@ -10,6 +10,7 @@
 #include "maat/arch.hpp"
 #include "maat/event.hpp"
 #include "maat/pinst.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -33,7 +34,7 @@ namespace ir
 
 /** The CPU context in Maat's IR. It is basically
  * a mapping between abstract expressions and CPU registers */
-class CPUContext
+class CPUContext: public serial::Serializable
 {
 private:
     std::vector<Value> regs;
@@ -68,12 +69,17 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const CPUContext& ctx);
     /// Print the CPU context to a stream with proper register names
     void print(std::ostream& os, const Arch& arch);
+
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** This class represents a context for temporary registers used in Maat's IR. It is basically
  * a mapping between abstract expressions and temporary registers. It is used internally
  * for executing IR code */
-class TmpContext
+class TmpContext: public serial::Serializable
 {
 private:
     std::vector<Value> tmps;
@@ -94,6 +100,11 @@ public:
     void reset(); ///< Remove all temporaries previously created
 public:
     friend std::ostream& operator<<(std::ostream& os, TmpContext& ctx);
+
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 // Hacky method to get engine.events and avoid the compiler to
@@ -102,7 +113,7 @@ public:
 event::EventManager& get_engine_events(MaatEngine& engine);
 
 /** The CPU is responsible for processing most IR instructions when executing code */
-class CPU
+class CPU: public serial::Serializable
 {
 private:
     CPUContext _cpu_ctx; ///< CPU registers context
@@ -188,6 +199,11 @@ public:
 
     /// Reset the temporary registers
     void reset_temporaries();
+
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 constexpr int max_cpu_regs = 200;

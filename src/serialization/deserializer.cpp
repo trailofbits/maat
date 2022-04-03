@@ -78,6 +78,8 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
 {
     switch (class_uid)
     {
+        case ClassId::CPU:
+            return new ir::CPU(0);
         case ClassId::EXPR_BINOP:
             return new ExprBinop();
         case ClassId::EXPR_CONCAT:
