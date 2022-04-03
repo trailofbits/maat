@@ -119,6 +119,26 @@ bool ConstraintObject::contains_vars(const std::set<std::string>& vars)
     );
 }
 
+serial::uid_t ConstraintObject::class_uid() const
+{
+    return serial::ClassId::CONSTRAINT;
+}
+
+void ConstraintObject::dump(serial::Serializer& s) const
+{
+    // Note: we skip serializing the contained_vars set. It will just be recalculated
+    // if contained_vars() is called
+    s << serial::bits(type) << left_expr << right_expr << left_constr << right_constr;
+}
+
+void ConstraintObject::load(serial::Deserializer& d)
+{
+    // Note: we skip deserializing the contained_vars set. It will just be recalculated
+    // if contained_vars() is called
+    d >> serial::bits(type) >> left_expr >> right_expr >> left_constr >> right_constr; 
+}
+
+
 std::ostream& operator<<(std::ostream& os, const Constraint& constr)
 {
     switch(constr->type)

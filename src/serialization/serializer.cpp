@@ -83,6 +83,7 @@ Serializer& Serializer::operator<<(const Serializable* s)
     return *this;
 }
 
+
 void Serializer::dump_index()
 {
     for (const auto & [p,entry] : object_index)

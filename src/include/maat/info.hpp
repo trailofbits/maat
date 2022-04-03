@@ -6,6 +6,7 @@
 #include "maat/constraint.hpp"
 #include "maat/arch.hpp"
 #include "maat/value.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -13,6 +14,9 @@ namespace maat
 /// Namespace regrouping classes and types used by the engine to provide various information to the user
 namespace info
 {
+
+using serial::bits;
+using serial::optional_bits;
 
 /** \addtogroup engine
 * \{ */
@@ -38,13 +42,17 @@ enum class Stop
 };
 
 /// Struct holding information about a register access
-struct  RegAccess
+struct  RegAccess: public serial::Serializable
 {
     ir::reg_t reg; ///< Register that is accessed
     Value value; ///< Current value of the register
     Value new_value; ///< Value of the register after access (for reads it is the same as 'value')
     bool written; ///< If the register is written
     bool read; ///< If the register is read
+
+    RegAccess() = default;
+    RegAccess(ir::reg_t reg, const Value& val, const Value& new_val, bool written, bool read)
+    :reg(reg), value(val), new_value(new_val), written(written), read(read){}
 
     /// Print register access info to a stream
     void print(std::ostream& os, const Arch& arch)
@@ -64,17 +72,52 @@ struct  RegAccess
             os << space << "New value: " << new_value << "\n";
     }
 
+    virtual uid_t class_uid() const
+    {
+        return serial::ClassId::REG_ACCESS;
+    }
+
+    virtual void dump(serial::Serializer& s) const
+    {
+        s << bits(reg) << value << new_value << bits(written) << bits(read);
+    }
+
+    virtual void load(serial::Deserializer& d)
+    {
+         d >> bits(reg) >> value >> new_value >> bits(written) >> bits(read);
+    }
+
 };
 
 
 /// Struct holding information about a memory access
-struct MemAccess
+struct MemAccess: public serial::Serializable
 {
+public:
     Value addr; ///< Address where memory is accessed
     size_t size; ///< Number of bytes accessed
     Value value; ///< Value read/written from/to memory
     bool written; ///< If the memory is written
     bool read; ///< If the memory is read
+
+    MemAccess() = default;
+    MemAccess(const Value& addr, size_t size, const Value& val, bool written, bool read)
+    :addr(addr), size(size), value(val), written(written), read(read){}
+
+    virtual uid_t class_uid() const
+    {
+        return serial::ClassId::MEM_ACCESS;
+    }
+
+    virtual void dump(serial::Serializer& s) const
+    {
+        s << addr << bits(size) << value << bits(written) << bits(read);
+    }
+
+    virtual void load(serial::Deserializer& d)
+    {
+        d >> addr >> bits(size) >> value >> bits(written) >> bits(read);
+    }
 };
 
 /// Print memory access info to a stream
@@ -82,12 +125,31 @@ std::ostream& operator<<(std::ostream& os, const MemAccess& mem_access);
 
 // TODO: next could be a simple addr_t
 /// Struct holding information about a regular or conditional branch operation
-struct Branch
+struct Branch: public serial::Serializable
 {
     std::optional<bool> taken = std::nullopt; ///< Boolean indicating if the branch is taken or not (it has no value for purely symbolic conditions)
     Constraint cond; ///< Condition for the branch. The branch is taken if the constraint evaluates to True (**warning**: null for unconditional branches)
     Value target; ///< Target address if the branch is taken (**warning**: null for IR internal branches)
     Value next; ///< Next instruction if the branch is not taken (**warning**: null for regular branch operation)
+
+    Branch() = default;
+    Branch(const std::optional<bool>& taken, const Constraint& cond, const Value& t, const Value& n)
+    :taken(taken), cond(cond), target(t), next(n){}
+
+    virtual uid_t class_uid() const
+    {
+        return serial::ClassId::BRANCH;
+    }
+
+    virtual void dump(serial::Serializer& s) const
+    {
+        s << optional_bits(taken) << cond << target << next;
+    }
+
+    virtual void load(serial::Deserializer& d)
+    {
+        d >> optional_bits(taken) >> cond >> target >> next;
+    }
 };
 
 /// Print branch info to a stream
@@ -100,7 +162,7 @@ std::ostream& operator<<(std::ostream& os, const Branch& branch);
  * info, e.g register/memory that was read/written, path constraints that was
  * encountered, etc
  * */
-class Info
+class Info: public serial::Serializable
 {
 public:
     info::Stop stop; ///< Reason why the engine stopped
@@ -191,6 +253,22 @@ public:
         if (reg_access.has_value())
             reg_access->print(os, arch);
     };
+
+    virtual uid_t class_uid() const
+    {
+        return serial::ClassId::INFO;
+    }
+
+    virtual void dump(serial::Serializer& s) const
+    {
+        s << bits(stop) << optional_bits(addr) << branch << reg_access << mem_access << exit_status;
+    }
+
+    virtual void load(serial::Deserializer& d)
+    {
+        d >> bits(stop) >> optional_bits(addr) >> branch >> reg_access >> mem_access >> exit_status;
+    }
+
 };
 
     /** \} */ // doxygen Engine group

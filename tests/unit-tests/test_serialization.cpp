@@ -227,6 +227,7 @@ void test_serialization()
     total += serialize_mem_segment();
     total += serialize_var_context();
     total += serialize_symbolic_mem_engine();
+    // TODO test snapshots (serialize then restore snapshot)
 
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;

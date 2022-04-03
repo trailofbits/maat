@@ -24,12 +24,20 @@ typedef std::vector<std::pair<Expr, uint8_t>> abstract_mem_chunk_t;
 typedef unsigned int symbolic_mem_snapshot_t;
  
 /// Struct used by snapshots to record previous contents of an overwritten memory area
-struct  SavedMemState
+struct SavedMemState: public serial::Serializable
 {
+public:
     size_t size;
     addr_t addr;
     cst_t concrete_content;
     abstract_mem_chunk_t abstract_content;
+
+public:
+    SavedMemState();
+    SavedMemState(size_t size, addr_t addr, cst_t concrete, abstract_mem_chunk_t abstract);
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
  

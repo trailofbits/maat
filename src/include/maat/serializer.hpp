@@ -28,15 +28,19 @@ typedef uint16_t uid_t;
  * for error detection */
 enum ClassId : uid_t
 {
-    EXPR_BINOP=1,
+    BRANCH=1,
+    CONSTRAINT,
+    EXPR_BINOP,
     EXPR_CONCAT,
     EXPR_CST,
     EXPR_EXTRACT,
     EXPR_ITE,
     EXPR_UNOP,
     EXPR_VAR,
+    INFO,
     INTERVAL_TREE,
     MEM_ABSTRACT_BUFFER,
+    MEM_ACCESS,
     MEM_CONCRETE_BUFFER,
     MEM_MAP,
     MEM_MAP_MANAGER,
@@ -45,6 +49,8 @@ enum ClassId : uid_t
     MEM_STATUS_BITMAP,
     NUMBER,
     PAGE_SET,
+    REG_ACCESS,
+    SAVED_MEM_STATE,
     SIMPLE_INTERVAL,
     SYMBOLIC_MEM_ENGINE,
     SYMBOLIC_MEM_WRITE,
@@ -77,6 +83,22 @@ template <typename T> struct Buffer
 static inline Buffer<char> buffer(char* buf, int cnt){ return Buffer<char>{buf, cnt}; }
 /// Wrap a buffer for writing to a serializer stream
 static inline Buffer<const char> buffer(const char* buf, int cnt){ return Buffer<const char>{buf, cnt}; }
+
+/** Explicit wrapper to dump/load the raw contents of std::optional<> variables using a serializer stream.
+ * Intended to be used for primitive POD types like 'int', 'char', etc  */
+template <typename T> struct OptionalBits
+{
+    T t;
+};
+/// Wrap a variable for reading from a deserializer stream
+template <typename T> static inline OptionalBits<std::optional<T>&> optional_bits(std::optional<T>& t){
+    return OptionalBits<std::optional<T>&>{t};
+}
+
+/// Wrap a variable for writing to a deserializer stream
+template <typename T> static inline OptionalBits<const std::optional<T>&> optional_bits(const std::optional<T>& t){
+    return OptionalBits<const std::optional<T>&>{t};
+}
 
 // Forward declarations
 class Serializer;
@@ -161,6 +183,16 @@ public:
         return *this;
     }
 
+    /// Dump std::optional primitive type by reference
+    template <typename T> Serializer& operator<<(OptionalBits<T&> obj)
+    {
+        bool has_value = obj.t.has_value(); 
+        stream() << bits(has_value);
+        if (has_value)
+            stream() << bits(obj.t.value());
+        return *this;
+    }
+
     /// Dump raw buffer
     template <typename T> Serializer& operator<<(Buffer<T> obj)
     {
@@ -197,6 +229,16 @@ public:
     Serializer& operator<<(const Serializable& s)
     {
         s.dump(*this); 
+        return *this;
+    }
+
+    /// Dump optional of non-serializable non-primitive type
+    template <typename T>
+    Serializer& operator<<(const std::optional<T>& s)
+    {
+        *this << bits(s.has_value());
+        if (s.has_value())
+            *this << *s; // Don't use bits() here, we don't want to support primitive types
         return *this;
     }
 
@@ -289,6 +331,16 @@ public:
         return *this;
     }
 
+    /// Load std::optional primitive type by reference
+    template <typename T> Deserializer& operator>>(OptionalBits<T&> obj)
+    {
+        bool has_value = obj.t.has_value();
+        stream() >> bits(has_value);
+        if (has_value)
+            stream() >> bits(obj.t);
+        return *this;
+    }
+
     /// Load raw buffer
     template <typename T> Deserializer& operator>>(Buffer<T> obj)
     {
@@ -371,6 +423,19 @@ public:
     Deserializer& operator>>(Serializable& s)
     {
         s.load(*this);
+        return *this;
+    }
+
+    /// Load optional of non-primitive type
+    template <typename T>
+    Deserializer& operator>>(std::optional<T>& opt)
+    {
+        bool has_value;
+        *this >> bits(has_value);
+        if (has_value)
+            *this >> opt.emplace(); // Don't use bits() here, we don't want to support primitive types
+        else
+            opt = std::nullopt;
         return *this;
     }
 

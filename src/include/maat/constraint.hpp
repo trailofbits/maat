@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include "maat/expression.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -45,7 +46,7 @@ typedef std::shared_ptr<ConstraintObject> Constraint;
 
 /** \brief Constraint object representing constraints between symbolic expressions. This class
  *  should never be manipulated directly but used transparently through ::Constraint instances */
-class ConstraintObject
+class ConstraintObject: public serial::Serializable
 {
 private:
     // std::nullopt until we get the variables 
@@ -56,6 +57,7 @@ public:
     Expr right_expr; ///< Right member of the constraint if arithmetic constraint between symbolic expressions
     Constraint left_constr; ///< Left member of the constraint if combination of other constraints (OR/AND)
     Constraint right_constr; ///< Right member of the constraint if combination of other constraints (OR/AND)
+public:
     ConstraintObject(ConstraintType t, Expr l, Expr r); ///< Constructor 
     ConstraintObject(ConstraintType t, Constraint l, Constraint r); ///< Constructor
     Constraint invert(); ///< Returns the inverse of the constraint
@@ -64,7 +66,10 @@ public:
     bool contains_vars(const std::set<std::string>& var_names);
     /// Returns a reference to the set of abstract variables containted in the constraint
     const std::set<std::string>& contained_vars();
-    
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /// Print a constraint to an out stream
