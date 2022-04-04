@@ -32,6 +32,7 @@ enum ClassId : uid_t
     CONSTRAINT,
     CPU,
     CPU_CONTEXT,
+    ENV_SNAPSHOT,
     EXPR_BINOP,
     EXPR_CONCAT,
     EXPR_CST,
@@ -39,7 +40,9 @@ enum ClassId : uid_t
     EXPR_ITE,
     EXPR_UNOP,
     EXPR_VAR,
+    FILE_ACCESSOR,
     INFO,
+    INST_LOCATION,
     INTERVAL_TREE,
     MEM_ABSTRACT_BUFFER,
     MEM_ACCESS,
@@ -51,9 +54,14 @@ enum ClassId : uid_t
     MEM_STATUS_BITMAP,
     NUMBER,
     PAGE_SET,
+    PHYSICAL_FILE,
+    PROCESS_INFO,
     REG_ACCESS,
     SAVED_MEM_STATE,
     SIMPLE_INTERVAL,
+    SNAPSHOT,
+    SNAPSHOT_MANAGER,
+    SNAPSHOT_MANAGER_ENV,
     SYMBOLIC_MEM_ENGINE,
     SYMBOLIC_MEM_WRITE,
     TMP_CONTEXT,
@@ -101,6 +109,24 @@ template <typename T> static inline OptionalBits<std::optional<T>&> optional_bit
 /// Wrap a variable for writing to a deserializer stream
 template <typename T> static inline OptionalBits<const std::optional<T>&> optional_bits(const std::optional<T>& t){
     return OptionalBits<const std::optional<T>&>{t};
+}
+
+/** Explicit wrapper to dump/load the raw contents of a primitive-type container using a serializer stream.
+ * Intended to be used for POD types like 'int', 'char', etc  */
+template <typename T> struct ContainerBits
+{
+    T t;
+};
+/// Wrap a POD type container for reading from a deserializer stream
+template <typename T, template< typename ELEM, typename ALLOC = std::allocator<ELEM>> class C>
+static inline ContainerBits<C<T>&> container_bits(C<T>& t){
+    return ContainerBits<C<T>&>{t};
+}
+
+/// Wrap a POD type container for writing to a deserializer stream
+template <typename T, template< typename ELEM, typename ALLOC = std::allocator<ELEM>> class C>
+static inline ContainerBits<const C<T>&> container_bits(const C<T>& t){
+    return ContainerBits<const C<T>&>{t};
 }
 
 // Forward declarations
@@ -211,7 +237,18 @@ public:
         return *this;
     }
 
-    /// Dump standard container
+    /// Dump standard container of primitive type
+    template <typename T>
+    Serializer& operator<<(ContainerBits<T&> container)
+    {
+        size_t size = container.t.size();
+        stream() << bits(size);
+        for (const auto& elem : container.t)
+            *this << bits(elem);
+        return *this;
+    }
+
+    /// Dump standard container of non-primitive type
     template <typename T, template< typename ELEM, typename ALLOC = std::allocator<ELEM>> class C>
     Serializer& operator<<(const C<T>& container)
     {
@@ -404,6 +441,20 @@ public:
             // We should be OK forcing the cast to child class T here since
             // the template is enabled only if T derives from Serializable
             s = reinterpret_cast<T*>(obj);
+        }
+        return *this;
+    }
+
+    /// Load standard container of primitive type
+    template <typename T>
+    Deserializer& operator>>(ContainerBits<T> container)
+    {
+        size_t size = 0;
+        stream() >> bits(size);
+        for (size_t i = 0; i < size; i++)
+        {
+            auto& t = container.t.emplace_back();
+            *this >> bits(t);
         }
         return *this;
     }

@@ -1,4 +1,5 @@
 #include "maat/env/filesystem.hpp"
+#include "maat/snapshot.hpp"
 #include <fstream>
 
 namespace maat
@@ -302,6 +303,41 @@ void PhysicalFile::record_write(addr_t offset, int nb_bytes)
     }
 }
 
+uid_t PhysicalFile::class_uid() const
+{
+    return serial::ClassId::PHYSICAL_FILE;
+}
+
+void PhysicalFile::dump(serial::Serializer& s) const
+{
+    s << bits(_uid_cnt) << bits(_uid) << data << bits(flags) 
+      << bits(deleted) << bits(_size) << _symlink
+      << bits(type) << bits(istream_read_offset)
+      << snapshots;
+    // We support serializing flush stream ONLY if its std::cout
+    bool flush_stream_is_stdout = (
+        flush_stream.has_value() and
+        flush_stream.value().get().rdbuf() == std::cout.rdbuf()
+    );
+        s << bits(flush_stream_is_stdout);
+}
+
+void PhysicalFile::load(serial::Deserializer& d)
+{
+    d >> bits(_uid_cnt) >> bits(_uid) >> data >> bits(flags) 
+      >> bits(deleted) >> bits(_size) >> _symlink
+      >> bits(type) >> bits(istream_read_offset)
+      >> snapshots;
+    bool flush_stream_is_stdout;
+    d >> bits(flush_stream_is_stdout);
+    if (flush_stream_is_stdout)
+        flush_stream = std::ref(std::cout);
+    else
+        flush_stream = std::nullopt;
+}
+
+FileAccessor::FileAccessor(): physical_file(nullptr), _handle(-1) {}
+
 FileAccessor::FileAccessor(physical_file_t file, filehandle_t handle, const std::string& name):
 flags(0), physical_file(file), _handle(handle), deleted(false), _alloc_addr(0), _filename(name)
 {
@@ -336,6 +372,25 @@ unsigned int FileAccessor::read_buffer(
 filehandle_t FileAccessor::handle() const
 {
     return _handle;
+}
+
+uid_t FileAccessor::class_uid() const
+{
+    return serial::ClassId::FILE_ACCESSOR;
+}
+
+void FileAccessor::dump(serial::Serializer& s) const
+{
+    s << bits(_handle) << bits(flags) << physical_file << bits(_alloc_addr) 
+      << bits(state.read_ptr) << bits(state.write_ptr) << _filename
+      << bits(deleted);
+}
+
+void FileAccessor::load(serial::Deserializer& d)
+{
+    d >> bits(_handle) >> bits(flags) >> physical_file >> bits(_alloc_addr) 
+      >> bits(state.read_ptr) >> bits(state.write_ptr) >> _filename
+      >> bits(deleted);
 }
 
 // ====================== Directory ======================
@@ -1130,6 +1185,44 @@ void Snapshot::add_saved_file_content(std::shared_ptr<PhysicalFile> file, SavedM
 void Snapshot::add_filesystem_action(std::string path, FileSystemAction action)
 {
     fs_actions.push_back(std::make_pair(path, action));
+}
+
+uid_t Snapshot::class_uid() const
+{
+    return serial::ClassId::ENV_SNAPSHOT;
+}
+
+void Snapshot::dump(serial::Serializer& s) const
+{
+    s << bits(saved_file_contents.size());
+    for (const auto& p : saved_file_contents)
+        s << p.first << p.second;
+
+    s << bits(fs_actions.size());
+    for (const auto& p : fs_actions)
+        s << p.first << bits(p.second);
+
+    s << file_accessors;
+}
+
+void Snapshot::load(serial::Deserializer& d)
+{
+    size_t tmp_size;
+    d >> bits(tmp_size);
+    for (int i = 0; i < tmp_size; i++)
+    {
+        auto& p = saved_file_contents.emplace_back();
+        d >> p.first >> p.second;
+    }
+
+    d >> bits(tmp_size);
+    for (int i = 0; i < tmp_size; i++)
+    {
+        auto& p = fs_actions.emplace_back();
+        d >> p.first >> bits(p.second);
+    }
+
+    d >> file_accessors;
 }
 
 

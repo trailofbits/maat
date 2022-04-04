@@ -4,6 +4,7 @@ namespace maat
 {
 
 using serial::bits;
+using serial::container_bits;
 
 SavedMemState::SavedMemState(): size(0), addr(0), concrete_content(0){}
 
@@ -49,6 +50,25 @@ void Snapshot::add_saved_mem(SavedMemState&& content)
 void Snapshot::add_created_segment(ucst_t segment_start)
 {
     created_segments.push_back(segment_start);
+}
+
+uid_t Snapshot::class_uid() const
+{
+    return serial::ClassId::SNAPSHOT;
+}
+
+void Snapshot::dump(serial::Serializer& s) const
+{
+    s << cpu << bits(symbolic_mem) << saved_mem << container_bits(created_segments)
+      << pending_ir_state << page_permissions << mem_mappings
+      << bits(path) << info << process << bits(env);
+}
+
+void Snapshot::load(serial::Deserializer& d)
+{
+    d >> cpu >> bits(symbolic_mem) >> saved_mem >> container_bits(created_segments)
+      >> pending_ir_state >> page_permissions >> mem_mappings
+      >> bits(path) >> info >> process >> bits(env);
 }
 
 } // namespace maat

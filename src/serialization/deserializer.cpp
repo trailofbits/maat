@@ -104,6 +104,14 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
             return new MemSegment(0, 0);
         case ClassId::MEM_STATUS_BITMAP:
             return new MemStatusBitmap();
+        case ClassId::PHYSICAL_FILE:
+            return new env::PhysicalFile(nullptr, env::PhysicalFile::Type::INVALID);
+        case ClassId::PROCESS_INFO:
+            return new ProcessInfo();
+        case ClassId::SNAPSHOT_MANAGER:
+            return new SnapshotManager<maat::Snapshot>();
+        case ClassId::SNAPSHOT_MANAGER_ENV:
+            return new SnapshotManager<maat::env::Snapshot>();
         case ClassId::SYMBOLIC_MEM_ENGINE:
             return new SymbolicMemEngine(0, nullptr);
         case ClassId::VALUE:

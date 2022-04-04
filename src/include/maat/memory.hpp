@@ -7,10 +7,11 @@
 #include <iostream>
 #include <iomanip>
 #include <list>
+#include "maat/value.hpp"
 #include "maat/types.hpp"
+#include "maat/snapshot.hpp"
 #include "maat/expression.hpp"
 #include "maat/settings.hpp"
-#include "maat/snapshot.hpp"
 #include "maat/memory_page.hpp"
 #include "maat/serializer.hpp"
 

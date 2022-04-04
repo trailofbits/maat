@@ -10,36 +10,13 @@
 #include "maat/process.hpp"
 #include "maat/exception.hpp"
 #include "maat/serializer.hpp"
+#include "maat/saved_mem_state.hpp"
 
 namespace maat
 {
 
 /** \addtogroup engine
  * \{ */
- 
-/// (Internal) Used to record writes on abstract memory
-typedef std::vector<std::pair<Expr, uint8_t>> abstract_mem_chunk_t;
- 
-/// (Internal) Used for snapshoting symbolic memory engine
-typedef unsigned int symbolic_mem_snapshot_t;
- 
-/// Struct used by snapshots to record previous contents of an overwritten memory area
-struct SavedMemState: public serial::Serializable
-{
-public:
-    size_t size;
-    addr_t addr;
-    cst_t concrete_content;
-    abstract_mem_chunk_t abstract_content;
-
-public:
-    SavedMemState();
-    SavedMemState(size_t size, addr_t addr, cst_t concrete, abstract_mem_chunk_t abstract);
-    virtual uid_t class_uid() const;
-    virtual void dump(serial::Serializer& s) const;
-    virtual void load(serial::Deserializer& d);
-};
-
  
 /** \brief Data container class used by the engine for snapshoting.
  * 
@@ -50,7 +27,7 @@ public:
  * the snapshot is taken, typically memory modifications (read/write, segment creation,
  * permission changes, ...).
  * */
-class Snapshot
+class Snapshot: public serial::Serializable
 {
 public:
     /// CPU state snapshot
@@ -82,6 +59,10 @@ public:
 public:
     void add_saved_mem(SavedMemState&& content);
     void add_created_segment(addr_t segment_start);
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 // Forward decl
@@ -92,7 +73,7 @@ namespace env
 
 /// Wrapper class to manage a list of snapshots
 template<typename T>
-class SnapshotManager
+class SnapshotManager: public serial::Serializable
 {
 friend class MaatEngine;
 friend class maat::env::FileSystem;
@@ -132,6 +113,35 @@ public:
     {
         return _snapshots.size();
     }
+
+    virtual serial::uid_t class_uid() const
+    {
+        // NOTE: this code assumes that SnapshotManager<> is instanciated only
+        // with Snapshot and env::Snapshot. If we instanciate it with other kinds
+        // of snapshots we'll need a workaround to get the correct class_uid.
+        // Unfortunately env::Snapshot can not be imported in this file because
+        // it would create circular imports. If other types of snapshots are importable
+        // here we should be fine just adding them in 'else if' clauses.
+        if (instanciated_with_type<maat::Snapshot>)
+            return serial::ClassId::SNAPSHOT_MANAGER;
+        else
+            return serial::ClassId::SNAPSHOT_MANAGER_ENV;
+    }
+
+    virtual void dump(serial::Serializer& s) const
+    {
+        s << _snapshots;
+    }
+
+    virtual void load(serial::Deserializer& d)
+    {
+        d >> _snapshots;
+    }
+
+public:
+    /// Template variable used to check what type the manager has been instanciated with
+    template <typename Check>
+    static constexpr bool instanciated_with_type = std::is_same_v<Check, T>;
 };
 /** \} */ // doxygen Engine group
 
