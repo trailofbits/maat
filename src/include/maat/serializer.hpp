@@ -59,6 +59,7 @@ enum ClassId : uid_t
     PROCESS_INFO,
     REG_ACCESS,
     SAVED_MEM_STATE,
+    SETTINGS,
     SIMPLE_INTERVAL,
     SNAPSHOT,
     SNAPSHOT_MANAGER,
