@@ -185,7 +185,7 @@ namespace hash
         nb += _x86_assert_algo_1(engine, 9700, 0x678eddf3);
         nb += _x86_assert_algo_1(engine, 9800, 0x25963d63);
         nb += _x86_assert_algo_1(engine, 9900, 0x6386bda3);
-        
+
         return nb;
     }
             

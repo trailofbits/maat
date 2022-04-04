@@ -60,6 +60,7 @@ enum ClassId : uid_t
     MEM_STATUS_BITMAP,
     NUMBER,
     PAGE_SET,
+    PATH_MANAGER,
     PHYSICAL_FILE,
     PROCESS_INFO,
     REG_ACCESS,

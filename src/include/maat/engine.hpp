@@ -77,7 +77,7 @@ public:
     std::shared_ptr<MemEngine> mem;
     ir::CPU cpu;
     event::EventManager hooks;
-    PathManager path;
+    PathManager path; // TODO: make this a shared_ptr<> when adding support for multi-engine runs
     std::shared_ptr<env::EnvEmulator> env;
     std::shared_ptr<SymbolManager> symbols;
     std::shared_ptr<ProcessInfo> process;

@@ -106,6 +106,8 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
             return new MemSegment(0, 0);
         case ClassId::MEM_STATUS_BITMAP:
             return new MemStatusBitmap();
+        case ClassId::PATH_MANAGER:
+            return new PathManager();
         case ClassId::PHYSICAL_FILE:
             return new env::PhysicalFile(nullptr, env::PhysicalFile::Type::INVALID);
         case ClassId::PROCESS_INFO:

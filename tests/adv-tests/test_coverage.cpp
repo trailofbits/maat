@@ -29,7 +29,7 @@ namespace code_coverage{
             }
             return 1; 
         }
-        
+
         bool do_code_coverage(MaatEngine& engine, addr_t start, addr_t end)
         {
             solver::SolverZ3 sol;
@@ -109,7 +109,7 @@ namespace code_coverage{
             }
             return success;
         }
-        
+
         unsigned int plaintext_pwd(){
             /* Function that checks a password 
              *     0x000004ed <+0>:	    push   ebp
