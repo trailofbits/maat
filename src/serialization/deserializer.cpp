@@ -100,6 +100,8 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
             return new MemAbstractBuffer();
         case ClassId::MEM_CONCRETE_BUFFER:
             return new MemConcreteBuffer();
+        case ClassId::MEM_ENGINE:
+            return new MemEngine();
         case ClassId::MEM_SEGMENT:
             return new MemSegment(0, 0);
         case ClassId::MEM_STATUS_BITMAP:

@@ -170,10 +170,12 @@ void MemPageManager::merge_regions()
 
 mem_flag_t MemPageManager::get_flags(addr_t addr)
 {
-    for( PageSet& r : _regions )
+    for (PageSet& r : _regions)
     {
-        if( r.contains(addr))
+        if (r.contains(addr))
+        {
             return r.flags;
+        }
     }
     throw runtime_exception("MemPageManager::get_flags(): didn't find matching map, should not happen!");
 }
@@ -213,6 +215,7 @@ void MemPageManager::dump(serial::Serializer& s) const
 
 void MemPageManager::load(serial::Deserializer& d)
 {
+    _regions.clear();
     d >> bits(_page_size) >> _regions;
 }
 
@@ -2445,6 +2448,23 @@ void MemEngine::record_mem_write(addr_t addr, int nb_bytes)
             addr += bytes_to_write;
         }
     }
+}
+
+uid_t MemEngine::class_uid() const
+{
+    return serial::ClassId::MEM_ENGINE;
+}
+
+void MemEngine::dump(serial::Serializer& s) const
+{
+    s << bits(_arch_bits) << _segments << _varctx << _snapshots
+      << symbolic_mem_engine << page_manager << mappings;
+}
+
+void MemEngine::load(serial::Deserializer& d)
+{
+    d >> bits(_arch_bits) >> _segments >> _varctx >> _snapshots
+      >> symbolic_mem_engine >> page_manager >> mappings; 
 }
 
 addr_t reserved_memory(MemEngine& mem)

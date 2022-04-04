@@ -202,6 +202,31 @@ namespace test
 
             return res;
         }
+
+        unsigned int serialize_mem_engine()
+        {
+            unsigned int res = 0;
+            std::unique_ptr<MemEngine> engine2;
+            auto snap = std::make_shared<SnapshotManager<Snapshot>>();
+            auto ctx = std::make_shared<VarContext>();
+            MemEngine engine1(ctx, 64, snap);
+
+            Expr    e1 = exprcst(32, 0xaaaa),
+                    e2 = exprvar(64, "A");
+            
+            engine1.map(0, 0xfffff, maat::mem_flag_rw, "map1");
+            engine1.map(0x10000000, 0x10010000, maat::mem_flag_rw, "map2");
+            engine1.write(12, 123456, 4);
+            engine1.write(101, Value(e1));
+            engine1.write(0x10000000, Value(e2));
+
+            _dump_and_load(engine1, engine2);
+            res += _assert(engine2->read(0x10000000, 8).as_expr()->eq(e2), "Serializer: failed to dump and load MemSegment");
+            res += _assert(engine2->read(101, 4).as_expr()->eq(e1), "Serializer: failed to dump and load MemSegment");
+            res += _assert(engine2->read(12, 4).as_uint() == 123456, "Serializer: failed to dump and load MemSegment");
+
+            return res;
+        }
     }
 }
 
@@ -227,6 +252,7 @@ void test_serialization()
     total += serialize_mem_segment();
     total += serialize_var_context();
     total += serialize_symbolic_mem_engine();
+    total += serialize_mem_engine();
     // TODO test snapshots (serialize then restore snapshot)
 
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 

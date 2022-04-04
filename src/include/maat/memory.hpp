@@ -408,7 +408,7 @@ static constexpr mem_alert_t mem_alert_x_overwrite = 0x1;
 static constexpr mem_alert_t mem_alert_possible_out_of_bounds = 0x2;
 
 /** A memory engine representing a process's memory */
-class MemEngine
+class MemEngine: public serial::Serializable
 {
 private:
     size_t _arch_bits;
@@ -610,6 +610,11 @@ public:
     /** \brief Clear the list of pending executable memory overwrites (to be used
      * by the engine only) */
     void _clear_pending_x_mem_overwrites();
+
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** \brief This helper function returns the
