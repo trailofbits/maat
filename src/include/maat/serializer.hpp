@@ -10,6 +10,10 @@
 
 namespace maat{
 
+// Forward declarations
+enum class CPUMode;
+class TranslationContext;
+
 /** \defgroup serial Serialization
  * \brief Maat's serialization utilities
  * */
@@ -44,6 +48,7 @@ enum ClassId : uid_t
     INFO,
     INST_LOCATION,
     INTERVAL_TREE,
+    LIFTER,
     MEM_ABSTRACT_BUFFER,
     MEM_ACCESS,
     MEM_CONCRETE_BUFFER,
@@ -500,6 +505,9 @@ private:
     void init();
     Serializable* _deserialize();
 };
+
+void cache_sleigh_ctx(CPUMode mode, std::shared_ptr<TranslationContext> sleigh_ctx);
+std::shared_ptr<TranslationContext> get_cached_sleigh_ctx(CPUMode mode);
 
 /** \} */ // Serialization doxygen group
 

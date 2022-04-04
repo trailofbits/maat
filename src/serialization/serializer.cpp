@@ -113,5 +113,26 @@ void Serializer::Stream::set_pos(int pos)
     os.get().seekp((std::streampos)pos);
 }
 
+
+
+
+// ========= Cache for sleigh contexts ===========
+
+std::unordered_map<CPUMode, std::shared_ptr<TranslationContext>> __sleigh_ctx_cache;
+
+void cache_sleigh_ctx(CPUMode mode, std::shared_ptr<TranslationContext> sleigh_ctx)
+{
+    __sleigh_ctx_cache[mode] = sleigh_ctx;
+}
+
+std::shared_ptr<TranslationContext> get_cached_sleigh_ctx(CPUMode mode)
+{
+    const auto& res = __sleigh_ctx_cache.find(mode);
+    if (res == __sleigh_ctx_cache.end())
+        return nullptr;
+    else
+        return res->second;
+}
+
 } // namespace serial
 } // namespace maat
