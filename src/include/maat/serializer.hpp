@@ -45,6 +45,8 @@ enum ClassId : uid_t
     EXPR_UNOP,
     EXPR_VAR,
     FILE_ACCESSOR,
+    FILE_SYSTEM,
+    FS_DIRECTORY,
     INFO,
     INST_LOCATION,
     INTERVAL_TREE,
@@ -269,6 +271,16 @@ public:
         return *this;
     }
 
+    /// Dump map non-primitive type
+    template<template <typename...> class Map, typename K, typename V>
+    Serializer& operator<<(const Map<K,V>& map)
+    {
+        stream() << bits(map.size());
+        for (const auto& [key,val] : map)
+            *this << key << val;
+        return *this;
+    }
+
     /// Dump shared_ptr of serializable 
     Serializer& operator<<(const std::shared_ptr<Serializable>& s);
 
@@ -388,6 +400,22 @@ public:
         stream() >> bits(has_value);
         if (has_value)
             stream() >> bits(obj.t);
+        return *this;
+    }
+
+    /// Dump map non-primitive type
+    template<template <typename...> class Map, typename K, typename V>
+    Deserializer& operator>>(Map<K,V>& map)
+    {
+        size_t size;
+        K key;
+        V val;
+        stream() >> bits(size);
+        for (int i = 0; i < size; i++)
+        {
+            *this >> key >> val;
+            map[key] = val;
+        }
         return *this;
     }
 

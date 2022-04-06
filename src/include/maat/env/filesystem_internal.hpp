@@ -197,7 +197,7 @@ public:
 class Directory;
 typedef std::shared_ptr<Directory> directory_t;
 
-class Directory
+class Directory: public serial::Serializable
 {
 friend class FileSystem;
 protected:
@@ -232,6 +232,10 @@ public:
 public:
     /// Print directory to output stream
     void print(std::ostream& os, const std::string& indent) const;
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 

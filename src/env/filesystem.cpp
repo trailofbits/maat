@@ -740,6 +740,22 @@ void Directory::print(std::ostream& os, const std::string& indent_string) const
     }
 }
 
+uid_t Directory::class_uid() const
+{
+    return serial::ClassId::FS_DIRECTORY;
+}
+
+void Directory::dump(serial::Serializer& s) const
+{
+    s << bits(deleted) << files << subdirs << symlinks
+      << snapshots;
+}
+
+void Directory::load(serial::Deserializer& d)
+{
+    d >> bits(deleted) >> files >> subdirs >> symlinks
+      >> snapshots;
+}
 
 // =============== FileSystem =================
 FileSystem::FileSystem(OS system):
@@ -1145,6 +1161,22 @@ void FileSystem::restore_last_snapshot(bool remove)
     if (remove)
         snapshots.pop_back();
 }
+
+uid_t FileSystem::class_uid() const
+{
+    return serial::ClassId::FILE_SYSTEM;
+}
+
+void FileSystem::dump(serial::Serializer& s) const
+{
+    // TODO
+}
+
+void FileSystem::load(serial::Deserializer& d)
+{
+    // TODO
+}
+
 
 std::ostream& operator<<(std::ostream& os, const FileSystem& fs)
 {

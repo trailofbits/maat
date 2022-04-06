@@ -11,7 +11,7 @@ namespace maat
 namespace env
 {
 
-class FileSystem
+class FileSystem: public maat::serial::Serializable
 {
 friend class EnvEmulator;
 friend class LinuxEmulator;
@@ -130,6 +130,11 @@ public:
     void restore_snapshot(snapshot_t snapshot, bool remove=false);
     /// Restore latests snapshot
     void restore_last_snapshot(bool remove=false);
+
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
 };
 
 

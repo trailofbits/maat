@@ -94,6 +94,8 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
             return new ExprUnop();
         case ClassId::EXPR_VAR:
             return new ExprVar();
+        case ClassId::FS_DIRECTORY:
+            return new env::Directory(nullptr);
         case ClassId::INTERVAL_TREE:
             return new IntervalTree();
         case ClassId::MEM_ABSTRACT_BUFFER:
