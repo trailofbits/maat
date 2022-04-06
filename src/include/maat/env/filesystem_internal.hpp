@@ -141,14 +141,14 @@ protected:
 private:
     addr_t istream_read_offset; ///< Used by IOSTREAM files
 private:
-    SnapshotManager<env::Snapshot>* snapshots; ///< Snapshot manager to record writes
+    std::shared_ptr<SnapshotManager<env::Snapshot>> snapshots; ///< Snapshot manager to record writes
 public:
     /** \brief If this field is set, flush every write to the file in the
      * stream as well. This is mostly used for stdout/stderr emulated files */
     std::optional<std::reference_wrapper<std::ostream>> flush_stream;
 public:
     /// Create a new physical file
-    PhysicalFile(SnapshotManager<env::Snapshot>* snapshots, Type type = Type::REGULAR);
+    PhysicalFile(std::shared_ptr<SnapshotManager<env::Snapshot>> snapshots=nullptr, Type type = Type::REGULAR);
     /// Write abstract buffer to the file. Return the number of bytes written
     unsigned int write_buffer(const std::vector<Value>& buffer, addr_t& offset);
     /// Write concrete buffer to the file. Return the number of bytes written
@@ -207,12 +207,12 @@ private:
     std::map<std::string, directory_t> subdirs;
     std::map<std::string, fspath_t> symlinks;
 private:
-    SnapshotManager<env::Snapshot>* snapshots; ///< Snapshot manager to record writes
+    std::shared_ptr<SnapshotManager<env::Snapshot>> snapshots; ///< Snapshot manager to record writes
 private:
     // Return True if 'name' is an existing file or subdir or symlink
     bool _contains_name(const std::string& name);
 public:
-    Directory(SnapshotManager<env::Snapshot>* snapshots); ///< Create a new empty directory
+    Directory(std::shared_ptr<SnapshotManager<env::Snapshot>> snapshots=nullptr); ///< Create a new empty directory
     /// Create new file
     bool create_file(fspath_t path, bool create_path = false); // TODO snapshot manager ?
     /// Get physical file object. Throws exception if the file doesn't exist

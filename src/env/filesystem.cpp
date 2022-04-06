@@ -13,7 +13,7 @@ namespace env
 // what happens for a null inode number.
 unsigned int PhysicalFile::_uid_cnt = 5;
 
-PhysicalFile::PhysicalFile(SnapshotManager<env::Snapshot>* s, PhysicalFile::Type t):
+PhysicalFile::PhysicalFile(std::shared_ptr<SnapshotManager<env::Snapshot>> s, PhysicalFile::Type t):
 type(t), snapshots(s)
 {
     data = std::make_shared<MemSegment>(0x0, 0xfff); // Default size: 0x1000
@@ -394,7 +394,7 @@ void FileAccessor::load(serial::Deserializer& d)
 }
 
 // ====================== Directory ======================
-Directory::Directory(SnapshotManager<env::Snapshot>* s):
+Directory::Directory(std::shared_ptr<SnapshotManager<env::Snapshot>> s):
 deleted(false), snapshots(s)
 {};
 
@@ -759,8 +759,7 @@ void Directory::load(serial::Deserializer& d)
 
 // =============== FileSystem =================
 FileSystem::FileSystem(OS system):
-_handle_cnt(0), orphan_file_wildcard('#'),
-root(&snapshots), orphan_files(&snapshots)
+_handle_cnt(0), orphan_file_wildcard('#')
 {
     switch (system)
     {
@@ -776,6 +775,9 @@ root(&snapshots), orphan_files(&snapshots)
         default:
             throw runtime_exception("FileSystem constructor: unsupported OS!");
     }
+    snapshots = std::make_shared<SnapshotManager<env::Snapshot>>();
+    root = Directory(snapshots);
+    orphan_files = Directory(snapshots);
 }
 
 bool FileSystem::create_file(const std::string& path, bool create_path)
@@ -787,8 +789,8 @@ bool FileSystem::create_file(const std::string& path, bool create_path)
         return false;
     }
 
-    if (snapshots.active())
-        snapshots.back().add_filesystem_action(path, FileSystemAction::CREATE_FILE);
+    if (snapshots->active())
+        snapshots->back().add_filesystem_action(path, FileSystemAction::CREATE_FILE);
     return true;
 }
 
@@ -823,9 +825,9 @@ bool FileSystem::delete_file(const std::string& path, bool weak)
     {
         return false;
     }
-    if (weak and snapshots.active()) // Record deletion only if weak-delete
+    if (weak and snapshots->active()) // Record deletion only if weak-delete
     {
-        snapshots.back().add_filesystem_action(path, FileSystemAction::DELETE_FILE);
+        snapshots->back().add_filesystem_action(path, FileSystemAction::DELETE_FILE);
     }
     return true;
 }
@@ -849,8 +851,8 @@ bool FileSystem::create_dir(const std::string& path)
         return false;
     }
     
-    if (snapshots.active())
-        snapshots.back().add_filesystem_action(path, FileSystemAction::CREATE_DIR);
+    if (snapshots->active())
+        snapshots->back().add_filesystem_action(path, FileSystemAction::CREATE_DIR);
     return true;
 }
 
@@ -867,9 +869,9 @@ bool FileSystem::delete_dir(const std::string& path, bool weak)
         return false;
     }
 
-    if (weak and snapshots.active())
+    if (weak and snapshots->active())
     {
-        snapshots.back().add_filesystem_action(path, FileSystemAction::DELETE_DIR);
+        snapshots->back().add_filesystem_action(path, FileSystemAction::DELETE_DIR);
     }
     return true;
 }
@@ -1071,10 +1073,10 @@ std::string FileSystem::get_stderr_for_pid(int pid)
 
 FileSystem::snapshot_t FileSystem::take_snapshot()
 {
-    env::Snapshot& snapshot = snapshots.emplace_back();
+    env::Snapshot& snapshot = snapshots->emplace_back();
     snapshot.file_accessors = fa_list;
     // Snapshot ID is its index in the snapshots list
-    return snapshots.size()-1;
+    return snapshots->size()-1;
 }
 
 /** Restore the engine state to 'snapshot'. If remove is true, the 
@@ -1089,12 +1091,12 @@ void FileSystem::restore_snapshot(snapshot_t snapshot, bool remove)
 
     // idx is the index of the oldest snapshot to restore
     // start by rewinding until 'idx' and delete more recent snapshots 
-    while (idx < snapshots.size()-1)
+    while (idx < snapshots->size()-1)
     {
         restore_last_snapshot(true); // remove = true
     }
     // For the last one (the 'idx' snapshot), pass the user provided 'remove' parameter
-    if (idx == snapshots.size()-1)
+    if (idx == snapshots->size()-1)
     {
         restore_last_snapshot(remove);
     }
@@ -1104,7 +1106,7 @@ void FileSystem::restore_snapshot(snapshot_t snapshot, bool remove)
  * snapshot is removed after being restored */
 void FileSystem::restore_last_snapshot(bool remove)
 {
-    Snapshot& snapshot = snapshots.back(); 
+    Snapshot& snapshot = snapshots->back(); 
     // Restore physical files content in reverse order !
     for (
         auto it = snapshot.saved_file_contents.rbegin(); 
@@ -1159,7 +1161,7 @@ void FileSystem::restore_last_snapshot(bool remove)
 
     // If remove, destroy the snapshot
     if (remove)
-        snapshots.pop_back();
+        snapshots->pop_back();
 }
 
 uid_t FileSystem::class_uid() const

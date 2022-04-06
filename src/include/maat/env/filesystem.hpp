@@ -29,7 +29,7 @@ private:
     std::list<FileAccessor> fa_list;
     std::vector<filehandle_t> reserved_handles;
 private:
-    maat::SnapshotManager<env::Snapshot> snapshots;
+    std::shared_ptr<maat::SnapshotManager<env::Snapshot>> snapshots;
 public:
     /// Create a new filesystem for OS 'system'
     FileSystem(OS system);
