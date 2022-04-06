@@ -7,6 +7,9 @@ namespace maat
 namespace env
 {
 
+using serial::bits;
+using serial::container_bits;
+
 // ================ PhysicalFile =====================
 // Init uids at some random value, because they can be
 // used to simulate the inode number on Linux and I don't know
@@ -1171,14 +1174,17 @@ uid_t FileSystem::class_uid() const
 
 void FileSystem::dump(serial::Serializer& s) const
 {
-    // TODO
+    s << path_separator << rootdir_prefix << bits(orphan_file_wildcard)
+      << root << orphan_files << fa_list << container_bits(reserved_handles)
+      << snapshots;
 }
 
 void FileSystem::load(serial::Deserializer& d)
 {
-    // TODO
+    d >> path_separator >> rootdir_prefix >> bits(orphan_file_wildcard)
+      >> root >> orphan_files >> fa_list >> container_bits(reserved_handles)
+      >> snapshots;
 }
-
 
 std::ostream& operator<<(std::ostream& os, const FileSystem& fs)
 {
