@@ -70,7 +70,7 @@ size_t ABI::real_arg_size(MaatEngine& engine, size_t arg_size)
 // =========== ABI NONE ============
 ABI_NONE::ABI_NONE(): ABI(Type::NONE) {}
 
-const ABI& ABI_NONE::instance()
+ABI& ABI_NONE::instance()
 {
     static ABI_NONE abi;
     return abi;
@@ -81,7 +81,7 @@ const ABI& ABI_NONE::instance()
 X86_CDECL::X86_CDECL(): ABI(Type::X86_CDECL)
 {}
 
-const ABI& X86_CDECL::instance()
+ABI& X86_CDECL::instance()
 {
     static X86_CDECL abi;
     return abi;
@@ -137,7 +137,7 @@ void X86_CDECL::ret(MaatEngine& engine) const
 X86_STDCALL::X86_STDCALL(): ABI(Type::X86_STDCALL)
 {}
 
-const ABI& X86_STDCALL::instance()
+ABI& X86_STDCALL::instance()
 {
     static X86_STDCALL abi;
     return abi;
@@ -193,7 +193,7 @@ void X86_STDCALL::ret(MaatEngine& engine) const
 X86_LINUX_SYSENTER::X86_LINUX_SYSENTER(): ABI(Type::X86_LINUX_SYSENTER)
 {}
 
-const ABI& X86_LINUX_SYSENTER::instance()
+ABI& X86_LINUX_SYSENTER::instance()
 {
     static X86_LINUX_SYSENTER abi;
     return abi;
@@ -232,7 +232,7 @@ Value X86_LINUX_SYSENTER::get_arg(MaatEngine& engine, int n, size_t arg_size) co
 X64_SYSTEM_V::X64_SYSTEM_V(): ABI(Type::X64_SYSTEM_V)
 {}
 
-const ABI& X64_SYSTEM_V::instance()
+ABI& X64_SYSTEM_V::instance()
 {
     static X64_SYSTEM_V abi;
     return abi;
@@ -298,7 +298,7 @@ void X64_SYSTEM_V::ret(MaatEngine& engine) const
 X64_LINUX_SYSCALL::X64_LINUX_SYSCALL(): ABI(Type::X64_LINUX_SYSCALL)
 {}
 
-const ABI& X64_LINUX_SYSCALL::instance()
+ABI& X64_LINUX_SYSCALL::instance()
 {
     static X64_LINUX_SYSCALL abi;
     return abi;
@@ -353,7 +353,7 @@ void X64_LINUX_SYSCALL::ret(MaatEngine& engine) const
 X86_LINUX_INT80::X86_LINUX_INT80(): ABI(Type::X86_LINUX_INT80)
 {}
 
-const ABI& X86_LINUX_INT80::instance()
+ABI& X86_LINUX_INT80::instance()
 {
     static X86_LINUX_INT80 abi;
     return abi;

@@ -8,6 +8,7 @@
 #include "maat/arch.hpp"
 #include "maat/snapshot.hpp"
 #include "maat/process.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -27,11 +28,11 @@ namespace env
  * This class provides an interface to other components that can be used
  * to emulate system calls, IPC, a filesystem, external libraries, memory
  * allocation on the heap, etc. */
-class EnvEmulator
+class EnvEmulator: public serial::Serializable
 {
 public:
-    const abi::ABI& default_abi; ///< Default ABI for calling functions
-    const abi::ABI& syscall_abi; ///< Default ABI for system calls
+    abi::ABI& default_abi; ///< Default ABI for calling functions
+    abi::ABI& syscall_abi; ///< Default ABI for system calls
 protected:
     std::vector<Library> _libraries;
     syscall_func_map_t _syscall_func_map; // <sysnum:handler>
@@ -39,8 +40,14 @@ public:
     FileSystem fs;
 public:
     /// Create an emulator for architecture *arch* and system *system*
-    EnvEmulator(Arch::Type arch, OS os);
+    EnvEmulator(Arch::Type arch = Arch::Type::NONE, OS os = OS::NONE);
     virtual ~EnvEmulator() = default;
+protected:
+    /** In-place initialisation function.
+     * This function is redundent with the constructor, however it is necessary
+     * to have it so that it can be called from derived classes when they are
+     * deserialized and need to be initialized after the object was allocated */
+    void _init(Arch::Type arch, OS os);
 // Library functions
 public:
     /// Return **true** if the environment can emulate the library *name*
@@ -62,19 +69,36 @@ public:
 public:
     /// Add a running process to the environment
     virtual void add_running_process(const ProcessInfo& pinfo, const std::string& filepath);
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
 };
 
 /// Specialisation of 'EnvEmulator' for the Linux operating system 
 class LinuxEmulator: public EnvEmulator
 {
+private:
+    Arch::Type _arch;
 public:
     LinuxEmulator(Arch::Type arch);
     virtual ~LinuxEmulator() = default;
+private:
+    /// In-place initialization function used by constructor and deserializer
+    void _init(Arch::Type arch);
 public:
     /// Add a running process to the environment
     virtual void add_running_process(const ProcessInfo& pinfo, const std::string& filepath);
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
 };
 
+
+// Util functions
+abi::ABI& _get_default_abi(Arch::Type arch, OS os);
+abi::ABI& _get_syscall_abi(Arch::Type arch, OS os);
 
 /** \} */ // doxygen group env
 

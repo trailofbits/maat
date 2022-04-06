@@ -150,7 +150,7 @@ class ABI_NONE: public ABI
 protected:
     ABI_NONE();
 public:
-    static const ABI& instance();
+    static ABI& instance();
 };
 
 /// X86 CDECL ABI
@@ -160,7 +160,7 @@ protected:
     X86_CDECL();
 public:
     /// ABI instance (singleton pattern)
-    static const ABI& instance();
+    static ABI& instance();
 public:
     /// Get function arguments
     virtual void get_args(
@@ -188,7 +188,7 @@ protected:
     X86_STDCALL();
 public:
     /// ABI instance (singleton pattern)
-    static const ABI& instance();
+    static ABI& instance();
 public:
     /// Get function arguments
     virtual void get_args(
@@ -216,7 +216,7 @@ protected:
     X86_LINUX_INT80();
 public:
     /// ABI instance (singleton pattern)
-    static const ABI& instance();
+    static ABI& instance();
 public:
     /// Get function arguments
     virtual void get_args(
@@ -242,7 +242,7 @@ protected:
     X86_LINUX_SYSENTER();
 public:
     /// ABI instance (singleton pattern)
-    static const ABI& instance();
+    static ABI& instance();
 public:
     /// Get function arguments
     virtual void get_args(
@@ -261,7 +261,7 @@ protected:
     X64_SYSTEM_V();
 public:
     /// ABI instance (singleton pattern)
-    static const ABI& instance();
+    static ABI& instance();
 public:
     /// Get function arguments
     virtual void get_args(
@@ -289,7 +289,7 @@ protected:
     X64_LINUX_SYSCALL();
 public:
     /// ABI instance (singleton pattern)
-    static const ABI& instance();
+    static ABI& instance();
 public:
     /// Get function arguments
     virtual void get_args(

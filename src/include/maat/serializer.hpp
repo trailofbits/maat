@@ -36,6 +36,8 @@ enum ClassId : uid_t
     CONSTRAINT,
     CPU,
     CPU_CONTEXT,
+    ENV_EMULATOR,
+    ENV_LINUX_EMULATOR,
     ENV_SNAPSHOT,
     EXPR_BINOP,
     EXPR_CONCAT,

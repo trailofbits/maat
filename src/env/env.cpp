@@ -3,7 +3,7 @@
 namespace maat{
 namespace env{
 
-const abi::ABI& _get_default_abi(Arch::Type arch, OS os)
+abi::ABI& _get_default_abi(Arch::Type arch, OS os)
 {
     if (arch == Arch::Type::X86)
     {
@@ -18,7 +18,7 @@ const abi::ABI& _get_default_abi(Arch::Type arch, OS os)
     return abi::ABI_NONE::instance();
 }
 
-const abi::ABI& _get_syscall_abi(Arch::Type arch, OS os)
+abi::ABI& _get_syscall_abi(Arch::Type arch, OS os)
 {
     if (arch == Arch::Type::X64)
     {
@@ -33,6 +33,13 @@ default_abi(_get_default_abi(arch, os)),
 syscall_abi(_get_syscall_abi(arch, os)),
 fs(FileSystem(os))
 {}
+
+void EnvEmulator::_init(Arch::Type arch, OS os)
+{
+    default_abi = _get_default_abi(arch, os);
+    syscall_abi = _get_syscall_abi(arch, os);
+    fs = FileSystem(os);
+}
 
 bool EnvEmulator::contains_library(const std::string& name) const
 {
@@ -102,6 +109,26 @@ EnvEmulator::snapshot_t EnvEmulator::take_snapshot()
 void EnvEmulator::restore_snapshot(snapshot_t snapshot, bool remove)
 {
     return fs.restore_snapshot(snapshot, remove);
+}
+
+uid_t EnvEmulator::class_uid() const
+{
+    return serial::ClassId::ENV_EMULATOR;
+}
+
+void EnvEmulator::dump(serial::Serializer& s) const
+{
+    // Note: we don't serialize the ABIs and stuff because
+    // the base EnvEmulator class is only used to provide
+    // a symbolic filesystem without being a real environment.
+    // Every OS properly supported for emulation will have its
+    // own derived class
+    s << fs;
+}
+
+void EnvEmulator::load(serial::Deserializer& d)
+{
+    d >> fs;
 }
 
 } // namespace env
