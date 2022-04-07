@@ -66,7 +66,7 @@ public:
     }
 };
 
-std::string StateManager::states_dir = "/tmp/";
+std::string StateManager::states_dir = "./";
 std::string StateManager::base_name = "_maat_state";
 
 StateManager state_manager;
