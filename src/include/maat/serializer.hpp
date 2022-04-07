@@ -6,6 +6,8 @@
 #include <string>
 #include <iostream>
 #include <set>
+#include <functional>
+#include <memory>
 #include "maat/exception.hpp"
 
 namespace maat{
