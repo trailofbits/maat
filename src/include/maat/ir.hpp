@@ -313,6 +313,8 @@ public:
         AsmInst::inst_id inst_id; ///< The instruction id within the AsmInst at 'addr'
         InstLocation(): addr(0), inst_id(-1){}; ///< Dummy constructor used by deserializer
         InstLocation(uint64_t address, AsmInst::inst_id id): addr(address), inst_id(id){};
+        virtual ~InstLocation() = default;
+        
         virtual serial::uid_t class_uid() const
         {
             return serial::ClassId::INST_LOCATION;

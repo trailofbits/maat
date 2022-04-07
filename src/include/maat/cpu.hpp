@@ -43,7 +43,7 @@ public:
     CPUContext(int nb_regs);
     CPUContext(const CPUContext& other) = default;
     CPUContext& operator=(const CPUContext& other) = default;
-    ~CPUContext() = default;
+    virtual ~CPUContext() = default;
 
 public:
     /// Assign abstract or concrete expression to register *reg*
@@ -88,7 +88,7 @@ public:
     TmpContext() = default;
     TmpContext(const TmpContext& other) = default;
     TmpContext& operator=(const TmpContext& other) = default;
-    ~TmpContext() = default;
+    virtual ~TmpContext() = default;
 private:
     void fill_until(int idx);
 public:
@@ -125,6 +125,7 @@ public:
     CPU(int nb_regs=0); ///< Constructor
     CPU(const CPU& other) = default;
     CPU& operator=(const CPU& other) = default;
+    virtual ~CPU() = default;
 private:
 
     /** \brief Extracts bit field (high_bit and low_bit included) from 'expr'. If

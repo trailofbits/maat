@@ -32,7 +32,7 @@ public:
     Lifter(CPUMode mode);
     Lifter(const Lifter&) = default;
     Lifter& operator=(const Lifter&) = default;
-    ~Lifter() = default;
+    virtual ~Lifter() = default;
     /** \brief Disassemble instructions until next branch instruction.
      * 
      *  @param ir_map The IR cache where to add lifted instructions

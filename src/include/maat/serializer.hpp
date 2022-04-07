@@ -158,6 +158,7 @@ class Deserializer;
 class Serializable
 {
 public:
+    virtual ~Serializable() = default;
     /// Return the class uid (see ClassId enum)
     virtual uid_t class_uid() const = 0; 
     /// Dump the object contents in a serializer stream

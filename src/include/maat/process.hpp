@@ -18,6 +18,7 @@ public:
     bool terminated; ///< 'True' if the process exited or was killed
 public:
     ProcessInfo(): pid(0), pwd(""), binary_path(""), terminated(false){}
+    virtual ~ProcessInfo() = default;
 
     virtual serial::uid_t class_uid() const
     {

@@ -48,6 +48,7 @@ public:
     FileAccessor();
     /// Create a new file 
     FileAccessor(physical_file_t physical_file, filehandle_t handle, const std::string& filename="");
+    virtual ~FileAccessor() = default;
     /// Write abstract buffer to the file. Return the number of bytes written
     unsigned int write_buffer(const std::vector<Value>& buffer);
     /// Write concrete buffer to the file. Return the number of bytes written
@@ -105,6 +106,7 @@ public:
     Snapshot() = default;
     Snapshot(const Snapshot& other) = delete;
     Snapshot& operator=(const Snapshot& other) = delete;
+    virtual ~Snapshot() = default;
 public:
     void add_saved_file_content(std::shared_ptr<PhysicalFile> file, SavedMemState&& content);
     void add_filesystem_action(std::string path, FileSystemAction action);
@@ -149,6 +151,7 @@ public:
 public:
     /// Create a new physical file
     PhysicalFile(std::shared_ptr<SnapshotManager<env::Snapshot>> snapshots=nullptr, Type type = Type::REGULAR);
+    virtual ~PhysicalFile() = default;
     /// Write abstract buffer to the file. Return the number of bytes written
     unsigned int write_buffer(const std::vector<Value>& buffer, addr_t& offset);
     /// Write concrete buffer to the file. Return the number of bytes written
@@ -213,6 +216,7 @@ private:
     bool _contains_name(const std::string& name);
 public:
     Directory(std::shared_ptr<SnapshotManager<env::Snapshot>> snapshots=nullptr); ///< Create a new empty directory
+    virtual ~Directory() = default;
     /// Create new file
     bool create_file(fspath_t path, bool create_path = false); // TODO snapshot manager ?
     /// Get physical file object. Throws exception if the file doesn't exist

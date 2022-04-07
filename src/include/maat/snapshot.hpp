@@ -56,6 +56,7 @@ public:
     Snapshot() = default;
     Snapshot(const Snapshot& other) = delete;
     Snapshot& operator=(const Snapshot& other) = delete;
+    virtual ~Snapshot() = default;
 public:
     void add_saved_mem(SavedMemState&& content);
     void add_created_segment(addr_t segment_start);
@@ -79,6 +80,8 @@ friend class MaatEngine;
 friend class maat::env::FileSystem;
 private:
     std::list<T> _snapshots;
+public:
+    virtual ~SnapshotManager() = default;
 protected:
     // Protected because only MaatEngine should have the right to add/remove breakpoints
     /// Add a new snapshot a return a reference to it

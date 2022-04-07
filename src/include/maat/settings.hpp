@@ -62,6 +62,7 @@ public:
     bool log_calls;
 public:
     Settings();
+    virtual ~Settings() = default;
     friend std::ostream& operator<<(std::ostream& os, const Settings& settings);
 public:
     virtual serial::uid_t class_uid() const;

@@ -69,7 +69,7 @@ public:
     /** Constructor */
     MemStatusBitmap(offset_t nb_bytes);
     /** Destructor */
-    ~MemStatusBitmap();
+    virtual ~MemStatusBitmap();
     /** Extend the bitmap to make it represent 'nb_bytes' more bytes of
      * memory. The new bytes are inserted at the end of the bitmap.
      * For example if nb_bytes is 16, the actual bitmap size will
@@ -109,7 +109,7 @@ private:
 public:
     MemConcreteBuffer(); ///< Constructor
     MemConcreteBuffer(offset_t nb_bytes); ///< Constructor
-    ~MemConcreteBuffer(); ///< Destructor
+    virtual ~MemConcreteBuffer(); ///< Destructor
     /** Extend the buffer to make it represent 'nb_bytes' more bytes of
      * memory. The new bytes are inserted at the end of the buffer */
     void extend_after(offset_t nb_bytes); 
@@ -171,6 +171,7 @@ private:
     abstract_mem_t _mem;
 public:
     MemAbstractBuffer(); ///< Constructor
+    virtual ~MemAbstractBuffer() = default;
     Expr read(offset_t off, unsigned int nb_bytes); ///< Read 'nb_bytes' bytes as an abstract value from offset 'off'
     void write(offset_t off, Expr val); ///< Write an abstract value at offset 'off'
     std::pair<Expr, uint8_t>& at(offset_t off); ///< Return the abstract value pair stored at offset 'off'
@@ -201,6 +202,7 @@ public:
 
 public:
     MemSegment(addr_t start, addr_t end, const std::string& name="", bool is_engine_special_segment=false); ///< Constructor
+    virtual ~MemSegment() = default;
     bool contains(addr_t addr);
     addr_t size(); ///< Number of bytes 
     bool intersects_with_range(addr_t addr_min, addr_t addr_max);
@@ -274,6 +276,7 @@ public:
         refined_value_set.size = size;
         refined_value_set.set_cst(a);
     };
+    virtual ~SymbolicMemWrite() = default;
 
 public:
     virtual uid_t class_uid() const
@@ -297,6 +300,8 @@ public:
     ucst_t min, max;
     int write_count;
     SimpleInterval(ucst_t a=0, ucst_t b=0, int wc=0):min(a), max(b), write_count(wc){};
+    virtual ~SimpleInterval() = default;
+public:
     bool contains(ucst_t val)
     {
         return min <= val && max >= val;
@@ -342,7 +347,7 @@ public:
     bool contains_addr(ucst_t val, unsigned int max_count=0xffffffff);
     bool contains_interval(ucst_t min, ucst_t max, unsigned int max_count=0xffffffff);
     void restore(int write_count);
-    ~IntervalTree();
+    virtual ~IntervalTree();
 public:
     virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
@@ -370,6 +375,7 @@ public:
 
 public:
     SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContext> varctx);
+    virtual ~SymbolicMemEngine() = default;
     /** \brief Record symbolic pointer write. 'addr_min' and 'addr_max' are the
      * minimal and maximal concrete values that the 'addr' expression can take */
     void symbolic_ptr_write(const Expr& addr, const Value& val, addr_t addr_min, addr_t addr_max);
@@ -429,7 +435,7 @@ public:
      * @param arch_bits Default address size in bits
      * @param snap Snapshot manager to use if snapshots are enabled */
     MemEngine(std::shared_ptr<VarContext> varctx=nullptr, size_t arch_bits=64, std::shared_ptr<SnapshotManager<Snapshot>> snap=nullptr);
-    ~MemEngine();
+    virtual ~MemEngine();
 
     /** \brief Map memory from 'start' to 'end' (included), with permissions 'mflags'. 
     Necessary segments are created in order to fill the map. The map is NOT initialised with zeros */

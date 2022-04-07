@@ -141,6 +141,7 @@ class ValueSet: public serial::Serializable
     ValueSet();
     ValueSet(size_t size);
     ValueSet(size_t size, ucst_t min, ucst_t max, ucst_t stride);
+    virtual ~ValueSet() = default;
 
     void set(ucst_t min, ucst_t max, ucst_t stride);
     void set_cst(ucst_t val); ///< Set value set as just one constant value

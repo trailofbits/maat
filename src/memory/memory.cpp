@@ -801,6 +801,7 @@ void MemAbstractBuffer::load(Deserializer& d)
     offset_t off;
     uint8_t byte;
     Expr expr;
+    _mem.clear();
     d >> bits(nb_elems);
     for (int i = 0; i < nb_elems; i++)
     {

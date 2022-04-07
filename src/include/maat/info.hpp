@@ -53,6 +53,7 @@ struct  RegAccess: public serial::Serializable
     RegAccess() = default;
     RegAccess(ir::reg_t reg, const Value& val, const Value& new_val, bool written, bool read)
     :reg(reg), value(val), new_value(new_val), written(written), read(read){}
+    virtual ~RegAccess() = default;
 
     /// Print register access info to a stream
     void print(std::ostream& os, const Arch& arch)
@@ -103,6 +104,7 @@ public:
     MemAccess() = default;
     MemAccess(const Value& addr, size_t size, const Value& val, bool written, bool read)
     :addr(addr), size(size), value(val), written(written), read(read){}
+    virtual ~MemAccess() = default;
 
     virtual uid_t class_uid() const
     {
@@ -135,6 +137,7 @@ struct Branch: public serial::Serializable
     Branch() = default;
     Branch(const std::optional<bool>& taken, const Constraint& cond, const Value& t, const Value& n)
     :taken(taken), cond(cond), target(t), next(n){}
+    virtual ~Branch() = default;
 
     virtual uid_t class_uid() const
     {
@@ -179,7 +182,7 @@ public:
     Info(){this->reset();};
     Info(const Info& other) = default;
     Info& operator=(const Info& other) = default;
-    ~Info() = default;
+    virtual ~Info() = default;
     /// Reset all current information
     void reset()
     {

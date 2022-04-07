@@ -61,6 +61,7 @@ public:
     ConstraintObject(); ///< Dummy constructor used by deserializer
     ConstraintObject(ConstraintType t, Expr l, Expr r); ///< Constructor 
     ConstraintObject(ConstraintType t, Constraint l, Constraint r); ///< Constructor
+    virtual ~ConstraintObject() = default;
     Constraint invert(); ///< Returns the inverse of the constraint
     /** \brief Return true if the constraint contains at least one of the variables
      * listed in 'var_names' */

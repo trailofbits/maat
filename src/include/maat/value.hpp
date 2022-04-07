@@ -38,7 +38,7 @@ public:
     Value(size_t size, cst_t val); ///< Build value from concrete value
     Value& operator=(const Value& other) = default; ///< Copy assignment
     Value& operator=(Value&& other) = default; ///< Move assignment
-    ~Value() = default;
+    virtual ~Value() = default;
 public:
     Value& operator=(const Expr& e); ///< Build Value from expression
     Value& operator=(Expr&& e); ///< Build Value from expression

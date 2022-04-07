@@ -29,7 +29,7 @@ public:
     VarContext(unsigned int id=0); ///< Constructor
     VarContext(const VarContext&) = default;
     VarContext& operator=(const VarContext&) = default;
-    ~VarContext() = default;
+    virtual ~VarContext() = default;
 
 public:
     unsigned int id; ///< Unique identifier for the VarContext instance

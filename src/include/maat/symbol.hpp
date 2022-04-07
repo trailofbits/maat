@@ -59,7 +59,7 @@ public:
     Symbol();
     Symbol(const Symbol& other) = default;
     Symbol& operator=(const Symbol& other) = default;
-    ~Symbol() = default;
+    virtual ~Symbol() = default;
     /// Create a function symbol
     Symbol(
         FunctionStatus status,
@@ -91,6 +91,8 @@ class SymbolManager: public serial::Serializable
 protected:
     std::unordered_map<addr_t, Symbol> symbols_by_addr;
     std::unordered_map<std::string, Symbol> symbols_by_name;
+public:
+    virtual ~SymbolManager() = default;
 public:
     void add_symbol(Symbol symbol); ///< Add a symbol
 public:

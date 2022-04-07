@@ -38,6 +38,7 @@ public:
 
     PageSet(); ///< Dummy constructor used by deserializer
     PageSet(addr_t start, addr_t end, mem_flag_t f, bool was_once_executable=false);
+    virtual ~PageSet() = default;
     bool intersects_with_range(addr_t min, addr_t max) const;
     bool contains(addr_t addr);
 public:
@@ -56,6 +57,7 @@ private:
     void merge_regions();
 public:
     MemPageManager(size_t page_size=0x1000);
+    virtual ~MemPageManager() = default;
     size_t page_size();
     void set_flags(addr_t start, addr_t end, mem_flag_t flags);
     mem_flag_t get_flags(addr_t addr);
@@ -94,6 +96,7 @@ public:
 
     MemMap(); ///< Dummy constructor used by deserializer
     MemMap(addr_t start, addr_t end, mem_flag_t f, std::string name="");
+    virtual ~MemMap() = default;
     bool intersects_with_range(addr_t min, addr_t max) const;
     bool contains(addr_t addr) const;
     bool contained_in_range(addr_t min, addr_t max) const;
@@ -111,6 +114,9 @@ class MemMapManager: public serial::Serializable
 {
 private:
     std::list<MemMap> _maps;
+public:
+    MemMapManager() = default;
+    virtual ~MemMapManager() = default;
 public:
     void map(MemMap map);
     void unmap(addr_t start, addr_t end);

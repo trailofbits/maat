@@ -27,6 +27,7 @@ public:
 public:
     SavedMemState();
     SavedMemState(size_t size, addr_t addr, cst_t concrete, abstract_mem_chunk_t abstract);
+    virtual ~SavedMemState() = default;
 public:
     virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;

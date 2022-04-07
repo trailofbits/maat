@@ -18,6 +18,9 @@ public:
 private:
     std::vector<Constraint> _constraints;
 public:
+    PathManager() = default;
+    virtual ~PathManager() = default;
+public:
     void add(Constraint constraint); ///< Add a path constraint
     path_snapshot_t take_snapshot(); ///< Snapshot the current path constraints
     void restore_snapshot(path_snapshot_t snap); ///< Restore snapshot

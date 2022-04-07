@@ -101,7 +101,7 @@ public:
     /// Instanciate an engine for architecture 'arch' and operating system 'os'
     MaatEngine(Arch::Type arch, env::OS os = env::OS::NONE);
     MaatEngine(const MaatEngine& other) = delete;
-    ~MaatEngine() = default; ///< Destructor
+    virtual ~MaatEngine() = default; ///< Destructor
 
 public:
     /** \brief Continue executing from the current state. Execute at most
