@@ -79,10 +79,11 @@ void TmpContext::dump(serial::Serializer& s) const
 
 void TmpContext::load(serial::Deserializer& d)
 {
+    tmps.clear();
     d >> tmps;
 }
 
-std::ostream& operator<<(std::ostream& os, TmpContext& ctx)
+std::ostream& operator<<(std::ostream& os, const TmpContext& ctx)
 {
     for (int i = 0; i < ctx.tmps.size(); i++)
     {
@@ -288,6 +289,7 @@ void CPUContext::dump(serial::Serializer& s) const
 
 void CPUContext::load(serial::Deserializer& d)
 {
+    regs.clear();
     d >> regs;
 }
 
@@ -675,6 +677,7 @@ void CPU::dump(serial::Serializer& s) const
     // Note: we don't serialize processed_inst since it is used internally only
     // during the IR execution loop and reset for every new IR instruction
     s << _cpu_ctx << tmp_ctx;
+    
 }
 
 void CPU::load(serial::Deserializer& d)

@@ -58,6 +58,7 @@ public:
     Constraint left_constr; ///< Left member of the constraint if combination of other constraints (OR/AND)
     Constraint right_constr; ///< Right member of the constraint if combination of other constraints (OR/AND)
 public:
+    ConstraintObject(); ///< Dummy constructor used by deserializer
     ConstraintObject(ConstraintType t, Expr l, Expr r); ///< Constructor 
     ConstraintObject(ConstraintType t, Constraint l, Constraint r); ///< Constructor
     Constraint invert(); ///< Returns the inverse of the constraint

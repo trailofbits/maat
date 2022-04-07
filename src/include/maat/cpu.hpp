@@ -57,7 +57,7 @@ public:
     
     /// Assign concrete value to register *reg*
     void set(ir::reg_t reg, Number&& value);
-    
+
     /// Assign concrete value to register *reg*
     void set(ir::reg_t reg, const Number& value);
 
@@ -99,7 +99,7 @@ public:
 public:
     void reset(); ///< Remove all temporaries previously created
 public:
-    friend std::ostream& operator<<(std::ostream& os, TmpContext& ctx);
+    friend std::ostream& operator<<(std::ostream& os, const TmpContext& ctx);
 
 public:
     virtual serial::uid_t class_uid() const;

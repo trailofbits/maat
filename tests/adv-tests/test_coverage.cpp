@@ -301,6 +301,7 @@ namespace code_coverage{
             
             return nb;
         }
+
 #endif // ifdef MAAT_HAS_SOLVER_BACKEND
     }
 }

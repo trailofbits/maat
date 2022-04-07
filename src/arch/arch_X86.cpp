@@ -51,10 +51,14 @@ serial::uid_t Arch::class_uid() const
 }
 
 void Arch::dump(serial::Serializer& s) const
-{}
+{
+    s << serial::empty(); // Nothing to serialize
+}
 
 void Arch::load(serial::Deserializer& d)
-{}
+{
+    d >> serial::empty(); // Nothing to serialize
+}
 
 
 namespace X86

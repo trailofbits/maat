@@ -147,6 +147,7 @@ static inline ContainerBits<const C<T>&> container_bits(const C<T>& t){
     return ContainerBits<const C<T>&>{t};
 }
 
+
 // Forward declarations
 class Serializer;
 class Deserializer;
@@ -162,6 +163,17 @@ public:
     /// Restore an object from a deserializer stream
     virtual void load(Deserializer&) = 0; 
 };
+
+/// Wrap an empty object for reading/writing to serializer/deserializer
+// This needs to be used for objects that have no body to serialize (otherwise
+// their position in the stream will be identical to the next object's position,
+// which breaks the deserializer)
+class Empty
+{
+public:
+    char dummy;
+};
+Empty& empty();
 
 /// Class that serializes a serializable class into a stream
 class Serializer
@@ -244,6 +256,13 @@ public:
     template <typename T> Serializer& operator<<(Buffer<T> obj)
     {
         stream() << obj;
+        return *this;
+    }
+
+    /// Dump empty object
+    Serializer& operator<<(Empty& obj)
+    {
+        stream() << bits(obj.dummy);
         return *this;
     }
 
@@ -405,7 +424,7 @@ public:
         bool has_value = obj.t.has_value();
         stream() >> bits(has_value);
         if (has_value)
-            stream() >> bits(obj.t);
+            stream() >> bits(obj.t.emplace());
         return *this;
     }
 
@@ -429,6 +448,13 @@ public:
     template <typename T> Deserializer& operator>>(Buffer<T> obj)
     {
         stream() >> obj;
+        return *this;
+    }
+
+    /// Load empty object
+    Deserializer& operator>>(Empty& obj)
+    {
+        stream() >> bits(obj.dummy);
         return *this;
     }
 
@@ -480,7 +506,7 @@ public:
             // Get object for this uid
             auto it = uid_to_object.find(obj_uid);
             if (it == uid_to_object.end())
-                throw serialize_exception("Error deserializing shared_ptr: can't map uid to object");
+                throw serialize_exception("Error deserializing ptr: can't map uid to object");
             Serializable* obj = it->second;
             // We should be OK forcing the cast to child class T here since
             // the template is enabled only if T derives from Serializable

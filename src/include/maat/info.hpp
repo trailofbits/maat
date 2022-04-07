@@ -84,7 +84,7 @@ struct  RegAccess: public serial::Serializable
 
     virtual void load(serial::Deserializer& d)
     {
-         d >> bits(reg) >> value >> new_value >> bits(written) >> bits(read);
+        d >> bits(reg) >> value >> new_value >> bits(written) >> bits(read);
     }
 
 };

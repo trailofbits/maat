@@ -1317,7 +1317,7 @@ void MaatEngine::dump(serial::Serializer& s) const
     // Lifter(s)
     s << bits(lifters.size());
     for (const auto& [key,val] : lifters)
-    s << bits(key) << val;
+        s << bits(key) << val;
 }
 
 void MaatEngine::load(serial::Deserializer& d)

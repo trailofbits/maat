@@ -4,6 +4,13 @@
 namespace maat{
 namespace serial{
 
+Empty _empty_instance;
+Empty& empty()
+{
+    return _empty_instance;
+}
+
+
 // uid 0 is reserved for null pointers
 Serializer::Serializer(std::ostream& os): _stream(os), _uid_cnt(1)
 {

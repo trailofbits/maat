@@ -84,6 +84,8 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
             return new X64::ArchX64();
         case ClassId::ARCH_X86:
             return new X86::ArchX86();
+        case ClassId::CONSTRAINT:
+            return new ConstraintObject();
         case ClassId::CPU:
             return new ir::CPU(0);
         case ClassId::ENV_EMULATOR:
@@ -108,6 +110,8 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
             return new env::Directory(nullptr);
         case ClassId::INTERVAL_TREE:
             return new IntervalTree();
+        case ClassId::LIFTER:
+            return new Lifter(CPUMode::NONE);
         case ClassId::MAAT_ENGINE:
             return new MaatEngine(Arch::Type::NONE);
         case ClassId::MEM_ABSTRACT_BUFFER:
@@ -130,6 +134,8 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
             return new SnapshotManager<maat::Snapshot>();
         case ClassId::SNAPSHOT_MANAGER_ENV:
             return new SnapshotManager<maat::env::Snapshot>();
+        case ClassId::SYMBOL_MANAGER:
+            return new SymbolManager();
         case ClassId::SYMBOLIC_MEM_ENGINE:
             return new SymbolicMemEngine(0, nullptr);
         case ClassId::VALUE:
@@ -137,7 +143,10 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
         case ClassId::VAR_CONTEXT:
             return new VarContext();
         default:
-            throw serialize_exception("Deserializer::Factory::new_object: unsupported class uid");
+            throw serialize_exception(
+                Fmt() << "Deserializer::Factory::new_object: unsupported class uid: " 
+                      << (int)class_uid >> Fmt::to_str
+            );
     }
 }
 

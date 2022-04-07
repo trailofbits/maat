@@ -227,6 +227,34 @@ namespace test
 
             return res;
         }
+
+        unsigned int serialize_cpu()
+        {
+            unsigned int res = 0;
+            ir::CPU cpu1(100);
+            std::unique_ptr<ir::CPU> cpu2;
+
+            for (reg_t i = 0; i < 100; i++)
+                cpu1.ctx().set(i, exprcst(32, (cst_t)i));
+
+            _dump_and_load(cpu1, cpu2);
+            for (reg_t i = 0; i < 100; i++)
+                res += _assert(cpu2->ctx().get(i).as_uint() == (cst_t)i, "Serializer: failed to dump and load CPU");
+
+            return res;
+        }
+
+        unsigned int serialize_maat_engine()
+        {
+            unsigned int res = 0;
+            MaatEngine engine1(Arch::Type::X86, env::OS::LINUX);
+            std::unique_ptr<MaatEngine> engine2;
+
+            // Just check that dump & load engine doesn't raise errors
+            _dump_and_load(engine1, engine2);
+
+            return res+1;
+        }
     }
 }
 
@@ -238,7 +266,6 @@ void test_serialization()
     std::string green = "\033[1;32m";
     std::string def = "\033[0m";
     std::string bold = "\033[1m";
-
 
     std::cout   << bold << "[" << green << "+" 
                 << def << bold << "]" << def 
@@ -253,6 +280,8 @@ void test_serialization()
     total += serialize_var_context();
     total += serialize_symbolic_mem_engine();
     total += serialize_mem_engine();
+    total += serialize_cpu();
+    total += serialize_maat_engine();
     // TODO test snapshots (serialize then restore snapshot)
 
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 

@@ -7,6 +7,10 @@
 namespace maat
 {
 
+ConstraintObject::ConstraintObject()
+:left_expr(nullptr), right_expr(nullptr), left_constr(nullptr), right_constr(nullptr)
+{}
+
 ConstraintObject::ConstraintObject(ConstraintType t, Expr l, Expr r):
     type(t), left_expr(l), right_expr(r), 
     left_constr(nullptr), right_constr(nullptr)
