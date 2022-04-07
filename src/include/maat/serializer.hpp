@@ -484,7 +484,7 @@ public:
             Serializable* obj = it->second;
             // We should be OK forcing the cast to child class T here since
             // the template is enabled only if T derives from Serializable
-            s = reinterpret_pointer_cast<T>(
+            s = std::reinterpret_pointer_cast<T>(
                 _factory.new_shared_ptr(obj)
             );
         }
