@@ -411,6 +411,9 @@ static constexpr mem_alert_t mem_alert_possible_out_of_bounds = 0x2;
 class MemEngine: public serial::Serializable
 {
 private:
+    static int _uid_cnt;
+private:
+    int _uid;
     size_t _arch_bits;
     std::list<std::shared_ptr<MemSegment>> _segments;
     std::shared_ptr<VarContext> _varctx;
@@ -612,6 +615,7 @@ public:
     void _clear_pending_x_mem_overwrites();
 
 public:
+    int uid() const;
     virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
     virtual void load(serial::Deserializer& d);

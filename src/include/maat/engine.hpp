@@ -26,6 +26,7 @@
 #include "maat/process.hpp"
 #include "maat/callother.hpp"
 #include "maat/varcontext.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -41,10 +42,8 @@ namespace maat
  * is a wrapper around core components (lifter, memory engine, IR CPU, 
  * binary loader, environment simulation, etc) that enables to symbolically
  * emulate a process */
-class MaatEngine
+class MaatEngine: public serial::Serializable
 {
-private:
-    CPUMode _current_cpu_mode;
 private:
     /** \typedef branch_type_t 
      * The type of branch taken */
@@ -52,6 +51,8 @@ private:
     static constexpr int branch_none = 0;
     static constexpr int branch_native = 1;
     static constexpr int branch_pcode = 2;
+private:
+    CPUMode _current_cpu_mode;
 private:
     // Convenience variable to avoid passing it to all subfunctions
     bool _halt_after_inst;
@@ -71,7 +72,6 @@ private:
     std::unique_ptr<ExprSimplifier> simplifier;
     callother::HandlerMap callother_handlers;
 public:
-    std::shared_ptr<ir::IRMap> ir_map;
     std::shared_ptr<Arch> arch;
     std::shared_ptr<VarContext> vars;
     std::shared_ptr<MemEngine> mem;
@@ -227,6 +227,10 @@ private:
     /** \brief Removes the instructions whose memory content has been tampered
      * by user callbacks or user scripts, and thus whose lift is no longer valid */
     void handle_pending_x_mem_overwrites();
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 

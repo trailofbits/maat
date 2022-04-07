@@ -78,6 +78,12 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
 {
     switch (class_uid)
     {
+        case ClassId::ARCH_NONE:
+            return new ArchNone();
+        case ClassId::ARCH_X64:
+            return new X64::ArchX64();
+        case ClassId::ARCH_X86:
+            return new X86::ArchX86();
         case ClassId::CPU:
             return new ir::CPU(0);
         case ClassId::ENV_EMULATOR:
@@ -102,6 +108,8 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
             return new env::Directory(nullptr);
         case ClassId::INTERVAL_TREE:
             return new IntervalTree();
+        case ClassId::MAAT_ENGINE:
+            return new MaatEngine(Arch::Type::NONE);
         case ClassId::MEM_ABSTRACT_BUFFER:
             return new MemAbstractBuffer();
         case ClassId::MEM_CONCRETE_BUFFER:

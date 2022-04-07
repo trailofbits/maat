@@ -32,7 +32,10 @@ typedef uint16_t uid_t;
  * for error detection */
 enum ClassId : uid_t
 {
-    BRANCH=1,
+    ARCH_NONE=1,
+    ARCH_X64,
+    ARCH_X86,
+    BRANCH,
     CONSTRAINT,
     CPU,
     CPU_CONTEXT,
@@ -53,6 +56,7 @@ enum ClassId : uid_t
     INST_LOCATION,
     INTERVAL_TREE,
     LIFTER,
+    MAAT_ENGINE,
     MEM_ABSTRACT_BUFFER,
     MEM_ACCESS,
     MEM_CONCRETE_BUFFER,

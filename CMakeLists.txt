@@ -46,6 +46,7 @@ add_library(maat_maat
   src/ir/asm_inst.cpp
   src/ir/cpu.cpp
   src/ir/instruction.cpp
+  src/ir/ir_cache.cpp
   src/loader/loader.cpp
   src/loader/loader_lief.cpp
   src/loader/loader_lief_elf.cpp

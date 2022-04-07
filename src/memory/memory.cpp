@@ -1248,6 +1248,9 @@ void MemSegment::load(Deserializer& d)
 }
 
 
+// Initialise static engine count
+int MemEngine::_uid_cnt = 0;
+
 MemEngine::MemEngine(
     std::shared_ptr<VarContext> varctx,
     size_t arch_bits,
@@ -1262,6 +1265,7 @@ _snapshots(snap)
         _varctx = std::make_shared<VarContext>(0);
     if(_snapshots == nullptr)
         _snapshots = std::make_shared<SnapshotManager<Snapshot>>();
+    _uid = _uid_cnt++;
 }
 
 MemEngine::~MemEngine()
@@ -2457,14 +2461,19 @@ uid_t MemEngine::class_uid() const
 
 void MemEngine::dump(serial::Serializer& s) const
 {
-    s << bits(_arch_bits) << _segments << _varctx << _snapshots
+    s << bits(_uid) << bits(_arch_bits) << _segments << _varctx << _snapshots
       << symbolic_mem_engine << page_manager << mappings;
 }
 
 void MemEngine::load(serial::Deserializer& d)
 {
-    d >> bits(_arch_bits) >> _segments >> _varctx >> _snapshots
+    d >> bits(_uid) >> bits(_arch_bits) >> _segments >> _varctx >> _snapshots
       >> symbolic_mem_engine >> page_manager >> mappings; 
+}
+
+int MemEngine::uid() const
+{
+    return _uid;
 }
 
 addr_t reserved_memory(MemEngine& mem)

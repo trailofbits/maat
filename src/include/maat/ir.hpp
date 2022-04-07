@@ -348,6 +348,11 @@ public:
 };
 
 
+// Interface for cached IR instructions
+/// Get IRMap corresponding to MemEngine identified by `mem_engine_uid`
+IRMap& get_ir_map(int mem_engine_uid);
+
+
 /** \} */ // IR doxygen group
 
 } // namespace ir
