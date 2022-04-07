@@ -148,7 +148,7 @@ void LoaderLIEF::load_elf(
     addr_t base,
     std::vector<CmdlineArg> args,
     const environ_t& envp,
-    const std::string& virtual_path,
+    const std::unordered_map<std::string, std::string>& virtual_fs,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs,
     bool load_interp
@@ -181,7 +181,7 @@ void LoaderLIEF::load_elf(
                 base,
                 args,
                 envp,
-                virtual_path,
+                virtual_fs,
                 libdirs,
                 ignore_libs,
                 interp_path
@@ -200,7 +200,7 @@ void LoaderLIEF::load_elf(
         base,
         args,
         envp,
-        virtual_path,
+        virtual_fs,
         libdirs,
         ignore_libs
     );
@@ -212,7 +212,7 @@ void LoaderLIEF::load_elf_using_interpreter(
     addr_t base,
     std::vector<CmdlineArg> args,
     const environ_t& envp,
-    const std::string& virtual_path,
+    const std::unordered_map<std::string, std::string>& virtual_fs,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs,
     const std::string& interp_path
@@ -258,7 +258,7 @@ void LoaderLIEF::load_elf_using_interpreter(
     elf_setup_stack(engine, base, args, envp);
 
     // Add the libs in the filesystem so the emulated loader can access them
-    add_elf_dependencies_to_emulated_fs(engine, libdirs, ignore_libs);
+    add_elf_dependencies_to_emulated_fs(engine, libdirs, ignore_libs, virtual_fs);
 
     // Point PC to interpreter entrypoint
     engine->cpu.ctx().set(reg_pc, interpreter_entry.value());
@@ -270,7 +270,7 @@ void LoaderLIEF::load_elf_binary(
     addr_t base,
     std::vector<CmdlineArg> args,
     const environ_t& envp,
-    const std::string& virtual_path,
+    const std::unordered_map<std::string, std::string>& virtual_fs,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs
 )
@@ -574,7 +574,8 @@ void LoaderLIEF::load_elf_dependencies(
 void LoaderLIEF::add_elf_dependencies_to_emulated_fs(
     MaatEngine* engine,
     const std::list<std::string>& libdirs,
-    const std::list<std::string>& ignore_libs
+    const std::list<std::string>& ignore_libs,
+    const std::unordered_map<std::string, std::string>& virtual_fs
 )
 {
     std::set<std::string> all_dependencies;
@@ -589,24 +590,24 @@ void LoaderLIEF::add_elf_dependencies_to_emulated_fs(
     for (const std::string& lib_name : all_dependencies)
     {
         std::string lib_path = find_library_file(lib_name, libdirs);
-        std::string fs_libdir = "/usr/lib/";
+
         if (lib_path.empty())
         {
             engine->log.warning("Couldn't find library '", lib_name, "': not adding it to emulated filesystem");
             continue;
         }
 
-        // Create file in fs
-        std::string virtual_path = fs_libdir + lib_name;
-        engine->env->fs.create_file(virtual_path, true);
-        env::physical_file_t pfile = engine->env->fs.get_file(virtual_path);
-        if (pfile == nullptr)
-        {
+        const std::string lib_fs_path =
+            get_path_in_virtual_fs(engine, virtual_fs, lib_name, "/usr/lib/");
+        const env::fspath_t virtual_path =
+            engine->env->fs.fspath_from_path(lib_fs_path);
+        engine->env->fs.create_file(lib_fs_path, true);
+        env::physical_file_t pfile = engine->env->fs.get_file(lib_fs_path);
+        if (pfile == nullptr) {
             throw loader_exception(
                 Fmt() << "Error getting file in emulated filesystem: "
-                << virtual_path
-                >> Fmt::to_str
-            );
+                        << lib_fs_path >>
+                Fmt::to_str);
         }
         addr_t offset = 0;
         pfile->copy_real_file(lib_path);

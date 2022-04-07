@@ -768,12 +768,12 @@ _handle_cnt(0), orphan_file_wildcard('#')
     {
         case OS::LINUX:
         case OS::NONE:
-            path_separator = "/";
+            _path_separator = "/";
             rootdir_prefix = "/";
             reserved_handles = {0,1,2}; // stdin, stdout, stderr
             break;
         case OS::WINDOWS:
-            path_separator = "\\";
+            _path_separator = "\\";
             break;
         default:
             throw runtime_exception("FileSystem constructor: unsupported OS!");
@@ -927,7 +927,7 @@ std::string FileSystem::path_from_fspath(const fspath_t& path)
     std::string res = "";
     for (const auto& s : path)
     {
-        res += path_separator;
+        res += path_separator();
         res += s;
     }
     return res;
@@ -968,7 +968,7 @@ fspath_t FileSystem::fspath_from_path_relative_to(std::string rel_path, fspath_t
         return {};
 
     // Parse filename for delimiter
-    while ((pos = rel_path.find(path_separator)) != std::string::npos)
+    while ((pos = rel_path.find(path_separator())) != std::string::npos)
     {
         s = rel_path.substr(0, pos);
 
@@ -995,7 +995,7 @@ fspath_t FileSystem::fspath_from_path_relative_to(std::string rel_path, fspath_t
             res.push_back(s);
         }
 
-        rel_path.erase(0, pos + path_separator.length());
+        rel_path.erase(0, pos + path_separator().length());
         i++;
     }
 
@@ -1030,7 +1030,7 @@ std::string FileSystem::pointed_path_from_symlink(std::string symlink_file)
 bool FileSystem::is_relative_path(const std::string& path)
 {
     return (
-        path.substr(0, path_separator.size()) != path_separator
+        path.substr(0, path_separator().size()) != path_separator()
     );
 }
 
@@ -1038,6 +1038,10 @@ node_status_t FileSystem::get_node_status(const std::string& path)
 {
     Directory& dir = (path[0] == orphan_file_wildcard) ? orphan_files : root;
     return dir.get_node_status(fspath_from_path(path));
+}
+
+const std::string&  FileSystem::path_separator(void) const {
+    return _path_separator;
 }
 
 filehandle_t FileSystem::get_free_handle()
@@ -1174,14 +1178,14 @@ uid_t FileSystem::class_uid() const
 
 void FileSystem::dump(serial::Serializer& s) const
 {
-    s << path_separator << rootdir_prefix << bits(orphan_file_wildcard)
+    s << _path_separator << rootdir_prefix << bits(orphan_file_wildcard)
       << root << orphan_files << fa_list << container_bits(reserved_handles)
       << snapshots;
 }
 
 void FileSystem::load(serial::Deserializer& d)
 {
-    d >> path_separator >> rootdir_prefix >> bits(orphan_file_wildcard)
+    d >> _path_separator >> rootdir_prefix >> bits(orphan_file_wildcard)
       >> root >> orphan_files >> fa_list >> container_bits(reserved_handles)
       >> snapshots;
 }
