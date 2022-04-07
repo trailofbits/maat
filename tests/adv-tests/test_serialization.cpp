@@ -104,7 +104,7 @@ EventCallback path_cb = EventCallback(
 );
 
 // Function that configures MaatEngine parameters
-bool set_hooks(std::shared_ptr<MaatEngine> engine, addr_t end)
+void set_hooks(std::shared_ptr<MaatEngine> engine, addr_t end)
 {
     // Set breakpoints and handlers
     engine->hooks.add(Event::EXEC, When::BEFORE, "end", AddrFilter(end));
