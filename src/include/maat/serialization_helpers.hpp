@@ -10,7 +10,7 @@ namespace serial{
  * \{ */
 
 /// Helper class for dynamically saving and loading states into a single MaatEngine
-class SimpleEngineSerializer
+class SimpleStateManager
 {
 private:
     std::filesystem::path states_dir;
@@ -24,7 +24,7 @@ public:
      * @param dir Directory where to store serialized states
      * @param base_filname Base name to use to name the files containing serialized states
      * @param delete_on_load If set to true, delete the serialization files when loading a state */
-    SimpleEngineSerializer(
+    SimpleStateManager(
         std::filesystem::path dir,
         std::string base_filename = "maat_state",
         bool delete_on_load=true

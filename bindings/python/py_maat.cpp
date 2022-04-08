@@ -20,6 +20,8 @@ PyMethodDef module_methods[] = {
     {"MaatEngine", (PyCFunction)maat_MaatEngine, METH_VARARGS, "Create a new DSE engine"},
     // Solver
     {"Solver", (PyCFunction)maat_Solver, METH_NOARGS, "Create a constraint solver"},
+    // SimpleStateManager
+    {"SimpleStateManager", (PyCFunction)maat_SimpleStateManager, METH_VARARGS, "Create a new helper for serializing/deserializing engine states"},
     {NULL}
 };
 

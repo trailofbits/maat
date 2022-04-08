@@ -32,7 +32,7 @@ typedef struct {
 
 PyObject* maat_Cst(PyObject* self, PyObject* args, PyObject* keywords);
 PyObject* maat_Var(PyObject* self, PyObject* args, PyObject* keywords);
-PyObject* maat_Concat(PyObject* upper, PyObject* lower);
+PyObject* maat_Concat(PyObject* self, PyObject* args);
 PyObject* maat_Extract(PyObject* self, PyObject* args);
 PyObject* PyValue_FromValue(const Value& val);
 PyObject* PyValue_FromValueAndVarContext(const Value& val, std::shared_ptr<VarContext> ctx);
@@ -263,6 +263,16 @@ typedef struct{
 PyObject* get_Stats_Type();
 PyObject* maat_Stats();
 #define as_stats_object(x)  (*((Stats_Object*)x))
+
+// ============ SimpleStateManager ============
+
+typedef struct{
+    PyObject_HEAD
+    maat::serial::SimpleStateManager* s;
+} SimpleStateManager_Object;
+PyObject* get_SimpleStateManager_Type();
+PyObject* maat_SimpleStateManager(PyObject* self, PyObject* args);
+#define as_simple_serializer_object(x)  (*((SimpleStateManager_Object*)x))
 
 } // namespace py
 } // namespace maat

@@ -33,7 +33,7 @@ unsigned int _assert(bool val, const string& msg)
 }
 
 std::filesystem::path states_dir(".");
-serial::SimpleEngineSerializer state_manager(states_dir);
+serial::SimpleStateManager state_manager(states_dir);
 
 // Path constraint callback
 static bool snapshot_next = true;

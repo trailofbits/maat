@@ -7,14 +7,14 @@
 namespace maat{
 namespace serial{
 
-SimpleEngineSerializer::SimpleEngineSerializer(
+SimpleStateManager::SimpleStateManager(
     std::filesystem::path dir,
     std::string f,
     bool d
 ): states_dir(dir), base_filename(f), delete_on_load(d), state_cnt(0)
 {}
 
-void SimpleEngineSerializer::enqueue_state(MaatEngine& engine)
+void SimpleStateManager::enqueue_state(MaatEngine& engine)
 {
     std::string filename = get_next_state_filename();
     std::ofstream out(filename, std::ios_base::binary);
@@ -24,7 +24,7 @@ void SimpleEngineSerializer::enqueue_state(MaatEngine& engine)
     pending_states.push(filename);
 }
 
-bool SimpleEngineSerializer::dequeue_state(MaatEngine& engine)
+bool SimpleStateManager::dequeue_state(MaatEngine& engine)
 {
     if (pending_states.empty())
         return false;
@@ -43,7 +43,7 @@ bool SimpleEngineSerializer::dequeue_state(MaatEngine& engine)
     return true;
 }
 
-std::string SimpleEngineSerializer::get_next_state_filename()
+std::string SimpleStateManager::get_next_state_filename()
 {
     std::string filename = base_filename + "_" + std::to_string(state_cnt++);
     return (states_dir / filename).string();
