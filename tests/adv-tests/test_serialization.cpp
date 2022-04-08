@@ -7,7 +7,9 @@
 #include "maat/solver.hpp"
 #include "maat/engine.hpp"
 #include "maat/varcontext.hpp"
+#include "maat/serialization_helpers.hpp"
 #include <fstream>
+#include <filesystem>
 
 using std::cout;
 using std::endl; 
@@ -30,50 +32,8 @@ unsigned int _assert(bool val, const string& msg)
     return 1; 
 }
 
-class StateManager
-{
-private:
-    static std::string states_dir;
-    static std::string base_name;
-    int state_cnt;
-    std::queue<std::string> pending_states;
-public:
-    StateManager(): state_cnt(0){}
-    void store_state(MaatEngine& engine)
-    {
-        std::string filename = states_dir + base_name + std::to_string(state_cnt++);
-        std::ofstream out(filename, std::ios_base::binary);
-        Serializer s(out);
-        s.serialize(engine);
-        out.close();
-        pending_states.push(filename);
-    }
-
-    bool load_next_state(MaatEngine& engine)
-    {
-        if (empty())
-            return false;
-
-        std::string filename = pending_states.front();
-        pending_states.pop();
-
-        std::ifstream in(filename, std::ios_base::binary);
-        Deserializer d(in);
-        d.deserialize(engine);
-        in.close();
-        return true;
-    }
-
-    bool empty() const 
-    {
-        return pending_states.empty();
-    }
-};
-
-std::string StateManager::states_dir = "./";
-std::string StateManager::base_name = "_maat_state";
-
-StateManager state_manager;
+std::filesystem::path states_dir(".");
+serial::SimpleEngineSerializer state_manager(states_dir);
 
 // Path constraint callback
 static bool snapshot_next = true;
@@ -99,7 +59,7 @@ EventCallback path_cb = EventCallback(
                 // Get new input
                 model = sol.get_model();
                 // Serialize current branch
-                state_manager.store_state(engine);
+                state_manager.enqueue_state(engine);
                 // Update context and explore the other branch
                 engine.vars->update_from(*model);
             }
@@ -143,7 +103,7 @@ bool do_code_coverage_serialization(MaatEngine& engine, addr_t start, addr_t end
         else
         {
             // Pull new state
-            if (not state_manager.load_next_state(engine))
+            if (not state_manager.dequeue_state(engine))
                 break;
             snapshot_next = false; // Don't retake a snapshot on branch where we forked
         }

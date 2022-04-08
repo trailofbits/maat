@@ -22,7 +22,7 @@ class TranslationContext;
 
 namespace serial{
 
-/** \addtogroup ir
+/** \addtogroup serial
  * \{ */
 
 /// Unique identifier of a serialized object
