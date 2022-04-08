@@ -61,7 +61,6 @@ public:
         Deserializer d(in);
         d.deserialize(engine);
         in.close();
-        std::cout << "DEBUG loaded engine hooks: \n" << engine.hooks;
         return true;
     }
 
