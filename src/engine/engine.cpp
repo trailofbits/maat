@@ -1310,7 +1310,7 @@ void MaatEngine::dump(serial::Serializer& s) const
 {
     s << bits(_current_cpu_mode) << bits(_halt_after_inst)
       << bits(_previous_halt_before_exec)
-      << current_ir_state
+      << current_ir_state << path
       << snapshots << arch << vars << mem
       << cpu << env << symbols << process
       << info << settings;
@@ -1324,7 +1324,7 @@ void MaatEngine::load(serial::Deserializer& d)
 {
     d >> bits(_current_cpu_mode) >> bits(_halt_after_inst)
       >> bits(_previous_halt_before_exec)
-      >> current_ir_state
+      >> current_ir_state >> path
       >> snapshots >> arch >> vars >> mem
       >> cpu >> env >> symbols >> process
       >> info >> settings;

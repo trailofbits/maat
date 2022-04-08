@@ -146,7 +146,7 @@ namespace test{
                  addr2 = exprvar(32, "var_1") | 0x00001100;
             Expr e, ite, ite2;
             Expr val1 = exprcst(32, 0x12345678);
-            std::unique_ptr<ExprSimplifier> simp = NewDefaultExprSimplifier();
+            auto simp = NewDefaultExprSimplifier();
 
             mem.symbolic_ptr_write(addr1, addr1->value_set(), val1, settings);
 
@@ -260,7 +260,7 @@ namespace test{
             Expr e, ite, ite2;
             Value val;
             Expr val1 = exprcst(64, 0x12345678deadbeef);
-            std::unique_ptr<ExprSimplifier> simp = NewDefaultExprSimplifier();
+            auto simp = NewDefaultExprSimplifier();
 
             mem.write(0x10, val1);
             varctx->set("var_0", 0x11);

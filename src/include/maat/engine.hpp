@@ -69,7 +69,7 @@ private:
 private:
     std::unordered_map<CPUMode, std::shared_ptr<Lifter>> lifters;
     std::shared_ptr<SnapshotManager<Snapshot>> snapshots;
-    std::unique_ptr<ExprSimplifier> simplifier;
+    std::shared_ptr<ExprSimplifier> simplifier;
     callother::HandlerMap callother_handlers;
 public:
     std::shared_ptr<Arch> arch;

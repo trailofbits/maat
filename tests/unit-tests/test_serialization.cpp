@@ -248,7 +248,7 @@ namespace test
         {
             unsigned int res = 0;
             MaatEngine engine1(Arch::Type::X86, env::OS::LINUX);
-            std::unique_ptr<MaatEngine> engine2;
+            MaatEngine engine2(Arch::Type::NONE);
 
             // Just check that dump & load engine doesn't raise errors
             _dump_and_load(engine1, engine2);

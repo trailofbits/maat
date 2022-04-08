@@ -12,7 +12,8 @@ void Deserializer::init()
 {
     // Read index info
     int index_pos, index_cnt;
-    stream() >> bits(index_pos) >> bits(index_cnt);
+    uid_t root_obj_uid;
+    stream() >> bits(index_pos) >> bits(index_cnt) >> bits(root_obj_uid);
     uid_to_object.reserve(index_cnt);
     data_pos_to_object.reserve(index_cnt);
 
@@ -20,8 +21,15 @@ void Deserializer::init()
     stream().set_pos(index_pos);
     for (int i = 0; i < index_cnt; i++)
     {
-        Serializer::IndexEntry entry{0,0,0};
-        stream() >> bits(entry.obj_uid) >> bits(entry.class_uid) >> bits(entry.data_pos);
+        Serializer::IndexEntry entry{0,0,0,0};
+        stream() >> bits(entry.obj_uid) >> bits(entry.class_uid)
+                 >> bits(entry.data_pos) >> bits(entry.data_end_pos);
+        // Save data position of root object
+        if (entry.obj_uid == root_obj_uid)
+        {
+            root_obj_data_pos = entry.data_pos;
+            root_obj_data_end_pos = entry.data_end_pos;
+        }
         // Make sure that uid is unique
         if (uid_to_object.find(entry.obj_uid) != uid_to_object.end())
             throw serialize_exception("Deserializer::init(): got non unique uid!");
@@ -33,7 +41,7 @@ void Deserializer::init()
     }
 }
 
-Serializable* Deserializer::_deserialize()
+Serializable* Deserializer::_deserialize(bool skip_root_obj)
 {
     int index_pos = 0, index_cnt = 0;
     uid_t root_obj_uid = 0;
@@ -47,8 +55,15 @@ Serializable* Deserializer::_deserialize()
     {
         while (stream().current_pos() < index_pos)
         {
-            Serializable* obj = data_pos_to_object.at(stream().current_pos());
-            obj->load(*this);
+            if (skip_root_obj and stream().current_pos() == root_obj_data_pos)
+            {
+                stream().set_pos(root_obj_data_end_pos);
+            }
+            else
+            {
+                Serializable* obj = data_pos_to_object.at(stream().current_pos());
+                obj->load(*this);
+            }
         }
     }
     catch (const std::out_of_range&)
@@ -56,11 +71,24 @@ Serializable* Deserializer::_deserialize()
         throw serialize_exception("Deserializer::deserialize(): data position in stream doesn't correspond to an object");
     }
 
+    // If we skipped root object, delete it from the map, because we won't use
+    // it to create and return a pointer.
+    if (skip_root_obj)
+        delete uid_to_object[root_obj_uid];
+
     // TODO(boyan): check that every raw pointer now has an owner 
     // (either unique_ptr or shared_ptr)
 
     // Return root object
     return uid_to_object.at(root_obj_uid);
+}
+
+
+void Deserializer::deserialize(Serializable& dest)
+{
+    _deserialize(true);
+    stream().set_pos(root_obj_data_pos);
+    dest.load(*this);
 }
 
 Deserializer& Deserializer::operator>>(std::string& str)

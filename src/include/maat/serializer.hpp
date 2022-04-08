@@ -213,6 +213,7 @@ public:
         uid_t obj_uid;
         uid_t class_uid;
         int data_pos; // Data position for object in stream
+        int data_end_pos; // End of data for object in stream
     };
 
 private:
@@ -393,6 +394,7 @@ public:
 private:
     std::unordered_map<uid_t, Serializable*> uid_to_object;
     std::unordered_map<int, Serializable*> data_pos_to_object;
+    int root_obj_data_pos, root_obj_data_end_pos;
     // In stream
     Stream _stream;
     Factory _factory;
@@ -401,7 +403,7 @@ public:
 protected:
     Stream& stream();
 public:
-    // deserialize() methods must be called only once
+    // WARNING: deserialize() methods must be called only once!
     /// Deserialize object
     template <typename T> void deserialize(std::unique_ptr<T>& dest)
     {
@@ -413,6 +415,10 @@ public:
     {
         dest = std::shared_ptr<T>(reinterpret_cast<T*>(_deserialize()));
     }
+
+    /// Deserialize object into an object reference (must be move assignable)
+    void deserialize(Serializable& dest);
+
 public:
     /// Load primitive type by reference
     template <typename T> Deserializer& operator>>(Bits<T&> obj)
@@ -524,6 +530,7 @@ public:
     {
         size_t size = 0;
         stream() >> bits(size);
+        container.t.clear();
         for (size_t i = 0; i < size; i++)
         {
             auto& t = container.t.emplace_back();
@@ -538,6 +545,7 @@ public:
     {
         size_t size = 0;
         stream() >> bits(size);
+        container.clear();
         for (size_t i = 0; i < size; i++)
         {
             T& t = container.emplace_back();
@@ -569,7 +577,10 @@ public:
 private:
     // Read index and initialise all empty objects
     void init();
-    Serializable* _deserialize();
+    /** Deserialize objects and return a pointer to the root object.
+      * If skip_root_obj is true, deserializes all objects but the root object,
+        and returns a nullptr */
+    Serializable* _deserialize(bool skip_root_obj = false);
 };
 
 void cache_sleigh_ctx(CPUMode mode, std::shared_ptr<TranslationContext> sleigh_ctx);

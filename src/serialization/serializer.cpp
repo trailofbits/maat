@@ -42,6 +42,7 @@ void Serializer::serialize(const Serializable& obj)
         const Serializable* next = serialization_queue.front();
         get_index_entry(next).data_pos = stream().current_pos();
         next->dump(*this);
+        get_index_entry(next).data_end_pos = stream().current_pos();
         serialization_queue.pop();
     }
     // Write index
@@ -95,7 +96,8 @@ void Serializer::dump_index()
 {
     for (const auto & [p,entry] : object_index)
     {
-        stream() << bits(entry.obj_uid) << bits(entry.class_uid) << bits(entry.data_pos);
+        stream() << bits(entry.obj_uid) << bits(entry.class_uid)
+                 << bits(entry.data_pos) << bits(entry.data_end_pos);
     }
 }
 

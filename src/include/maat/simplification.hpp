@@ -47,7 +47,7 @@ public:
 
 /** \brief Instanciate a new expression simplifier that uses all of Maat's built-in 
  * simplifier functions */
-std::unique_ptr<ExprSimplifier> NewDefaultExprSimplifier();
+std::shared_ptr<ExprSimplifier> NewDefaultExprSimplifier();
 
 /* Simplification functions */
 Expr es_constant_folding(Expr e); ///< Constant folding simplifier function

@@ -49,20 +49,25 @@ public:
         pending_states.push(filename);
     }
 
-    std::shared_ptr<MaatEngine> load_next_state()
+    bool load_next_state(MaatEngine& engine)
     {
-        if (pending_states.empty())
-            return nullptr;
+        if (empty())
+            return false;
 
-        std::shared_ptr<MaatEngine> res;
         std::string filename = pending_states.front();
         pending_states.pop();
 
         std::ifstream in(filename, std::ios_base::binary);
         Deserializer d(in);
-        d.deserialize(res);
+        d.deserialize(engine);
         in.close();
-        return res;
+        std::cout << "DEBUG loaded engine hooks: \n" << engine.hooks;
+        return true;
+    }
+
+    bool empty() const 
+    {
+        return pending_states.empty();
     }
 };
 
@@ -82,7 +87,9 @@ EventCallback path_cb = EventCallback(
             solver::SolverZ3 sol;
             // Find model that inverts that branch
             for (auto c : engine.path.constraints())
+            {
                 sol.add(c);
+            }
             _assert(engine.info.branch->taken.has_value(), "do_code_coverage_serialization(): got invalid branch info on path constraint breakpoint");
             if (*engine.info.branch->taken)
                 sol.add(engine.info.branch->cond->invert());
@@ -103,80 +110,73 @@ EventCallback path_cb = EventCallback(
     }
 );
 
-// Function that configures MaatEngine parameters
-void set_hooks(std::shared_ptr<MaatEngine> engine, addr_t end)
-{
-    // Set breakpoints and handlers
-    engine->hooks.add(Event::EXEC, When::BEFORE, "end", AddrFilter(end));
-    engine->hooks.add(Event::PATH, When::BEFORE, EventCallback(path_cb), "path");
-}
-
 // Code coverage with BFS algorithm using deserialization
 // Return engine state that finds the correct password or nullptr on failure
-std::shared_ptr<MaatEngine> do_code_coverage_serialization(std::shared_ptr<MaatEngine> engine, addr_t start, addr_t end)
+bool do_code_coverage_serialization(MaatEngine& engine, addr_t start, addr_t end)
 {
     // Set EIP at starting point
-    engine->cpu.ctx().set(X86::EIP, start);
+    engine.cpu.ctx().set(X86::EIP, start);
 
     // Do code coverage
     bool success = false;
     bool cont = true;
-    engine->settings.record_path_constraints = true;
-    set_hooks(engine, end);
+    engine.settings.record_path_constraints = true;
+    
+    // Set hooks
+    engine.hooks.add(Event::EXEC, When::BEFORE, "end", AddrFilter(end));
+    engine.hooks.add(Event::PATH, When::BEFORE, EventCallback(path_cb), "path");
 
-    while (engine->run() == info::Stop::HOOK)
+    while (engine.run() == info::Stop::HOOK)
     {
         solver::SolverZ3 sol;
         // First try to find a model for EAX == 1
-        for (auto c : engine->path.constraints())
+        for (auto c : engine.path.constraints())
             sol.add(c);
-        sol.add(engine->cpu.ctx().get(X86::EAX).as_expr() != 0);
+        sol.add(engine.cpu.ctx().get(X86::EAX).as_expr() != 0);
         if (sol.check())
         {
             success = true;
             auto model = sol.get_model();
             // Update context and continue from here with new values
-            engine->vars->update_from(*model);
-            break; // Success
+            engine.vars->update_from(*model);
+            return true; // Success
         }
         else
         {
             // Pull new state
-            engine = state_manager.load_next_state();
-            if (engine == nullptr)
+            if (not state_manager.load_next_state(engine))
                 break;
-            set_hooks(engine, end);
             snapshot_next = false; // Don't retake a snapshot on branch where we forked
         }
     }
-    return engine;
+    return false; // Failure
 }
 
 unsigned int plaintext_pwd()
 {
     unsigned int nb = 0;
-    auto  engine = std::make_shared<MaatEngine>(Arch::Type::X86);
-    engine->log.set_level(Log::ERROR);
-    engine->mem->map(0x0, 0xfff, maat::mem_flag_rwx, "code");
-    engine->mem->map(0x4000, 0x5fff, maat::mem_flag_rw, "stack"); // stack
-    engine->cpu.ctx().set(X86::ESP, 0x5000);
-    engine->mem->write(0x5004, 0x6000, 4); // argument of the function pushed on the stack
-    engine->cpu.ctx().set(X86::EAX, 0x6000);
-    engine->mem->map(0x6000, 0x6100, maat::mem_flag_rw, "input_password"); // The input password
+    MaatEngine engine(Arch::Type::X86);
+    engine.log.set_level(Log::ERROR);
+    engine.mem->map(0x0, 0xfff, maat::mem_flag_rwx, "code");
+    engine.mem->map(0x4000, 0x5fff, maat::mem_flag_rw, "stack"); // stack
+    engine.cpu.ctx().set(X86::ESP, 0x5000);
+    engine.mem->write(0x5004, 0x6000, 4); // argument of the function pushed on the stack
+    engine.cpu.ctx().set(X86::EAX, 0x6000);
+    engine.mem->map(0x6000, 0x6100, maat::mem_flag_rw, "input_password"); // The input password
 
     // Make user supplied password symbolic
-    engine->mem->write(0x6000, exprvar(8, "char0"));
-    engine->mem->write(0x6001, exprvar(8, "char1"));
-    engine->mem->write(0x6002, exprvar(8, "char2"));
-    engine->mem->write(0x6003, exprvar(8, "char3"));
-    engine->mem->write(0x6004, exprvar(8, "char4"));
+    engine.mem->write(0x6000, exprvar(8, "char0"));
+    engine.mem->write(0x6001, exprvar(8, "char1"));
+    engine.mem->write(0x6002, exprvar(8, "char2"));
+    engine.mem->write(0x6003, exprvar(8, "char3"));
+    engine.mem->write(0x6004, exprvar(8, "char4"));
     // First try to run
     std::string initial_try = "araca";
-    engine->vars->set("char0", initial_try[0]);
-    engine->vars->set("char1", initial_try[1]);
-    engine->vars->set("char2", initial_try[2]);
-    engine->vars->set("char3", initial_try[3]);
-    engine->vars->set("char4", initial_try[4]);
+    engine.vars->set("char0", initial_try[0]);
+    engine.vars->set("char1", initial_try[1]);
+    engine.vars->set("char2", initial_try[2]);
+    engine.vars->set("char3", initial_try[3]);
+    engine.vars->set("char4", initial_try[4]);
 
     // Write the code of the function in memory
     // map function at address 0x4ed
@@ -195,17 +195,17 @@ unsigned int plaintext_pwd()
         cout << "\nFailed to get ressource to launch tests !" << endl << std::flush; 
         throw test_exception();
     }
-    engine->mem->write_buffer(0x4ed, (uint8_t*)string(buffer.begin(), buffer.end()).c_str(), size);
+    engine.mem->write_buffer(0x4ed, (uint8_t*)string(buffer.begin(), buffer.end()).c_str(), size);
 
     // Do code coverage
-    engine = do_code_coverage_serialization(engine, 0x4ed, 0x568);
+    bool success = do_code_coverage_serialization(engine, 0x4ed, 0x568);
 
-    nb += _assert(engine != nullptr, "plaintext_pwd(): failed to find the correct input");
-    nb += _assert((char)engine->vars->get("char0") == 't', "plaintext_pwd(): failed to find the correct input");
-    nb += _assert((char)engine->vars->get("char1") == 'r', "plaintext_pwd(): failed to find the correct input");
-    nb += _assert((char)engine->vars->get("char2") == 'u', "plaintext_pwd(): failed to find the correct input");
-    nb += _assert((char)engine->vars->get("char3") == 'c', "plaintext_pwd(): failed to find the correct input");
-    nb += _assert((char)engine->vars->get("char4") == 0, "plaintext_pwd(): failed to find the correct input");
+    nb += _assert(success, "plaintext_pwd(): failed to find the correct input");
+    nb += _assert((char)engine.vars->get("char0") == 't', "plaintext_pwd(): failed to find the correct input");
+    nb += _assert((char)engine.vars->get("char1") == 'r', "plaintext_pwd(): failed to find the correct input");
+    nb += _assert((char)engine.vars->get("char2") == 'u', "plaintext_pwd(): failed to find the correct input");
+    nb += _assert((char)engine.vars->get("char3") == 'c', "plaintext_pwd(): failed to find the correct input");
+    nb += _assert((char)engine.vars->get("char4") == 0, "plaintext_pwd(): failed to find the correct input");
 
     return nb;
 }
