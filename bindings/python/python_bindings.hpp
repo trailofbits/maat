@@ -101,6 +101,13 @@ typedef struct{
 } MaatEngine_Object;
 PyObject* get_MaatEngine_Type();
 PyObject* maat_MaatEngine(PyObject* self, PyObject* args);
+// This method initializes all the attributes of a python MaatEngine object. It
+// is separate from the constructor because we also need to call it when deserializing
+// a MaatEngine. Indeed, attributes like 'vars', 'cpu', are already initialized
+// and point to members of the MaatEngine, but if we deserialize a new state into the engine
+// those pointers are invalid (they point to the old engine objects, not the new one).
+void _init_MaatEngine_attributes(MaatEngine_Object* object);
+void _clear_MaatEngine_attributes(MaatEngine_Object* object);
 #define as_engine_object(x)  (*((MaatEngine_Object*)x))
 
 // ====================== Info ======================

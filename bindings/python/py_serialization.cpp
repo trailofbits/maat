@@ -30,7 +30,7 @@ static PyObject* SimpleStateManager_enqueue_state(PyObject* self, PyObject* args
 static PyObject* SimpleStateManager_dequeue_state(PyObject* self, PyObject* args)
 {
     PyObject* engine;
-
+    
     if( !PyArg_ParseTuple(args, "O!", get_MaatEngine_Type(), &engine))
     {
         return NULL;
@@ -40,6 +40,12 @@ static PyObject* SimpleStateManager_dequeue_state(PyObject* self, PyObject* args
         *as_engine_object(engine).engine
     );
 
+    // IMPORTANT: we need to reinit the object attributes so that they point to the
+    // fields of the new engine, otherwise they will continue pointing to the fields
+    // of the previous engine
+    _clear_MaatEngine_attributes((MaatEngine_Object*)engine); // To decref previous objects
+    _init_MaatEngine_attributes((MaatEngine_Object*)engine); // To create new wrapper objects
+
     if (res)
         Py_RETURN_TRUE;
     else
@@ -48,14 +54,14 @@ static PyObject* SimpleStateManager_dequeue_state(PyObject* self, PyObject* args
 
 static PyMethodDef SimpleStateManager_methods[] = {
     {"enqueue_state", (PyCFunction)SimpleStateManager_enqueue_state, METH_VARARGS, "Save current state of a MaatEngine in pending states list"},
-    {"dequeue_state", (PyCFunction)SimpleStateManager_dequeue_state, METH_NOARGS, "Load next pending state into MaatEngine"},
+    {"dequeue_state", (PyCFunction)SimpleStateManager_dequeue_state, METH_VARARGS, "Load next pending state into MaatEngine"},
     {NULL, NULL, 0, NULL}
 };
 
 /* Type description for python Expr objects */
 PyTypeObject SimpleStateManager_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "Constraint",                                   /* tp_name */
+    "SimpleStateManager",                                   /* tp_name */
     sizeof(SimpleStateManager_Object),                      /* tp_basicsize */
     0,                                        /* tp_itemsize */
     (destructor)SimpleStateManager_dealloc,                 /* tp_dealloc */
@@ -104,25 +110,25 @@ PyObject* maat_SimpleStateManager(PyObject* self, PyObject* args)
     SimpleStateManager_Object* object;
     std::filesystem::path dir;
     std::string base_filename;
-    const char* py_dir;
-    const char* py_base_filename;
+    const char* py_dir = nullptr;
+    const char* py_base_filename = nullptr;
     int delete_on_load = 1;
     
-    if( !PyArg_ParseTuple(args, "s|sp", &dir, &base_filename, &delete_on_load))
+    if( !PyArg_ParseTuple(args, "s|sp", &py_dir, &py_base_filename, &delete_on_load))
     {
         return NULL;
     }
 
     try{
         dir = std::filesystem::path(py_dir);
-    }catch(const std::filesystem::filesystem_error&){
+    }catch(const std::filesystem::filesystem_error& e){
         return PyErr_Format(PyExc_ValueError, "Invalid 'dir' argument");
     }
 
-    base_filename = std::string(py_base_filename);
+    if (py_base_filename != nullptr)
+        base_filename = std::string(py_base_filename);
     if (base_filename.empty())
         base_filename = std::string("maat_state");
-
 
     // Create object
     PyType_Ready(&SimpleStateManager_Type);

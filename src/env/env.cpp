@@ -3,29 +3,29 @@
 namespace maat{
 namespace env{
 
-abi::ABI& _get_default_abi(Arch::Type arch, OS os)
+abi::ABI* _get_default_abi(Arch::Type arch, OS os)
 {
     if (arch == Arch::Type::X86)
     {
         if (os == OS::LINUX)
-            return abi::X86_CDECL::instance();
+            return &abi::X86_CDECL::instance();
     }
     else if (arch == Arch::Type::X64)
     {
         if (os == OS::LINUX)
-            return abi::X64_SYSTEM_V::instance();
+            return &abi::X64_SYSTEM_V::instance();
     }
-    return abi::ABI_NONE::instance();
+    return &abi::ABI_NONE::instance();
 }
 
-abi::ABI& _get_syscall_abi(Arch::Type arch, OS os)
+abi::ABI* _get_syscall_abi(Arch::Type arch, OS os)
 {
     if (arch == Arch::Type::X64)
     {
         if (os == OS::LINUX)
-            return abi::X64_LINUX_SYSCALL::instance();
+            return &abi::X64_LINUX_SYSCALL::instance();
     }
-    return abi::ABI_NONE::instance();
+    return &abi::ABI_NONE::instance();
 }
 
 EnvEmulator::EnvEmulator(Arch::Type arch, OS os):

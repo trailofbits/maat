@@ -76,7 +76,6 @@ ABI& ABI_NONE::instance()
     return abi;
 }
 
-
 // ========== ABI X86 CDECL ============
 X86_CDECL::X86_CDECL(): ABI(Type::X86_CDECL)
 {}

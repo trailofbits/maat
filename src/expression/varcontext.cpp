@@ -99,6 +99,7 @@ std::string VarContext::get_as_string(std::string name) const
     std::string var_name;
     std::string res;
     ucst_t c;
+
     while( !stop )
     {
         std::stringstream ss;
@@ -284,6 +285,7 @@ void VarContext::dump(Serializer& s) const
 void VarContext::load(Deserializer& d)
 {
     size_t size;
+    varmap.clear();
     d >> bits(_id_cnt) >> bits(size);
     for (int i = 0; i < size; i++)
     {

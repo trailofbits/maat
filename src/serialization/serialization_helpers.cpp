@@ -26,6 +26,7 @@ void SimpleStateManager::enqueue_state(MaatEngine& engine)
 
 bool SimpleStateManager::dequeue_state(MaatEngine& engine)
 {
+
     if (pending_states.empty())
         return false;
 

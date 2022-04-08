@@ -78,7 +78,6 @@ bool do_code_coverage_serialization(MaatEngine& engine, addr_t start, addr_t end
 
     // Do code coverage
     bool success = false;
-    bool cont = true;
     engine.settings.record_path_constraints = true;
     
     // Set hooks

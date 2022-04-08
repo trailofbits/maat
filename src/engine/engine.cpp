@@ -888,7 +888,7 @@ bool MaatEngine::process_callback_emulated_function(addr_t addr)
     {
         const env::Function& func = env->get_library_by_num(symbol.env_lib_num).get_function_by_num(symbol.env_func_num);
         // Execute function callback
-        switch (func.callback().execute(*this, env->default_abi))
+        switch (func.callback().execute(*this, *env->default_abi))
         {
             case env::Action::CONTINUE:
                 break;

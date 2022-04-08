@@ -31,8 +31,9 @@ namespace env
 class EnvEmulator: public serial::Serializable
 {
 public:
-    abi::ABI& default_abi; ///< Default ABI for calling functions
-    abi::ABI& syscall_abi; ///< Default ABI for system calls
+    // Those should be references but the compiler messes up virtual inheritance smh...
+    abi::ABI* default_abi; ///< Default ABI for calling functions
+    abi::ABI* syscall_abi; ///< Default ABI for system calls
 protected:
     std::vector<Library> _libraries;
     syscall_func_map_t _syscall_func_map; // <sysnum:handler>
@@ -41,6 +42,8 @@ public:
 public:
     /// Create an emulator for architecture *arch* and system *system*
     EnvEmulator(Arch::Type arch = Arch::Type::NONE, OS os = OS::NONE);
+    EnvEmulator(const EnvEmulator& other) = delete;
+    EnvEmulator& operator=(const EnvEmulator& other) = delete;
     virtual ~EnvEmulator() = default;
 protected:
     /** In-place initialisation function.
@@ -97,8 +100,8 @@ public:
 
 
 // Util functions
-abi::ABI& _get_default_abi(Arch::Type arch, OS os);
-abi::ABI& _get_syscall_abi(Arch::Type arch, OS os);
+abi::ABI* _get_default_abi(Arch::Type arch, OS os);
+abi::ABI* _get_syscall_abi(Arch::Type arch, OS os);
 
 /** \} */ // doxygen group env
 
