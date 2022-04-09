@@ -231,6 +231,7 @@ PyObject* PySettings_FromSettings(Settings* _settings, bool is_ref){
     object = PyObject_New(Settings_Object, &Settings_Type);
     if( object != nullptr ){
         object->settings = _settings;
+        object->is_ref = is_ref;
     }
     return (PyObject*)object;
 }

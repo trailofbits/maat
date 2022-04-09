@@ -209,7 +209,7 @@ void X64_SYSCALL_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processed
             func_name = func.name();
 
         // Execute function callback
-        switch (func.callback().execute(engine, engine.env->syscall_abi, func_name))
+        switch (func.callback().execute(engine, *engine.env->syscall_abi, func_name))
         {
             case env::Action::CONTINUE:
                 break;

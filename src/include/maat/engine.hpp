@@ -26,6 +26,7 @@
 #include "maat/process.hpp"
 #include "maat/callother.hpp"
 #include "maat/varcontext.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -41,10 +42,8 @@ namespace maat
  * is a wrapper around core components (lifter, memory engine, IR CPU, 
  * binary loader, environment simulation, etc) that enables to symbolically
  * emulate a process */
-class MaatEngine
+class MaatEngine: public serial::Serializable
 {
-private:
-    CPUMode _current_cpu_mode;
 private:
     /** \typedef branch_type_t 
      * The type of branch taken */
@@ -52,6 +51,8 @@ private:
     static constexpr int branch_none = 0;
     static constexpr int branch_native = 1;
     static constexpr int branch_pcode = 2;
+private:
+    CPUMode _current_cpu_mode;
 private:
     // Convenience variable to avoid passing it to all subfunctions
     bool _halt_after_inst;
@@ -68,16 +69,15 @@ private:
 private:
     std::unordered_map<CPUMode, std::shared_ptr<Lifter>> lifters;
     std::shared_ptr<SnapshotManager<Snapshot>> snapshots;
-    std::unique_ptr<ExprSimplifier> simplifier;
+    std::shared_ptr<ExprSimplifier> simplifier;
     callother::HandlerMap callother_handlers;
 public:
-    std::shared_ptr<ir::IRMap> ir_map;
     std::shared_ptr<Arch> arch;
     std::shared_ptr<VarContext> vars;
     std::shared_ptr<MemEngine> mem;
     ir::CPU cpu;
     event::EventManager hooks;
-    PathManager path;
+    PathManager path; // TODO: make this a shared_ptr<> when adding support for multi-engine runs
     std::shared_ptr<env::EnvEmulator> env;
     std::shared_ptr<SymbolManager> symbols;
     std::shared_ptr<ProcessInfo> process;
@@ -101,7 +101,7 @@ public:
     /// Instanciate an engine for architecture 'arch' and operating system 'os'
     MaatEngine(Arch::Type arch, env::OS os = env::OS::NONE);
     MaatEngine(const MaatEngine& other) = delete;
-    ~MaatEngine() = default; ///< Destructor
+    virtual ~MaatEngine() = default; ///< Destructor
 
 public:
     /** \brief Continue executing from the current state. Execute at most
@@ -227,6 +227,28 @@ private:
     /** \brief Removes the instructions whose memory content has been tampered
      * by user callbacks or user scripts, and thus whose lift is no longer valid */
     void handle_pending_x_mem_overwrites();
+public:
+    virtual serial::uid_t class_uid() const;
+    /** Serialize the engine state
+     *
+     * This serializes the whole engine state except:
+     * - Event hooks
+     * - Internal expression simplifier
+     * - Logger
+     * - Library emulation callbacks
+     * - Callother callbacks
+     *
+     * In order to keep those members (especially the event hooks), it is 
+     * necessary to deserialize the engine **in place** using the same object
+     * instance that was serialized.
+     */
+    virtual void dump(serial::Serializer& s) const;
+    /** Deserialize a state into the engine
+     *
+     * See notes in 'MaatEngine::dump()' about members that are
+     * not included in serialization.
+     */
+    virtual void load(serial::Deserializer& d);
 };
 
 

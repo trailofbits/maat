@@ -5,6 +5,13 @@ namespace env{
 
 LinuxEmulator::LinuxEmulator(Arch::Type arch): EnvEmulator(arch, OS::LINUX)
 {
+    _init(arch);
+}
+
+void LinuxEmulator::_init(Arch::Type arch)
+{
+    EnvEmulator::_init(arch, OS::LINUX);
+    _arch = arch;
     // Load emulated libraries
     switch (arch)
     {
@@ -49,6 +56,25 @@ void LinuxEmulator::add_running_process(const ProcessInfo& pinfo, const std::str
     fs._new_fa(stderr, 2);
     fs.get_file_by_handle(1)->flush_stream = std::ref(std::cout);
     fs.get_file_by_handle(2)->flush_stream = std::ref(std::cerr);
+}
+
+uid_t LinuxEmulator::class_uid() const
+{
+    return serial::ClassId::ENV_LINUX_EMULATOR;
+}
+
+void LinuxEmulator::dump(serial::Serializer& s) const
+{
+    s << bits(_arch) << fs;
+}
+
+void LinuxEmulator::load(serial::Deserializer& d)
+{
+    Arch::Type arch;
+    d >> bits(arch);
+    _init(arch);
+    // Then after initialisation, load filesystem
+    d >> fs;
 }
 
 } // namespace env

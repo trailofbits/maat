@@ -9,6 +9,10 @@
 namespace maat
 {
 
+using serial::bits;
+
+PageSet::PageSet(): start(0), end(0), flags(maat::mem_flag_none), was_once_executable(false)
+{}
 
 PageSet::PageSet(addr_t s, addr_t e, mem_flag_t f, bool was_once_exec): 
     start(s), end(e), flags(f)
@@ -24,6 +28,21 @@ bool PageSet::intersects_with_range(addr_t min, addr_t max) const
 bool PageSet::contains(addr_t addr)
 {
     return start <= addr && end >= addr;
+}
+
+uid_t PageSet::class_uid() const
+{
+    return serial::ClassId::PAGE_SET;
+}
+
+void PageSet::dump(serial::Serializer& s) const
+{
+    s << bits(start) << bits(end)  << bits(flags) << bits(was_once_executable);
+}
+
+void PageSet::load(serial::Deserializer& d)
+{
+    d >> bits(start) >> bits(end) >> bits(flags) >> bits(was_once_executable);
 }
 
 
@@ -151,10 +170,12 @@ void MemPageManager::merge_regions()
 
 mem_flag_t MemPageManager::get_flags(addr_t addr)
 {
-    for( PageSet& r : _regions )
+    for (PageSet& r : _regions)
     {
-        if( r.contains(addr))
+        if (r.contains(addr))
+        {
             return r.flags;
+        }
     }
     throw runtime_exception("MemPageManager::get_flags(): didn't find matching map, should not happen!");
 }
@@ -180,6 +201,22 @@ const std::list<PageSet>& MemPageManager::regions()
 void MemPageManager::set_regions(std::list<PageSet>&& regions)
 {
     _regions = regions;
+}
+
+uid_t MemPageManager::class_uid() const
+{
+    return serial::ClassId::MEM_PAGE_MANAGER;
+}
+
+void MemPageManager::dump(serial::Serializer& s) const
+{
+    s << bits(_page_size) << _regions;
+}
+
+void MemPageManager::load(serial::Deserializer& d)
+{
+    _regions.clear();
+    d >> bits(_page_size) >> _regions;
 }
 
 std::string _mem_flags_to_string(mem_flag_t flags)
@@ -455,6 +492,26 @@ offset_t MemStatusBitmap::is_concrete_until(offset_t off, offset_t max )
     return res;
 }
 
+uid_t MemStatusBitmap::class_uid() const
+{
+    return serial::ClassId::MEM_STATUS_BITMAP;
+}
+
+void MemStatusBitmap::dump(Serializer& s) const
+{
+    s << bits(_size);
+    s << serial::buffer((char*)_bitmap, _size);
+}
+
+void MemStatusBitmap::load(Deserializer& d)
+{
+    if (_bitmap != nullptr)
+        delete [] _bitmap;
+
+    d >> bits(_size);
+    _bitmap = new uint8_t[_size];
+    d >> serial::buffer((char*)_bitmap, _size);
+}
 
 MemConcreteBuffer::MemConcreteBuffer():_mem(nullptr){}
 MemConcreteBuffer::MemConcreteBuffer(offset_t nb_bytes)
@@ -594,6 +651,27 @@ uint8_t* MemConcreteBuffer::raw_mem_at(offset_t off)
     return reinterpret_cast<uint8_t*>(_mem) + off;
 }
 
+uid_t MemConcreteBuffer::class_uid() const
+{
+    return serial::ClassId::MEM_CONCRETE_BUFFER;
+}
+
+void MemConcreteBuffer::dump(Serializer& s) const
+{
+    s << bits(_size);
+    s << serial::buffer((char*)_mem, _size);
+}
+
+void MemConcreteBuffer::load(Deserializer& d)
+{
+    if (_mem != nullptr)
+        delete [] _mem;
+
+    d >> bits(_size);
+    _mem = new uint8_t[_size];
+    d >> serial::buffer((char*)_mem, _size);
+}
+
 /* Memory abstract buffer 
    ======================
 Abstract expressions are stored in a hashmap <offset : (expr, byte_num)>. 
@@ -699,6 +777,37 @@ void MemAbstractBuffer::write(offset_t off, Expr e)
 {
     for( offset_t i = 0; i < (e->size/8); i++ )
         _mem[off+i] = std::make_pair(e, i);
+}
+
+uid_t MemAbstractBuffer::class_uid() const
+{
+    return serial::ClassId::MEM_ABSTRACT_BUFFER;
+}
+
+void MemAbstractBuffer::dump(Serializer& s) const
+{
+    s << bits(_mem.size());
+    for (auto const& [key, val]: _mem)
+    {
+        s << bits(key) // offset
+          << val.first // expr
+          << bits(val.second); // selected byte in expr
+    }
+}
+
+void MemAbstractBuffer::load(Deserializer& d)
+{
+    size_t nb_elems;
+    offset_t off;
+    uint8_t byte;
+    Expr expr;
+    _mem.clear();
+    d >> bits(nb_elems);
+    for (int i = 0; i < nb_elems; i++)
+    {
+        d >> bits(off) >> expr >> bits(byte);
+        _mem[off] = std::make_pair(expr, byte); 
+    }
 }
 
 
@@ -1120,6 +1229,28 @@ addr_t MemSegment::is_identical_until(addr_t addr, cst_t byte)
 }
 
 
+uid_t MemSegment::class_uid() const
+{
+    return serial::ClassId::MEM_SEGMENT;
+}
+
+void MemSegment::dump(Serializer& s) const
+{
+    s << _bitmap << _concrete << _abstract
+      << bits(_is_engine_special_segment)
+      << bits(start) << bits(end) << name;
+}
+
+void MemSegment::load(Deserializer& d)
+{
+    d >> _bitmap >> _concrete >> _abstract
+      >> bits(_is_engine_special_segment)
+      >> bits(start) >> bits(end) >> name;
+}
+
+
+// Initialise static engine count
+int MemEngine::_uid_cnt = 0;
 
 MemEngine::MemEngine(
     std::shared_ptr<VarContext> varctx,
@@ -1135,6 +1266,7 @@ _snapshots(snap)
         _varctx = std::make_shared<VarContext>(0);
     if(_snapshots == nullptr)
         _snapshots = std::make_shared<SnapshotManager<Snapshot>>();
+    _uid = _uid_cnt++;
 }
 
 MemEngine::~MemEngine()
@@ -2321,6 +2453,28 @@ void MemEngine::record_mem_write(addr_t addr, int nb_bytes)
             addr += bytes_to_write;
         }
     }
+}
+
+uid_t MemEngine::class_uid() const
+{
+    return serial::ClassId::MEM_ENGINE;
+}
+
+void MemEngine::dump(serial::Serializer& s) const
+{
+    s << bits(_uid) << bits(_arch_bits) << _segments << _varctx << _snapshots
+      << symbolic_mem_engine << page_manager << mappings;
+}
+
+void MemEngine::load(serial::Deserializer& d)
+{
+    d >> bits(_uid) >> bits(_arch_bits) >> _segments >> _varctx >> _snapshots
+      >> symbolic_mem_engine >> page_manager >> mappings; 
+}
+
+int MemEngine::uid() const
+{
+    return _uid;
 }
 
 addr_t reserved_memory(MemEngine& mem)

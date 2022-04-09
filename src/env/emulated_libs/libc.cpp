@@ -132,7 +132,7 @@ void _get_format_string(MaatEngine& engine, char* format, int len, std::string& 
     addr_t addr;
     char buffer[2048], specifier[128], formatted_arg[256];
     int buffer_len;
-    const maat::env::abi::ABI& abi = engine.env->default_abi;
+    const maat::env::abi::ABI& abi = *engine.env->default_abi;
     size_t arg_size = engine.arch->octets();
 
     int spec;

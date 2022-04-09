@@ -46,12 +46,16 @@ add_library(maat_maat
   src/ir/asm_inst.cpp
   src/ir/cpu.cpp
   src/ir/instruction.cpp
+  src/ir/ir_cache.cpp
   src/loader/loader.cpp
   src/loader/loader_lief.cpp
   src/loader/loader_lief_elf.cpp
   src/memory/memory.cpp
   src/memory/memory_map.cpp
   src/memory/symbolic_memory.cpp
+  src/serialization/deserializer.cpp
+  src/serialization/serialization_helpers.cpp
+  src/serialization/serializer.cpp
   src/solver/solver.cpp
   src/solver/solver_z3.cpp
   src/third-party/murmur3/murmur3.c

@@ -19,6 +19,7 @@ add_executable(unit-tests
   unit-tests/test_ir.cpp
   unit-tests/test_loader.cpp
   unit-tests/test_memory.cpp
+  unit-tests/test_serialization.cpp
   unit-tests/test_simplification.cpp
   unit-tests/test_snapshot.cpp
   unit-tests/test_solver.cpp
@@ -43,6 +44,7 @@ add_test(NAME unit-tests
 add_executable(adv-tests
   adv-tests/test_all.cpp
   adv-tests/test_coverage.cpp
+  adv-tests/test_serialization.cpp
   adv-tests/test_hash.cpp
   adv-tests/test_hash_solving.cpp
   adv-tests/test_solve_symptr.cpp

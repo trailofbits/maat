@@ -3,6 +3,8 @@
 namespace maat
 {
 
+using serial::bits;
+
 Value::Value(): _expr(nullptr), type(Value::Type::NONE){}
 
 Value::Value(const Expr& expr)
@@ -1404,6 +1406,30 @@ Value concat(const Value& upper, const Value& lower)
     return res;
 }
 
+uid_t Value::class_uid() const
+{
+    return serial::ClassId::VALUE;
+}
+
+void Value::dump(Serializer& s) const
+{
+    s << bits(type);
+    if (is_abstract())
+        s << _expr;
+    else
+        s << _number;
+}
+
+void Value::load(Deserializer& d)
+{
+    d >> bits(type);
+    if (type == Value::Type::ABSTRACT)
+        d >> _expr;
+    else
+        d >> _number;
+}
+
+
 Constraint operator==(const Value& left, const Value& right)
 {
     return left.as_expr() == right.as_expr();
@@ -1493,5 +1519,6 @@ Constraint operator>=(cst_t left, const Value& right)
 {
     return exprcst(right.size(), left) >= right.as_expr();
 }
+
 
 } // namespace maat

@@ -66,7 +66,24 @@ void TmpContext::reset()
     tmps.clear();
 }
 
-std::ostream& operator<<(std::ostream& os, TmpContext& ctx)
+
+serial::uid_t TmpContext::class_uid() const
+{
+    return serial::ClassId::TMP_CONTEXT;
+}
+
+void TmpContext::dump(serial::Serializer& s) const
+{
+    s << tmps;
+}
+
+void TmpContext::load(serial::Deserializer& d)
+{
+    tmps.clear();
+    d >> tmps;
+}
+
+std::ostream& operator<<(std::ostream& os, const TmpContext& ctx)
 {
     for (int i = 0; i < ctx.tmps.size(); i++)
     {
@@ -260,19 +277,35 @@ const Value& CPUContext::get(ir::reg_t reg) const
     }
 }
 
+serial::uid_t CPUContext::class_uid() const
+{
+    return serial::ClassId::CPU_CONTEXT;
+}
+
+void CPUContext::dump(serial::Serializer& s) const
+{
+    s << regs;
+}
+
+void CPUContext::load(serial::Deserializer& d)
+{
+    regs.clear();
+    d >> regs;
+}
+
 std::ostream& operator<<(std::ostream& os, const CPUContext& ctx)
 {
     for (int i = 0; i < ctx.regs.size(); i++)
         os << "REG_" << std::dec << i << ": " << ctx.regs[i] << "\n";
     return os;
 }
+
 // Print the CPU context to a stream with proper register names
 void CPUContext::print(std::ostream& os, const Arch& arch)
 {
     for (int i = 0; i < arch.nb_regs; i++)
         os << arch.reg_name(i) << ": " << regs[i] << "\n";
 }
-
 
 
 CPU::CPU(int nb_regs): _cpu_ctx(CPUContext(nb_regs))
@@ -634,14 +667,23 @@ void CPU::reset_temporaries()
     tmp_ctx.reset();
 }
 
+serial::uid_t CPU::class_uid() const
+{
+    return serial::ClassId::CPU;
+}
 
+void CPU::dump(serial::Serializer& s) const
+{
+    // Note: we don't serialize processed_inst since it is used internally only
+    // during the IR execution loop and reset for every new IR instruction
+    s << _cpu_ctx << tmp_ctx;
+    
+}
 
-
-
-
-
-
-
+void CPU::load(serial::Deserializer& d)
+{
+    d >> _cpu_ctx >> tmp_ctx;
+}
 
 
 

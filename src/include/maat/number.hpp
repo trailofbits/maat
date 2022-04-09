@@ -4,6 +4,7 @@
 #include <iostream>
 #include "maat/types.hpp"
 #include "maat/exception.hpp"
+#include "maat/serializer.hpp"
 #include "gmp.h"
 #include "gmpxx.h"
 
@@ -19,7 +20,7 @@ namespace maat
  * If the number of bits is inferior or equal to 64, the value will be stored in a **cst_t** variable.
  * If the number of bits is superior to 64, the classes uses a multiprecision
  * integer from the GMP library */
-class Number
+class Number : public maat::serial::Serializable 
 {
 public:
     size_t size;
@@ -108,6 +109,10 @@ public:
     void print(std::ostream& os, bool decimal=false) const;
     /// Print number to a stream
     friend std::ostream& operator<<(std::ostream& os, const Number& n);
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** \} */ // doxygen Expressions group

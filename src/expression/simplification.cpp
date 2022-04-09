@@ -105,9 +105,9 @@ Expr ExprSimplifier::simplify(Expr e, bool mark_as_simplified)
     return tmp_expr;
 }
 
-std::unique_ptr<ExprSimplifier> NewDefaultExprSimplifier()
+std::shared_ptr<ExprSimplifier> NewDefaultExprSimplifier()
 {
-    auto simp = std::make_unique<ExprSimplifier>();
+    auto simp = std::make_shared<ExprSimplifier>();
     simp->add(es_constant_folding);
     simp->add(es_neutral_elements);
     simp->add(es_absorbing_elements);

@@ -4,6 +4,9 @@
 namespace maat
 {
 
+using serial::bits;
+using serial::container_bits;
+
 Symbol::Symbol():
 func_status(Symbol::FunctionStatus::NONE),
 data_status(Symbol::DataStatus::NONE),
@@ -44,6 +47,34 @@ env_lib_num(-1),
 env_func_num(-1),
 size(_size)
 {}
+
+serial::uid_t Symbol::class_uid() const
+{
+    return serial::ClassId::SYMBOL;
+}
+
+void Symbol::dump(serial::Serializer& s) const
+{
+    s << bits(func_status) << bits(data_status) << bits(addr) << name
+      << bits(env_lib_num) << bits(env_func_num) << bits(size);
+    // optional args
+    s << bits(args.has_value());
+    if (args.has_value())
+        s << container_bits(args.value());
+}
+
+void Symbol::load(serial::Deserializer& d)
+{
+    d >> bits(func_status) >> bits(data_status) >> bits(addr) >> name
+      >> bits(env_lib_num) >> bits(env_func_num) >> bits(size);
+    // optional args
+    bool has_args;
+    d >> bits(has_args);
+    if (has_args)
+        d >> container_bits(args.emplace());
+    else
+        args = std::nullopt;
+}
 
 std::ostream& operator<<(std::ostream& os, const Symbol& s)
 {
@@ -138,6 +169,43 @@ void SymbolManager::add_function(
         name,
         args
     ));
+}
+
+serial::uid_t SymbolManager::class_uid() const
+{
+    return serial::ClassId::SYMBOL_MANAGER;
+}
+
+void SymbolManager::dump(serial::Serializer& s) const
+{
+    s << bits(symbols_by_addr.size());
+    for (const auto& [addr,sym] : symbols_by_addr)
+        s << bits(addr) << sym;
+
+    s << bits(symbols_by_name.size());
+    for (const auto& [name,sym] : symbols_by_name)
+        s << name << sym;
+}
+
+void SymbolManager::load(serial::Deserializer& d)
+{
+    size_t tmp_size;
+    Symbol sym;
+    d >> bits(tmp_size);
+    for (int i = 0; i < tmp_size; i++)
+    {
+        addr_t addr;
+        d >> bits(addr) >> sym;
+        symbols_by_addr[addr] = sym;
+    }
+
+    d >> bits(tmp_size);
+    for (int i = 0; i < tmp_size; i++)
+    {
+        std::string name;
+        d >> name >> sym;
+        symbols_by_name[name] = sym;
+    }
 }
 
 std::ostream& operator<<(std::ostream& os, const SymbolManager& s)

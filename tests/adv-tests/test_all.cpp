@@ -13,6 +13,7 @@ void test_hash();
 void test_code_coverage();
 void test_solve_hash();
 void test_solve_symbolic_ptr();
+void test_adv_serialization();
 
 int main(int argc, char ** argv)
 {
@@ -38,6 +39,7 @@ int main(int argc, char ** argv)
             /* If no args specified, test all */
                 test_hash();
                 test_code_coverage();
+                test_adv_serialization();
                 test_solve_hash();
                 test_solve_symbolic_ptr();
             }
@@ -50,6 +52,8 @@ int main(int argc, char ** argv)
                         test_hash();
                     else if( !strcmp(argv[i], "cov"))
                         test_code_coverage();
+                    else if( !strcmp(argv[i], "serial"))
+                        test_adv_serialization();
                     else if( !strcmp(argv[i], "solve_hash") )
                         test_solve_hash();
                     else if( !strcmp(argv[i], "solve_symptr"))

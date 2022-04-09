@@ -146,7 +146,7 @@ namespace test{
                  addr2 = exprvar(32, "var_1") | 0x00001100;
             Expr e, ite, ite2;
             Expr val1 = exprcst(32, 0x12345678);
-            std::unique_ptr<ExprSimplifier> simp = NewDefaultExprSimplifier();
+            auto simp = NewDefaultExprSimplifier();
 
             mem.symbolic_ptr_write(addr1, addr1->value_set(), val1, settings);
 
@@ -157,19 +157,6 @@ namespace test{
             nb += _assert(ite->is_symbolic(*varctx),"Concrete read in symbolic memory failed");
 
             mem.symbolic_ptr_write(addr2, addr2->value_set(), val1, settings);
-
-            // e = mem.read(0xf000, 4); // Read in symbolic area
-            // ite2 = mem.unfold_exprmem(e);
-            // TODO nb += _assert(ite2->neq(ite),"Concrete read in symbolic memory failed");
-
-            // Restore snapshot ?
-            /* TODO later
-            mem.symbolic_mem_engine.restore_snapshot(1);
-            e = mem.read(0xf000, 4); // Read in symbolic area
-            ite2 = mem.unfold_exprmem(e);
-            // std::cout << "Test ITE2: " << ite2 << std::endl;
-            nb += _assert(ite2->eq(ite),"Concrete read in symbolic memory failed");
-            */
 
             // Make concrete ptr write in symbolic memory
             mem.write(0xf008, exprcst(64, 0xdeadbeefcafebabe));
@@ -260,7 +247,7 @@ namespace test{
             Expr e, ite, ite2;
             Value val;
             Expr val1 = exprcst(64, 0x12345678deadbeef);
-            std::unique_ptr<ExprSimplifier> simp = NewDefaultExprSimplifier();
+            auto simp = NewDefaultExprSimplifier();
 
             mem.write(0x10, val1);
             varctx->set("var_0", 0x11);

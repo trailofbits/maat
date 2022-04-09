@@ -6,12 +6,13 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include "maat/serializer.hpp"
 
 namespace maat
 {
 
 /// A class representing a symbol
-class Symbol
+class Symbol: public serial::Serializable
 {
 public:
     using args_spec_t = std::vector<size_t>;
@@ -58,7 +59,7 @@ public:
     Symbol();
     Symbol(const Symbol& other) = default;
     Symbol& operator=(const Symbol& other) = default;
-    ~Symbol() = default;
+    virtual ~Symbol() = default;
     /// Create a function symbol
     Symbol(
         FunctionStatus status,
@@ -78,14 +79,20 @@ public:
     );
 public:
     friend std::ostream& operator<<(std::ostream&, const Symbol&);
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /// Manager for all symbols in an engine
-class SymbolManager
+class SymbolManager: public serial::Serializable
 {
 protected:
     std::unordered_map<addr_t, Symbol> symbols_by_addr;
     std::unordered_map<std::string, Symbol> symbols_by_name;
+public:
+    virtual ~SymbolManager() = default;
 public:
     void add_symbol(Symbol symbol); ///< Add a symbol
 public:
@@ -107,6 +114,10 @@ public:
 public:
     /// Print all symbols to a stream
     friend std::ostream& operator<<(std::ostream&, const SymbolManager&);
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 

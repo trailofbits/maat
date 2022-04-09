@@ -7,14 +7,18 @@
 #include <iostream>
 #include <iomanip>
 #include <list>
+#include "maat/value.hpp"
 #include "maat/types.hpp"
+#include "maat/snapshot.hpp"
 #include "maat/expression.hpp"
 #include "maat/settings.hpp"
-#include "maat/snapshot.hpp"
 #include "maat/memory_page.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
+
+using serial::bits;
 
 /** \defgroup memory Memory 
  * \brief Modeling a process's main memory.
@@ -54,7 +58,7 @@ to write only a few bytes. Therefore, for performance reasons, it is possible
 for the functions to return an offset bigger than off+nb_bytes-1, just
 keep that in mind when using it.
 */
-class MemStatusBitmap
+class MemStatusBitmap: public serial::Serializable
 {
 private:
     uint8_t* _bitmap;
@@ -65,7 +69,7 @@ public:
     /** Constructor */
     MemStatusBitmap(offset_t nb_bytes);
     /** Destructor */
-    ~MemStatusBitmap();
+    virtual ~MemStatusBitmap();
     /** Extend the bitmap to make it represent 'nb_bytes' more bytes of
      * memory. The new bytes are inserted at the end of the bitmap.
      * For example if nb_bytes is 16, the actual bitmap size will
@@ -84,6 +88,10 @@ public:
     bool is_concrete(offset_t off);
     offset_t is_abstract_until(offset_t off, offset_t max=0xffffffff);
     offset_t is_concrete_until(offset_t off, offset_t max=0xffffffff);
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /**This class represents a concrete memory area. It's basically a wrapper 
@@ -93,7 +101,7 @@ For performance reasons, no checks are performed on the read/write operations
 to make sure that they don't overflow the bounds of the buffer. It is up
 to the caller to verify that the arguments passed are consistent.
 */
-class MemConcreteBuffer
+class MemConcreteBuffer: public serial::Serializable
 {
 private:
     unsigned int _size;
@@ -101,7 +109,7 @@ private:
 public:
     MemConcreteBuffer(); ///< Constructor
     MemConcreteBuffer(offset_t nb_bytes); ///< Constructor
-    ~MemConcreteBuffer(); ///< Destructor
+    virtual ~MemConcreteBuffer(); ///< Destructor
     /** Extend the buffer to make it represent 'nb_bytes' more bytes of
      * memory. The new bytes are inserted at the end of the buffer */
     void extend_after(offset_t nb_bytes); 
@@ -123,6 +131,11 @@ public:
 
     /// Returns a raw pointer to the concrete memory buffer at offset 'off'
     uint8_t* raw_mem_at(offset_t off);
+
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** This class represents a memory area where abstract expressions are stored.
@@ -149,7 +162,7 @@ expressions stored in memory, the class automatically concatenates/extracts
 the corresponding parts
 */
 
-class MemAbstractBuffer
+class MemAbstractBuffer: public serial::Serializable
 {
 public:
     // TODO: use std::map, and use iterator successors in read() implementation
@@ -158,10 +171,15 @@ private:
     abstract_mem_t _mem;
 public:
     MemAbstractBuffer(); ///< Constructor
+    virtual ~MemAbstractBuffer() = default;
     Expr read(offset_t off, unsigned int nb_bytes); ///< Read 'nb_bytes' bytes as an abstract value from offset 'off'
     void write(offset_t off, Expr val); ///< Write an abstract value at offset 'off'
     std::pair<Expr, uint8_t>& at(offset_t off); ///< Return the abstract value pair stored at offset 'off'
     void set(offset_t off, std::pair<Expr, uint8_t>& pair); ///< Set the abstract value pair at offset 'off' 
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** This class is a wrapper that represents a mapped memory area. It can
@@ -169,7 +187,7 @@ be used transparently to write and read both abstract and concrete values.
 To do so, it uses a concrete buffer, an abstract buffer, and a memory status
 bitmap to keep track of what is abstract and what is concrete 
 */
-class MemSegment
+class MemSegment: public serial::Serializable
 {
 private:
     MemStatusBitmap _bitmap;
@@ -184,6 +202,7 @@ public:
 
 public:
     MemSegment(addr_t start, addr_t end, const std::string& name="", bool is_engine_special_segment=false); ///< Constructor
+    virtual ~MemSegment() = default;
     bool contains(addr_t addr);
     addr_t size(); ///< Number of bytes 
     bool intersects_with_range(addr_t addr_min, addr_t addr_max);
@@ -232,16 +251,23 @@ public:
     /** \brief Finds the first address holding a value different that 'byte' 
      * starting from 'start' */
     addr_t is_identical_until(addr_t start, cst_t byte);
+
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 
 /** \brief Represents a symbolic pointer memory write */
-class SymbolicMemWrite
+class SymbolicMemWrite: public serial::Serializable
 {
 public:
     Expr addr; ///< Address of the write (symbolic pointer)
     Value value; ///< Value written
     ValueSet refined_value_set;
+    /// Dummy constructor used for deserialization
+    SymbolicMemWrite(): addr(nullptr) {} 
     SymbolicMemWrite(Expr a, const Value& val, ValueSet& vs): addr(a), value(val), refined_value_set(vs){};
     SymbolicMemWrite(addr_t a, size_t size, const Value& val)
     {
@@ -250,19 +276,49 @@ public:
         refined_value_set.size = size;
         refined_value_set.set_cst(a);
     };
+    virtual ~SymbolicMemWrite() = default;
+
+public:
+    virtual uid_t class_uid() const
+    {
+        return serial::ClassId::SYMBOLIC_MEM_WRITE;
+    }
+    virtual void dump(serial::Serializer& s) const
+    {
+        s << addr << value << refined_value_set;
+    }
+    virtual void load(serial::Deserializer& d)
+    {
+        d >> addr >> value >> refined_value_set;
+    }
 };
 
 /** \brief Class used internally for symbolic memory management */
-class SimpleInterval
+class SimpleInterval: public serial::Serializable
 {
 public:
     ucst_t min, max;
     int write_count;
-    SimpleInterval(ucst_t a, ucst_t b, int wc):min(a), max(b), write_count(wc){};
+    SimpleInterval(ucst_t a=0, ucst_t b=0, int wc=0):min(a), max(b), write_count(wc){};
+    virtual ~SimpleInterval() = default;
+public:
     bool contains(ucst_t val)
     {
         return min <= val && max >= val;
     };
+public:
+    virtual uid_t class_uid() const
+    {
+        return serial::ClassId::SIMPLE_INTERVAL;
+    }
+    virtual void dump(serial::Serializer& s) const
+    {
+        s << bits(min) << bits(max) << bits(write_count);
+    }
+    virtual void load(serial::Deserializer& d)
+    {
+        d >> bits(min) >> bits(max) >> bits(write_count);
+    }
 };
 
 /** \brief Class used internally for symbolic memory management.
@@ -277,7 +333,7 @@ Binary tree of intervals, for each node:
     - match_max is the list of intervals containing 'center' ordered
       by their higher value
 */
-class IntervalTree
+class IntervalTree: public serial::Serializable
 {
 public:
     ucst_t center;
@@ -291,7 +347,11 @@ public:
     bool contains_addr(ucst_t val, unsigned int max_count=0xffffffff);
     bool contains_interval(ucst_t min, ucst_t max, unsigned int max_count=0xffffffff);
     void restore(int write_count);
-    ~IntervalTree();
+    virtual ~IntervalTree();
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 
@@ -299,7 +359,7 @@ class MaatEngine;
 
 /** \brief Dedicated memory engine handling the 'symbolic' memory state resulting from symbolic
  * pointer writes */
-class SymbolicMemEngine
+class SymbolicMemEngine: public serial::Serializable
 {
 private:
     unsigned int write_count; ///< Number of symbolic writes that have been performed
@@ -308,11 +368,14 @@ private:
 private:
     std::shared_ptr<VarContext> _varctx;
 public:
-    Expr _unfold_concrete_ptr_exprmem(Expr expr, bool force_aligned=false);
-    Expr _unfold_symbolic_ptr_exprmem(Expr expr, bool force_aligned=false);
+    /** \brief If set to **true**, force symbolic pointers to be aligned with the
+     * size of the memory access. This can be used to reduce the set of
+     * possible ways memory content is affected by symbolic stores */
+    bool symptr_force_aligned;
 
 public:
     SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContext> varctx);
+    virtual ~SymbolicMemEngine() = default;
     /** \brief Record symbolic pointer write. 'addr_min' and 'addr_max' are the
      * minimal and maximal concrete values that the 'addr' expression can take */
     void symbolic_ptr_write(const Expr& addr, const Value& val, addr_t addr_min, addr_t addr_max);
@@ -332,10 +395,12 @@ public:
     symbolic_mem_snapshot_t take_snapshot();
     void restore_snapshot(symbolic_mem_snapshot_t id);
 public:
-    /** \brief If set to **true**, force symbolic pointers to be aligned with the
-     * size of the memory access. This can be used to reduce the set of
-     * possible ways memory content is affected by symbolic stores */
-    bool symptr_force_aligned;
+    Expr _unfold_concrete_ptr_exprmem(Expr expr, bool force_aligned=false);
+    Expr _unfold_symbolic_ptr_exprmem(Expr expr, bool force_aligned=false);
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 
@@ -349,9 +414,12 @@ static constexpr mem_alert_t mem_alert_x_overwrite = 0x1;
 static constexpr mem_alert_t mem_alert_possible_out_of_bounds = 0x2;
 
 /** A memory engine representing a process's memory */
-class MemEngine
+class MemEngine: public serial::Serializable
 {
 private:
+    static int _uid_cnt;
+private:
+    int _uid;
     size_t _arch_bits;
     std::list<std::shared_ptr<MemSegment>> _segments;
     std::shared_ptr<VarContext> _varctx;
@@ -367,7 +435,7 @@ public:
      * @param arch_bits Default address size in bits
      * @param snap Snapshot manager to use if snapshots are enabled */
     MemEngine(std::shared_ptr<VarContext> varctx=nullptr, size_t arch_bits=64, std::shared_ptr<SnapshotManager<Snapshot>> snap=nullptr);
-    ~MemEngine();
+    virtual ~MemEngine();
 
     /** \brief Map memory from 'start' to 'end' (included), with permissions 'mflags'. 
     Necessary segments are created in order to fill the map. The map is NOT initialised with zeros */
@@ -551,6 +619,12 @@ public:
     /** \brief Clear the list of pending executable memory overwrites (to be used
      * by the engine only) */
     void _clear_pending_x_mem_overwrites();
+
+public:
+    int uid() const;
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** \brief This helper function returns the

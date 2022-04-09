@@ -20,6 +20,12 @@ typedef double fcst_t; ///< Float constant value (double precision / 64 bits)
  * \{ */
 typedef uint64_t addr_t; ///< Concrete memory address
 /** \} */
+
+/** \addtogroup engine
+ * \{ */
+/// (Internal) Used for snapshoting symbolic memory engine
+typedef unsigned int symbolic_mem_snapshot_t;
+/** \} */
 }
 
 #endif

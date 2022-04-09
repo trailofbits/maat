@@ -1,4 +1,5 @@
 #include "maat/env/filesystem.hpp"
+#include "maat/snapshot.hpp"
 #include <fstream>
 
 namespace maat
@@ -6,25 +7,28 @@ namespace maat
 namespace env
 {
 
+using serial::bits;
+using serial::container_bits;
+
 // ================ PhysicalFile =====================
-// Init uuids at some random value, because they can be
+// Init uids at some random value, because they can be
 // used to simulate the inode number on Linux and I don't know
 // what happens for a null inode number.
-unsigned int PhysicalFile::_uuid_cnt = 5;
+unsigned int PhysicalFile::_uid_cnt = 5;
 
-PhysicalFile::PhysicalFile(SnapshotManager<env::Snapshot>* s, PhysicalFile::Type t):
+PhysicalFile::PhysicalFile(std::shared_ptr<SnapshotManager<env::Snapshot>> s, PhysicalFile::Type t):
 type(t), snapshots(s)
 {
     data = std::make_shared<MemSegment>(0x0, 0xfff); // Default size: 0x1000
     deleted = false;
     _size = 0;
     istream_read_offset = 0;
-    _uuid = _uuid_cnt++;
+    _uid = _uid_cnt++;
 }
 
-unsigned int PhysicalFile::uuid()
+unsigned int PhysicalFile::uid()
 {
-    return _uuid;
+    return _uid;
 }
 
 unsigned int PhysicalFile::size()
@@ -302,6 +306,41 @@ void PhysicalFile::record_write(addr_t offset, int nb_bytes)
     }
 }
 
+uid_t PhysicalFile::class_uid() const
+{
+    return serial::ClassId::PHYSICAL_FILE;
+}
+
+void PhysicalFile::dump(serial::Serializer& s) const
+{
+    s << bits(_uid_cnt) << bits(_uid) << data << bits(flags) 
+      << bits(deleted) << bits(_size) << _symlink
+      << bits(type) << bits(istream_read_offset)
+      << snapshots;
+    // We support serializing flush stream ONLY if its std::cout
+    bool flush_stream_is_stdout = (
+        flush_stream.has_value() and
+        flush_stream.value().get().rdbuf() == std::cout.rdbuf()
+    );
+        s << bits(flush_stream_is_stdout);
+}
+
+void PhysicalFile::load(serial::Deserializer& d)
+{
+    d >> bits(_uid_cnt) >> bits(_uid) >> data >> bits(flags) 
+      >> bits(deleted) >> bits(_size) >> _symlink
+      >> bits(type) >> bits(istream_read_offset)
+      >> snapshots;
+    bool flush_stream_is_stdout;
+    d >> bits(flush_stream_is_stdout);
+    if (flush_stream_is_stdout)
+        flush_stream = std::ref(std::cout);
+    else
+        flush_stream = std::nullopt;
+}
+
+FileAccessor::FileAccessor(): physical_file(nullptr), _handle(-1) {}
+
 FileAccessor::FileAccessor(physical_file_t file, filehandle_t handle, const std::string& name):
 flags(0), physical_file(file), _handle(handle), deleted(false), _alloc_addr(0), _filename(name)
 {
@@ -338,8 +377,27 @@ filehandle_t FileAccessor::handle() const
     return _handle;
 }
 
+uid_t FileAccessor::class_uid() const
+{
+    return serial::ClassId::FILE_ACCESSOR;
+}
+
+void FileAccessor::dump(serial::Serializer& s) const
+{
+    s << bits(_handle) << bits(flags) << physical_file << bits(_alloc_addr) 
+      << bits(state.read_ptr) << bits(state.write_ptr) << _filename
+      << bits(deleted);
+}
+
+void FileAccessor::load(serial::Deserializer& d)
+{
+    d >> bits(_handle) >> bits(flags) >> physical_file >> bits(_alloc_addr) 
+      >> bits(state.read_ptr) >> bits(state.write_ptr) >> _filename
+      >> bits(deleted);
+}
+
 // ====================== Directory ======================
-Directory::Directory(SnapshotManager<env::Snapshot>* s):
+Directory::Directory(std::shared_ptr<SnapshotManager<env::Snapshot>> s):
 deleted(false), snapshots(s)
 {};
 
@@ -685,11 +743,26 @@ void Directory::print(std::ostream& os, const std::string& indent_string) const
     }
 }
 
+uid_t Directory::class_uid() const
+{
+    return serial::ClassId::FS_DIRECTORY;
+}
+
+void Directory::dump(serial::Serializer& s) const
+{
+    s << bits(deleted) << files << subdirs << symlinks
+      << snapshots;
+}
+
+void Directory::load(serial::Deserializer& d)
+{
+    d >> bits(deleted) >> files >> subdirs >> symlinks
+      >> snapshots;
+}
 
 // =============== FileSystem =================
 FileSystem::FileSystem(OS system):
-_handle_cnt(0), orphan_file_wildcard('#'),
-root(&snapshots), orphan_files(&snapshots)
+_handle_cnt(0), orphan_file_wildcard('#')
 {
     switch (system)
     {
@@ -705,6 +778,9 @@ root(&snapshots), orphan_files(&snapshots)
         default:
             throw runtime_exception("FileSystem constructor: unsupported OS!");
     }
+    snapshots = std::make_shared<SnapshotManager<env::Snapshot>>();
+    root = Directory(snapshots);
+    orphan_files = Directory(snapshots);
 }
 
 bool FileSystem::create_file(const std::string& path, bool create_path)
@@ -716,8 +792,8 @@ bool FileSystem::create_file(const std::string& path, bool create_path)
         return false;
     }
 
-    if (snapshots.active())
-        snapshots.back().add_filesystem_action(path, FileSystemAction::CREATE_FILE);
+    if (snapshots->active())
+        snapshots->back().add_filesystem_action(path, FileSystemAction::CREATE_FILE);
     return true;
 }
 
@@ -752,9 +828,9 @@ bool FileSystem::delete_file(const std::string& path, bool weak)
     {
         return false;
     }
-    if (weak and snapshots.active()) // Record deletion only if weak-delete
+    if (weak and snapshots->active()) // Record deletion only if weak-delete
     {
-        snapshots.back().add_filesystem_action(path, FileSystemAction::DELETE_FILE);
+        snapshots->back().add_filesystem_action(path, FileSystemAction::DELETE_FILE);
     }
     return true;
 }
@@ -778,8 +854,8 @@ bool FileSystem::create_dir(const std::string& path)
         return false;
     }
     
-    if (snapshots.active())
-        snapshots.back().add_filesystem_action(path, FileSystemAction::CREATE_DIR);
+    if (snapshots->active())
+        snapshots->back().add_filesystem_action(path, FileSystemAction::CREATE_DIR);
     return true;
 }
 
@@ -796,9 +872,9 @@ bool FileSystem::delete_dir(const std::string& path, bool weak)
         return false;
     }
 
-    if (weak and snapshots.active())
+    if (weak and snapshots->active())
     {
-        snapshots.back().add_filesystem_action(path, FileSystemAction::DELETE_DIR);
+        snapshots->back().add_filesystem_action(path, FileSystemAction::DELETE_DIR);
     }
     return true;
 }
@@ -1004,10 +1080,10 @@ std::string FileSystem::get_stderr_for_pid(int pid)
 
 FileSystem::snapshot_t FileSystem::take_snapshot()
 {
-    env::Snapshot& snapshot = snapshots.emplace_back();
+    env::Snapshot& snapshot = snapshots->emplace_back();
     snapshot.file_accessors = fa_list;
     // Snapshot ID is its index in the snapshots list
-    return snapshots.size()-1;
+    return snapshots->size()-1;
 }
 
 /** Restore the engine state to 'snapshot'. If remove is true, the 
@@ -1022,12 +1098,12 @@ void FileSystem::restore_snapshot(snapshot_t snapshot, bool remove)
 
     // idx is the index of the oldest snapshot to restore
     // start by rewinding until 'idx' and delete more recent snapshots 
-    while (idx < snapshots.size()-1)
+    while (idx < snapshots->size()-1)
     {
         restore_last_snapshot(true); // remove = true
     }
     // For the last one (the 'idx' snapshot), pass the user provided 'remove' parameter
-    if (idx == snapshots.size()-1)
+    if (idx == snapshots->size()-1)
     {
         restore_last_snapshot(remove);
     }
@@ -1037,7 +1113,7 @@ void FileSystem::restore_snapshot(snapshot_t snapshot, bool remove)
  * snapshot is removed after being restored */
 void FileSystem::restore_last_snapshot(bool remove)
 {
-    Snapshot& snapshot = snapshots.back(); 
+    Snapshot& snapshot = snapshots->back(); 
     // Restore physical files content in reverse order !
     for (
         auto it = snapshot.saved_file_contents.rbegin(); 
@@ -1092,7 +1168,26 @@ void FileSystem::restore_last_snapshot(bool remove)
 
     // If remove, destroy the snapshot
     if (remove)
-        snapshots.pop_back();
+        snapshots->pop_back();
+}
+
+uid_t FileSystem::class_uid() const
+{
+    return serial::ClassId::FILE_SYSTEM;
+}
+
+void FileSystem::dump(serial::Serializer& s) const
+{
+    s << _path_separator << rootdir_prefix << bits(orphan_file_wildcard)
+      << root << orphan_files << fa_list << container_bits(reserved_handles)
+      << snapshots;
+}
+
+void FileSystem::load(serial::Deserializer& d)
+{
+    d >> _path_separator >> rootdir_prefix >> bits(orphan_file_wildcard)
+      >> root >> orphan_files >> fa_list >> container_bits(reserved_handles)
+      >> snapshots;
 }
 
 std::ostream& operator<<(std::ostream& os, const FileSystem& fs)
@@ -1134,6 +1229,44 @@ void Snapshot::add_saved_file_content(std::shared_ptr<PhysicalFile> file, SavedM
 void Snapshot::add_filesystem_action(std::string path, FileSystemAction action)
 {
     fs_actions.push_back(std::make_pair(path, action));
+}
+
+uid_t Snapshot::class_uid() const
+{
+    return serial::ClassId::ENV_SNAPSHOT;
+}
+
+void Snapshot::dump(serial::Serializer& s) const
+{
+    s << bits(saved_file_contents.size());
+    for (const auto& p : saved_file_contents)
+        s << p.first << p.second;
+
+    s << bits(fs_actions.size());
+    for (const auto& p : fs_actions)
+        s << p.first << bits(p.second);
+
+    s << file_accessors;
+}
+
+void Snapshot::load(serial::Deserializer& d)
+{
+    size_t tmp_size;
+    d >> bits(tmp_size);
+    for (int i = 0; i < tmp_size; i++)
+    {
+        auto& p = saved_file_contents.emplace_back();
+        d >> p.first >> p.second;
+    }
+
+    d >> bits(tmp_size);
+    for (int i = 0; i < tmp_size; i++)
+    {
+        auto& p = fs_actions.emplace_back();
+        d >> p.first >> bits(p.second);
+    }
+
+    d >> file_accessors;
 }
 
 

@@ -41,7 +41,6 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
     vars = std::make_shared<VarContext>();
     snapshots = std::make_shared<SnapshotManager<Snapshot>>();
     mem = std::make_shared<MemEngine>(vars, arch->bits(), snapshots);
-    ir_map = std::make_shared<ir::IRMap>();
     process = std::make_shared<ProcessInfo>();
     simplifier = NewDefaultExprSimplifier();
     callother_handlers = callother::default_handler_map();
@@ -889,7 +888,7 @@ bool MaatEngine::process_callback_emulated_function(addr_t addr)
     {
         const env::Function& func = env->get_library_by_num(symbol.env_lib_num).get_function_by_num(symbol.env_func_num);
         // Execute function callback
-        switch (func.callback().execute(*this, env->default_abi))
+        switch (func.callback().execute(*this, *env->default_abi))
         {
             case env::Action::CONTINUE:
                 break;
@@ -915,8 +914,9 @@ bool MaatEngine::process_callback_emulated_function(addr_t addr)
 
 const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
 {
-    if (ir_map->contains_inst_at(addr))
-        return ir_map->get_inst_at(addr);
+    ir::IRMap& ir_map = ir::get_ir_map(mem->uid());
+    if (ir_map.contains_inst_at(addr))
+        return ir_map.get_inst_at(addr);
 
     // The code hasn't been lifted yet so we disassemble it
     try
@@ -924,7 +924,7 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
         // TODO: check if code region is symbolic
         if (
             not lifters[_current_cpu_mode]->lift_block(
-                *ir_map,
+                ir_map,
                 addr,
                 mem->raw_mem_at(addr),
                 0xfffffff,
@@ -936,7 +936,7 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
         ){
             throw lifter_exception("MaatEngine::run(): failed to lift instructions");
         }
-        return ir_map->get_inst_at(addr);
+        return ir_map.get_inst_at(addr);
     }
     catch(const unsupported_instruction_exception& e)
     {
@@ -962,7 +962,8 @@ void MaatEngine::handle_pending_x_mem_overwrites()
 {
     for (auto& mem_access : mem->_get_pending_x_mem_overwrites())
     {
-        ir_map->remove_insts_containing(mem_access.first, mem_access.second);
+        ir::IRMap& ir_map = ir::get_ir_map(mem->uid());
+        ir_map.remove_insts_containing(mem_access.first, mem_access.second);
     }
     mem->_clear_pending_x_mem_overwrites();
 }
@@ -1298,6 +1299,45 @@ void MaatEngine::load(
 #else
     throw runtime_exception("Maat was compiled without a loader backend");
 #endif
+}
+
+serial::uid_t MaatEngine::class_uid() const
+{
+    return serial::ClassId::MAAT_ENGINE;
+}
+
+void MaatEngine::dump(serial::Serializer& s) const
+{
+    s << bits(_current_cpu_mode) << bits(_halt_after_inst)
+      << bits(_previous_halt_before_exec)
+      << current_ir_state << path
+      << snapshots << arch << vars << mem
+      << cpu << env << symbols << process
+      << info << settings;
+    // Lifter(s)
+    s << bits(lifters.size());
+    for (const auto& [key,val] : lifters)
+        s << bits(key) << val;
+}
+
+void MaatEngine::load(serial::Deserializer& d)
+{
+    d >> bits(_current_cpu_mode) >> bits(_halt_after_inst)
+      >> bits(_previous_halt_before_exec)
+      >> current_ir_state >> path
+      >> snapshots >> arch >> vars >> mem
+      >> cpu >> env >> symbols >> process
+      >> info >> settings;
+    // Lifter(s)
+    size_t tmp_size;
+    d >> bits(tmp_size);
+    for (int i = 0; i < tmp_size; i++)
+    {
+        CPUMode mode;
+        std::shared_ptr<Lifter> lifter;
+        d >> bits(mode) >> lifter;
+        lifters[mode] = lifter;
+    }
 }
 
 } // namespace maat

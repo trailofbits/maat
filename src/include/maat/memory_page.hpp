@@ -4,9 +4,12 @@
 #include <list>
 #include <string>
 #include "maat/types.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
+
+using serial::uid_t;
 
 /** \addtogroup memory
  * \{ */
@@ -25,7 +28,7 @@ static constexpr mem_flag_t mem_flag_wx = 6U;
 static constexpr mem_flag_t mem_flag_rwx = 7U;
 
 /// A set of contiguous memory pages
-class PageSet
+class PageSet: public serial::Serializable
 {
 public:
     addr_t start;
@@ -33,21 +36,28 @@ public:
     mem_flag_t flags;
     bool was_once_executable;
 
+    PageSet(); ///< Dummy constructor used by deserializer
     PageSet(addr_t start, addr_t end, mem_flag_t f, bool was_once_executable=false);
+    virtual ~PageSet() = default;
     bool intersects_with_range(addr_t min, addr_t max) const;
     bool contains(addr_t addr);
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /// Basic manager for page permissions
-class MemPageManager
+class MemPageManager: public serial::Serializable
 {
 private:
-    const size_t _page_size;
+    size_t _page_size;
     std::list<PageSet> _regions;
 private:
     void merge_regions();
 public:
     MemPageManager(size_t page_size=0x1000);
+    virtual ~MemPageManager() = default;
     size_t page_size();
     void set_flags(addr_t start, addr_t end, mem_flag_t flags);
     mem_flag_t get_flags(addr_t addr);
@@ -68,11 +78,15 @@ public:
     void set_regions(std::list<PageSet>&& regions);
 public:
     friend std::ostream& operator<<(std::ostream& os, MemPageManager& mem);
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 
 /// A memory mapping
-class MemMap
+class MemMap: public serial::Serializable
 {
 public:
     addr_t start;
@@ -80,20 +94,29 @@ public:
     mem_flag_t flags;
     std::string name;
 
+    MemMap(); ///< Dummy constructor used by deserializer
     MemMap(addr_t start, addr_t end, mem_flag_t f, std::string name="");
+    virtual ~MemMap() = default;
     bool intersects_with_range(addr_t min, addr_t max) const;
     bool contains(addr_t addr) const;
     bool contained_in_range(addr_t min, addr_t max) const;
     void truncate(std::list<MemMap>& res, addr_t min, addr_t max);
 public:
     friend bool operator<(const MemMap&, const MemMap&);
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /// Basic manager for page permissions
-class MemMapManager
+class MemMapManager: public serial::Serializable
 {
 private:
     std::list<MemMap> _maps;
+public:
+    MemMapManager() = default;
+    virtual ~MemMapManager() = default;
 public:
     void map(MemMap map);
     void unmap(addr_t start, addr_t end);
@@ -103,6 +126,10 @@ public:
     const MemMap& get_map_by_name(const std::string& name) const;
 public:
     friend std::ostream& operator<<(std::ostream&, const MemMapManager&);
+public:
+    virtual uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 // Util function for printing

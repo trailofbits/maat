@@ -1,11 +1,15 @@
 #ifndef MAAT_PROCESS_H
 #define MAAT_PROCESS_H
 
+#include "maat/serializer.hpp"
+
 namespace maat
 {
-  
+
+using serial::bits;
+
 /// This class contains information about a process
-class ProcessInfo
+class ProcessInfo: public serial::Serializable
 {
 public:
     int pid; ///< Process ID  
@@ -14,6 +18,22 @@ public:
     bool terminated; ///< 'True' if the process exited or was killed
 public:
     ProcessInfo(): pid(0), pwd(""), binary_path(""), terminated(false){}
+    virtual ~ProcessInfo() = default;
+
+    virtual serial::uid_t class_uid() const
+    {
+        return serial::ClassId::PROCESS_INFO;
+    }
+
+    virtual void dump(serial::Serializer& s) const
+    {
+        s << bits(pid) << pwd << binary_path << bits(terminated);
+    }
+
+    virtual void load(serial::Deserializer& d)
+    {
+        d >> bits(pid) >> pwd >> binary_path >> bits(terminated);
+    }
 };
 
     
