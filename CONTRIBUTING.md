@@ -1,6 +1,6 @@
 # Contributing
 
-**Last updated**: 02/28/2022
+**Last updated**: 09/04/2022
 
 - [General guidelines](#general-guidelines)
 - [Supporting a new architecture](#support-new-arch)
@@ -13,7 +13,7 @@ First of all, thank you for being interested in contributing to Maat! Here are t
 
 - clone Maat's repository on your development machine
 - follow instructions in [HACKING.md](./HACKING.md) to build and test Maat in developer mode
-- create a new branch and implement your feature in it
+- create a new branch and implement your feature in it. You should base your branch on `master` for bug fixes and on `dev-next` for new features  
 - create a pull request for your branch
 
 If you're wondering whether a given feature is worth implementing, or if you're unsure about how it should be integrated in the existing code-base, feel free to [open a discussion](https://github.com/trailofbits/maat/discussions) on our Github so that we can talk about it beforehand.
