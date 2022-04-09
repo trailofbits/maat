@@ -19,6 +19,7 @@ add_executable(unit-tests
   unit-tests/test_ir.cpp
   unit-tests/test_loader.cpp
   unit-tests/test_memory.cpp
+  unit-tests/test_serialization.cpp
   unit-tests/test_simplification.cpp
   unit-tests/test_snapshot.cpp
   unit-tests/test_solver.cpp
@@ -43,6 +44,7 @@ add_test(NAME unit-tests
 add_executable(adv-tests
   adv-tests/test_all.cpp
   adv-tests/test_coverage.cpp
+  adv-tests/test_serialization.cpp
   adv-tests/test_hash.cpp
   adv-tests/test_hash_solving.cpp
   adv-tests/test_solve_symptr.cpp
@@ -61,6 +63,21 @@ add_test(NAME adv-tests
   # Need this for looking up test binaries
   WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.."
 )
+
+if(maat_BUILD_PYTHON_BINDINGS AND maat_RUN_PYTHON_TESTS)
+  include(../cmake/pytest.cmake)
+
+  add_test(NAME python-tests
+    COMMAND ${pytest_command} .
+    # Need to run within the python-tests directory
+    WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/python-tests"
+  )
+
+  # Set environment variables for correct operation
+  set_tests_properties(python-tests PROPERTIES
+    ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:maat_python>;MAAT_SLEIGH_DIR=${spec_out_dir}"
+  )
+endif()
 
 #IDE UX
 add_folders(Test)

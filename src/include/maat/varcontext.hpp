@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include "maat/number.hpp"
+#include "maat/serializer.hpp"
 #include <vector>
 
 namespace maat 
@@ -15,7 +16,7 @@ namespace maat
 class Value; // Forward decl
 
 /** A context that associates concrete values to symbolic variables*/
-class VarContext
+class VarContext: public serial::Serializable
 {
 private:
     static unsigned int _id_cnt;
@@ -23,12 +24,12 @@ private:
 private:
     /** Map concrete values to symbolic variables */
     std::map<std::string, maat::Number> varmap;
-    
+
 public:
     VarContext(unsigned int id=0); ///< Constructor
     VarContext(const VarContext&) = default;
     VarContext& operator=(const VarContext&) = default;
-    ~VarContext() = default;
+    virtual ~VarContext() = default;
 
 public:
     unsigned int id; ///< Unique identifier for the VarContext instance
@@ -86,6 +87,11 @@ public:
      * */
     void update_from(VarContext& other);
     void print(std::ostream& os) const; ///< Print the context to a stream
+
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** Print the context to a stream */

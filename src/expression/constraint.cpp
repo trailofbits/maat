@@ -7,6 +7,10 @@
 namespace maat
 {
 
+ConstraintObject::ConstraintObject()
+:left_expr(nullptr), right_expr(nullptr), left_constr(nullptr), right_constr(nullptr)
+{}
+
 ConstraintObject::ConstraintObject(ConstraintType t, Expr l, Expr r):
     type(t), left_expr(l), right_expr(r), 
     left_constr(nullptr), right_constr(nullptr)
@@ -118,6 +122,26 @@ bool ConstraintObject::contains_vars(const std::set<std::string>& vars)
         vars.begin(), vars.end()
     );
 }
+
+serial::uid_t ConstraintObject::class_uid() const
+{
+    return serial::ClassId::CONSTRAINT;
+}
+
+void ConstraintObject::dump(serial::Serializer& s) const
+{
+    // Note: we skip serializing the contained_vars set. It will just be recalculated
+    // if contained_vars() is called
+    s << serial::bits(type) << left_expr << right_expr << left_constr << right_constr;
+}
+
+void ConstraintObject::load(serial::Deserializer& d)
+{
+    // Note: we skip deserializing the contained_vars set. It will just be recalculated
+    // if contained_vars() is called
+    d >> serial::bits(type) >> left_expr >> right_expr >> left_constr >> right_constr; 
+}
+
 
 std::ostream& operator<<(std::ostream& os, const Constraint& constr)
 {

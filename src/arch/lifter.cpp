@@ -14,6 +14,9 @@ Lifter::Lifter(CPUMode m): mode(m)
 
     MaatConfig& config = MaatConfig::instance();
 
+    if (m == CPUMode::NONE)
+        return;
+
     // Init disassembly context
     try
     {
@@ -39,7 +42,11 @@ Lifter::Lifter(CPUMode m): mode(m)
             throw lifter_exception("Lifter: didn't find sleigh files for this CPU");
         }
 
-         sleigh_ctx = new_sleigh_ctx(arch, slafile->string(), pspecfile->string());
+        // Try to get cached sleigh context if it exists
+        sleigh_ctx = serial::get_cached_sleigh_ctx(mode);
+        // No cached context, create a new one
+        if (sleigh_ctx == nullptr)
+            sleigh_ctx = new_sleigh_ctx(arch, slafile->string(), pspecfile->string());
     }
     catch(std::exception& e)
     {
@@ -99,5 +106,24 @@ const std::string& Lifter::get_inst_asm(addr_t addr, code_t inst)
     return sleigh_get_asm(sleigh_ctx, addr, inst);
 }
 
+
+serial::uid_t Lifter::class_uid() const
+{
+    return serial::ClassId::LIFTER;
+}
+
+void Lifter::dump(serial::Serializer& s) const
+{
+    s << serial::bits(mode);
+    serial::cache_sleigh_ctx(mode, sleigh_ctx); // Cache sleigh context for performance
+}
+
+void Lifter::load(serial::Deserializer& d)
+{
+    CPUMode m;
+    // Get mode and call constructor again to initialize everything properly
+    d >> serial::bits(m);
+    *this = Lifter(m);
+}
 
 } // namespace maat

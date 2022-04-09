@@ -82,8 +82,10 @@ public:
      * order:
      *     1. Explicit files added with 'add_explicit_sleigh_file'
      *     2. Explicit directories added with 'add_explicit_sleigh_dir'
-     *     3. Maat install directory, specified with `MAAT_INSTALL_DIR` env variable
-     *     4. Standard locations such as '/usr/local/', '/usr/', ...
+     *     3. Sleigh files directory, specified with `MAAT_SLEIGH_DIR` env variable
+     *     4. Maat install directory, specified with `MAAT_INSTALL_DIR` env variable
+     *     5. Known relative paths from the library location
+     *     6. Standard locations such as '/usr/local/', '/usr/', ...
      *
      * @param filename Name of the file to find (e.g, 'x86.sla')
      * @param only_explicit_paths If set to 'True', searches for 'filename'
@@ -112,6 +114,19 @@ public:
             return std::nullopt;
 
         // 3. Known absolute installation path with env variable
+        char* sleigh_dir = std::getenv("MAAT_SLEIGH_DIR");
+        if (sleigh_dir)
+        {
+            if (
+                auto res = find_sleigh_file_in_dir(
+                    filename,
+                    std::filesystem::path(sleigh_dir)
+                )
+            )
+                return res;
+        }
+
+        // 4. Known absolute installation path with env variable
         char* install_dir = std::getenv("MAAT_INSTALL_DIR");
         if (install_dir)
         {
@@ -124,7 +139,7 @@ public:
                 return res;
         }
 
-        // 4. Known relative paths
+        // 5. Known relative paths
         // Relative to the python extension module
 #ifdef MAAT_PYTHON_BINDINGS
         // Note: it would have been best to compute this path when initialising the maat
@@ -140,7 +155,7 @@ public:
         }
 #endif
 
-        // 5. Standard locations
+        // 6. Standard locations
         for (const auto& dir : standard_locations)
         {
             if (auto res = find_sleigh_file_in_dir(filename, dir))

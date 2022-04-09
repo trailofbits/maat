@@ -29,7 +29,7 @@ namespace code_coverage{
             }
             return 1; 
         }
-        
+
         bool do_code_coverage(MaatEngine& engine, addr_t start, addr_t end)
         {
             solver::SolverZ3 sol;
@@ -109,7 +109,7 @@ namespace code_coverage{
             }
             return success;
         }
-        
+
         unsigned int plaintext_pwd(){
             /* Function that checks a password 
              *     0x000004ed <+0>:	    push   ebp
@@ -184,7 +184,14 @@ namespace code_coverage{
 
             // Write the code of the function in memory
             // map function at address 0x4ed
-            std::ifstream file("tests/ressources/plaintext_pwd/check.bin", std::ios::binary | std::ios::ate);
+            std::string file1_path("tests/resources/plaintext_pwd/check.bin");
+            std::ifstream file(file1_path, std::ios::binary | std::ios::ate);
+            if (not file.is_open())
+            {
+                cout << "Failed to open file " << file1_path;
+                throw test_exception();
+            }
+
             std::streamsize size = file.tellg();
             file.seekg(0, std::ios::beg);
             std::vector<char> buffer(size);
@@ -272,7 +279,7 @@ namespace code_coverage{
             
             /* Write the code of the function in memory */
             // map function at address 0x4ed
-            std::ifstream file("tests/ressources/xored_pwd/check.bin", std::ios::binary | std::ios::ate);
+            std::ifstream file("tests/resources/xored_pwd/check.bin", std::ios::binary | std::ios::ate);
             std::streamsize size = file.tellg();
             file.seekg(0, std::ios::beg);
             std::vector<char> buffer(size);
@@ -294,6 +301,7 @@ namespace code_coverage{
             
             return nb;
         }
+
 #endif // ifdef MAAT_HAS_SOLVER_BACKEND
     }
 }

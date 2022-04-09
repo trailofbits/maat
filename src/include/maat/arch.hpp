@@ -6,6 +6,7 @@
 #include "maat/types.hpp"
 #include <vector>
 #include <unordered_map>
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -44,14 +45,14 @@ enum class CPUMode
  * the size of the registers, the number of registers, and available CPU modes for 
  * architectures that can have several modes (like ARMv7)
 */
-class Arch
+class Arch: public serial::Serializable
 {
 public:
     /// Architectures supported by Maat's engine 
     enum class Type
     {
         X86, ///< Intel X86
-        X64, // TODO ///< Intel X86_64
+        X64, ///< Intel X86_64
         ARM32, // TODO ///< armv7 (32 bits)
         ARM64, // TODO ///< armv8 (64 bits)
         NONE
@@ -78,6 +79,10 @@ public:
 public:
     int bits() const; ///< Return the size of the architecture in bits
     int octets() const; ///< Return the size of the architecture in bytes/octets
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 // A dummy implementation of an architecture, used for tests

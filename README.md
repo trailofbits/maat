@@ -1,6 +1,6 @@
 <p align="center" >
      <br><br>
-<img width="45%" src="ressources/maat_logo.png"/> <br>
+<img width="45%" src="resources/maat_logo.png"/> <br>
   <!-- TODO
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT"> &nbsp; &nbsp;
    <img src="https://img.shields.io/badge/Build-Linux-green" alt="Build: Linux">  &nbsp; &nbsp;

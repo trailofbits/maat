@@ -121,7 +121,7 @@ FunctionCallback::return_t _stat(
                ino_t     st_ino;         // Inode number 
                mode_t    st_mode;        // File type and mode 
                nlink_t   st_nlink;       // Number of hard links 
-               uid_t     st_uid;         // User ID of owner 
+               uuid_t     st_uid;         // User ID of owner 
                gid_t     st_gid;         // Group ID of owner 
                dev_t     st_rdev;        // Device ID (if special file) 
                off_t     st_size;        // Total size, in bytes 
@@ -176,7 +176,7 @@ FunctionCallback::return_t _stat(
     // Order of the fields in the stat struct also come from the reverse on my own machine
     engine.mem->write(statbuf, 0x16, long_size); // st_dev
     statbuf += long_size;
-    engine.mem->write(statbuf, file->uuid(), long_size); // st_ino
+    engine.mem->write(statbuf, file->uid(), long_size); // st_ino
     statbuf += long_size;
     engine.mem->write(statbuf, 0x1, long_size); // st_nlink
     statbuf += long_size;

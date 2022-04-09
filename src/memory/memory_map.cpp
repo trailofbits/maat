@@ -6,6 +6,11 @@
 namespace maat
 {
 
+using serial::bits;
+
+MemMap::MemMap(): start(0), end(0), flags(maat::mem_flag_none)
+{}
+
 MemMap::MemMap(
 addr_t s, addr_t e, mem_flag_t f, std::string n): 
     start(s), end(e), flags(f), name(n)
@@ -55,6 +60,23 @@ bool operator<(const MemMap& m1, const MemMap& m2)
 {
     return m1.start < m2.start;
 }
+
+uid_t MemMap::class_uid() const
+{
+    return serial::ClassId::MEM_MAP;
+}
+
+void MemMap::dump(serial::Serializer& s) const
+{
+    s << bits(start) << bits(end)  << bits(flags) << name;
+}
+
+void MemMap::load(serial::Deserializer& d)
+{
+    d >> bits(start) >> bits(end) >> bits(flags) >> name;
+}
+
+
 
 void MemMapManager::map(MemMap new_map)
 {
@@ -143,5 +165,19 @@ std::ostream& operator<<(std::ostream& os, const MemMapManager& mem)
     return os;
 }
 
+uid_t MemMapManager::class_uid() const
+{
+    return serial::ClassId::MEM_MAP_MANAGER;
+}
+
+void MemMapManager::dump(serial::Serializer& s) const
+{
+    s << _maps;
+}
+
+void MemMapManager::load(serial::Deserializer& d)
+{
+    d >> _maps;
+}
 
 } // namespace maat

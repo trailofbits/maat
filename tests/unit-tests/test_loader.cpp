@@ -30,12 +30,12 @@ namespace test
             engine.log.set_level(Log::ERROR);
             addr_t tmp;
             engine.load(
-                "tests/ressources/simple_algo_2/simple_algo_2",
+                "tests/resources/simple_algo_2/simple_algo_2",
                 loader::Format::ELF32,
                 0x56555000,
                 std::vector<CmdlineArg>{CmdlineArg("12345678")},
                 {},
-                "",
+                {},
                 {},
                 {}
             );

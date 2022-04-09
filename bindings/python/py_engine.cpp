@@ -8,15 +8,7 @@ namespace py{
 static void MaatEngine_dealloc(PyObject* self)
 {
     delete ((MaatEngine_Object*)self)->engine;  ((MaatEngine_Object*)self)->engine = nullptr;
-    Py_DECREF(as_engine_object(self).mem);
-    Py_DECREF(as_engine_object(self).info);
-    Py_DECREF(as_engine_object(self).cpu);
-    Py_DECREF(as_engine_object(self).vars);    
-    Py_DECREF(as_engine_object(self).hooks);    
-    Py_DECREF(as_engine_object(self).path);
-    Py_DECREF(as_engine_object(self).env);
-
-    /* TODO deref stats, logger */
+    _clear_MaatEngine_attributes((MaatEngine_Object*)self);
     Py_TYPE(self)->tp_free((PyObject *)self);
 };
 
@@ -99,18 +91,19 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
     std::vector<loader::CmdlineArg> cmdline_args;
     std::list<std::string> lib_paths, ignore_libs;
     loader::environ_t envp;
-    char *virtual_path = "";
+    std::unordered_map<std::string, std::string> virtual_fs;
+    PyObject *py_virtual_fs = nullptr;
     int load_interp = 1; // True by default
     Py_ssize_t i;
 
-    char* keywd[] = {"", "", "base", "args", "envp", "libdirs", "ignore_libs", "virtual_path", "load_interp", NULL};
+    char* keywd[] = {"", "", "base", "args", "envp", "libdirs", "ignore_libs", "virtual_fs", "load_interp", NULL};
 
     if( !PyArg_ParseTupleAndKeywords(
-            args, keywords, "si|KOOOOsp", keywd,
+            args, keywords, "si|KOOOOOp", keywd,
             &name, &bin_type, &base, 
             &py_cmdline_args, &py_envp,
             &py_libs, &py_ignore_libs,
-            &virtual_path, &load_interp
+            &py_virtual_fs, &load_interp
         )
     )
     {
@@ -234,6 +227,30 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
         }
     }
 
+    if (py_virtual_fs != nullptr)
+    {
+        // Check if it's a dict
+        if( !PyDict_Check(py_virtual_fs) )
+        {
+            return PyErr_Format(PyExc_TypeError, "'virtual_fs' parameter must be a dict");
+        }
+        PyObject *key, *value;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(py_virtual_fs, &pos, &key, &value))
+        {
+            const char *key_str = nullptr, *value_str = nullptr;
+            if ((key_str = PyUnicode_AsUTF8(key)) == nullptr)
+            {
+                return PyErr_Format(PyExc_TypeError, "couldn't translate 'virtual_fs' key to string");
+            }
+            if ((value_str = PyUnicode_AsUTF8(value)) == nullptr)
+            {
+                return PyErr_Format(PyExc_TypeError, "couldn't translate 'virtual_fs' value to string");
+            }
+            virtual_fs[std::string(key_str)] = std::string(value_str);
+        }
+    }
+
     try
     {
         as_engine_object(self).engine->load(
@@ -242,7 +259,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
             (addr_t)base,
             cmdline_args,
             envp,
-            std::string(virtual_path),
+            virtual_fs,
             lib_paths,
             ignore_libs,
             load_interp
@@ -325,6 +342,46 @@ PyObject* get_MaatEngine_Type(){
     return (PyObject*)&MaatEngine_Type;
 };
 
+#define MAAT_PY_CLEAR(x) \
+{ \
+    if (x != NULL) {Py_XDECREF(x); x = NULL;} \
+}
+
+void _clear_MaatEngine_attributes(MaatEngine_Object* obj)
+{
+    MAAT_PY_CLEAR(as_engine_object(obj).mem)
+    MAAT_PY_CLEAR(as_engine_object(obj).info)
+    MAAT_PY_CLEAR(as_engine_object(obj).cpu)
+    MAAT_PY_CLEAR(as_engine_object(obj).vars)
+    MAAT_PY_CLEAR(as_engine_object(obj).hooks) 
+    MAAT_PY_CLEAR(as_engine_object(obj).path)
+    MAAT_PY_CLEAR(as_engine_object(obj).env)
+    MAAT_PY_CLEAR(as_engine_object(obj).settings)
+    MAAT_PY_CLEAR(as_engine_object(obj).process)
+}
+
+void _init_MaatEngine_attributes(MaatEngine_Object* object)
+{   
+    // Then set attributes
+    object->engine->self_python_wrapper_object = (PyObject*)object;
+    // Create wrappers with references to members
+    object->vars = PyVarContext_FromVarContext(object->engine->vars.get(), true);
+    object->cpu = PyCPU_FromCPUAndArchAndVarContext(
+        &object->engine->cpu,
+        true,
+        object->engine->arch.get(),
+        object->engine->vars
+    );
+    object->mem = PyMemEngine_FromMemEngine(object->engine->mem.get(), true);
+    object->hooks = PyEventManager_FromEventManager(&(object->engine->hooks), true);
+    object->info = PyInfo_FromInfoAndArch(&(object->engine->info), true, &(*object->engine->arch));
+    object->path = PyPath_FromPath(&(object->engine->path), true);
+    object->env = PyEnv_FromEnvEmulator(object->engine->env.get(), true);
+    object->settings = PySettings_FromSettings(&(object->engine->settings), true);
+    object->process = PyProcessInfo_FromProcessInfo(object->engine->process.get(), true);
+    // TODO: object->log ....
+}
+
 /* Constructor */
 PyObject* maat_MaatEngine(PyObject* self, PyObject* args){
     MaatEngine_Object* object;
@@ -344,24 +401,7 @@ PyObject* maat_MaatEngine(PyObject* self, PyObject* args){
         if (object != nullptr)
         {
             object->engine = new MaatEngine((Arch::Type)arch, (env::OS)system);
-            object->engine->self_python_wrapper_object = (PyObject*)object;
-            // Create wrappers with references to members
-            object->vars = PyVarContext_FromVarContext(object->engine->vars.get(), true);
-            object->cpu = PyCPU_FromCPUAndArchAndVarContext(
-                &object->engine->cpu,
-                true,
-                object->engine->arch.get(),
-                object->engine->vars
-            );
-            object->mem = PyMemEngine_FromMemEngine(object->engine->mem.get(), true);
-            object->hooks = PyEventManager_FromEventManager(&(object->engine->hooks), true);
-            object->info = PyInfo_FromInfoAndArch(&(object->engine->info), true, &(*object->engine->arch));
-            object->path = PyPath_FromPath(&(object->engine->path), true);
-            object->env = PyEnv_FromEnvEmulator(object->engine->env.get(), true);
-            // TODO object->stats = PyStats_FromMaatEngineStats(&(object->engine->stats), true);
-            // TODO: object->log ....
-            object->settings = PySettings_FromSettings(&(object->engine->settings), true);
-            object->process = PyProcessInfo_FromProcessInfo(object->engine->process.get(), true);
+            _init_MaatEngine_attributes(object);
         }
     }
     catch(std::exception& e)

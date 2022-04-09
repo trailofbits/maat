@@ -32,7 +32,7 @@ typedef struct {
 
 PyObject* maat_Cst(PyObject* self, PyObject* args, PyObject* keywords);
 PyObject* maat_Var(PyObject* self, PyObject* args, PyObject* keywords);
-PyObject* maat_Concat(PyObject* upper, PyObject* lower);
+PyObject* maat_Concat(PyObject* self, PyObject* args);
 PyObject* maat_Extract(PyObject* self, PyObject* args);
 PyObject* PyValue_FromValue(const Value& val);
 PyObject* PyValue_FromValueAndVarContext(const Value& val, std::shared_ptr<VarContext> ctx);
@@ -101,6 +101,13 @@ typedef struct{
 } MaatEngine_Object;
 PyObject* get_MaatEngine_Type();
 PyObject* maat_MaatEngine(PyObject* self, PyObject* args);
+// This method initializes all the attributes of a python MaatEngine object. It
+// is separate from the constructor because we also need to call it when deserializing
+// a MaatEngine. Indeed, attributes like 'vars', 'cpu', are already initialized
+// and point to members of the MaatEngine, but if we deserialize a new state into the engine
+// those pointers are invalid (they point to the old engine objects, not the new one).
+void _init_MaatEngine_attributes(MaatEngine_Object* object);
+void _clear_MaatEngine_attributes(MaatEngine_Object* object);
 #define as_engine_object(x)  (*((MaatEngine_Object*)x))
 
 // ====================== Info ======================
@@ -250,11 +257,29 @@ PyObject* maat_Solver(PyObject* module);
 void init_config(PyObject* module);
 typedef struct{
     PyObject_HEAD
-    maat::MaatConfig* config;
 } Config_Object;
 PyObject* get_Config_Type();
 PyObject* maat_Config();
 #define as_config_object(x)  (*((Config_Object*)x))
+
+// ================= Stats ==================
+void init_stats(PyObject* module);
+typedef struct{
+    PyObject_HEAD
+} Stats_Object;
+PyObject* get_Stats_Type();
+PyObject* maat_Stats();
+#define as_stats_object(x)  (*((Stats_Object*)x))
+
+// ============ SimpleStateManager ============
+
+typedef struct{
+    PyObject_HEAD
+    maat::serial::SimpleStateManager* s;
+} SimpleStateManager_Object;
+PyObject* get_SimpleStateManager_Type();
+PyObject* maat_SimpleStateManager(PyObject* self, PyObject* args);
+#define as_simple_serializer_object(x)  (*((SimpleStateManager_Object*)x))
 
 } // namespace py
 } // namespace maat

@@ -43,12 +43,12 @@ namespace solve_symbolic_ptr{
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
 
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_write_1",
+                "tests/resources/symbolic_ptr_binaries/sym_write_1",
                 loader::Format::ELF32,
                 0,
                 {},
                 {},
-                "",
+                {},
                 {},
                 {}
             );
@@ -90,11 +90,11 @@ namespace solve_symbolic_ptr{
 
             std::vector<loader::CmdlineArg> args = {loader::CmdlineArg(engine.vars->new_concolic_buffer("arg", "abcdefghijklm"))};
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_write_1",
+                "tests/resources/symbolic_ptr_binaries/sym_write_1",
                 loader::Format::ELF32,
                 0, 
                 args, {},
-                "", {}, {}
+                {}, {}, {}
             );
 
             // Breakpoint at the end of func
@@ -121,7 +121,7 @@ namespace solve_symbolic_ptr{
             engine.vars->update_from(*model);
 
             // Re-run program
-            engine.settings.symptr_refine_timeout = 0; // Don't loose time to refine symbolic accesses, we just want a concrete run
+            engine.settings.symptr_refine_range = false; // Don't loose time to refine symbolic accesses, we just want a concrete run
             engine.run();
 
             nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to re-run the target program to check solution ");
@@ -146,11 +146,11 @@ namespace solve_symbolic_ptr{
 
             std::vector<loader::CmdlineArg> args = {loader::CmdlineArg(engine.vars->new_concolic_buffer("argv1", "abcdefghijklm"))};
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_write_2",
+                "tests/resources/symbolic_ptr_binaries/sym_write_2",
                 loader::Format::ELF32,
                 0,
                 args, {},
-                "",
+                {},
                 {},
                 {}
             );
@@ -200,9 +200,9 @@ namespace solve_symbolic_ptr{
             engine.vars->set("symarg", 1234);
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_read_1",
+                "tests/resources/symbolic_ptr_binaries/sym_read_1",
                 loader::Format::ELF32,
-                0, {}, {}, "", {}, {}
+                0, {}, {}, {}, {}, {}
             );
             
             // Set EIP at beginning of func
@@ -243,10 +243,10 @@ namespace solve_symbolic_ptr{
             std::unique_ptr<solver::Solver> sol = solver::new_solver();
             std::vector<loader::CmdlineArg> args = {loader::CmdlineArg(engine.vars->new_concolic_buffer("arg", "abcdefghi"))};
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_read_1",
+                "tests/resources/symbolic_ptr_binaries/sym_read_1",
                 loader::Format::ELF32,
                 0,
-                args, {}, "", {}, {}
+                args, {}, {}, {}, {}
             );
 
             // Breakpoint at the end of func
@@ -272,7 +272,7 @@ namespace solve_symbolic_ptr{
             engine.vars->update_from(*model);
 
             // Re-run program
-            engine.settings.symptr_refine_timeout = 0; // Don't loose time to refine symbolic accesses, we just want a concrete run
+            engine.settings.symptr_refine_range = false; // Don't loose time to refine symbolic accesses, we just want a concrete run
             engine.run();
 
             nb += _assert(engine.info.stop == info::Stop::HOOK, "Failed to re-run the target program to check solution ");
@@ -292,9 +292,9 @@ namespace solve_symbolic_ptr{
 
             auto sol = solver::new_solver();
             engine.load(
-                "tests/ressources/symbolic_ptr_binaries/sym_rw_1",
+                "tests/resources/symbolic_ptr_binaries/sym_rw_1",
                 loader::Format::ELF32,
-                0, {}, {}, "", {}, {}
+                0, {}, {}, {}, {}, {}
             );
 
             // Set EIP at beginning of func
@@ -352,7 +352,7 @@ void test_solve_symbolic_ptr()
     total += x86_symbolic_index_read();
     total += x86_symbolic_index_read_atoi();
     total += x86_symbolic_index_rw();
-    // Return res
+    // Print res
     cout << total << "/" << total << green << "\t\tOK" << def << endl;
 #endif
 }

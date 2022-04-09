@@ -2,6 +2,7 @@
 #define MAAT_SETTINGS_H
 
 #include <iostream>
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -14,7 +15,7 @@ namespace maat
  * Most of the settings can be enabled or disabled by setting it to **true** or **false**.
  * A few others are more fine-grain and can be assigned an arbitrary number (e.g *symptr_max_range*)
  * */
-class Settings
+class Settings: public serial::Serializable
 {
 public:
     // Symbolic execution
@@ -61,7 +62,12 @@ public:
     bool log_calls;
 public:
     Settings();
+    virtual ~Settings() = default;
     friend std::ostream& operator<<(std::ostream& os, const Settings& settings);
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** \} */ // doxygen Engine group

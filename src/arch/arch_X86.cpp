@@ -38,6 +38,29 @@ reg_t Arch::reg_num(const std::string& name) const
     return it->second;
 }
 
+serial::uid_t Arch::class_uid() const
+{
+    switch (type)
+    {
+        case Arch::Type::X86: return serial::ClassId::ARCH_X86;
+        case Arch::Type::X64: return serial::ClassId::ARCH_X64;
+        case Arch::Type::NONE: return serial::ClassId::ARCH_NONE;
+        default:
+            throw serialize_exception("Arch::class_uid(): unsupported arch type");
+    }
+}
+
+void Arch::dump(serial::Serializer& s) const
+{
+    s << serial::empty(); // Nothing to serialize
+}
+
+void Arch::load(serial::Deserializer& d)
+{
+    d >> serial::empty(); // Nothing to serialize
+}
+
+
 namespace X86
 {
     ArchX86::ArchX86(): Arch(Arch::Type::X86, 32, X86::NB_REGS)

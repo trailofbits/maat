@@ -9,6 +9,7 @@
 #include "maat/ir.hpp"
 #include "maat/sleigh_interface.hpp"
 #include "maat/arch.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -22,14 +23,16 @@ typedef uint8_t* code_t;
 
 
 /** \brief The lifter is responsible for translating binary assembly code into Maat's IR */
-class Lifter
+class Lifter: public serial::Serializable
 {
 protected:
-    const CPUMode mode;
+    CPUMode mode;
     std::shared_ptr<TranslationContext> sleigh_ctx;
 public:
     Lifter(CPUMode mode);
-    ~Lifter() = default;
+    Lifter(const Lifter&) = default;
+    Lifter& operator=(const Lifter&) = default;
+    virtual ~Lifter() = default;
     /** \brief Disassemble instructions until next branch instruction.
      * 
      *  @param ir_map The IR cache where to add lifted instructions
@@ -56,6 +59,11 @@ public:
 
     /** \brief Get assembly string of instruction at address 'addr' */
     virtual const std::string& get_inst_asm(addr_t addr, code_t inst);
+
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
 };
 
 /** \} */ // doxygen group ir

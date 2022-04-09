@@ -3,6 +3,8 @@
 namespace maat
 {
 
+using namespace maat::serial;
+
 // Interpret src as a signed mpz value and puts it in res
 // src must be more than 64 bits, mpz_t is not initialized
 void mpz_init_force_signed(mpz_t& res, const Number& src)
@@ -30,6 +32,41 @@ Number::Number(): size(0), cst_(-1), mpz_(0){}
 Number::Number(size_t bits): size(bits), cst_(0), mpz_(0){}
 
 Number::~Number(){}
+
+uid_t Number::class_uid() const {return ClassId::NUMBER;}
+
+void Number::dump(Serializer& s) const
+{
+    bool _is_mpz = is_mpz();
+    s << bits(size) << bits(_is_mpz);
+    if (_is_mpz)
+    {
+        // If mpz, dump as string
+        std::stringstream ss;
+        print(ss, true); // Decimal = True
+        s << ss.str();
+    }
+    else
+        s << bits(cst_);
+}
+
+void Number::load(Deserializer& d)
+{
+    bool _is_mpz;
+    d >> bits(size) >> bits(_is_mpz);
+    if (_is_mpz)
+    {
+        std::string val;
+        d >> val;
+        set_mpz(val, 10); // Base 10 because dump() prints with decimal = True
+    }
+    else
+    {
+        cst_t val;
+        d >> bits(val);
+        set_cst(val);
+    }
+}
 
 void Number::adjust_mpz()
 {

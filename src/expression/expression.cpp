@@ -1,6 +1,7 @@
 #include "maat/expression.hpp"
 #include "maat/varcontext.hpp"
 #include "maat/exception.hpp"
+#include "maat/stats.hpp"
 #include <cstring>
 #include "murmur3.h"
 #include <algorithm>
@@ -9,6 +10,8 @@
 
 namespace maat
 {
+
+using namespace maat::serial;
 
 ExprStatus operator|(ExprStatus s1, ExprStatus s2){
     if( s1 == ExprStatus::SYMBOLIC || s2 == ExprStatus::SYMBOLIC)
@@ -99,8 +102,37 @@ ExprObject::ExprObject(ExprType t, size_t _size, bool _is_simp, Taint _t, ucst_t
     _concrete(_size)
 {
     _value_set = ValueSet(_size);
+    // Record expr creation in statistics
+    MaatStats::instance().inc_created_exprs();
 }
 
+void ExprObject::dump(Serializer& s) const
+{
+    s   << bits(_hashed) << bits(_hash) 
+        << _simplified_expr
+        << bits(_is_simplified) << bits(_simplifier_id)
+        << _concrete << bits(_concrete_ctx_id)
+        << bits(_status) << bits(_status_ctx_id)
+        << bits(type) << bits(size)
+        << args;
+}
+
+
+void ExprObject::load(Deserializer& d)
+{
+    d   >> bits(_hashed) >> bits(_hash)
+        >> _simplified_expr
+        >> bits(_is_simplified) >> bits(_simplifier_id)
+        >> _concrete >> bits(_concrete_ctx_id)
+        >> bits(_status) >> bits(_status_ctx_id)
+        >> bits(type) >> bits(size)
+        >> args;
+}
+
+uid_t ExprObject::class_uid() const 
+{
+    throw serialize_exception("class_uid() shouldn't be called from ExprObject base class");
+}
 
 bool ExprObject::is_type(ExprType t, Op op)
 {
@@ -327,6 +359,8 @@ bool ExprObject::contains_vars(std::set<std::string>& var_names)
 }
 
 // ==================================
+ExprCst::ExprCst(): ExprObject(ExprType::NONE, 0) {};
+
 ExprCst::ExprCst(size_t s, cst_t c): ExprObject(ExprType::CST, s, true, Taint::NOT_TAINTED)
 {
     if( s > 64 )
@@ -338,6 +372,18 @@ ExprCst::ExprCst(size_t s, cst_t c): ExprObject(ExprType::CST, s, true, Taint::N
         _concrete.set_cst(cst_sign_extend(s, c));
     }
 }
+
+void ExprCst::dump(Serializer& s) const
+{
+    ExprObject::dump(s);
+}
+
+void ExprCst::load(Deserializer& d)
+{
+    ExprObject::load(d);
+}
+
+uid_t ExprCst::class_uid() const {return ClassId::EXPR_CST;}
 
 ExprCst::ExprCst(size_t s, const std::string& value, int base): ExprObject(ExprType::CST, s, true, Taint::NOT_TAINTED)
 {
@@ -423,6 +469,8 @@ ValueSet& ExprCst::value_set()
 
 
 // ==================================
+ExprVar::ExprVar(): ExprObject(ExprType::NONE, 0) {};
+
 ExprVar::ExprVar(size_t s, std::string n, Taint t): ExprObject(ExprType::VAR, s, true, t), _name(n)
 {
     if (n.size() > ExprVar::max_name_length)
@@ -432,6 +480,20 @@ ExprVar::ExprVar(size_t s, std::string n, Taint t): ExprObject(ExprType::VAR, s,
     _value_set.set_all();
     _value_set_computed = true;
 }
+
+void ExprVar::dump(Serializer& s) const
+{
+    ExprObject::dump(s);
+    s << _name;
+}
+
+void ExprVar::load(Deserializer& d)
+{
+    ExprObject::load(d);
+    d >> _name;
+}
+
+uid_t ExprVar::class_uid() const {return ClassId::EXPR_VAR;}
 
 hash_t ExprVar::hash()
 {
@@ -511,6 +573,21 @@ ExprMem::ExprMem(size_t s, Expr addr, unsigned int ac, Expr base):
     _addr_value_set = addr->value_set();
 }
 
+void ExprMem::dump(Serializer& s) const
+{
+    throw serialize_exception("dump() not implemented for ExprMem");
+}
+
+void ExprMem::load(Deserializer& d)
+{
+    throw serialize_exception("load() not implemented for ExprMem");
+}
+
+uid_t ExprMem::class_uid() const
+{
+    throw serialize_exception("class_uid() not implemented for ExprMem");
+}
+
 ExprMem::ExprMem(size_t s, Expr addr, unsigned int ac, Expr base, ValueSet& vs):
     ExprObject(ExprType::MEM, s, false),
     _access_count(ac),
@@ -582,10 +659,26 @@ ValueSet& ExprMem::value_set()
 }
 
 // ==================================
+ExprUnop::ExprUnop(): ExprObject(ExprType::NONE, 0) {};
+
 ExprUnop::ExprUnop(Op o, Expr arg): ExprObject(ExprType::UNOP, arg->size), _op(o)
 {
     args.push_back(arg);
 }
+
+void ExprUnop::dump(Serializer& s) const
+{
+    ExprObject::dump(s);
+    s << bits(_op);
+}
+
+void ExprUnop::load(Deserializer& d)
+{
+    ExprObject::load(d);
+    d >> bits(_op);
+}
+
+uid_t ExprUnop::class_uid() const {return ClassId::EXPR_UNOP;}
 
 hash_t ExprUnop::hash()
 {
@@ -689,6 +782,8 @@ ValueSet& ExprUnop::value_set()
 }
 
 // ==================================
+ExprBinop::ExprBinop(): ExprObject(ExprType::NONE, 0) {};
+
 ExprBinop::ExprBinop(Op o, Expr left, Expr right): ExprObject(ExprType::BINOP, left->size), _op(o)
 {
     if(
@@ -706,6 +801,20 @@ ExprBinop::ExprBinop(Op o, Expr left, Expr right): ExprObject(ExprType::BINOP, l
     args.push_back(left);
     args.push_back(right);
 }
+
+void ExprBinop::dump(Serializer& s) const
+{
+    ExprObject::dump(s);
+    s << bits(_op);
+}
+
+void ExprBinop::load(Deserializer& d)
+{
+    ExprObject::load(d);
+    d >> bits(_op);
+}
+
+uid_t ExprBinop::class_uid() const {return ClassId::EXPR_BINOP;}
 
 hash_t ExprBinop::hash()
 {
@@ -977,6 +1086,8 @@ ExprStatus ExprBinop::status(const VarContext& ctx)
 }
 
 // ==================================
+ExprExtract::ExprExtract(): ExprObject(ExprType::NONE, 0) {};
+
 ExprExtract::ExprExtract(Expr arg, Expr higher, Expr lower) 
 try : ExprObject(ExprType::EXTRACT, (ucst_t)higher->cst() - (ucst_t)lower->cst() + 1)
 {
@@ -1007,6 +1118,18 @@ catch(const expression_exception& e)
         << e.what()
         >> Fmt::to_str);
 }
+
+void ExprExtract::dump(Serializer& s) const
+{
+    ExprObject::dump(s);
+}
+
+void ExprExtract::load(Deserializer& d)
+{
+    ExprObject::load(d);
+}
+
+uid_t ExprExtract::class_uid() const {return ClassId::EXPR_EXTRACT;}
 
 hash_t ExprExtract::hash()
 {
@@ -1091,11 +1214,25 @@ ValueSet& ExprExtract::value_set(){
 }
 
 // ==================================
+ExprConcat::ExprConcat(): ExprObject(ExprType::NONE, 0) {};
+
 ExprConcat::ExprConcat(Expr upper, Expr lower): ExprObject(ExprType::CONCAT, upper->size+lower->size)
 {
     args.push_back(upper);
     args.push_back(lower);
 }
+
+void ExprConcat::dump(Serializer& s) const
+{
+    ExprObject::dump(s);
+}
+
+void ExprConcat::load(Deserializer& d)
+{
+    ExprObject::load(d);
+}
+
+uid_t ExprConcat::class_uid() const {return ClassId::EXPR_CONCAT;}
 
 hash_t ExprConcat::hash()
 {
@@ -1181,6 +1318,8 @@ ValueSet& ExprConcat::value_set()
 }
 
 // ==================================
+ExprITE::ExprITE(): ExprObject(ExprType::NONE, 0) {};
+
 ExprITE::ExprITE(Expr cond_left, ITECond cond_op, Expr cond_right, Expr if_true, Expr if_false): 
         ExprObject(ExprType::ITE, if_false->size),
         _cond_op(cond_op)
@@ -1204,6 +1343,21 @@ ExprITE::ExprITE(Expr cond_left, ITECond cond_op, Expr cond_right, Expr if_true,
     args.push_back(if_true);
     args.push_back(if_false);
 }
+
+void ExprITE::dump(Serializer& s) const
+{
+    ExprObject::dump(s);
+    s << bits(_cond_op);
+}
+
+void ExprITE::load(Deserializer& d)
+{
+    ExprObject::load(d);
+    d >> bits(_cond_op);
+}
+
+uid_t ExprITE::class_uid() const {return ClassId::EXPR_ITE;}
+
 
 hash_t ExprITE::hash()
 {

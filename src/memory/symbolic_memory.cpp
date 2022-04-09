@@ -1,4 +1,6 @@
 #include "maat/memory.hpp"
+#include "maat/stats.hpp"
+#include "maat/varcontext.hpp"
 #include <algorithm>
 #include <list>
 #include <memory>
@@ -131,6 +133,24 @@ IntervalTree::~IntervalTree()
     // deleted automatically
 }
 
+uid_t IntervalTree::class_uid() const
+{
+    return serial::ClassId::INTERVAL_TREE;
+}
+
+void IntervalTree::dump(Serializer& s) const
+{
+    s << bits(center) << left.get() << right.get() << match_min << match_max;
+}
+
+void IntervalTree::load(Deserializer& d)
+{
+    IntervalTree *t1, *t2;
+    d >> bits(center) >> t1 >> t2 >> match_min >> match_max;
+    left = std::unique_ptr<IntervalTree>(t1);
+    right = std::unique_ptr<IntervalTree>(t2);
+}
+
 
 SymbolicMemEngine::SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContext> varctx):
     _varctx(varctx),
@@ -154,6 +174,9 @@ void SymbolicMemEngine::symbolic_ptr_write(const Expr& addr, const Value& val, a
     write_intervals.add_interval(min, max - 1 + (val.size()/8), write_count);
     // Add write to the list of writes
     writes.push_back(SymbolicMemWrite(addr, val, refined_vs));
+
+    // Record the write in statistics
+    MaatStats::instance().add_symptr_write(refined_vs.range());
 }
 
 void SymbolicMemEngine::concrete_ptr_write(Expr addr, const Value& val)
@@ -357,6 +380,22 @@ void SymbolicMemEngine::restore_snapshot(symbolic_mem_snapshot_t id)
     write_count = id;
     write_intervals.restore(write_count); // Restore interval tree
     writes.erase(writes.begin() + id, writes.end()); // Remove writes history
+}
+
+
+uid_t SymbolicMemEngine::class_uid() const
+{
+    return serial::ClassId::SYMBOLIC_MEM_ENGINE;
+}
+
+void SymbolicMemEngine::dump(Serializer& s) const
+{
+    s << bits(write_count) << writes << write_intervals << _varctx << bits(symptr_force_aligned);
+}
+
+void SymbolicMemEngine::load(Deserializer& d)
+{
+    d >> bits(write_count) >> writes >> write_intervals >> _varctx >> bits(symptr_force_aligned);
 }
 
 } // namespace maat

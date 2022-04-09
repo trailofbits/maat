@@ -74,6 +74,7 @@ PyObject* PyProcessInfo_FromProcessInfo(ProcessInfo* pinfo, bool is_ref)
     object = PyObject_New(ProcessInfo_Object, &ProcessInfo_Type);
     if( object != nullptr ){
         object->process = pinfo;
+        object->is_ref = is_ref;
     }
     return (PyObject*)object;
 }

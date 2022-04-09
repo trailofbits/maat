@@ -2,6 +2,7 @@
 #define MAAT_PATH_H
 
 #include "maat/constraint.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -10,12 +11,15 @@ namespace maat
  * \{ */
  
 /// A class recording the constraints associated with the current execution path
-class PathManager
+class PathManager: public serial::Serializable
 {
 public:
     using path_snapshot_t = unsigned int;
 private:
     std::vector<Constraint> _constraints;
+public:
+    PathManager() = default;
+    virtual ~PathManager() = default;
 public:
     void add(Constraint constraint); ///< Add a path constraint
     path_snapshot_t take_snapshot(); ///< Snapshot the current path constraints
@@ -130,7 +134,15 @@ public:
     IteratorWrapper get_related_constraints(const Expr& expr);
     // Return an iterator for the normal constraint vector, used by python bindings
     IteratorWrapper _constraints_iterator();
+
+public:
+    virtual serial::uid_t class_uid() const;
+    virtual void dump(serial::Serializer& s) const;
+    virtual void load(serial::Deserializer& d);
+
 };
+
+
 
 /** \} */ // doxygen group engine
 }

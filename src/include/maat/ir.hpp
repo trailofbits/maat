@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include "maat/expression.hpp"
 #include "maat/callother.hpp"
+#include "maat/serializer.hpp"
 
 namespace maat
 {
@@ -306,11 +307,28 @@ public:
 public:
     /** \brief The location of a given IR instruction, it is made of an IR block and the id of
      * the instruction within the block */
-    struct InstLocation
+    struct InstLocation: public serial::Serializable
     {
-        InstLocation(uint64_t address, AsmInst::inst_id id): addr(address), inst_id(id){};
         uint64_t addr; ///< Address of the asm instruction
         AsmInst::inst_id inst_id; ///< The instruction id within the AsmInst at 'addr'
+        InstLocation(): addr(0), inst_id(-1){}; ///< Dummy constructor used by deserializer
+        InstLocation(uint64_t address, AsmInst::inst_id id): addr(address), inst_id(id){};
+        virtual ~InstLocation() = default;
+        
+        virtual serial::uid_t class_uid() const
+        {
+            return serial::ClassId::INST_LOCATION;
+        }
+
+        virtual void dump(serial::Serializer& s) const
+        {
+            s << serial::bits(addr) << serial::bits(inst_id);
+        }
+
+        virtual void load(serial::Deserializer& d)
+        {
+            d >> serial::bits(addr) >> serial::bits(inst_id);
+        }
     };
 
 private:
@@ -330,6 +348,11 @@ public:
     /// Remove instruction at address 'addr'
     void remove_inst_at(uint64_t addr);
 };
+
+
+// Interface for cached IR instructions
+/// Get IRMap corresponding to MemEngine identified by `mem_engine_uid`
+IRMap& get_ir_map(int mem_engine_uid);
 
 
 /** \} */ // IR doxygen group

@@ -102,13 +102,6 @@ public:
     explicit event_exception(std::string msg): generic_exception(msg){};
 };
 
-// TODO remove
-/** Event exception */
-class bp_exception: public generic_exception {
-public:
-    explicit bp_exception(std::string msg): generic_exception(msg){};
-};
-
 /** IR exception */
 class ir_exception: public generic_exception {
 public:
@@ -161,6 +154,12 @@ public:
 class callother_exception: public generic_exception {
 public:
     explicit callother_exception(std::string msg): generic_exception(msg){};
+};
+
+/** Serialization exception */
+class serialize_exception: public generic_exception {
+public:
+    explicit serialize_exception(std::string msg): generic_exception(msg){};
 };
 
 /** Test exception */ 

@@ -54,6 +54,20 @@ PathManager::IteratorWrapper PathManager::get_related_constraints(const Expr& e)
             );
 }
 
+uid_t PathManager::class_uid() const
+{
+    return serial::ClassId::PATH_MANAGER;
+}
+
+void PathManager::dump(serial::Serializer& s) const
+{
+    s << _constraints;
+}
+
+void PathManager::load(serial::Deserializer& d)
+{
+    d >> _constraints;
+}
 
 
 } // namespace maat

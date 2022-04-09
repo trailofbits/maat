@@ -25,13 +25,13 @@ namespace events
 #define ADD_ASM_INST(addr, pcode_inst) \
 asm_inst = ir::AsmInst(addr, 1); \
 asm_inst.add_inst(pcode_inst); \
-engine.ir_map->add(asm_inst);
+ir::get_ir_map(engine.mem->uid()).add(asm_inst);
 
 #define ADD_ASM_INST_MULTIPLE(addr, pcode_inst_vec) \
 asm_inst = ir::AsmInst(addr, 1); \
 for (auto& pcode_inst : pcode_inst_vec) \
     asm_inst.add_inst(pcode_inst); \
-engine.ir_map->add(asm_inst);
+ir::get_ir_map(engine.mem->uid()).add(asm_inst);
 
     unsigned int reg_events(MaatEngine& engine)
     {

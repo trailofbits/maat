@@ -18,7 +18,7 @@ void LoaderLIEF::load(
     addr_t base,
     const std::vector<CmdlineArg>& args,
     const environ_t& envp,
-    const std::string& virtual_path,
+    const std::unordered_map<std::string, std::string>& virtual_fs,
     const std::list<std::string>& libdirs,
     const std::list<std::string>& ignore_libs,
     bool load_interp
@@ -30,38 +30,26 @@ void LoaderLIEF::load(
     {
         case loader::Format::ELF32:
         case loader::Format::ELF64:
-            load_elf(engine, binary, base, args, envp, virtual_path, libdirs, ignore_libs, load_interp);
+            load_elf(engine, binary, base, args, envp, virtual_fs, libdirs, ignore_libs, load_interp);
             break;
         default: 
             throw loader_exception("LoaderLIEF::load(): Unsupported executable format");
     }
     // Init environment
     // Set process info
-    env::fspath_t vfspath;
-    if (virtual_path.empty())
-        vfspath = {binary_name}; // Put it at root
-    else
-    {
-        vfspath = engine->env->fs.fspath_from_path(virtual_path);
-        vfspath.push_back(binary_name);
-    }
-    std::string vpath = engine->env->fs.path_from_fspath(vfspath);
+    std::string vpath = get_path_in_virtual_fs(engine, virtual_fs, binary_name);
     engine->process->pid = 1234;
     engine->process->binary_path = vpath;
     env::fspath_t pwd = engine->env->fs.fspath_from_path(vpath);
     pwd.pop_back();
     engine->process->pwd = engine->env->fs.path_from_fspath(pwd);
     // Add binary to filesystem
-    try
-    {
+    try {
         engine->env->add_running_process(*engine->process, binary);
-    }
-    catch(const env_exception& e)
-    {
-        engine->log.warning(
-            "Failed to add the binary in the virtual filesystem due to the following error: ",
-            e.what()
-        );
+    } catch (const env_exception &e) {
+        engine->log.warning("Failed to add the binary in the virtual "
+                            "filesystem due to the following error: ",
+                            e.what());
     }
 }
 
