@@ -178,7 +178,27 @@ public:
 };
 Empty& empty();
 
-/// Class that serializes a serializable class into a stream
+/** Class that serializes a serializable class into a stream
+ *
+ * A 'Serializer' instance is intended to be used only once, then deleted. The
+ * serialize() method allows to serialize an object on the disk, so that it can 
+ * later be reconstructed using the 'Deserializer'.
+ * 
+ * Objects content can be added to the serialization stream using the '<<' operator. 
+ * The serializer accepts 
+ * either objects that inherit from the 'Serializable' class, or raw bits.
+ * 
+ * 'Serializable' objects are serialized automatically using their dump()
+ * method. Operator '<<' seemlessly supports smart pointers, containers, std::optional, 
+ * raw pointers, and maps of 'Serializable' objects.
+ *
+ * In order to serialize raw bits (primitive types, buffers, etc), one needs to wrap
+ * the variable(s) with one of the following functions available in the serial:: namespace:
+ * - bits(): for primitive types (int, char, size_t, etc)
+ * - buffer(): for byte buffers with a known size
+ * - optional_bits(): for primitive types wrapped in std::optional (e.g optional<bool>)
+ * - container_bits(): for primitive types wrapper in std container (e.g vector<int>)
+ */
 class Serializer
 {
 public:
@@ -344,7 +364,25 @@ private:
 };
 
 
-/// Class that deserializes a serializable class from a stream
+/** Class that deserializes a serializable class from a stream
+ *
+ * A 'Deserializer' instance is intended to be used only once, then deleted. The
+ * deserialize() method allows to deserialize an object that was serialized by the
+ * 'Serializer'. There are different signatures for deserialize():
+ * deserialize(Serializable&): loads object content in place
+ * deserialize(<pointer to Serializable>): loads content in a newly allocated object 
+ * 
+ * Objects content can be read from the serialization stream using the '>>' operator. 
+ * The deserializer accepts 
+ * either objects that inherit from the 'Serializable' class, or raw bits.
+ * 
+ * 'Serializable' objects are loaded automatically using their load()
+ * method. Operator '>>' seemlessly supports smart pointers, containers, std::optional, 
+ * raw pointers, and maps of 'Serializable' objects.
+ *
+ * In order to deserialize raw bits (primitive types, buffers, etc), one needs to wrap
+ * the variable(s) with the same functions mentioned in the 'Serializer' documentation.
+ */
 class Deserializer
 {
 public:
@@ -416,7 +454,7 @@ public:
         dest = std::shared_ptr<T>(reinterpret_cast<T*>(_deserialize()));
     }
 
-    /// Deserialize object into an object reference (must be move assignable)
+    /// Deserialize object into an object reference
     void deserialize(Serializable& dest);
 
 public:
