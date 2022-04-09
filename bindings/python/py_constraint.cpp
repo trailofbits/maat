@@ -29,12 +29,37 @@ static PyObject* Constraint_repr(PyObject* self) {
     return Constraint_str(self);
 }
 
-static PyObject* Constraint_invert(PyObject* self){
+static PyObject* Constraint_invert(PyObject* self) {
     return PyConstraint_FromConstraint((*(as_constraint_object(self).constr))->invert());
+}
+
+static PyObject* Constraint_contained_vars(PyObject* self) {
+    std::set<std::string> res;
+    res = (*(as_constraint_object(self).constr))->contained_vars();
+
+    PyObject* list = PyList_New(0);
+    if( list == NULL )
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
+    }
+    for (const std::string& s : res)
+    {
+        PyObject* unistr = PyUnicode_FromString(s.c_str());
+        if ( unistr == NULL )
+        {
+            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create python string from variable name");
+        }
+        if( PyList_Append(list, unistr) == -1)
+        {
+            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add string to python list");
+        }
+    }
+    return list;
 }
 
 static PyMethodDef Constraint_methods[] = {
     {"invert", (PyCFunction)Constraint_invert, METH_NOARGS, "Returns the invert of the condition"},
+    {"contained_vars", (PyCFunction)Constraint_contained_vars, METH_NOARGS, "Returns a list of involved symbolic variables"},
     {NULL, NULL, 0, NULL}
 };
 
