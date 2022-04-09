@@ -78,12 +78,12 @@ namespace hash
                    0x000005a5 <+56>:	leave
                    0x000005a6 <+57>:	ret
         */
-        
+
         // code
-        engine.mem->new_segment(0x0, 0xfff);
+        engine.mem->map(0x0, 0xfff);
         engine.mem->write_buffer(0x56d, code, 58);
         // stack
-        engine.mem->new_segment(0x3000, 0xffff);
+        engine.mem->map(0x3000, 0xffff);
 
         nb += _x86_assert_algo_1(engine, 0, 0x219e5c12);
         nb += _x86_assert_algo_1(engine, 100, 0x6f8cdcd6);
@@ -238,7 +238,7 @@ namespace hash
             throw test_exception();
         }
         
-        engine.mem->new_segment(0x8048950, 0x8050000);
+        engine.mem->map(0x8048950, 0x8050000);
         engine.mem->write_buffer(0x8048960, (uint8_t*)string(buffer.begin(), buffer.end()).c_str(), size);
 
         // memcpy function at address 0x806ae50
@@ -252,7 +252,7 @@ namespace hash
             throw test_exception();
         }
 
-        engine.mem->new_segment(0x806ae50, 0x8070000);
+        engine.mem->map(0x806ae50, 0x8070000);
         engine.mem->write_buffer(0x806ae50, (uint8_t*)string(buffer.begin(), buffer.end()).c_str(), size);
 
         // many data sections
@@ -272,13 +272,13 @@ namespace hash
             cout << "\nFailed to get ressource to launch tests !" << endl << std::flush; 
             throw test_exception(); 
         }
-        engine.mem->new_segment(0x80a0000, 0x80df000);
+        engine.mem->map(0x80a0000, 0x80df000);
         engine.mem->write_buffer(0x80ab000, (uint8_t*)string(buffer.begin(), buffer.end()).c_str(), size);
 
         // stack
-        engine.mem->new_segment(0xffff0000, 0xffffe000);
+        engine.mem->map(0xffff0000, 0xffffe000);
         // argument to hash
-        engine.mem->new_segment(0x11000, 0x12000);
+        engine.mem->map(0x11000, 0x12000);
 
         nb += _x86_assert_md5(engine, (char*)"msul", 0xec04d6b3, 0xf4d9196c, 0x9015e930, 0xbb668ece);
         nb += _x86_assert_md5(engine, (char*)"ixtykuaw", 0xfadace91, 0x86a333a8, 0xce0cc2f0, 0x97524cdc);
@@ -369,10 +369,10 @@ namespace hash
         /*
 
         // code
-        sym.mem->new_segment(0x0, 0x1000, MEM_FLAG_RWX);
+        sym.mem->map(0x0, 0x1000, MEM_FLAG_RWX);
         sym.mem->write_buffer(0x68a, code, 74);
         // stack
-        sym.mem->new_segment(0xfff0000000003000, 0xfff0000000010000, MEM_FLAG_RW);
+        sym.mem->map(0xfff0000000003000, 0xfff0000000010000, MEM_FLAG_RW);
 
         // Do test
         nb += _x64_assert_algo_3(sym, 100, 0xdd2f8d0fbfacdd87);

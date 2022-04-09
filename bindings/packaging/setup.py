@@ -8,6 +8,16 @@ from setuptools import setup
 
 source_dir = str(Path(".").absolute().parent.parent)
 
+additional_cmake_configure_options = []
+
+sleigh_compiler = os.getenv("MAAT_SLEIGH_COMPILER")
+if sleigh_compiler:
+    additional_cmake_configure_options += [f"-Dmaat_SLEIGH_COMPILER:PATH={sleigh_compiler}"]
+
+prefix_path = os.getenv("CMAKE_PREFIX_PATH")
+if prefix_path:
+    additional_cmake_configure_options += [f"-DCMAKE_PREFIX_PATH:PATH={prefix_path}"]
+
 setup(
     cmdclass=dict(
         build_ext=cmake_build_extension.BuildExtension
@@ -28,7 +38,7 @@ setup(
                 "-Dmaat_USE_EXTERNAL_SLEIGH=OFF",
                 "-Dmaat_BUILD_PYTHON_BINDINGS:BOOL=ON",
                 "-Dmaat_PYTHON_PACKAGING:BOOL=ON",
-            ]
+            ] + additional_cmake_configure_options
         )
     ],
 )

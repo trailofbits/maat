@@ -25,7 +25,7 @@ jobs:
       run: |
         sudo apt-get install libgmp-dev python3-dev libz3-dev
         wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
-        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/Linux-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
     - name: Install LCov
       run: sudo apt-get update -q
@@ -66,7 +66,7 @@ jobs:
         # LIEF
         wget -O- https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
         # Sleigh
-        wget -O- https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        wget -O- https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/Linux-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
         # Z3 Ubuntu 20.04 package doesn't play nice with sanitizers
         # (also remove top-level directory from zip)
         wget -O z3.zip https://github.com/Z3Prover/z3/releases/download/z3-4.8.14/z3-4.8.14-x64-glibc-2.31.zip
@@ -128,7 +128,7 @@ jobs:
         sudo apt-get install libgmp-dev python3-dev libz3-dev
         python3 -m pip install pytest
         wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
-        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/Linux-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/Linux-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
     - name: Install Dependencies
       if: matrix.os == 'macos'
@@ -136,14 +136,14 @@ jobs:
         brew install gmp python3 z3
         python3 -m pip install pytest
         wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
-        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2/macOS-sleigh-10.1.2-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/macOS-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
     - name: Configure
       run: cmake --preset=ci-${{ matrix.os }}
         -D BUILD_SHARED_LIBS=${{ matrix.shared }}
 
     - name: Build
-      run: cmake --build build --config Release -j 2 || true
+      run: cmake --build build --config Release -j 2
 
     - name: Install
       run: cmake --install build --config Release --prefix prefix

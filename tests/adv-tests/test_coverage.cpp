@@ -161,12 +161,12 @@ namespace code_coverage{
             MaatEngine engine(Arch::Type::X86);
             engine.log.set_level(Log::ERROR);
             bool success;
-            engine.mem->new_segment(0x0, 0xfff);
-            engine.mem->new_segment(0x4000, 0x5fff); // stack
+            engine.mem->map(0x0, 0xfff);
+            engine.mem->map(0x4000, 0x5fff); // stack
             engine.cpu.ctx().set(X86::ESP, 0x5000);
             engine.mem->write(0x5004, 0x6000, 4); // argument of the function pushed on the stack
             engine.cpu.ctx().set(X86::EAX, 0x6000);
-            engine.mem->new_segment(0x6000, 0x6100); // The input password
+            engine.mem->map(0x6000, 0x6100); // The input password
 
             // Make user supplied password symbolic
             engine.mem->write(0x6000, exprvar(8, "char0"));
@@ -256,12 +256,12 @@ namespace code_coverage{
             engine.log.set_level(Log::ERROR);
             bool success;
             
-            engine.mem->new_segment(0x0, 0xfff);
-            engine.mem->new_segment(0x4000, 0x5fff); // stack
+            engine.mem->map(0x0, 0xfff);
+            engine.mem->map(0x4000, 0x5fff); // stack
             engine.cpu.ctx().set(X86::ESP, exprcst(32, 0x5000));
             engine.mem->write(0x5004, exprcst(32, 0x6000)); // argument of the function pushed on the stack
             engine.cpu.ctx().set(X86::EAX, exprcst(32, 0x6000));
-            engine.mem->new_segment(0x6000, 0x6100); // The input password
+            engine.mem->map(0x6000, 0x6100); // The input password
             
             /* Make user supplied password symbolic */
             engine.mem->write(0x6000, exprvar(8, "char0"));
