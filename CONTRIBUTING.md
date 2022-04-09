@@ -1,6 +1,6 @@
 # Contributing
 
-**Last updated**: 02/28/2020
+**Last updated**: 02/28/2022
 
 - [General guidelines](#general-guidelines)
 - [Supporting a new architecture](#support-new-arch)
