@@ -229,7 +229,25 @@ private:
     void handle_pending_x_mem_overwrites();
 public:
     virtual serial::uid_t class_uid() const;
+    /** Serialize the engine state
+     *
+     * This serializes the whole engine state except:
+     * - Event hooks
+     * - Internal expression simplifier
+     * - Logger
+     * - Library emulation callbacks
+     * - Callother callbacks
+     *
+     * In order to keep those members (especially the event hooks), it is 
+     * necessary to deserialize the engine **in place** using the same object
+     * instance that was serialized.
+     */
     virtual void dump(serial::Serializer& s) const;
+    /** Deserialize a state into the engine
+     *
+     * See notes in 'MaatEngine::dump()' about members that are
+     * not included in serialization.
+     */
     virtual void load(serial::Deserializer& d);
 };
 
