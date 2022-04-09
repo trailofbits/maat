@@ -282,7 +282,6 @@ void test_serialization()
     total += serialize_mem_engine();
     total += serialize_cpu();
     total += serialize_maat_engine();
-    // TODO test snapshots (serialize then restore snapshot)
 
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;

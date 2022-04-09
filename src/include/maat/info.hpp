@@ -26,7 +26,6 @@ using serial::optional_bits;
 enum class Stop
 {
     HOOK, ///< Event hook halted the engine
-    BP, ///< Breakpoint was hit // TODO: remove
     SYMBOLIC_PC, ///< Program counter is purely symbolic 
     SYMBOLIC_CODE, ///< Code to execute is purely symbolic
     MISSING_FUNCTION, ///< Calling a function that is neither loaded nor emulated

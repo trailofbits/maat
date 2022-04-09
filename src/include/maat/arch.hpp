@@ -52,7 +52,7 @@ public:
     enum class Type
     {
         X86, ///< Intel X86
-        X64, // TODO ///< Intel X86_64
+        X64, ///< Intel X86_64
         ARM32, // TODO ///< armv7 (32 bits)
         ARM64, // TODO ///< armv8 (64 bits)
         NONE

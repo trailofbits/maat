@@ -158,19 +158,6 @@ namespace test{
 
             mem.symbolic_ptr_write(addr2, addr2->value_set(), val1, settings);
 
-            // e = mem.read(0xf000, 4); // Read in symbolic area
-            // ite2 = mem.unfold_exprmem(e);
-            // TODO nb += _assert(ite2->neq(ite),"Concrete read in symbolic memory failed");
-
-            // Restore snapshot ?
-            /* TODO later
-            mem.symbolic_mem_engine.restore_snapshot(1);
-            e = mem.read(0xf000, 4); // Read in symbolic area
-            ite2 = mem.unfold_exprmem(e);
-            // std::cout << "Test ITE2: " << ite2 << std::endl;
-            nb += _assert(ite2->eq(ite),"Concrete read in symbolic memory failed");
-            */
-
             // Make concrete ptr write in symbolic memory
             mem.write(0xf008, exprcst(64, 0xdeadbeefcafebabe));
             e = mem.read(0xf008, 4).as_expr();
