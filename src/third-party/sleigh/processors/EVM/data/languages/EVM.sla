@@ -1,0 +1,60 @@
+<sleigh version="3" bigendian="true" align="1" uniqbase="0x280">
+<sourcefiles>
+<sourcefile name="EVM.slaspec" index="0"/>
+</sourcefiles>
+<spaces defaultspace="code">
+<space_other name="OTHER" index="1" bigendian="true" delay="0" size="8" physical="false"/>
+<space_unique name="unique" index="2" bigendian="true" delay="0" size="4" physical="true"/>
+<space name="code" index="3" bigendian="true" delay="1" size="1" physical="true"/>
+</spaces>
+<symbol_table scopesize="1" symbolsize="8">
+<scope id="0x0" parent="0x0"/>
+<subtable_sym_head name="instruction" id="0x0" scope="0x0"/>
+<start_sym_head name="inst_start" id="0x1" scope="0x0"/>
+<end_sym_head name="inst_next" id="0x2" scope="0x0"/>
+<userop_head name="stack_pop" id="0x3" scope="0x0"/>
+<userop_head name="stack_push" id="0x4" scope="0x0"/>
+<userop_head name="stack_read" id="0x5" scope="0x0"/>
+<userop_head name="stack_write" id="0x6" scope="0x0"/>
+<value_sym_head name="op" id="0x7" scope="0x0"/>
+<subtable_sym name="instruction" id="0x0" scope="0x0" numct="1">
+<constructor parent="0x0" first="1" length="1" line="0:18">
+<print piece="ADD"/>
+<construct_tpl>
+<null/><op_tpl code="CALLOTHER"><varnode_tpl><const_tpl type="spaceid" name="unique"/><const_tpl type="real" val="0x80"/><const_tpl type="real" val="0x20"/></varnode_tpl>
+<varnode_tpl><const_tpl type="spaceid" name="const"/><const_tpl type="real" val="0x0"/><const_tpl type="real" val="0x4"/></varnode_tpl>
+</op_tpl>
+<op_tpl code="CALLOTHER"><varnode_tpl><const_tpl type="spaceid" name="unique"/><const_tpl type="real" val="0x180"/><const_tpl type="real" val="0x20"/></varnode_tpl>
+<varnode_tpl><const_tpl type="spaceid" name="const"/><const_tpl type="real" val="0x0"/><const_tpl type="real" val="0x4"/></varnode_tpl>
+</op_tpl>
+<op_tpl code="INT_ADD"><varnode_tpl><const_tpl type="spaceid" name="unique"/><const_tpl type="real" val="0x200"/><const_tpl type="real" val="0x20"/></varnode_tpl>
+<varnode_tpl><const_tpl type="spaceid" name="unique"/><const_tpl type="real" val="0x80"/><const_tpl type="real" val="0x20"/></varnode_tpl>
+<varnode_tpl><const_tpl type="spaceid" name="unique"/><const_tpl type="real" val="0x180"/><const_tpl type="real" val="0x20"/></varnode_tpl>
+</op_tpl>
+<op_tpl code="CALLOTHER"><null/>
+<varnode_tpl><const_tpl type="spaceid" name="const"/><const_tpl type="real" val="0x1"/><const_tpl type="real" val="0x4"/></varnode_tpl>
+<varnode_tpl><const_tpl type="spaceid" name="unique"/><const_tpl type="real" val="0x200"/><const_tpl type="real" val="0x20"/></varnode_tpl>
+</op_tpl>
+</construct_tpl>
+</constructor>
+<decision number="1" context="false" start="0" size="0">
+<pair id="0">
+<instruct_pat>
+<pat_block offset="0" nonzero="1">
+  <mask_word mask="0xff000000" val="0x1000000"/>
+</pat_block>
+</instruct_pat>
+</pair>
+</decision>
+</subtable_sym>
+<start_sym name="inst_start" id="0x1" scope="0x0"/>
+<end_sym name="inst_next" id="0x2" scope="0x0"/>
+<userop name="stack_pop" id="0x3" scope="0x0" index="0"/>
+<userop name="stack_push" id="0x4" scope="0x0" index="1"/>
+<userop name="stack_read" id="0x5" scope="0x0" index="2"/>
+<userop name="stack_write" id="0x6" scope="0x0" index="3"/>
+<value_sym name="op" id="0x7" scope="0x0">
+<tokenfield bigendian="true" signbit="false" bitstart="0" bitend="7" bytestart="0" byteend="0" shift="0"/>
+</value_sym>
+</symbol_table>
+</sleigh>
