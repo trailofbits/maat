@@ -1,13 +1,14 @@
 #include "maat/engine.hpp"
 #include "maat/solver.hpp"
 #include "maat/stats.hpp"
+#include "maat/env/env_EVM.hpp"
 
 namespace maat
 {
     
 using namespace maat::event;
 
-MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
+MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr)
 {
     switch (_arch)
     {
@@ -21,6 +22,12 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
             lifters[CPUMode::X64] = std::make_shared<Lifter>(CPUMode::X64);
             _current_cpu_mode = CPUMode::X64;
             break;
+        case Arch::Type::EVM:
+            arch = std::make_shared<EVM::ArchEVM>();
+            lifters[CPUMode::EVM] = std::make_shared<Lifter>(CPUMode::EVM);
+            _current_cpu_mode = CPUMode::EVM;
+            env = std::make_shared<env::EVM::EthereumEmulator>();
+            break;
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
             _current_cpu_mode = CPUMode::NONE;
@@ -28,15 +35,21 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
         default:
             throw runtime_exception("MaatEngine(): unsupported architecture");
     }
-    switch (os)
+
+    // Set environment if not already set automatically by architecture
+    if (env == nullptr)
     {
-        case env::OS::LINUX:
-            env = std::make_shared<env::LinuxEmulator>(_arch);
-            break;
-        default:
-            env = std::make_shared<env::EnvEmulator>(_arch, env::OS::NONE);
-            break;
+        switch (os)
+        {
+            case env::OS::LINUX:
+                env = std::make_shared<env::LinuxEmulator>(_arch);
+                break;
+            default:
+                env = std::make_shared<env::EnvEmulator>(_arch, env::OS::NONE);
+                break;
+        }
     }
+
     symbols = std::make_shared<SymbolManager>();
     vars = std::make_shared<VarContext>();
     snapshots = std::make_shared<SnapshotManager<Snapshot>>();

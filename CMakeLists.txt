@@ -18,6 +18,7 @@ include(cmake/variables.cmake)
 # ---- Declare library ----
 
 add_library(maat_maat
+  src/arch/arch_EVM.cpp
   src/arch/arch_X86.cpp
   src/arch/lifter.cpp
   src/engine/callother.cpp
@@ -33,6 +34,7 @@ add_library(maat_maat
   src/env/emulated_libs/libc.cpp
   src/env/emulated_syscalls/linux_syscalls.cpp
   src/env/env.cpp
+  src/env/env_EVM.cpp
   src/env/env_linux.cpp
   src/env/filesystem.cpp
   src/env/library.cpp
@@ -176,11 +178,13 @@ endmacro()
 
 maat_sleigh_compile(x86 x86-64)
 maat_sleigh_compile(x86 x86)
+maat_sleigh_compile(EVM EVM)
 
 # All of the sla spec targets are combined into this one
 add_custom_target(maat_all_sla_specs DEPENDS
   maat_sleigh_spec_x86-64
   maat_sleigh_spec_x86
+  maat_sleigh_spec_EVM
 )
 
 # Add sla specs as dependencies to our targets

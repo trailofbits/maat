@@ -464,6 +464,6 @@ namespace X64
         return X64::TSC;
     }
 } // namespace X64
-    
+
 } // namespace maat
 

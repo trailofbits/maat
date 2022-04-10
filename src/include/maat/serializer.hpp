@@ -42,6 +42,7 @@ enum ClassId : uid_t
     CPU,
     CPU_CONTEXT,
     ENV_EMULATOR,
+    ENV_ETHEREUM_EMULATOR,
     ENV_LINUX_EMULATOR,
     ENV_SNAPSHOT,
     EXPR_BINOP,

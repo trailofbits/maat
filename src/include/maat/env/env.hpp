@@ -98,6 +98,9 @@ public:
     virtual void load(maat::serial::Deserializer& d);
 };
 
+namespace EVM {
+    class EthereumEmulator; // Forward declaration
+}
 
 // Util functions
 abi::ABI* _get_default_abi(Arch::Type arch, OS os);

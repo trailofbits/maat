@@ -35,6 +35,7 @@ enum class CPUMode
     A32, ///< ARM 32-bits
     T32, ///< ARM Thumb
     A64, ///< ARM 64-bits
+    EVM, ///< Ethereum byte-code
     NONE
 };
 
@@ -55,6 +56,7 @@ public:
         X64, ///< Intel X86_64
         ARM32, // TODO ///< armv7 (32 bits)
         ARM64, // TODO ///< armv8 (64 bits)
+        EVM, ///< Ethereum byte-code
         NONE
     };
 
@@ -321,6 +323,32 @@ namespace X64
 
     /** \} */ // Arch doxygen group
 } // namespace X64
+
+
+/// Namespace for EVM specific definitions and classes
+namespace EVM
+{
+    /* Registers */
+    static constexpr reg_t PC = 0; ///< Program counter
+    static constexpr reg_t NB_REGS = 1;
+
+    /** \addtogroup arch
+     * \{ */
+
+    /// Ethereum Virtual Machine architecture
+    class ArchEVM: public Arch
+    {
+    public:
+        ArchEVM();
+        ~ArchEVM() = default;
+        size_t reg_size(reg_t reg_num) const;
+        reg_t sp() const;
+        reg_t pc() const;
+        reg_t tsc() const;
+    };
+
+    /** \} */ // Arch doxygen group
+} // namespace EVM
 
 
 // TODO add to doxygen when ready
