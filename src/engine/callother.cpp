@@ -295,6 +295,72 @@ void EVM_STACK_PUSH_handler(MaatEngine& engine, const ir::Inst& inst, ir::Proces
     contract->stack.push(pinst.in1.value());
 }
 
+// A/B = 0 if (B==0) else A/B
+void EVM_DIV_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    if (in2.is_concrete(*engine.vars) and in2.as_number().equal_to(Number(in2.size(), 0)))
+        pinst.res.set_cst(inst.out.size(), 0);
+    else
+        pinst.res.set_ITE(
+            in2, ITECond::EQ, Value(in2.size(), 0),
+            Value(inst.out.size(), 0),
+            in1/in2
+        );
+}
+
+// A/B = 0 if (B==0) else A/B
+void EVM_SDIV_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    if (in2.is_concrete(*engine.vars) and in2.as_number().equal_to(Number(in2.size(), 0)))
+        pinst.res.set_cst(inst.out.size(), 0);
+    else
+        pinst.res.set_ITE(
+            in2, ITECond::EQ, Value(in2.size(), 0),
+            Value(inst.out.size(), 0),
+            sdiv(in1,in2)
+        );
+}
+
+// A%B = 0 if (B==0) else A%B
+void EVM_MOD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    if (in2.is_concrete(*engine.vars) and in2.as_number().equal_to(Number(in2.size(), 0)))
+        pinst.res.set_cst(inst.out.size(), 0);
+    else
+        pinst.res.set_ITE(
+            in2, ITECond::EQ, Value(in2.size(), 0),
+            Value(inst.out.size(), 0),
+            in1%in2
+        );
+}
+
+// A%B = 0 if (B==0) else A%B
+void EVM_SMOD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    if (in2.is_concrete(*engine.vars) and in2.as_number().equal_to(Number(in2.size(), 0)))
+        pinst.res.set_cst(inst.out.size(), 0);
+    else
+    {
+        pinst.res.set_ITE(
+            in2, ITECond::EQ, Value(in2.size(), 0),
+            Value(inst.out.size(), 0),
+            smod(in1,in2)
+        );
+    }
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -309,6 +375,11 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_STOP, EVM_STOP_handler);
     h.set_handler(Id::EVM_STACK_POP, EVM_STACK_POP_handler);
     h.set_handler(Id::EVM_STACK_PUSH, EVM_STACK_PUSH_handler);
+    h.set_handler(Id::EVM_DIV, EVM_DIV_handler);
+    h.set_handler(Id::EVM_SDIV, EVM_SDIV_handler);
+    h.set_handler(Id::EVM_MOD, EVM_MOD_handler);
+    h.set_handler(Id::EVM_SMOD, EVM_SMOD_handler);
+
     return h;
 }
 

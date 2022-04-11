@@ -12,6 +12,10 @@ define pcodeop stack_set; # write one word to stack at given position
 
 # Instructions that can't be lifted to pcode
 define pcodeop stop; # STOP
+define pcodeop evm_div; # DIV that allows dividing by 0
+define pcodeop evm_sdiv; # SDIV that allows dividing by 0
+define pcodeop evm_mod; # MOD that allows dividing by 0
+define pcodeop evm_smod; # SMOD that allows dividing by 0
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -26,4 +30,44 @@ define token opcode(8)
     local tmp1:32 = stack_pop();
     local tmp2:32 = stack_pop();
     stack_push(tmp1+tmp2);
+}
+
+:MUL is op = 0x2 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    stack_push(tmp1*tmp2);
+}
+
+:SUB is op = 0x3 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    stack_push(tmp1-tmp2);
+}
+
+:DIV is op = 0x4 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    local res:32 = evm_div(tmp1, tmp2);
+    stack_push(res);
+}
+
+:SDIV is op = 0x5 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    local res:32 = evm_sdiv(tmp1, tmp2);
+    stack_push(res);
+}
+
+:MOD is op = 0x6 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    local res:32 = evm_mod(tmp1, tmp2);
+    stack_push(res);
+}
+
+:SMOD is op = 0x7 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    local res:32 = evm_smod(tmp1, tmp2);
+    stack_push(res);
 }

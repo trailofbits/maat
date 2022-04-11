@@ -532,7 +532,11 @@ public:
             {"stack_push",callother::Id::EVM_STACK_PUSH}, 
             {"stack_set",callother::Id::EVM_STACK_SET}, 
             {"stack_get",callother::Id::EVM_STACK_GET}, 
-            {"stop",callother::Id::EVM_STOP}
+            {"stop",callother::Id::EVM_STOP},
+            {"evm_div",callother::Id::EVM_DIV},
+            {"evm_sdiv",callother::Id::EVM_SDIV},
+            {"evm_mod",callother::Id::EVM_MOD},
+            {"evm_smod",callother::Id::EVM_SMOD}
         };
 
         for (const auto& [op_str, op_id] : operators)

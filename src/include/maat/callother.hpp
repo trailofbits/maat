@@ -40,6 +40,10 @@ enum class Id
     EVM_STACK_PUSH,
     EVM_STACK_SET,
     EVM_STACK_GET,
+    EVM_DIV,
+    EVM_SDIV,
+    EVM_MOD,
+    EVM_SMOD,
     UNSUPPORTED
 };
 

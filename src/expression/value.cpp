@@ -934,6 +934,34 @@ void Value::set_bool_xor(const Value& n1, const Value& n2, size_t size)
     }
 }
 
+void Value::set_ITE(
+    const Value& c1, ITECond cond, const Value& c2,
+    const Value& if_true, const Value& if_false
+)
+{
+    bool is_true = true;
+    if (c1.is_abstract() or c2.is_abstract()
+        or if_true.is_abstract() or if_false.is_abstract())
+    {
+        *this = ITE(c1.as_expr(), cond, c2.as_expr(), if_true.as_expr(), if_false.as_expr());
+    }
+    else
+    {
+        switch (cond)
+        {
+            case ITECond::EQ: is_true = c1.as_number().equal_to(c2.as_number()); break;
+            case ITECond::LE: is_true = c1.as_number().lessequal_than(c2.as_number()); break;
+            case ITECond::LT: is_true = c1.as_number().less_than(c2.as_number()); break;
+            case ITECond::SLT: is_true = c1.as_number().sless_than(c2.as_number()); break;
+            case ITECond::SLE: is_true = c1.as_number().slessequal_than(c2.as_number()); break;
+            default:
+                throw expression_exception("Value::set_ITE(): got unimplemented ITE condition");
+        }
+        // Assign result depending on condition
+        *this = is_true? if_true : if_false;
+    }
+}
+
 std::ostream& operator<<(std::ostream& os, const Value& val)
 {
     if (val.is_none())

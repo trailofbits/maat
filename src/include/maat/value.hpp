@@ -107,6 +107,10 @@ public:
     void set_bool_and(const Value& n1, const Value& n2, size_t size);
     void set_bool_or(const Value& n1, const Value& n2, size_t size);
     void set_bool_xor(const Value& n1, const Value& n2, size_t size);
+    void set_ITE(
+        const Value& c1, ITECond cond, const Value& c2,
+        const Value& if_true, const Value& if_false
+    );
 public:
     friend std::ostream& operator<<(std::ostream& os, const Value& val);
 public:
