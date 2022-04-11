@@ -16,6 +16,8 @@ define pcodeop evm_div; # DIV that allows dividing by 0
 define pcodeop evm_sdiv; # SDIV that allows dividing by 0
 define pcodeop evm_mod; # MOD that allows dividing by 0
 define pcodeop evm_smod; # SMOD that allows dividing by 0
+define pcodeop evm_signextend; # SIGNEXTEND with variable # of bytes to extend
+
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -69,5 +71,36 @@ define token opcode(8)
     local tmp1:32 = stack_pop();
     local tmp2:32 = stack_pop();
     local res:32 = evm_smod(tmp1, tmp2);
+    stack_push(res);
+}
+
+:ADDMOD is op = 0x8 {
+    local tmp:32 = stack_pop();
+    local arg1:64 = zext(tmp);
+    tmp = stack_pop();
+    local arg2:64 = zext(tmp);
+    tmp = stack_pop();
+    local arg3:64 = zext(tmp);
+
+    local res:64 = evm_mod(arg1+arg2, arg3);
+    stack_push(res[0,256]);
+}
+
+:MULMOD is op = 0x9 {
+    local tmp:32 = stack_pop();
+    local arg1:64 = zext(tmp);
+    tmp = stack_pop();
+    local arg2:64 = zext(tmp);
+    tmp = stack_pop();
+    local arg3:64 = zext(tmp);
+
+    local res:64 = evm_mod(arg1*arg2, arg3);
+    stack_push(res[0,256]);
+}
+
+:SIGNEXTEND is op = 0xb {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = evm_signextend(arg1, arg2);
     stack_push(res);
 }

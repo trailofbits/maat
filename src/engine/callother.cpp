@@ -361,6 +361,25 @@ void EVM_SMOD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
     }
 }
 
+// sext(byte, val) = sext(val[byte*8-1 : 0])
+void EVM_SIGNEXTEND_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+    Value tmp;
+
+    if (not in1.is_concrete(*engine.vars))
+        throw callother_exception("SIGNEXTEND: not supported for symbolic bytes count");
+
+    if (in1.as_uint() >= 32)
+        pinst.res = in2;
+    else
+    {
+        tmp.set_extract(in2, 8*(in1.as_uint()+1)-1, 0);
+        pinst.res.set_sext(256, tmp);
+    }
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -379,6 +398,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_SDIV, EVM_SDIV_handler);
     h.set_handler(Id::EVM_MOD, EVM_MOD_handler);
     h.set_handler(Id::EVM_SMOD, EVM_SMOD_handler);
+    h.set_handler(Id::EVM_SIGNEXTEND, EVM_SIGNEXTEND_handler);
 
     return h;
 }

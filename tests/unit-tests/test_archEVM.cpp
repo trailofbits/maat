@@ -24,6 +24,27 @@ namespace test{
             return 1;
         }
  
+        unsigned int _assert_bignum_eq(
+            const Value& var,
+            std::string expected_value,
+            std::string error_msg,
+            int base=10
+        )
+        {
+            const Number& number = var.as_number();
+            Number expected(number.size);
+            expected.set_mpz(expected_value, base);
+            if (not expected.equal_to(number))
+            {
+                std::stringstream ss;
+                ss << var;
+                std::cout << "\nFail: _assert_bignum_eq: " << ss.str() << " is not " << expected_value << std::endl;
+                std::cout << "\nFail: " << error_msg << std::endl;
+                throw test_exception(); 
+            }
+            return 1; 
+        }
+
         void setup_dummy_contract(MaatEngine& engine)
         {
             engine.process->pid = get_ethereum(engine)->add_contract(
@@ -68,6 +89,261 @@ namespace test{
 
             return nb;
         }
+
+        unsigned int test_div(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x04", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            contract->stack.push(Value(256, "3", 10));
+            contract->stack.push(Value(256, "21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "7218217218218217217218488488368",
+                "ArchEVM: failed to disassembly and/or execute DIV"
+            );
+
+            // Division by zero
+            contract->stack.push(Value(256, "0", 10));
+            contract->stack.push(Value(256, "21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute DIV"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_sdiv(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x05", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            contract->stack.push(Value(256, "3", 10));
+            contract->stack.push(Value(256, "-21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "-7218217218218217217218488488369",
+                "ArchEVM: failed to disassembly and/or execute SDIV"
+            );
+
+            // Division by zero
+            contract->stack.push(Value(256, "0", 10));
+            contract->stack.push(Value(256, "-21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute DIV"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_mod(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x06", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            contract->stack.push(Value(256, "3398479384739847938749387430947", 10));
+            contract->stack.push(Value(256, "21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "1263775346215564019159140879423",
+                "ArchEVM: failed to disassembly and/or execute MOD"
+            );
+
+            // Modulo by zero
+            contract->stack.push(Value(256, "0", 10));
+            contract->stack.push(Value(256, "21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute MOD"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_smod(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x07", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            contract->stack.push(Value(256, "-3398479384739847938749387430947", 10));
+            contract->stack.push(Value(256, "-21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "-1263775346215564019159140879423",
+                "ArchEVM: failed to disassembly and/or execute SMOD"
+            );
+
+            contract->stack.push(Value(256, "3398479384739847938749387430947", 10));
+            contract->stack.push(Value(256, "-21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "2134704038524283919590246551524",
+                "ArchEVM: failed to disassembly and/or execute SMOD"
+            );
+
+            // Modulo by zero
+            contract->stack.push(Value(256, "0", 10));
+            contract->stack.push(Value(256, "-21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute SMOD"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_addmod(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x08", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            contract->stack.push(Value(256, "-5", 10));
+            contract->stack.push(Value(256, "6542513", 10));
+            contract->stack.push(Value(256, "-1", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "6542517",
+                "ArchEVM: failed to disassembly and/or execute ADDMOD"
+            );
+
+            // Modulo by zero
+            contract->stack.push(Value(256, "0", 10));
+            contract->stack.push(Value(256, "6542513", 10));
+            contract->stack.push(Value(256, "21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute ADDMOD"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_mulmod(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x09", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            contract->stack.push(Value(256, "-5", 10));
+            contract->stack.push(Value(256, "6684746543", 10));
+            contract->stack.push(Value(256, "000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "51173515919254644494219054947542675994107681307330243892244173046669980394647",
+                "ArchEVM: failed to disassembly and/or execute MULMOD"
+            );
+
+            // Modulo by zero
+            contract->stack.push(Value(256, "0", 10));
+            contract->stack.push(Value(256, "564651451", 10));
+            contract->stack.push(Value(256, "21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute MULMOD"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_signextend(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x0b", 1);
+            write_inst(engine, 0x10, code);
+            contract_t contract = get_contract_for_engine(engine);
+
+            contract->stack.push(Value(256, "ffff", 16));
+            contract->stack.push(Value(256, "1", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "-1",
+                "ArchEVM: failed to disassembly and/or execute SIGNEXTEND"
+            );
+
+            contract->stack.push(Value(256, "ffff", 16));
+            contract->stack.push(Value(256, "2", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "ffff",
+                "ArchEVM: failed to disassembly and/or execute SIGNEXTEND",
+                16
+            );
+
+            contract->stack.push(Value(256, "-23", 10));
+            contract->stack.push(Value(256, "31", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "-23",
+                "ArchEVM: failed to disassembly and/or execute SIGNEXTEND"
+            );
+
+            return nb;
+        }
     }
 }
 
@@ -91,6 +367,13 @@ void test_archEVM()
 
     total += reg_translation();
     total += test_add(engine);
+    total += test_div(engine);
+    total += test_sdiv(engine);
+    total += test_mod(engine);
+    total += test_smod(engine);
+    total += test_addmod(engine);
+    total += test_mulmod(engine);
+    total += test_signextend(engine);
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

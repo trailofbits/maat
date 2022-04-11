@@ -44,6 +44,7 @@ enum class Id
     EVM_SDIV,
     EVM_MOD,
     EVM_SMOD,
+    EVM_SIGNEXTEND,
     UNSUPPORTED
 };
 
