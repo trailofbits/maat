@@ -1317,6 +1317,8 @@ void MaatEngine::load(
 )
 {
 #ifdef MAAT_HAS_LOADER_BACKEND
+    // TODO(boyan): pass binary type to new_loader() so that it returns
+    // the appropriate loader. i.e LoaderLIEF of LoaderEVM...
     std::unique_ptr<loader::Loader> l = loader::new_loader();
     l->load(
         this,

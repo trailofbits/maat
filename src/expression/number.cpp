@@ -98,7 +98,7 @@ cst_t __number_cst_mask(size_t size)
 
 ucst_t __number_cst_unsign_trunc(size_t size, cst_t c)
 {
-    if( size == sizeof(cst_t)*8)
+    if( size >= sizeof(cst_t)*8)
     {
         return c;
     }

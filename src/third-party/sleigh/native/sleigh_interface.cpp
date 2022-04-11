@@ -292,6 +292,7 @@ public:
     TmpCache            tmp_cache;
     maat::Arch::Type    arch;
     AssemblyEmitCacher  asm_cache;
+    std::unordered_map<uintm, maat::callother::Id> callother_mapping;
 
     TranslationContext(maat::Arch::Type a, const std::string& slafile, const std::string& pspecfile): arch(a)
     {
@@ -303,6 +304,11 @@ public:
         {
             throw runtime_exception(Fmt() << "Sleigh: failed to load pspecfile: " << pspecfile >> Fmt::to_str);
         }
+
+        // For EVM we add special callother operations, need to build the mapping to callother::Id
+        // for them
+        if (a == maat::Arch::Type::EVM)
+            build_callother_mapping_EVM();
     }
 
     ~TranslationContext()
@@ -438,7 +444,17 @@ public:
                         );
                         std::string mnem = tmp_cacher.get_mnemonic(tmp_addr);
                         // Get callother id in maat
-                        callother::Id id = callother::mnemonic_to_id(mnem, arch);
+                        callother::Id id = callother::Id::UNSUPPORTED;
+                        // Try using the sleigh symbol id directly
+                        uintm sleigh_pcodeop_id = inst.in[0].cst();
+                        auto match = callother_mapping.find(sleigh_pcodeop_id);
+                        if (match != callother_mapping.end())
+                            id = match->second;
+                        // If no match found in sleigh_id <-> callother_id mapping,
+                        // try matching the mnemonic
+                        if (id == callother::Id::UNSUPPORTED)
+                            id = callother::mnemonic_to_id(mnem, arch);
+
                         // Set the callother_id in inst
                         inst.callother_id = id;
 
@@ -505,6 +521,35 @@ public:
     const std::string getRegisterName(AddrSpace* as, uintb off, int4 size)
     {
         return m_sleigh->getRegisterName(as, off, size);
+    }
+
+    void build_callother_mapping_EVM()
+    {
+        SleighSymbol* symbol = nullptr;
+        // Note: the operator names MUST match the names in EVM.slaspec
+        std::unordered_map<std::string, callother::Id> operators = {
+            {"stack_pop",callother::Id::EVM_STACK_POP}, 
+            {"stack_push",callother::Id::EVM_STACK_PUSH}, 
+            {"stack_set",callother::Id::EVM_STACK_SET}, 
+            {"stack_get",callother::Id::EVM_STACK_GET}, 
+            {"stop",callother::Id::EVM_STOP}
+        };
+
+        for (const auto& [op_str, op_id] : operators)
+        {
+            symbol = m_sleigh->findSymbol(op_str);
+            if (symbol == nullptr)
+                throw lifter_exception(
+                    Fmt() << "Error instanciating sleigh lifter, didn't find symbol for operator "
+                    << op_str >> Fmt::to_str
+                );
+            if (symbol->getType() != SleighSymbol::symbol_type::userop_symbol)
+                throw lifter_exception(
+                    Fmt() << "Error instanciating sleigh lifter, wrong symbol type for operator "
+                    << op_str >> Fmt::to_str
+                );
+            callother_mapping[((UserOpSymbol*)symbol)->getIndex()] = op_id;
+        }
     }
 };
 

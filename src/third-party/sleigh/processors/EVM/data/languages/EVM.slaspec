@@ -7,13 +7,20 @@ define space code type=ram_space size=1 wordsize=1 default;
 # Stack helpers
 define pcodeop stack_pop; # pop one word from stack
 define pcodeop stack_push; # push one word to stack
-define pcodeop stack_read; # get one word from stack at given position
-define pcodeop stack_write; # write one word to stack at given position
+define pcodeop stack_get; # get one word from stack at given position
+define pcodeop stack_set; # write one word to stack at given position
+
+# Instructions that can't be lifted to pcode
+define pcodeop stop; # STOP
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
 	op = (0,7)
 ;
+
+:STOP is op = 0x0 {
+    stop();
+}
 
 :ADD is op = 0x1 {
     local tmp1:32 = stack_pop();

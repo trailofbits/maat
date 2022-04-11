@@ -27,12 +27,19 @@ typedef std::add_pointer<void(MaatEngine&, const ir::Inst&, ir::ProcessedInst&)>
 /// Unique identifiers for CALLOTHER occurences in the IR
 enum class Id
 {
+    // X86/X64
     X86_RDTSC, ///< Load the timestamp counter in a register/temporary
     X86_CPUID, ///< CPUID on X86/X64
     X64_SYSCALL, ///< System call on X64
     X86_PMINUB, ///< PMINUB on X86/X64
     X86_INT, ///< INT on X86
     X86_LOCK, ///< LOCK on X86/X64
+    // EVM
+    EVM_STOP,
+    EVM_STACK_POP,
+    EVM_STACK_PUSH,
+    EVM_STACK_SET,
+    EVM_STACK_GET,
     UNSUPPORTED
 };
 

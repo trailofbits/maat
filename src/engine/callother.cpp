@@ -2,6 +2,7 @@
 #include "maat/engine.hpp"
 #include "maat/memory.hpp"
 #include "maat/env/library.hpp"
+#include "maat/env/env_EVM.hpp"
 
 namespace maat{
 namespace callother{
@@ -19,6 +20,10 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
             if (mnemonic == "PMINUB") return Id::X86_PMINUB;
             if (mnemonic == "INT") return Id::X86_INT;
             if (mnemonic == "LOCK") return Id::X86_LOCK;
+            break;
+        case Arch::Type::EVM:
+            if (mnemonic == "STACK_PUSH") return Id::EVM_STACK_PUSH;
+            if (mnemonic == "STACK_POP") return Id::EVM_STACK_POP;
             break;
         default:
             break;
@@ -272,6 +277,24 @@ void X86_INT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
+void EVM_STOP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    throw callother_exception("STOP: instruction not implemented");
+}
+
+void EVM_STACK_POP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    pinst.res = contract->stack.get(0);
+    contract->stack.pop();
+}
+
+void EVM_STACK_PUSH_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    contract->stack.push(pinst.in1.value());
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -282,6 +305,10 @@ HandlerMap default_handler_map()
     h.set_handler(Id::X86_PMINUB, X86_PMINUB_handler);
     h.set_handler(Id::X86_INT, X86_INT_handler);
     h.set_handler(Id::X86_LOCK, X86_LOCK_handler);
+
+    h.set_handler(Id::EVM_STOP, EVM_STOP_handler);
+    h.set_handler(Id::EVM_STACK_POP, EVM_STACK_POP_handler);
+    h.set_handler(Id::EVM_STACK_PUSH, EVM_STACK_PUSH_handler);
     return h;
 }
 

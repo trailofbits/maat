@@ -22,6 +22,13 @@ Value::Value(size_t size, cst_t val)
     set_cst(size, val);
 }
 
+Value::Value(size_t size, const std::string& val, int base)
+{
+    Number n(size);
+    n.set_mpz(val, base);
+    *this = n;
+}
+
 Value& Value::operator=(const Expr& e)
 {
     _expr = e;

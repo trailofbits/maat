@@ -36,6 +36,7 @@ public:
     Value(const Expr& expr); ///< Build value from abstract expression
     Value(const Number& number); ///< Build value from concrete number
     Value(size_t size, cst_t val); ///< Build value from concrete value
+    Value(size_t size, const std::string& val, int base=16); ///< Build value from string and base
     Value& operator=(const Value& other) = default; ///< Copy assignment
     Value& operator=(Value&& other) = default; ///< Move assignment
     virtual ~Value() = default;
