@@ -19,7 +19,7 @@ define pcodeop evm_smod; # SMOD that allows dividing by 0
 define pcodeop evm_exp; # EXP
 define pcodeop evm_signextend; # SIGNEXTEND with variable # of bytes to extend
 define pcodeop evm_byte; # BYTE, extract single byte from word
-
+define pcodeop evm_mload; # MLOAD
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -211,3 +211,8 @@ define token opcode(8)
     local tmp:32 = stack_pop();
 }
 
+:MLOAD is op = 0x51 {
+    local addr:32 = stack_pop();
+    local res:32 = evm_mload(addr);
+    stack_push(res);
+}

@@ -943,8 +943,8 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
 {
     offset_t off = addr - start;
     offset_t from = off, to, bytes_to_read;
-    Value tmp2;
-    Value n1, n2;
+    Value tmp1, tmp2, tmp3;
+    Value n1, n2, n3, n4;
 
     res.set_none();
 
@@ -1016,6 +1016,15 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
                     n1.set_cst(64, _concrete.read(from, 8));
                     n2.set_cst(64, _concrete.read(from+8, 8));
                     tmp2.set_concat(n2, n1);
+                    break;
+                case 32:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(64, _concrete.read(from+16, 8));
+                    n4.set_cst(64, _concrete.read(from+24, 8));
+                    tmp1.set_concat(n2, n1);
+                    tmp3.set_concat(n4, n3); // This assumes little endian
+                    tmp2.set_concat(tmp3, tmp1);
                     break;
                 default: throw mem_exception("MemSegment: should not be reading more than 16 bytes at a time!");
             }

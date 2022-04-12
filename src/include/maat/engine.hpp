@@ -161,15 +161,23 @@ public:
 public:
     /** \brief Return the assembly string for instruction at address 'addr' */ 
     const std::string& get_inst_asm(addr_t addr);
-private:
+public:
     /** \brief Treat 'addr' as an Address parameter, load the actual value located
      * in memory and store it back in 'addr'. The previous address value stored in
      * 'addr' is put in its auxiliary field.
      * 
      * 'param' is a reference either to the parameter corresponding to 'addr' or - when
      * invoked by 'process_load' - to the output parameter. It's used to get the number
-     * of bits to read in memory */
-    bool resolve_addr_param(const ir::Param& param, ir::ProcessedInst::param_t& addr);
+     * of bits to read in memory 
+     * 
+     * 'mem' is the memory engine to use to read
+     */
+    bool resolve_addr_param(
+        const ir::Param& param,
+        ir::ProcessedInst::param_t& addr,
+        MemEngine& mem
+    );
+private:
     /** \brief Resolve all Address parameters in the instruction if needed. This method
      * returns 'true' on success and 'false' if an error occured */
     bool process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pinst);

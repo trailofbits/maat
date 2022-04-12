@@ -49,7 +49,59 @@ std::ostream& operator<<(std::ostream& os, const Stack& stack)
     return os;
 }
 
-Contract::Contract(Value addr): address(addr) {}
+Memory::Memory(std::shared_ptr<VarContext> ctx)
+:_size(0), _alloc_size(0x1000), _mem(ctx), _varctx(ctx)
+{};
+
+MemEngine& Memory::mem()
+{
+    return _mem;
+}
+
+addr_t Memory::size() const
+{
+    return _size;
+}
+
+// TODO: handle symbolic pointer policies like in MaatEngine
+Value Memory::read(const Value& addr, size_t nb_bytes)
+{
+    _expand_if_needed(addr, nb_bytes);
+    // TODO: if 'addr' is fully symbolic, we should specify that
+    // the base expr is 0 (if addr exceeds current memory size and results
+    // in memory expansion)
+    return _mem.read(addr, nb_bytes);
+}
+
+// TODO: handle symbolic pointer policies like in MaatEngine
+void Memory::write(const Value& addr, const Value& val)
+{
+    _expand_if_needed(addr, val.size()/8);
+    _mem.write(addr, val);
+}
+
+void Memory::_expand_if_needed(const Value& addr, size_t nb_bytes)
+{
+    if (not addr.is_symbolic(*_varctx))
+    {
+        addr_t required_size = addr.as_uint(*_varctx)+nb_bytes;
+        while (required_size > _size)
+        {
+            // Expand memory and init with zeros
+            _mem.map(_size, _size+_alloc_size-1);
+            std::vector<uint8_t> zeros(_alloc_size, 0);
+            _mem.write_buffer(_size, zeros.data(), _alloc_size, true);
+            _size += _alloc_size;
+            _alloc_size *= 4;
+        }
+    }
+    // TODO: need to handle else{} case when computing gas to know how much
+    // bytes have been allocated
+}
+
+Contract::Contract(const MaatEngine& engine, Value addr)
+: memory(Memory(engine.vars)), address(addr)
+{}
 
 
 EthereumEmulator::EthereumEmulator(): EnvEmulator(Arch::Type::EVM, OS::NONE)

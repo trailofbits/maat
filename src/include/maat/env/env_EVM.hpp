@@ -46,15 +46,40 @@ private:
     int _pos_to_idx(int pos) const;
 };
 
+/// EVM Volatile Memory
+class Memory
+{
+private:
+    MemEngine _mem;
+    addr_t _size;
+    addr_t _alloc_size;
+    std::shared_ptr<VarContext> _varctx;
+public:
+    Memory(std::shared_ptr<VarContext> ctx);
+    ~Memory() = default;
+public:
+    MemEngine& mem(); ///< Get internal memory engine
+    addr_t size() const; ///< Get current memory size in bytes
+public:
+    /// Read 'nb_bytes' at address 'addr'
+    Value read(const Value& addr, size_t nb_bytes);
+    /// Write value to memory
+    void write(const Value& addr, const Value& val);
+private:
+    // Expand memory if needed to write 'nb_bytes' at 'addr'
+    void _expand_if_needed(const Value& addr, size_t nb_bytes);
+};
+
 /// Deployed Smart-Contract
 class Contract
 {
 public:
     Value address; ///< Address where the contract is deployed
     Stack stack; ///< Stack of the executing EVM
+    Memory memory; ///< Volatile memory of the executing EVM
 public:
     /** Constructor. Create new deployed contract */
-    Contract(Value address);
+    Contract(const MaatEngine& engine, Value address);
 };
 
 typedef std::shared_ptr<Contract> contract_t;

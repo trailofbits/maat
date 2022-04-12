@@ -538,7 +538,8 @@ public:
             {"evm_mod",callother::Id::EVM_MOD},
             {"evm_smod",callother::Id::EVM_SMOD},
             {"evm_signextend", callother::Id::EVM_SIGNEXTEND},
-            {"evm_byte", callother::Id::EVM_BYTE}
+            {"evm_byte", callother::Id::EVM_BYTE},
+            {"evm_mload", callother::Id::EVM_MLOAD}
         };
 
         for (const auto& [op_str, op_id] : operators)

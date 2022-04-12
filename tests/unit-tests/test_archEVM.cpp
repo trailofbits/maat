@@ -48,7 +48,10 @@ namespace test{
         void setup_dummy_contract(MaatEngine& engine)
         {
             engine.process->pid = get_ethereum(engine)->add_contract(
-                std::make_shared<Contract>(Value(256, "86984651684651a5a65665b65f", 16))
+                std::make_shared<Contract>(
+                    engine,
+                    Value(256, "86984651684651a5a65665b65f", 16)
+                )
             );
         }
 
@@ -486,6 +489,31 @@ namespace test{
 
             return nb;
         }
+
+        unsigned int test_mload(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x51", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            Value addr(256, "10", 10);
+
+            contract->memory.write(addr, Value(256, "1234", 16));
+            contract->stack.push(Value(256, "40", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "1234",
+                "ArchEVM: failed to disassembly and/or execute MLOAD",
+                16
+            );
+
+            return nb;
+        }
     }
 }
 
@@ -520,6 +548,7 @@ void test_archEVM()
     total += test_sgt(engine);
     total += test_iszero(engine);
     total += test_byte(engine);
+    total += test_mload(engine);
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

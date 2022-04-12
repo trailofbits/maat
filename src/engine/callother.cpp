@@ -412,6 +412,19 @@ void EVM_BYTE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
 
 }
 
+void EVM_MLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    // Note: calling resolve_addr_param() should not be done from outside the MaatEngine
+    // but here it's a hacky way to trigger the whole memory processing with handling of
+    // symbolic pointers and triggering of event hooks
+    bool success = engine.resolve_addr_param(inst.in[1], pinst.in1, contract->memory.mem());
+    if (success)
+        pinst.res = pinst.in1.value();
+    else 
+        throw callother_exception("MLOAD: fatal error reading memory");
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -432,6 +445,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_SMOD, EVM_SMOD_handler);
     h.set_handler(Id::EVM_SIGNEXTEND, EVM_SIGNEXTEND_handler);
     h.set_handler(Id::EVM_BYTE, EVM_BYTE_handler);
+    h.set_handler(Id::EVM_MLOAD, EVM_MLOAD_handler);
 
     return h;
 }

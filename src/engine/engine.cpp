@@ -612,7 +612,11 @@ bool MaatEngine::process_branch(
 }
 
 
-bool MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::param_t& addr_param)
+bool MaatEngine::resolve_addr_param(
+    const ir::Param& param,
+    ir::ProcessedInst::param_t& addr_param,
+    MemEngine& mem_engine
+)
 {
     const Value& addr = addr_param.value();
     Value loaded;
@@ -666,11 +670,11 @@ bool MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
                 range = refine_value_set(load_addr);
                 MaatStats::instance().done_refine_symptr_read();
             }
-            mem->symbolic_ptr_read(loaded, load_addr, range, load_size, settings);
+            mem_engine.symbolic_ptr_read(loaded, load_addr, range, load_size, settings);
         }
         else
         {
-            mem->read(loaded, addr_param.auxilliary.as_uint(*vars), load_size);
+            mem_engine.read(loaded, addr_param.auxilliary.as_uint(*vars), load_size);
         }
         // P-code can load a number of bits that's not a multiple of 8.
         // If that's the case, readjust the loaded value size by trimming
@@ -724,8 +728,8 @@ bool MaatEngine::process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pi
         return true;
 
     if (
-        (inst.in[0].is_addr() and !resolve_addr_param(inst.in[0], pinst.in0))
-        or (inst.in[1].is_addr() and !resolve_addr_param(inst.in[1], pinst.in1))
+        (inst.in[0].is_addr() and !resolve_addr_param(inst.in[0], pinst.in0, *mem))
+        or (inst.in[1].is_addr() and !resolve_addr_param(inst.in[1], pinst.in1, *mem))
     )
     {
         log.error("MaatEngine::process_addr_params(): failed to process IR inst: ", inst);
@@ -737,7 +741,7 @@ bool MaatEngine::process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pi
 
 bool MaatEngine::process_load(const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    if (not resolve_addr_param(inst.out, pinst.in1))
+    if (not resolve_addr_param(inst.out, pinst.in1, *mem))
     {
         log.error("MaatEngine::process_load(): failed to resolve address parameter");
         return false;
