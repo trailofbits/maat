@@ -45,6 +45,7 @@ enum class Id
     EVM_MOD,
     EVM_SMOD,
     EVM_SIGNEXTEND,
+    EVM_BYTE,
     UNSUPPORTED
 };
 

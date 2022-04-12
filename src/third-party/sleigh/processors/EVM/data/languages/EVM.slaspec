@@ -18,6 +18,7 @@ define pcodeop evm_mod; # MOD that allows dividing by 0
 define pcodeop evm_smod; # SMOD that allows dividing by 0
 define pcodeop evm_exp; # EXP
 define pcodeop evm_signextend; # SIGNEXTEND with variable # of bytes to extend
+define pcodeop evm_byte; # BYTE, extract single byte from word
 
 
 # Opcode token: EVM opcodes take 1 byte
@@ -152,4 +153,52 @@ define token opcode(8)
     local arg1:32 = stack_pop();
     local res:32 = zext(arg1 == 0:32);
     stack_push(res);
+}
+
+:AND is op = 0x16 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg1 & arg2);
+}
+
+:OR is op = 0x17 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg1 | arg2);
+}
+
+:XOR is op = 0x18 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg1 ^ arg2);
+}
+
+:NOT is op = 0x19 {
+    local arg1:32 = stack_pop();
+    stack_push(~arg1);
+}
+
+:BYTE is op = 0x1a {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = evm_byte(arg1, arg2);
+    stack_push(res);
+}
+
+:SHL is op = 0x1b {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg2 << arg1);
+}
+
+:SHR is op = 0x1c {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg2 >> arg1);
+}
+
+:SAR is op = 0x1d {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg2 s>> arg1);
 }

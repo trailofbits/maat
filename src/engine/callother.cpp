@@ -380,6 +380,38 @@ void EVM_SIGNEXTEND_handler(MaatEngine& engine, const ir::Inst& inst, ir::Proces
     }
 }
 
+// byte(n, val) = val[n*8+7 : n*8]
+void EVM_BYTE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    if (in1.is_concrete(*engine.vars))
+    {
+        ucst_t select = in1.as_uint();
+        if (select >= 32)
+            pinst.res = Value(256, 0);
+        else
+        {
+            pinst.res.set_extract(in2, select*8+7, select*8);
+            pinst.res.set_zext(256, pinst.res);
+        }
+    }
+    else
+    {
+        // NOTE(boyan): we can simulate the symbolic index extract by either
+        // a mask+shift or with a big ITE expression. I am not sure what 
+        // the SMT solver prefers...
+        Value mask(256, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00", 16);
+        pinst.res.set_ITE(
+            Value(256, 32), ITECond::LE, in1,
+            Value(256, 0),
+            (in2 >> (in1*8)) & mask
+        );
+    }
+
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -399,6 +431,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_MOD, EVM_MOD_handler);
     h.set_handler(Id::EVM_SMOD, EVM_SMOD_handler);
     h.set_handler(Id::EVM_SIGNEXTEND, EVM_SIGNEXTEND_handler);
+    h.set_handler(Id::EVM_BYTE, EVM_BYTE_handler);
 
     return h;
 }
