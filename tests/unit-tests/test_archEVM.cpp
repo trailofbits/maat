@@ -441,6 +441,51 @@ namespace test{
 
             return nb;
         }
+
+
+        unsigned int test_byte(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x1a", 1);
+            write_inst(engine, 0x10, code);
+            contract_t contract = get_contract_for_engine(engine);
+
+            contract->stack.push(Value(256, "ffff465135465868686514654846516586684646516168476847", 16));
+            contract->stack.push(Value(256, "21", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "35",
+                "ArchEVM: failed to disassembly and/or execute BYTE",
+                16
+            );
+
+            contract->stack.push(Value(256, "-1", 10));
+            contract->stack.push(Value(256, "32", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute BYTE"
+            );
+
+            contract->stack.push(Value(256, "65465165465165146351", 16));
+            contract->stack.push(Value(256, "0", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "51",
+                "ArchEVM: failed to disassembly and/or execute BYTE",
+                16
+            );
+
+            return nb;
+        }
     }
 }
 
@@ -474,6 +519,7 @@ void test_archEVM()
     total += test_lt(engine);
     total += test_sgt(engine);
     total += test_iszero(engine);
+    total += test_byte(engine);
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

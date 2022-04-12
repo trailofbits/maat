@@ -202,3 +202,12 @@ define token opcode(8)
     local arg2:32 = stack_pop();
     stack_push(arg2 s>> arg1);
 }
+
+
+# TODO: 0x30's message operations
+# TODO: 0x40's block operations
+
+:POP is op = 0x50 {
+    local tmp:32 = stack_pop();
+}
+
