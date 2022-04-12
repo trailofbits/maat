@@ -188,6 +188,9 @@ public:
     void write(offset_t off, Expr val); ///< Write an abstract value at offset 'off'
     std::pair<Expr, uint8_t>& at(offset_t off); ///< Return the abstract value pair stored at offset 'off'
     void set(offset_t off, std::pair<Expr, uint8_t>& pair); ///< Set the abstract value pair at offset 'off' 
+private:
+    Expr _read_little_endian(offset_t off, unsigned int nb_bytes);
+    Expr _read_big_endian(offset_t off, unsigned int nb_bytes);
 public:
     virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;

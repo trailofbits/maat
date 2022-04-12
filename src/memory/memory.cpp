@@ -736,7 +736,7 @@ MemAbstractBuffer::MemAbstractBuffer(Endian endian):_endianness(endian){}
  * or more likely result in a crash. !! 
  * 
  * */
-Expr MemAbstractBuffer::read(offset_t off, unsigned int nb_bytes)
+Expr MemAbstractBuffer::_read_little_endian(offset_t off, unsigned int nb_bytes)
 {
     int i = nb_bytes-1;
     int off_byte, low_byte; 
@@ -756,7 +756,7 @@ Expr MemAbstractBuffer::read(offset_t off, unsigned int nb_bytes)
             if( it2->second.first->neq(tmp) )
             {
                 /* Found different expr */
-                if( res == nullptr )
+                if (res == nullptr)
                 {
                     res = extract(tmp, (off_byte*8)+7, low_byte*8);
                 }
@@ -808,10 +808,98 @@ Expr MemAbstractBuffer::read(offset_t off, unsigned int nb_bytes)
     return res;
 }
 
+Expr MemAbstractBuffer::_read_big_endian(offset_t off, unsigned int nb_bytes)
+{
+    int i = nb_bytes-1;
+    int off_byte, low_byte; 
+    Expr res = nullptr, tmp=nullptr;
+    abstract_mem_t::iterator it, it2;
+    while (nb_bytes > 0)
+    {
+        it = _mem.find(off); // Take next byte 
+        tmp = it->second.first; // Get associated expr
+        off_byte = it->second.second; // Get associated exproffset
+        low_byte = off_byte;
+        /* Find until where the same expression is in memory */
+        i = 0;
+        while (i < nb_bytes)
+        {
+            it2 = _mem.find(off+i); // Get expr
+            if (it2->second.first->neq(tmp))
+            {
+                /* Found different expr */
+                if (res == nullptr)
+                    res = extract(tmp, (off_byte*8)+7, low_byte*8);
+                else
+                    res = concat(res, extract(tmp, (off_byte*8)+7, low_byte*8));
+                i -= 1; // Don't consume this byte
+                break;
+            }
+            low_byte = it2->second.second; // Same expr, decrememnt exproffset counter
+            if (low_byte == 0)
+            {
+                /* Reached beginning of the memory write */
+                if (res == nullptr)
+                {
+                    // If the size corresponds to the offset_byte, then use the whole expr
+                    // Else extract lower bits 
+                    res = (tmp->size == (off_byte+1)*8 ? tmp : extract(tmp, (off_byte*8)+7, 0));
+                }
+                else
+                {
+                    res = concat(res,  (tmp->size == (off_byte+1)*8 ? tmp : extract(tmp, (off_byte*8)+7, 0))); 
+                }
+                break;
+            }
+            else
+            {
+                /* Not different expr, not beginning, continue to next */
+                i++; // Go to next offset 
+            }
+        }
+
+        // If nb_bytes wasn't reset to zero then we finished while in the middle of
+        // an expression
+        if (i == nb_bytes and nb_bytes != 0)
+        {
+            /* We reached the requested address, so extract and return */
+            if( res == nullptr )
+            {
+                res = extract(tmp, (off_byte*8)+7, low_byte*8);
+            }
+            else
+            {
+                res = concat(res, extract(tmp, (off_byte*8)+7, low_byte*8)); 
+            }
+            break;
+        }
+        /* Else just loop back and read next expression */
+        else
+        {
+            nb_bytes -= i+1; // Updates nb bytes to read
+            off += i+1; // Update offset from where to read
+        }
+    }
+    return res;
+}
+
+Expr MemAbstractBuffer::read(offset_t off, unsigned int nb_bytes)
+{
+    if (_endianness == Endian::LITTLE)
+        return _read_little_endian(off, nb_bytes);
+    else
+        return _read_big_endian(off, nb_bytes);
+}
+
 void MemAbstractBuffer::write(offset_t off, Expr e)
 {
     for( offset_t i = 0; i < (e->size/8); i++ )
-        _mem[off+i] = std::make_pair(e, i);
+    {
+        if (_endianness == Endian::LITTLE)
+            _mem[off+i] = std::make_pair(e, i);
+        else
+            _mem[off+i] = std::make_pair(e, (e->size/8)-1-i);
+    }
 }
 
 uid_t MemAbstractBuffer::class_uid() const
@@ -973,6 +1061,22 @@ Value MemSegment::read(addr_t addr, unsigned int nb_bytes)
     return val;
 }
 
+// Concatenate two values according to endianness. 
+// 'first' is the value at the lower address and 'second'
+// the one at the higher address
+static inline void concat_endian(
+    Value& res,
+    const Value& first,
+    const Value& second,
+    Endian endian
+)
+{
+    if (endian == Endian::LITTLE)
+        res.set_concat(second, first);
+    else
+        res.set_concat(first, second);
+}
+
 void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
 {
     offset_t off = addr - start;
@@ -991,7 +1095,7 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
     {
         /* Try if concrete or symbolic */
         to = _bitmap.is_concrete_until(from, nb_bytes);
-        if( to != from )
+        if (to != from)
         {
             /* Concrete */
             bytes_to_read = to-from; // Bytes that can be read as concrete
@@ -1014,22 +1118,22 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
                 case 9:
                     n1.set_cst(64, _concrete.read(from, 8));
                     n2.set_cst(8, _concrete.read(from+8, 1));
-                    tmp2.set_concat(n2, n1);
+                    concat_endian(tmp2, n1, n2, _endianness);
                     break;
                 case 10: 
                     n1.set_cst(64, _concrete.read(from, 8));
                     n2.set_cst(16, _concrete.read(from+8, 2));
-                    tmp2.set_concat(n2, n1);
+                    concat_endian(tmp2, n1, n2, _endianness);
                     break;
                 case 11:
                     n1.set_cst(64, _concrete.read(from, 8));
                     n2.set_cst(24, _concrete.read(from+8, 3));
-                    tmp2.set_concat(n2, n1);
+                    concat_endian(tmp2, n1, n2, _endianness);
                     break;
                 case 12:
                     n1.set_cst(64, _concrete.read(from, 8));
                     n2.set_cst(32, _concrete.read(from+8, 4));
-                    tmp2.set_concat(n2, n1);
+                    concat_endian(tmp2, n1, n2, _endianness);
                     break;
                 case 13:
                     n1.set_cst(64, _concrete.read(from, 8));
@@ -1039,34 +1143,153 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
                 case 14:
                     n1.set_cst(64, _concrete.read(from, 8));
                     n2.set_cst(48, _concrete.read(from+8, 6));
-                    tmp2.set_concat(n2, n1);
+                    concat_endian(tmp2, n1, n2, _endianness);
                     break;
                 case 15:
                     n1.set_cst(64, _concrete.read(from, 8));
                     n2.set_cst(56, _concrete.read(from+8, 7));
-                    tmp2.set_concat(n2, n1);
+                    concat_endian(tmp2, n1, n2, _endianness);
                     break;
                 case 16:
                     n1.set_cst(64, _concrete.read(from, 8));
                     n2.set_cst(64, _concrete.read(from+8, 8));
-                    tmp2.set_concat(n2, n1);
+                    concat_endian(tmp2, n1, n2, _endianness);
+                    break;
+                case 17:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(8, _concrete.read(from+16, 1));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp2, tmp1, n3, _endianness);
+                    break;
+                case 18:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(16, _concrete.read(from+16, 2));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp2, tmp1, n3, _endianness);
+                    break;
+                case 19:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(24, _concrete.read(from+16, 3));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp2, tmp1, n3, _endianness);
+                    break;
+                case 20:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(32, _concrete.read(from+16, 4));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp2, tmp1, n3, _endianness);
+                    break;
+                case 21:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(40, _concrete.read(from+16, 5));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp2, tmp1, n3, _endianness);
+                    break;
+                case 22:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(48, _concrete.read(from+16, 6));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp2, tmp1, n3, _endianness);
+                    break;
+                case 23:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(56, _concrete.read(from+16, 7));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp2, tmp1, n3, _endianness);
+                    break;
+                case 24:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(64, _concrete.read(from+16, 8));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp2, tmp1, n3, _endianness);
+                    break;
+                case 25:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(64, _concrete.read(from+16, 8));
+                    n4.set_cst(8, _concrete.read(from+24, 1));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp3, n3, n4, _endianness);
+                    concat_endian(tmp2, tmp1, tmp3, _endianness);
+                    break;
+                case 26:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(64, _concrete.read(from+16, 8));
+                    n4.set_cst(16, _concrete.read(from+24, 2));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp3, n3, n4, _endianness);
+                    concat_endian(tmp2, tmp1, tmp3, _endianness);
+                    break;
+                case 27:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(64, _concrete.read(from+16, 8));
+                    n4.set_cst(24, _concrete.read(from+24, 3));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp3, n3, n4, _endianness);
+                    concat_endian(tmp2, tmp1, tmp3, _endianness);
+                    break;
+                case 28:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(64, _concrete.read(from+16, 8));
+                    n4.set_cst(32, _concrete.read(from+24, 4));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp3, n3, n4, _endianness);
+                    concat_endian(tmp2, tmp1, tmp3, _endianness);
+                    break;
+                case 29:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(64, _concrete.read(from+16, 8));
+                    n4.set_cst(40, _concrete.read(from+24, 5));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp3, n3, n4, _endianness);
+                    concat_endian(tmp2, tmp1, tmp3, _endianness);
+                    break;
+                case 30:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(64, _concrete.read(from+16, 8));
+                    n4.set_cst(48, _concrete.read(from+24, 6));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp3, n3, n4, _endianness);
+                    concat_endian(tmp2, tmp1, tmp3, _endianness);
+                    break;
+                case 31:
+                    n1.set_cst(64, _concrete.read(from, 8));
+                    n2.set_cst(64, _concrete.read(from+8, 8));
+                    n3.set_cst(64, _concrete.read(from+16, 8));
+                    n4.set_cst(56, _concrete.read(from+24, 7));
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp3, n3, n4, _endianness);
+                    concat_endian(tmp2, tmp1, tmp3, _endianness);
                     break;
                 case 32:
                     n1.set_cst(64, _concrete.read(from, 8));
                     n2.set_cst(64, _concrete.read(from+8, 8));
                     n3.set_cst(64, _concrete.read(from+16, 8));
                     n4.set_cst(64, _concrete.read(from+24, 8));
-                    tmp1.set_concat(n2, n1);
-                    tmp3.set_concat(n4, n3); // This assumes little endian
-                    tmp2.set_concat(tmp3, tmp1);
+                    concat_endian(tmp1, n1, n2, _endianness);
+                    concat_endian(tmp3, n3, n4, _endianness);
+                    concat_endian(tmp2, tmp1, tmp3, _endianness);
                     break;
-                default: throw mem_exception("MemSegment: should not be reading more than 16 bytes at a time!");
+                default: throw mem_exception("MemSegment: unsupported number of bytes to read!");
             }
             /* Update result */
             if (res.is_none())
                 res = tmp2;
             else
-                res.set_concat(tmp2, res); // Assumes little endian
+                concat_endian(res, res, tmp2, _endianness);
         }
         else
         {
@@ -1084,7 +1307,7 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
             if (res.is_none())
                 res = tmp2;
             else
-                res.set_concat(tmp2, res); // Assumes little endian
+                concat_endian(res, res, tmp2, _endianness);
         }
         from += bytes_to_read;
     } while(nb_bytes > 0);
