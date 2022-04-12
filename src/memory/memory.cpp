@@ -513,8 +513,11 @@ void MemStatusBitmap::load(Deserializer& d)
     d >> serial::buffer((char*)_bitmap, _size);
 }
 
-MemConcreteBuffer::MemConcreteBuffer():_mem(nullptr){}
-MemConcreteBuffer::MemConcreteBuffer(offset_t nb_bytes)
+MemConcreteBuffer::MemConcreteBuffer(Endian endian)
+:_mem(nullptr), _endianness(endian){}
+
+MemConcreteBuffer::MemConcreteBuffer(offset_t nb_bytes, Endian endian)
+:_endianness(endian)
 {
     try
     {
@@ -598,8 +601,16 @@ offset_t MemConcreteBuffer::is_identical_until(offset_t start, offset_t end, uin
 uint64_t MemConcreteBuffer::read(offset_t off, int nb_bytes)
 {
     uint64_t res = 0;
-    for (int i = 0; i < nb_bytes; i++)
-        res += ((uint64_t)(*(_mem+off+i))) << i*8;
+    if (_endianness == Endian::LITTLE)
+    {
+        for (int i = 0; i < nb_bytes; i++)
+            res += ((uint64_t)(*(_mem+off+i))) << i*8;
+    }
+    else
+    {
+        for (int i = nb_bytes-1; i >= 0; i--)
+            res += ((uint64_t)(*(_mem+off+nb_bytes-1-i))) << i*8;
+    }
     return res;
 }
 
@@ -613,12 +624,22 @@ void MemConcreteBuffer::write(offset_t off, int64_t val, int nb_bytes)
             >> Fmt::to_str);
     }
 
-    // Note: this assumes little endian
-    for( ; nb_bytes > 0; nb_bytes--)
+    if (_endianness == Endian::LITTLE)
     {
-        *(uint8_t*)((uint8_t*)_mem+off) = val & 0xff;
-        val = val >> 8;
-        off++;
+        for( ; nb_bytes > 0; nb_bytes--)
+        {
+            *(uint8_t*)((uint8_t*)_mem+off) = val & 0xff;
+            val = val >> 8;
+            off++;
+        }
+    }
+    else
+    {
+        for( ; nb_bytes > 0; nb_bytes--)
+        {
+            *(uint8_t*)((uint8_t*)_mem+off) = (val >> ((nb_bytes-1)*8)) & 0xff;
+            off++;
+        }
     }
 }
 
@@ -635,11 +656,19 @@ void MemConcreteBuffer::write(offset_t off, const Number& val, int nb_bytes)
         }
         else
         {
-            write(off, tmp.get_cst(), 8);
+            if (_endianness == Endian::LITTLE)
+            {
+                write(off, tmp.get_cst(), 8);
+                shft = Number(tmp.size, 64);
+                tmp.set_shr(tmp, shft); // Should be safe
+            }
+            else
+            {
+                Number tmp_val; tmp_val.set_extract(tmp, nb_bytes*8-1, (nb_bytes-8)*8);
+                write(off, tmp_val.get_ucst(), 8);
+            }
             nb_bytes -= 8;
             off += 8;
-            shft = Number(tmp.size, 64);
-            tmp.set_shr(tmp, shft); // Should be safe
         }
     }
 }
@@ -664,6 +693,7 @@ void MemConcreteBuffer::dump(Serializer& s) const
 {
     s << bits(_size);
     s << serial::buffer((char*)_mem, _size);
+    s << bits(_endianness);
 }
 
 void MemConcreteBuffer::load(Deserializer& d)
@@ -674,6 +704,7 @@ void MemConcreteBuffer::load(Deserializer& d)
     d >> bits(_size);
     _mem = new uint8_t[_size];
     d >> serial::buffer((char*)_mem, _size);
+    d >> bits(_endianness);
 }
 
 /* Memory abstract buffer 
@@ -695,7 +726,7 @@ expressions stored in memory, the class automatically concatenates/extracts
 the corresponding parts.
 */
 
-MemAbstractBuffer::MemAbstractBuffer(){}
+MemAbstractBuffer::MemAbstractBuffer(Endian endian):_endianness(endian){}
 
 /* 1°) !! Reading function assumes little endian !!
  *  
@@ -790,6 +821,7 @@ uid_t MemAbstractBuffer::class_uid() const
 
 void MemAbstractBuffer::dump(Serializer& s) const
 {
+    s << bits(_endianness);
     s << bits(_mem.size());
     for (auto const& [key, val]: _mem)
     {
@@ -805,6 +837,7 @@ void MemAbstractBuffer::load(Deserializer& d)
     offset_t off;
     uint8_t byte;
     Expr expr;
+    d >> bits(_endianness);
     _mem.clear();
     d >> bits(nb_elems);
     for (int i = 0; i < nb_elems; i++)
@@ -816,13 +849,14 @@ void MemAbstractBuffer::load(Deserializer& d)
 
 
 
-MemSegment::MemSegment(addr_t s, addr_t e, const std::string& n, bool special):
+MemSegment::MemSegment(addr_t s, addr_t e, const std::string& n, bool special, Endian endian):
     start(s), end(e),
     _bitmap(MemStatusBitmap(e-s+1)), 
-    _concrete(MemConcreteBuffer(e-s+1)),
-    _abstract(MemAbstractBuffer()), 
+    _concrete(MemConcreteBuffer(e-s+1, endian)),
+    _abstract(MemAbstractBuffer(endian)), 
     _is_engine_special_segment(special),
-    name(n)
+    name(n),
+    _endianness(endian)
 {
     if(start > end){
         throw mem_exception("Cannot create segment with start address bigger than end address");
@@ -1251,14 +1285,16 @@ void MemSegment::dump(Serializer& s) const
 {
     s << _bitmap << _concrete << _abstract
       << bits(_is_engine_special_segment)
-      << bits(start) << bits(end) << name;
+      << bits(start) << bits(end) << name
+      << bits(_endianness);
 }
 
 void MemSegment::load(Deserializer& d)
 {
     d >> _bitmap >> _concrete >> _abstract
       >> bits(_is_engine_special_segment)
-      >> bits(start) >> bits(end) >> name;
+      >> bits(start) >> bits(end) >> name
+      >> bits(_endianness);
 }
 
 
@@ -1268,12 +1304,14 @@ int MemEngine::_uid_cnt = 0;
 MemEngine::MemEngine(
     std::shared_ptr<VarContext> varctx,
     size_t arch_bits,
-    std::shared_ptr<SnapshotManager<Snapshot>> snap
+    std::shared_ptr<SnapshotManager<Snapshot>> snap,
+    Endian endian
 ):
 _varctx(varctx),
 symbolic_mem_engine(arch_bits, varctx),
 _arch_bits(arch_bits),
-_snapshots(snap)
+_snapshots(snap),
+_endianness(endian)
 {
     if(_varctx == nullptr)
         _varctx = std::make_shared<VarContext>(0);
@@ -1293,7 +1331,13 @@ void MemEngine::new_segment(addr_t start, addr_t end, mem_flag_t flags, const st
         throw mem_exception("Trying to create a segment that overlaps with another segment");
 
     // Else create entire new segment
-    std::shared_ptr<MemSegment> seg = std::make_shared<MemSegment>(start, end, name, is_special);
+    std::shared_ptr<MemSegment> seg = std::make_shared<MemSegment>(
+        start,
+        end,
+        name,
+        is_special,
+        _endianness
+    );
     // Find where to insert new segment
     // TODO: std::lower_bound won't f**** compile and I can't figure out why
     for (it = _segments.begin(); it != _segments.end(); it++)
@@ -2485,13 +2529,15 @@ uid_t MemEngine::class_uid() const
 
 void MemEngine::dump(serial::Serializer& s) const
 {
-    s << bits(_uid) << bits(_arch_bits) << _segments << _varctx << _snapshots
+    s << bits(_uid) << bits(_arch_bits) << bits(_endianness) 
+      << _segments << _varctx << _snapshots
       << symbolic_mem_engine << page_manager << mappings;
 }
 
 void MemEngine::load(serial::Deserializer& d)
 {
-    d >> bits(_uid) >> bits(_arch_bits) >> _segments >> _varctx >> _snapshots
+    d >> bits(_uid) >> bits(_arch_bits) >> bits(_endianness)
+      >> _segments >> _varctx >> _snapshots
       >> symbolic_mem_engine >> page_manager >> mappings; 
 }
 

@@ -137,7 +137,27 @@ namespace test{
             nb += _assert(buf.read(0x21, 1) == 0x12, "MemConcreteBuffer <write then read> error");
             nb += _assert(buf.read(0x31, 2) == 0x3456, "MemConcreteBuffer <write then read> error");
             nb += _assert(buf.read(0x43, 4) == 0x34567812, "MemConcreteBuffer <write then read> error");
-         
+
+            // Big ENdian
+            MemConcreteBuffer buf2(0x10000, Endian::BIG);
+            // Write and read back
+            buf2.write(0x10, 0x12, 1);
+            buf2.write(0x20, 0x1234, 2); 
+            buf2.write(0x30, 0x12345678, 4); 
+            buf2.write(0x40, 0x1234567812345678, 8);
+            buf2.write(0x50, Value(256, "aaaaaaaa1235465843251324", 16).as_number(), 32);
+            nb += _assert(buf2.read(0x10, 1) == 0x12, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x20, 2) == 0x1234, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x30, 4) == 0x12345678, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x40, 8) == 0x1234567812345678, "MemConcreteBuffer big endian <write then read> error");
+            // ! Below tests assume big endian storage
+            nb += _assert(buf2.read(0x21, 1) == 0x34, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x31, 3) == 0x345678, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x43, 4) == 0x78123456, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x50+32-1, 1) == 0x24, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x50+32-8, 8) == 0x1235465843251324, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x50+32-16, 8) == 0xaaaaaaaa, "MemConcreteBuffer big endian <write then read> error");
+
             return nb; 
         }
 

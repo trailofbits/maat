@@ -94,6 +94,12 @@ public:
     virtual void load(serial::Deserializer& d);
 };
 
+enum class Endian
+{
+    LITTLE,
+    BIG
+};
+
 /**This class represents a concrete memory area. It's basically a wrapper 
 around a buffer that enables to read/write constants of different sizes
 
@@ -106,9 +112,14 @@ class MemConcreteBuffer: public serial::Serializable
 private:
     unsigned int _size;
     uint8_t* _mem;
+    Endian _endianness;
 public:
-    MemConcreteBuffer(); ///< Constructor
-    MemConcreteBuffer(offset_t nb_bytes); ///< Constructor
+    MemConcreteBuffer(Endian endian=Endian::LITTLE); ///< Constructor
+    MemConcreteBuffer(offset_t nb_bytes, Endian endian=Endian::LITTLE); ///< Constructor
+    MemConcreteBuffer(const MemConcreteBuffer& other) = delete;
+    MemConcreteBuffer(MemConcreteBuffer&& other) = delete;
+    MemConcreteBuffer& operator=(const MemConcreteBuffer& other) = delete;
+    MemConcreteBuffer& operator=(MemConcreteBuffer&& other) = delete;
     virtual ~MemConcreteBuffer(); ///< Destructor
     /** Extend the buffer to make it represent 'nb_bytes' more bytes of
      * memory. The new bytes are inserted at the end of the buffer */
@@ -169,8 +180,9 @@ public:
     using abstract_mem_t = std::unordered_map<offset_t, std::pair<Expr, uint8_t>>;
 private:
     abstract_mem_t _mem;
+    Endian _endianness;
 public:
-    MemAbstractBuffer(); ///< Constructor
+    MemAbstractBuffer(Endian endian=Endian::LITTLE); ///< Constructor
     virtual ~MemAbstractBuffer() = default;
     Expr read(offset_t off, unsigned int nb_bytes); ///< Read 'nb_bytes' bytes as an abstract value from offset 'off'
     void write(offset_t off, Expr val); ///< Write an abstract value at offset 'off'
@@ -194,6 +206,7 @@ private:
     MemConcreteBuffer _concrete;
     MemAbstractBuffer _abstract;
     bool _is_engine_special_segment;
+    Endian _endianness;
 
 public:
     addr_t start; ///< Beginning of the memory segment 
@@ -201,7 +214,13 @@ public:
     std::string name; ///< Optional. Name of the segment
 
 public:
-    MemSegment(addr_t start, addr_t end, const std::string& name="", bool is_engine_special_segment=false); ///< Constructor
+    MemSegment(
+        addr_t start,
+        addr_t end,
+        const std::string& name="",
+        bool is_engine_special_segment=false,
+        Endian endian=Endian::LITTLE
+    ); ///< Constructor
     virtual ~MemSegment() = default;
     bool contains(addr_t addr);
     addr_t size(); ///< Number of bytes 
@@ -423,6 +442,7 @@ private:
     static int _uid_cnt;
 private:
     int _uid;
+    Endian _endianness;
     size_t _arch_bits;
     std::list<std::shared_ptr<MemSegment>> _segments;
     std::shared_ptr<VarContext> _varctx;
@@ -436,8 +456,15 @@ public:
      * 
      * @param varctx VarContext to use when concretising abstract expressions
      * @param arch_bits Default address size in bits
-     * @param snap Snapshot manager to use if snapshots are enabled */
-    MemEngine(std::shared_ptr<VarContext> varctx=nullptr, size_t arch_bits=64, std::shared_ptr<SnapshotManager<Snapshot>> snap=nullptr);
+     * @param snap Snapshot manager to use if snapshots are enabled 
+     * @param endian Memory endianness
+     */
+    MemEngine(
+        std::shared_ptr<VarContext> varctx=nullptr,
+        size_t arch_bits=64,
+        std::shared_ptr<SnapshotManager<Snapshot>> snap=nullptr,
+        Endian endian = Endian::LITTLE
+    );
     virtual ~MemEngine();
 
     /** \brief Map memory from 'start' to 'end' (included), with permissions 'mflags'. 
