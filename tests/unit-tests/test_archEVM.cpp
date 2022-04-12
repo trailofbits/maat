@@ -344,6 +344,103 @@ namespace test{
 
             return nb;
         }
+
+        unsigned int test_lt(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x10", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+
+            contract->stack.push(Value(256, "658465465465465165165151654654654654654", 10));
+            contract->stack.push(Value(256, "66847465436546516516546516516541", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "1",
+                "ArchEVM: failed to disassembly and/or execute LT"
+            );
+
+            contract->stack.push(Value(256, "658465465465465165165151654654654654", 10));
+            contract->stack.push(Value(256, "-1", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute LT"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_sgt(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x13", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+
+            contract->stack.push(Value(256, "658465465465465165165151654654654654654", 10));
+            contract->stack.push(Value(256, "66847465436546516516546516516541", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute SGT"
+            );
+
+            contract->stack.push(Value(256, "658465465465465165165151654654654654", 10));
+            contract->stack.push(Value(256, "-1", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "1",
+                "ArchEVM: failed to disassembly and/or execute SGT"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_iszero(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x15", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+
+            contract->stack.push(Value(256, "1", 10)<<255);
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute ISZERO"
+            );
+
+            contract->stack.push(Value(256, "0", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "1",
+                "ArchEVM: failed to disassembly and/or execute ISZERO"
+            );
+
+            return nb;
+        }
     }
 }
 
@@ -374,6 +471,9 @@ void test_archEVM()
     total += test_addmod(engine);
     total += test_mulmod(engine);
     total += test_signextend(engine);
+    total += test_lt(engine);
+    total += test_sgt(engine);
+    total += test_iszero(engine);
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

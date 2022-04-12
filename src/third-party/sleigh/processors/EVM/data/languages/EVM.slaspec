@@ -16,6 +16,7 @@ define pcodeop evm_div; # DIV that allows dividing by 0
 define pcodeop evm_sdiv; # SDIV that allows dividing by 0
 define pcodeop evm_mod; # MOD that allows dividing by 0
 define pcodeop evm_smod; # SMOD that allows dividing by 0
+define pcodeop evm_exp; # EXP
 define pcodeop evm_signextend; # SIGNEXTEND with variable # of bytes to extend
 
 
@@ -98,9 +99,57 @@ define token opcode(8)
     stack_push(res[0,256]);
 }
 
+:EXP is op = 0xa {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = evm_exp(arg1, arg2);
+    stack_push(res);
+}
+
 :SIGNEXTEND is op = 0xb {
     local arg1:32 = stack_pop();
     local arg2:32 = stack_pop();
     local res:32 = evm_signextend(arg1, arg2);
+    stack_push(res);
+}
+
+:LT is op = 0x10 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = zext(arg1 < arg2);
+    stack_push(res);
+}
+
+:GT is op = 0x11 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = zext(arg1 > arg2);
+    stack_push(res);
+}
+
+:SLT is op = 0x12 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = zext(arg1 s< arg2);
+    stack_push(res);
+}
+
+:SGT is op = 0x13 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = zext(arg1 s> arg2);
+    stack_push(res);
+}
+
+:EQ is op = 0x14 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = zext(arg1 == arg2);
+    stack_push(res);
+}
+
+:ISZERO is op = 0x15 {
+    local arg1:32 = stack_pop();
+    local res:32 = zext(arg1 == 0:32);
     stack_push(res);
 }
