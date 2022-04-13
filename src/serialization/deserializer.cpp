@@ -165,7 +165,7 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
         case ClassId::SYMBOL_MANAGER:
             return new SymbolManager();
         case ClassId::SYMBOLIC_MEM_ENGINE:
-            return new SymbolicMemEngine(0, nullptr);
+            return new SymbolicMemEngine(0, nullptr, Endian::LITTLE);
         case ClassId::VALUE:
             return new Value();
         case ClassId::VAR_CONTEXT:

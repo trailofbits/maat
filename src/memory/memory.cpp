@@ -1524,7 +1524,7 @@ MemEngine::MemEngine(
     Endian endian
 ):
 _varctx(varctx),
-symbolic_mem_engine(arch_bits, varctx),
+symbolic_mem_engine(arch_bits, varctx, endian),
 _arch_bits(arch_bits),
 _snapshots(snap),
 _endianness(endian)

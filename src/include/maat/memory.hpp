@@ -390,6 +390,7 @@ private:
     unsigned int write_count; ///< Number of symbolic writes that have been performed
     std::vector<SymbolicMemWrite> writes; ///< List of memory writes performed
     IntervalTree write_intervals;
+    Endian _endianness;
 private:
     std::shared_ptr<VarContext> _varctx;
 public:
@@ -399,7 +400,7 @@ public:
     bool symptr_force_aligned;
 
 public:
-    SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContext> varctx);
+    SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContext> varctx, Endian endian);
     virtual ~SymbolicMemEngine() = default;
     /** \brief Record symbolic pointer write. 'addr_min' and 'addr_max' are the
      * minimal and maximal concrete values that the 'addr' expression can take */
