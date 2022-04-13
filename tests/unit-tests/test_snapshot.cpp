@@ -257,7 +257,6 @@ void test_snapshots()
     total += basic();
     total += snapshot_X86();
 
-
     std::cout   << "\t\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;
 }

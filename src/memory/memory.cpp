@@ -728,14 +728,7 @@ the corresponding parts.
 
 MemAbstractBuffer::MemAbstractBuffer(Endian endian):_endianness(endian){}
 
-/* 1°) !! Reading function assumes little endian !!
- *  
- * 2°) !! This code assumes that the MemAbstractBuffer has been used in a 
- * consistent way. In particular, if a read() operation is performed on 
- * an address range that has NOT been written, it will return wrong results
- * or more likely result in a crash. !! 
- * 
- * */
+
 Expr MemAbstractBuffer::_read_little_endian(offset_t off, unsigned int nb_bytes)
 {
     int i = nb_bytes-1;
@@ -1109,7 +1102,7 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
             {
                 case 1: tmp2.set_cst(8, _concrete.read(from, 1)); break;
                 case 2: tmp2.set_cst(16, _concrete.read(from, 2)); break;
-                case 3: tmp2.set_cst(24, _concrete.read(from, 3)); break; // Assumes little endian
+                case 3: tmp2.set_cst(24, _concrete.read(from, 3)); break;
                 case 4: tmp2.set_cst(32, _concrete.read(from, 4)); break;
                 case 5: tmp2.set_cst(40, _concrete.read(from, 5)); break;
                 case 6: tmp2.set_cst(48, _concrete.read(from, 6)); break;
@@ -1874,7 +1867,7 @@ void MemEngine::read(Value& res, addr_t addr, unsigned int nb_bytes, mem_alert_t
             if (res.is_none())
                 res = tmp;
             else
-                res.set_concat(tmp, res); // Assumes little endian
+                concat_endian(res, res, tmp, _endianness);
 
             nb_bytes -= tmp.size()/8;
             addr += tmp.size()/8;
@@ -2111,10 +2104,21 @@ void MemEngine::write(addr_t addr, const Value& val, mem_alert_t* alert, bool ca
                 // Record write for snapshots
                 record_mem_write(tmp_addr, bytes_to_write);
                 // Write
-                Value extracted = extract(tmp_val, (bytes_to_write*8)-1, 0);
-                (*it)->write(tmp_addr, extracted, *_varctx); // Just write lower bytes
+                Value extracted;
+                if (_endianness == Endian::LITTLE)
+                    extracted = extract(tmp_val, (bytes_to_write*8)-1, 0);
+                else
+                    extracted = extract(
+                        tmp_val,
+                        tmp_val.size()-1,
+                        tmp_val.size()-(bytes_to_write*8)
+                    );
+                (*it)->write(tmp_addr, extracted, *_varctx);
                 tmp_addr += bytes_to_write;
-                tmp_val.set_extract(tmp_val, tmp_val.size()-1, bytes_to_write*8);
+                if (_endianness == Endian::LITTLE)
+                    tmp_val.set_extract(tmp_val, tmp_val.size()-1, bytes_to_write*8);
+                else
+                    tmp_val.set_extract(tmp_val, tmp_val.size()-1-(bytes_to_write*8), 0);
             }
             else
             {
@@ -2509,8 +2513,10 @@ cst_t MemEngine::concrete_snapshot(addr_t addr, int nb_bytes)
         if( segment->contains(tmp_addr) )
         {
             ucst_t tmp = segment->concrete_snapshot(tmp_addr, nb_bytes); // updates addr and nb_bytes
-            // Assuming little endian
-            res += tmp << ((ucst_t)i*8);
+            if (_endianness == Endian::LITTLE)
+                res += tmp << ((ucst_t)i*8);
+            else
+                res |= tmp << ((nb_bytes-i)*8);
             i = tmp_addr - addr;
         }
         if (nb_bytes == 0)
@@ -2571,10 +2577,23 @@ void MemEngine::write_from_concrete_snapshot(addr_t addr, cst_t val, int nb_byte
             // Write
             if (page_manager.was_once_executable(addr))
                 alert |= maat::mem_alert_x_overwrite;
-            segment->write_from_concrete_snapshot(addr, val, bytes_to_write);
+            
 
-            // Update
-            val = val >> (bytes_to_write*8);
+            if (_endianness == Endian::LITTLE)
+            {
+                segment->write_from_concrete_snapshot(addr, val, bytes_to_write);
+                val = val >> (bytes_to_write*8);
+            }
+            else
+            {
+                segment->write_from_concrete_snapshot(
+                    addr,
+                    val >> (nb_bytes-bytes_to_write),
+                    bytes_to_write
+                );
+                // No need to update value for big endian
+            }
+
             nb_bytes -= bytes_to_write;
             if (nb_bytes == 0)
                 return;

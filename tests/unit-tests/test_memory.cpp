@@ -462,6 +462,26 @@ namespace test{
             mem.write(0x1200, c2, ctx);
             nb += _assert( mem.read(0x1200, 8).as_expr()->eq(concat( exprcst(16, 0x1234), concat( e2, concat( exprcst(8, 0xde), concat(extract(e4, 63, 56) ,c2))))), 
                     "MemSegment: concrete/symbolic juxtaposition failed");
+            
+            // Big endian
+            MemSegment mem2(0x1000, 0x30ff, "", false, Endian::BIG);
+            
+            /* Juxtapose concrete and symbolic */
+            mem2.write(0x1000, c1, ctx);
+            mem2.write(0x1001, e1, ctx);
+            nb += _assert(mem2.read(0x1000, 2).as_expr()->eq(concat(c1, e1)), "MemSegment: concrete/symbolic juxtaposition failed");
+            
+            mem2.write(0x1001, e2, ctx);
+            nb += _assert(mem2.read(0x1000, 2).as_expr()->eq(concat(c1, extract(e2, 15, 8))), "MemSegment: concrete/symbolic juxtaposition failed");
+            mem2.write(0x1000, e1, ctx);
+            mem2.write(0x1001, c2, ctx);
+            nb += _assert(mem2.read(0x1000, 2).as_expr()->eq(concat(e1, exprcst(8, 0x12))), "MemSegment: concrete/symbolic juxtaposition failed");
+
+            /* Overwrite concrete with symbolic and vice versa */
+            mem2.write(0x1100, c3, ctx);
+            mem2.write(0x1102, e4, ctx);
+            nb += _assert(mem2.read(0x1100, 4).as_expr()->eq(concat(exprcst(16, 0x1234), extract(e4, 63,48))), "MemSegment: concrete/symbolic juxtaposition failed");
+
             return nb; 
         }
 
@@ -540,9 +560,7 @@ namespace test{
             mem.check_status(0x3205, 0x3205, is_symbolic, is_tainted);
             nb += _assert(is_symbolic == false, "MemEngine: failed to check memory status");
             nb += _assert(is_tainted == false, "MemEngine: failed to check memory status");
-            
-            
-            
+
             /* Test the make_symbolic, make_tainted interface */
             std::string name;
             std::stringstream ss;
@@ -647,6 +665,23 @@ namespace test{
             // With symbolic/concolic write
             mem.write(0x1ffe, e);
             e2 = mem.read(0x1ffe, 8).as_expr();
+            ctx->set("var1", 0x12345678abababab);
+            nb += _assert(e2->as_uint(*ctx) == 0x12345678abababab, "MemEngine: read/write accross segments failed");
+
+
+            // Big endian
+            MemEngine mem2(ctx, 64, nullptr, Endian::BIG);
+
+            mem2.map(0x1000, 0x1fff, maat::mem_flag_rwx);
+            mem2.map(0x2000, 0x2fff, maat::mem_flag_rwx);
+
+            // With concrete write
+            mem2.write(0x1ffe, 0x12345678deadbeef, 8);
+            nb += _assert(mem2.read(0x1ffe, 8).as_uint(*ctx) == 0x12345678deadbeef, "MemEngine: read/write accross segments failed");
+
+            // With symbolic/concolic write
+            mem2.write(0x1ffe, e);
+            e2 = mem2.read(0x1ffe, 8).as_expr();
             ctx->set("var1", 0x12345678abababab);
             nb += _assert(e2->as_uint(*ctx) == 0x12345678abababab, "MemEngine: read/write accross segments failed");
 
