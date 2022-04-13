@@ -697,6 +697,7 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
         &bytes_len, &nb_elems, &elem_size, &PyLong_Type, &trailing_value))
     {
         PyErr_Clear();
+
         if (nb_elems == -1)
         {
             if (bytes_len % elem_size != 0)
@@ -718,7 +719,10 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
             cst_t val = 0;
             for (int j = elem_size-1; j >= 0; j--)
             {
-                val = (val << 8) | ((cst_t)(bytes[i*elem_size+j]) & 0xff);
+                if (as_varctx_object(self).ctx->endianness() == Endian::LITTLE)
+                    val = (val << 8) | ((cst_t)(bytes[i*elem_size+j]) & 0xff);
+                else
+                    val |= ((ucst_t)(bytes[i*elem_size+j]) << j);
             }
             concrete_buffer.push_back(val);
         }

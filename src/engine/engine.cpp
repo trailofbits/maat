@@ -10,6 +10,7 @@ using namespace maat::event;
 
 MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr)
 {
+    Endian endianness = Endian::LITTLE;
     switch (_arch)
     {
         case Arch::Type::X86:
@@ -27,6 +28,7 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr)
             lifters[CPUMode::EVM] = std::make_shared<Lifter>(CPUMode::EVM);
             _current_cpu_mode = CPUMode::EVM;
             env = std::make_shared<env::EVM::EthereumEmulator>();
+            endianness = Endian::BIG;
             break;
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
@@ -51,9 +53,9 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr)
     }
 
     symbols = std::make_shared<SymbolManager>();
-    vars = std::make_shared<VarContext>();
+    vars = std::make_shared<VarContext>(0, endianness);
     snapshots = std::make_shared<SnapshotManager<Snapshot>>();
-    mem = std::make_shared<MemEngine>(vars, arch->bits(), snapshots);
+    mem = std::make_shared<MemEngine>(vars, arch->bits(), snapshots, endianness);
     process = std::make_shared<ProcessInfo>();
     simplifier = NewDefaultExprSimplifier();
     callother_handlers = callother::default_handler_map();

@@ -94,12 +94,6 @@ public:
     virtual void load(serial::Deserializer& d);
 };
 
-enum class Endian
-{
-    LITTLE,
-    BIG
-};
-
 /**This class represents a concrete memory area. It's basically a wrapper 
 around a buffer that enables to read/write constants of different sizes
 

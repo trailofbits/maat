@@ -11,7 +11,7 @@ using serial::bits;
 /* ====================================== */
 unsigned int VarContext::_id_cnt = 0;
 
-VarContext::VarContext(unsigned int i): id(i)
+VarContext::VarContext(unsigned int i, Endian endian): id(i), _endianness(endian)
 {
     if(id == 0)
         id = ++(VarContext::_id_cnt);
@@ -83,8 +83,10 @@ std::vector<uint8_t> VarContext::get_as_buffer(std::string name, unsigned int el
         {
             for( ucst_t j = 0; j < elem_size; j++ )
             {
-                // Assume little endian
-                res.push_back((uint8_t)((get(var_name) >> (j*8)) & 0xff));
+                if (_endianness == Endian::LITTLE)
+                    res.push_back((uint8_t)((get(var_name) >> (j*8)) & 0xff));
+                else
+                    res.push_back((uint8_t)((get(var_name) >> ((elem_size-j-1)*8)) & 0xff));
             }
             i++;
         }
@@ -261,6 +263,11 @@ void VarContext::print(std::ostream& os ) const
     }
 }
 
+Endian VarContext::endianness() const 
+{
+    return _endianness;
+}
+
 std::ostream& operator<<(std::ostream& os, const VarContext& c)
 {
     c.print(os);
@@ -274,7 +281,7 @@ serial::uid_t VarContext::class_uid() const
 
 void VarContext::dump(Serializer& s) const
 {
-    s << bits(_id_cnt);
+    s << bits(_id_cnt) << bits(_endianness);
     s << bits(varmap.size());
     for (const auto& [key,val] : varmap)
     {
@@ -286,7 +293,7 @@ void VarContext::load(Deserializer& d)
 {
     size_t size;
     varmap.clear();
-    d >> bits(_id_cnt) >> bits(size);
+    d >> bits(_id_cnt) >> bits(_endianness) >> bits(size);
     for (int i = 0; i < size; i++)
     {
         std::string key;

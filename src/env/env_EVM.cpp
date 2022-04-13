@@ -50,7 +50,7 @@ std::ostream& operator<<(std::ostream& os, const Stack& stack)
 }
 
 Memory::Memory(std::shared_ptr<VarContext> ctx)
-:_size(0), _alloc_size(0x1000), _mem(ctx), _varctx(ctx)
+:_size(0), _alloc_size(0x1000), _mem(ctx, 64, nullptr, Endian::BIG), _varctx(ctx)
 {};
 
 MemEngine& Memory::mem()
@@ -63,17 +63,12 @@ addr_t Memory::size() const
     return _size;
 }
 
-// TODO: handle symbolic pointer policies like in MaatEngine
 Value Memory::read(const Value& addr, size_t nb_bytes)
 {
     _expand_if_needed(addr, nb_bytes);
-    // TODO: if 'addr' is fully symbolic, we should specify that
-    // the base expr is 0 (if addr exceeds current memory size and results
-    // in memory expansion)
     return _mem.read(addr, nb_bytes);
 }
 
-// TODO: handle symbolic pointer policies like in MaatEngine
 void Memory::write(const Value& addr, const Value& val)
 {
     _expand_if_needed(addr, val.size()/8);

@@ -507,7 +507,7 @@ namespace test{
 
             nb += _assert_bignum_eq(
                 contract->stack.get(0),
-                "1234",
+                "1234000000000000000000000000000000000000000000000000000000000000",
                 "ArchEVM: failed to disassembly and/or execute MLOAD",
                 16
             );
