@@ -539,7 +539,10 @@ public:
             {"evm_smod",callother::Id::EVM_SMOD},
             {"evm_signextend", callother::Id::EVM_SIGNEXTEND},
             {"evm_byte", callother::Id::EVM_BYTE},
-            {"evm_mload", callother::Id::EVM_MLOAD}
+            {"evm_mload", callother::Id::EVM_MLOAD},
+            {"evm_mstore", callother::Id::EVM_MSTORE},
+            {"evm_mstore8", callother::Id::EVM_MSTORE8},
+            {"evm_msize", callother::Id::EVM_MSIZE}
         };
 
         for (const auto& [op_str, op_id] : operators)
@@ -611,6 +614,8 @@ maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& r
         return sleigh_reg_translate_X86(reg_name);
     else if (arch == Arch::Type::X64)
         return sleigh_reg_translate_X64(reg_name);
+    else if (arch == Arch::Type::EVM)
+        return sleigh_reg_translate_EVM(reg_name);
     else
         throw maat::runtime_exception("Register translation from SLEIGH to MAAT not implemented for this architecture!");
 }

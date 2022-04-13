@@ -1299,5 +1299,15 @@ maat::ir::Param sleigh_reg_translate_X64(const std::string& reg_name)
             );
 }
 
+maat::ir::Param sleigh_reg_translate_EVM(const std::string& reg_name)
+{
+    if (reg_name == "PC") return maat::ir::Reg(maat::EVM::PC, 31, 0);
+
+    throw maat::runtime_exception(maat::Fmt()
+            << "EVM: Register translation from SLEIGH to MAAT missing for register "
+            << reg_name
+            >> maat::Fmt::to_str
+            );
+}
 
 } // namespace maat

@@ -47,6 +47,9 @@ enum class Id
     EVM_SIGNEXTEND,
     EVM_BYTE,
     EVM_MLOAD,
+    EVM_MSTORE,
+    EVM_MSTORE8,
+    EVM_MSIZE,
     UNSUPPORTED
 };
 

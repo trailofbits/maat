@@ -50,7 +50,7 @@ std::ostream& operator<<(std::ostream& os, const Stack& stack)
 }
 
 Memory::Memory(std::shared_ptr<VarContext> ctx)
-:_size(0), _alloc_size(0x1000), _mem(ctx, 64, nullptr, Endian::BIG), _varctx(ctx)
+:_size(0), _limit(0), _alloc_size(0x1000), _mem(ctx, 64, nullptr, Endian::BIG), _varctx(ctx)
 {};
 
 MemEngine& Memory::mem()
@@ -80,14 +80,22 @@ void Memory::_expand_if_needed(const Value& addr, size_t nb_bytes)
     if (not addr.is_symbolic(*_varctx))
     {
         addr_t required_size = addr.as_uint(*_varctx)+nb_bytes;
-        while (required_size > _size)
+        while (required_size > _limit)
         {
             // Expand memory and init with zeros
-            _mem.map(_size, _size+_alloc_size-1);
+            _mem.map(_limit, _limit+_alloc_size-1);
             std::vector<uint8_t> zeros(_alloc_size, 0);
-            _mem.write_buffer(_size, zeros.data(), _alloc_size, true);
-            _size += _alloc_size;
+            _mem.write_buffer(_limit, zeros.data(), _alloc_size, true);
+            _limit += _alloc_size;
             _alloc_size *= 4;
+        }
+        // Update size if needed
+        if ( required_size > _size)
+        {
+            _size = required_size;
+            // Memory is expanded by blocks of 32 bytes
+            if (_size % 32 != 0)
+                _size = _size + 32 - (_size%32);
         }
     }
     // TODO: need to handle else{} case when computing gas to know how much

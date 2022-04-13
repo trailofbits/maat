@@ -2,7 +2,11 @@ define endian=big;
 define alignment=1;
 
 # The RAM is used to store the contract code
-define space code type=ram_space size=1 wordsize=1 default;
+define space code type=ram_space size=4 wordsize=1 default;
+
+# Registers
+define space register type=register_space size=4;
+define register offset=0 size=4 [PC];
 
 # Stack helpers
 define pcodeop stack_pop; # pop one word from stack
@@ -20,6 +24,9 @@ define pcodeop evm_exp; # EXP
 define pcodeop evm_signextend; # SIGNEXTEND with variable # of bytes to extend
 define pcodeop evm_byte; # BYTE, extract single byte from word
 define pcodeop evm_mload; # MLOAD
+define pcodeop evm_mstore;
+define pcodeop evm_mstore8;
+define pcodeop evm_msize;
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -215,4 +222,49 @@ define token opcode(8)
     local addr:32 = stack_pop();
     local res:32 = evm_mload(addr);
     stack_push(res);
+}
+
+:MSTORE is op = 0x52 {
+    local addr:32 = stack_pop();
+    local val:32 = stack_pop();
+    evm_mstore(addr, val);
+}
+
+:MSTORE8 is op = 0x53 {
+    local addr:32 = stack_pop();
+    local val:32 = stack_pop();
+    evm_mstore8(addr, val:1);
+}
+
+# TODO: storage load/store operations
+
+:JUMP is op = 0x56 {
+    local target:32 = stack_pop();
+    goto [target];
+}
+
+jump_dest: is epsilon {
+    target:32 = stack_pop();
+    export target;
+}
+
+:JUMPI jump_dest is op = 0x57 & jump_dest {
+    local cc:32 = stack_pop();
+    if (cc != 0) goto jump_dest;
+}
+
+:PC is op = 0x58 {
+    local current:32 = zext(PC);
+    stack_push(current);
+}
+
+:MSIZE is op = 0x59 {
+    local res:32 = evm_msize();
+    stack_push(res);
+}
+
+# TODO: GAS operation
+
+:JUMPDEST is op = 0x5b {
+    # No effects
 }

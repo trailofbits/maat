@@ -313,7 +313,7 @@ info::Stop MaatEngine::run(int max_inst)
             {
                 info.addr = asm_inst->addr();
                 ASSERT_SUCCESS(
-                    process_store(inst, pinst)
+                    process_store(inst, pinst, *mem)
                 )
             }
 
@@ -767,7 +767,9 @@ bool MaatEngine::process_load(const ir::Inst& inst, ir::ProcessedInst& pinst)
 
 bool MaatEngine::process_store(
     const ir::Inst& inst,
-    ir::ProcessedInst& pinst
+    ir::ProcessedInst& pinst,
+    MemEngine& mem_engine,
+    bool treat_as_pcode_store
 )
 {
     mem_alert_t mem_alert = maat::mem_alert_none;
@@ -778,7 +780,7 @@ bool MaatEngine::process_store(
     Value to_store = pinst.in2.value();
 
     // Get address and value to store
-    if (inst.op == ir::Op::STORE)
+    if (inst.op == ir::Op::STORE or treat_as_pcode_store)
     {
         if (
             addr.is_concrete(*vars)
@@ -836,11 +838,11 @@ bool MaatEngine::process_store(
                 range = refine_value_set(abstract_store_addr);
                 MaatStats::instance().done_refine_symptr_write();
             }
-            mem->symbolic_ptr_write(abstract_store_addr, range, to_store, settings, &mem_alert, true);
+            mem_engine.symbolic_ptr_write(abstract_store_addr, range, to_store, settings, &mem_alert, true);
         }
         else
         {
-            mem->write(concrete_store_addr, to_store, &mem_alert, true);
+            mem_engine.write(concrete_store_addr, to_store, &mem_alert, true);
         }
         // Mem write event
         if (hooks.has_hooks({Event::MEM_W, Event::MEM_RW}, When::AFTER))

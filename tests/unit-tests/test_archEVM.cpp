@@ -514,6 +514,138 @@ namespace test{
 
             return nb;
         }
+
+        unsigned int test_mstore(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x52", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            Value addr(256, "60", 10);
+
+            contract->stack.push(Value(256, "1234", 16));
+            contract->stack.push(Value(256, "30", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert(
+                contract->memory.read(addr, 2).as_uint() == 0x1234,
+                "ArchEVM: failed to disassembly and/or execute MSTORE"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_mstore8(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x53", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            Value addr(256, "34", 10);
+
+            contract->stack.push(Value(256, "1234", 16));
+            contract->stack.push(addr);
+            engine.run_from(0x10, 1);
+
+            nb += _assert(
+                contract->memory.read(addr, 1).as_uint() == 0x34,
+                "ArchEVM: failed to disassembly and/or execute MSTORE8"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_jump(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x56", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+
+            contract->stack.push(Value(256, "888", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert(
+                engine.cpu.ctx().get(EVM::PC).as_uint() == 888,
+                "ArchEVM: failed to disassembly and/or execute JUMP"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_jumpi(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x57", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+
+            contract->stack.push(Value(256, "8000000000000000000000000000000000000000000000", 16));
+            contract->stack.push(Value(256, "888", 10));
+            engine.run_from(0x10, 1);
+            nb += _assert(
+                engine.cpu.ctx().get(EVM::PC).as_uint() == 888,
+                "ArchEVM: failed to disassembly and/or execute JUMPI"
+            );
+
+            contract->stack.push(Value(256, "0"));
+            contract->stack.push(Value(256, "888", 10));
+            engine.run_from(0x10, 1);
+            nb += _assert(
+                engine.cpu.ctx().get(EVM::PC).as_uint() == 0x11,
+                "ArchEVM: failed to disassembly and/or execute JUMPI"
+            );
+
+            return nb;
+        }
+
+        unsigned int test_pc(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x58", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            engine.run_from(0x10, 1);
+
+            nb += _assert( contract->stack.get(0).as_uint() == 0x10,
+                            "ArchEVM: failed to disassembly and/or execute PC");
+
+            return nb;
+        }
+
+        unsigned int test_msize(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x59", 1);
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            contract->memory.write(Value(256, 0x10000), Value(8, 0));
+            engine.run_from(0x10, 1);
+
+            // Memory expanded by blocks of 32 bytes
+            nb += _assert( contract->stack.get(0).as_uint() == 0x10020,
+                            "ArchEVM: failed to disassembly and/or execute MSIZE");
+
+            return nb;
+        }
     }
 }
 
@@ -549,6 +681,12 @@ void test_archEVM()
     total += test_iszero(engine);
     total += test_byte(engine);
     total += test_mload(engine);
+    total += test_mstore(engine);
+    total += test_mstore8(engine);
+    total += test_jump(engine);
+    total += test_jumpi(engine);
+    total += test_pc(engine);
+    total += test_msize(engine);
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

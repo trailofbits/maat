@@ -51,7 +51,8 @@ class Memory
 {
 private:
     MemEngine _mem;
-    addr_t _size;
+    addr_t _size; // Current memory size in the EVM sense
+    addr_t _limit; // Limit of internally allocated memory
     addr_t _alloc_size;
     std::shared_ptr<VarContext> _varctx;
 public:

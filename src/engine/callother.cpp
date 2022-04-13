@@ -425,6 +425,23 @@ void EVM_MLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
         throw callother_exception("MLOAD: fatal error reading memory");
 }
 
+void EVM_MSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    // Note: calling process_store() should not be done from outside the MaatEngine
+    // but here it's a hacky way to trigger the whole memory processing with handling of
+    // symbolic pointers and triggering of event hooks
+    bool success = engine.process_store(inst, pinst, contract->memory.mem());
+    if (not success)
+        throw callother_exception("MSTORE: fatal error writing memory");
+}
+
+void EVM_MSIZE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    pinst.res = Value(256, contract->memory.size());
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -446,6 +463,9 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_SIGNEXTEND, EVM_SIGNEXTEND_handler);
     h.set_handler(Id::EVM_BYTE, EVM_BYTE_handler);
     h.set_handler(Id::EVM_MLOAD, EVM_MLOAD_handler);
+    h.set_handler(Id::EVM_MSTORE, EVM_MSTORE_handler);
+    h.set_handler(Id::EVM_MSTORE8, EVM_MSTORE_handler); // Can use the same handler as MSTORE
+    h.set_handler(Id::EVM_MSIZE, EVM_MSIZE_handler);
 
     return h;
 }

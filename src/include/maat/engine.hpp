@@ -177,6 +177,25 @@ public:
         ir::ProcessedInst::param_t& addr,
         MemEngine& mem
     );
+
+    /** \brief Perform STORE operation. If 'current_block' was lifted from a memory
+     * address that is overwritten by the operation, 'automodifying_block' is
+     * set to 'true' and 'current_block' is removed from the pool of lifted blocks.
+     * 
+     * This method returns 'true' on success and 'false' if an error occured
+     *
+     * 'treat_as_pcode_store' tells the engine to process the instruction just as
+     * a pcode STORE instruction. In that case the address MUST be in pinst.in1 
+     * and the value to store MUST be in pinst.in2
+     *
+     * WARNING: this method is for internal use. It is exposed only so that callother
+     * handlers might use it if needed */
+    bool process_store(
+        const ir::Inst& inst,
+        ir::ProcessedInst& pinst,
+        MemEngine& mem_engine,
+        bool treat_as_pcode_store = true
+    );
 private:
     /** \brief Resolve all Address parameters in the instruction if needed. This method
      * returns 'true' on success and 'false' if an error occured */
@@ -205,16 +224,6 @@ private:
      * 
      * This method returns 'true' on success and 'false' if an error occured */ 
     bool process_load(const ir::Inst& inst, ir::ProcessedInst& pinst);
-    
-    /** \brief Perform STORE operation. If 'current_block' was lifted from a memory
-     * address that is overwritten by the operation, 'automodifying_block' is
-     * set to 'true' and 'current_block' is removed from the pool of lifted blocks.
-     * 
-     * This method returns 'true' on success and 'false' if an error occured */
-    bool process_store(
-        const ir::Inst& inst,
-        ir::ProcessedInst& pinst
-    );
     
     /** \brief Perform CALLOTHER operation. CALLOTHER are used when sleigh
      * can not express an instruction semantics using the available pcode operations.
