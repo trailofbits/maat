@@ -686,6 +686,70 @@ namespace test{
             nb += _assert( engine.cpu.ctx().get(EVM::PC).as_uint() == 0x31,
                             "ArchEVM: failed to disassembly and/or execute PUSH32");
 
+            // Reset memory to valid opcodes
+            write_inst(engine, 0x10, std::string(0x200, '\x00'));
+
+            return nb;
+        }
+
+        unsigned int test_dup(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x80\x00", 2); // dup0
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            
+            contract->stack.push(Value(256, 0x42));
+            engine.run_from(0x10, 1);
+            nb += _assert( contract->stack.get(0).as_uint() == 0x42,
+                            "ArchEVM: failed to disassembly and/or execute DUP1");
+            nb += _assert( contract->stack.get(1).as_uint() == 0x42,
+                            "ArchEVM: failed to disassembly and/or execute DUP1");
+
+
+            code = std::string("\x8f\x00", 2); // dup16
+            write_inst(engine, 0x10, code);
+            contract->stack.push(Value(256, 0xaaaaaaaaaaaa));
+            for (int i = 0; i < 15; i++)
+                contract->stack.push(Value(256, 0));
+            engine.run_from(0x10, 1);
+            nb += _assert( contract->stack.get(0).as_uint() == 0xaaaaaaaaaaaa,
+                            "ArchEVM: failed to disassembly and/or execute DUP16");
+            nb += _assert( contract->stack.get(16).as_uint() == 0xaaaaaaaaaaaa,
+                            "ArchEVM: failed to disassembly and/or execute DUP16");
+
+            return nb;
+        }
+
+        unsigned int test_swap(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            contract_t contract = get_contract_for_engine(engine);
+            for (int i = 0; i < 17; i++)
+                contract->stack.push(Value(256, i));
+
+
+            code = std::string("\x90", 1); // swap1
+            write_inst(engine, 0x10, code);
+            engine.run_from(0x10, 1);
+            nb += _assert( contract->stack.get(0).as_uint() == 15,
+                            "ArchEVM: failed to disassembly and/or execute SWAP1");
+            nb += _assert( contract->stack.get(1).as_uint() == 16,
+                            "ArchEVM: failed to disassembly and/or execute SWAP1");
+
+            code = std::string("\x9f", 1); // swap16
+            write_inst(engine, 0x10, code);
+            engine.run_from(0x10, 1);
+            nb += _assert( contract->stack.get(0).as_uint() == 0,
+                            "ArchEVM: failed to disassembly and/or execute SWAP16");
+            nb += _assert( contract->stack.get(16).as_uint() == 15,
+                            "ArchEVM: failed to disassembly and/or execute SWAP16");
+
             return nb;
         }
     }
@@ -730,6 +794,8 @@ void test_archEVM()
     total += test_pc(engine);
     total += test_msize(engine);
     total += test_push(engine);
+    total += test_dup(engine);
+    total += test_swap(engine);
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

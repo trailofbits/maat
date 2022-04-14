@@ -442,6 +442,29 @@ void EVM_MSIZE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
     pinst.res = Value(256, contract->memory.size());
 }
 
+void EVM_DUP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    const Value& cnt = pinst.in1.value();
+    if (not cnt.is_concrete(*engine.vars))
+        throw callother_exception("DUP: got symbolic position");
+    // We do cnt-1 because DUP<n> gets element <n-1> in the stack
+    const Value& val = contract->stack.get(cnt.as_uint(*engine.vars)-1);
+    contract->stack.push(val);
+}
+
+void EVM_SWAP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    const Value& cnt = pinst.in1.value();
+    if (not cnt.is_concrete(*engine.vars))
+        throw callother_exception("SWAP: got symbolic position");
+    int pos = cnt.as_uint(*engine.vars);
+    Value tmp = contract->stack.get(pos);
+    contract->stack.set(contract->stack.get(0), pos);
+    contract->stack.set(tmp, 0);
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -466,6 +489,8 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_MSTORE, EVM_MSTORE_handler);
     h.set_handler(Id::EVM_MSTORE8, EVM_MSTORE_handler); // Can use the same handler as MSTORE
     h.set_handler(Id::EVM_MSIZE, EVM_MSIZE_handler);
+    h.set_handler(Id::EVM_DUP, EVM_DUP_handler);
+    h.set_handler(Id::EVM_SWAP, EVM_SWAP_handler);
 
     return h;
 }

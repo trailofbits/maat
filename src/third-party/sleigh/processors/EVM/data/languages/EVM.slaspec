@@ -27,10 +27,13 @@ define pcodeop evm_mload; # MLOAD
 define pcodeop evm_mstore;
 define pcodeop evm_mstore8;
 define pcodeop evm_msize;
+define pcodeop evm_dup; # DUP1 to DUP16
+define pcodeop evm_swap; # SWAP1 to SWAP16
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
 	op = (0,7)
+    op_higher = (4,7)
 ;
 
 :STOP is op = 0x0 {
@@ -476,4 +479,17 @@ push_next_inst: next is op [ next=inst_next+op-95; ] { export *[code]:4 next; }
     local tmp:32;
     pushn(code_bytes, tmp);
     goto push_next_inst;
+}
+
+
+dup_cnt: cnt is op [cnt = op - 127;] { export *[const]:4 cnt;}
+
+:DUP dup_cnt is op_higher=8 & dup_cnt {
+    evm_dup(dup_cnt);
+}
+
+swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
+
+:SWAP swap_cnt is op_higher=9 & swap_cnt {
+    evm_swap(swap_cnt);
 }

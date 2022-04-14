@@ -38,8 +38,6 @@ enum class Id
     EVM_STOP,
     EVM_STACK_POP,
     EVM_STACK_PUSH,
-    EVM_STACK_SET,
-    EVM_STACK_GET,
     EVM_DIV,
     EVM_SDIV,
     EVM_MOD,
@@ -50,6 +48,8 @@ enum class Id
     EVM_MSTORE,
     EVM_MSTORE8,
     EVM_MSIZE,
+    EVM_DUP,
+    EVM_SWAP,
     UNSUPPORTED
 };
 

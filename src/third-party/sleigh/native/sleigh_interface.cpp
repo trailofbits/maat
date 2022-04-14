@@ -529,9 +529,7 @@ public:
         // Note: the operator names MUST match the names in EVM.slaspec
         std::unordered_map<std::string, callother::Id> operators = {
             {"stack_pop",callother::Id::EVM_STACK_POP}, 
-            {"stack_push",callother::Id::EVM_STACK_PUSH}, 
-            {"stack_set",callother::Id::EVM_STACK_SET}, 
-            {"stack_get",callother::Id::EVM_STACK_GET}, 
+            {"stack_push",callother::Id::EVM_STACK_PUSH},
             {"stop",callother::Id::EVM_STOP},
             {"evm_div",callother::Id::EVM_DIV},
             {"evm_sdiv",callother::Id::EVM_SDIV},
@@ -542,7 +540,9 @@ public:
             {"evm_mload", callother::Id::EVM_MLOAD},
             {"evm_mstore", callother::Id::EVM_MSTORE},
             {"evm_mstore8", callother::Id::EVM_MSTORE8},
-            {"evm_msize", callother::Id::EVM_MSIZE}
+            {"evm_msize", callother::Id::EVM_MSIZE},
+            {"evm_dup", callother::Id::EVM_DUP},
+            {"evm_swap", callother::Id::EVM_SWAP}
         };
 
         for (const auto& [op_str, op_id] : operators)
