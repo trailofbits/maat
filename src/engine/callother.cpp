@@ -431,7 +431,7 @@ void EVM_MSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
     // Note: calling process_store() should not be done from outside the MaatEngine
     // but here it's a hacky way to trigger the whole memory processing with handling of
     // symbolic pointers and triggering of event hooks
-    bool success = engine.process_store(inst, pinst, contract->memory.mem());
+    bool success = engine.process_store(inst, pinst, contract->memory.mem(), true);
     if (not success)
         throw callother_exception("MSTORE: fatal error writing memory");
 }

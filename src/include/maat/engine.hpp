@@ -185,8 +185,8 @@ public:
      * This method returns 'true' on success and 'false' if an error occured
      *
      * 'treat_as_pcode_store' tells the engine to process the instruction just as
-     * a pcode STORE instruction. In that case the address MUST be in pinst.in1 
-     * and the value to store MUST be in pinst.in2
+     * a pcode STORE instruction event if it's not a STORE. 
+     * In that case the address MUST be in pinst.in1 and the value to store MUST be in pinst.in2
      *
      * WARNING: this method is for internal use. It is exposed only so that callother
      * handlers might use it if needed */
@@ -194,7 +194,7 @@ public:
         const ir::Inst& inst,
         ir::ProcessedInst& pinst,
         MemEngine& mem_engine,
-        bool treat_as_pcode_store = true
+        bool treat_as_pcode_store = false
     );
 private:
     /** \brief Resolve all Address parameters in the instruction if needed. This method
