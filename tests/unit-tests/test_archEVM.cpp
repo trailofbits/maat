@@ -646,6 +646,48 @@ namespace test{
 
             return nb;
         }
+
+        unsigned int test_push(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+    
+            code = std::string("\x60\x42", 2); // push1
+            write_inst(engine, 0x10, code);
+
+            contract_t contract = get_contract_for_engine(engine);
+            engine.run_from(0x10, 1);
+
+            nb += _assert( contract->stack.get(0).as_uint() == 0x42,
+                            "ArchEVM: failed to disassembly and/or execute PUSH1");
+            nb += _assert( engine.cpu.ctx().get(EVM::PC).as_uint() == 0x12,
+                            "ArchEVM: failed to disassembly and/or execute PUSH1");
+
+
+            code = std::string("\x62\x42\x00\xff", 4); // push3
+            write_inst(engine, 0x10, code);
+            engine.run_from(0x10, 1);
+
+            nb += _assert( contract->stack.get(0).as_uint() == 0x4200ff,
+                            "ArchEVM: failed to disassembly and/or execute PUSH3");
+            nb += _assert( engine.cpu.ctx().get(EVM::PC).as_uint() == 0x14,
+                            "ArchEVM: failed to disassembly and/or execute PUSH3");
+
+            code = std::string("\x7f""AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 33); // push32
+            write_inst(engine, 0x10, code);
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "4141414141414141414141414141414141414141414141414141414141414141",
+                "ArchEVM: failed to disassembly and/or execute PUSH32",
+                16
+            );
+            nb += _assert( engine.cpu.ctx().get(EVM::PC).as_uint() == 0x31,
+                            "ArchEVM: failed to disassembly and/or execute PUSH32");
+
+            return nb;
+        }
     }
 }
 
@@ -687,6 +729,7 @@ void test_archEVM()
     total += test_jumpi(engine);
     total += test_pc(engine);
     total += test_msize(engine);
+    total += test_push(engine);
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

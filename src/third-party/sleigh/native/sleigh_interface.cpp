@@ -578,6 +578,7 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
     }
     else
     {
+        // TODO(boyan): use v->space->getType() here instead of the name :/
         // Is reg or tmp
         const std::string& addr_space_name = v->space->getName();
         if (addr_space_name == "register")
@@ -590,7 +591,7 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
             int tmp = ctx->tmp_cache.get_tmp_from_unique(v->offset);
             return std::move(maat::ir::Tmp(tmp, v->size*8));
         }
-        else if (addr_space_name == "ram")
+        else if (addr_space_name == "ram" or addr_space_name == "code")
         {
             // just store the address
             // the size of the output var will give the nb of accessed bytes

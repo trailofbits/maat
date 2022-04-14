@@ -5,7 +5,7 @@ define alignment=1;
 define space code type=ram_space size=4 wordsize=1 default;
 
 # Registers
-define space register type=register_space size=4;
+define space register type=register_space size=4 wordsize=1;
 define register offset=0 size=4 [PC];
 
 # Stack helpers
@@ -267,4 +267,213 @@ jump_dest: is epsilon {
 
 :JUMPDEST is op = 0x5b {
     # No effects
+}
+
+#### Macros used for PUSH<n> instructions
+
+code_bytes: addr is epsilon [addr = inst_next;]{export *[const]:4 addr;}
+
+macro pushn(addr, tmp) {
+    tmp = *addr;
+    local val:32 = zext(tmp);
+    stack_push(val);
+}
+
+push_next_inst: next is op [ next=inst_next+op-95; ] { export *[code]:4 next; }
+
+# NOTE: the PUSH<n> instructions encodings can take up more than 16 bytes. However 
+# sleigh supports only instructions on less than 16 bytes. Therefore we can't disassemble
+# the raw bytes as part of the instruction but need to read them separately, and then
+# jump past the bytes.
+
+:PUSH1 is op = 0x60 & push_next_inst & code_bytes {
+    local tmp:1;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH2 is op = 0x61 & push_next_inst & code_bytes {
+    local tmp:2;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH3 is op = 0x62 & push_next_inst & code_bytes {
+    local tmp:3;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH4 is op = 0x63 & push_next_inst & code_bytes {
+    local tmp:4;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH5 is op = 0x64 & push_next_inst & code_bytes {
+    local tmp:5;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH6 is op = 0x65 & push_next_inst & code_bytes {
+    local tmp:6;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH7 is op = 0x66 & push_next_inst & code_bytes {
+    local tmp:7;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH8 is op = 0x67 & push_next_inst & code_bytes {
+    local tmp:8;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH9 is op = 0x68 & push_next_inst & code_bytes {
+    local tmp:9;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH10 is op = 0x69 & push_next_inst & code_bytes {
+    local tmp:10;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH11 is op = 0x6a & push_next_inst & code_bytes {
+    local tmp:11;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH12 is op = 0x6b & push_next_inst & code_bytes {
+    local tmp:12;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH13 is op = 0x6c & push_next_inst & code_bytes {
+    local tmp:13;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH14 is op = 0x6d & push_next_inst & code_bytes {
+    local tmp:14;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH15 is op = 0x6e & push_next_inst & code_bytes {
+    local tmp:15;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH16 is op = 0x6f & push_next_inst & code_bytes {
+    local tmp:16;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH17 is op = 0x70 & push_next_inst & code_bytes {
+    local tmp:17;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH18 is op = 0x71 & push_next_inst & code_bytes {
+    local tmp:18;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH19 is op = 0x72 & push_next_inst & code_bytes {
+    local tmp:19;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH20 is op = 0x73 & push_next_inst & code_bytes {
+    local tmp:20;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH21 is op = 0x74 & push_next_inst & code_bytes {
+    local tmp:21;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH22 is op = 0x75 & push_next_inst & code_bytes {
+    local tmp:22;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH23 is op = 0x76 & push_next_inst & code_bytes {
+    local tmp:23;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH24 is op = 0x77 & push_next_inst & code_bytes {
+    local tmp:24;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH25 is op = 0x78 & push_next_inst & code_bytes {
+    local tmp:25;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH26 is op = 0x79 & push_next_inst & code_bytes {
+    local tmp:26;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH27 is op = 0x7a & push_next_inst & code_bytes {
+    local tmp:27;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH28 is op = 0x7b & push_next_inst & code_bytes {
+    local tmp:28;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH29 is op = 0x7c & push_next_inst & code_bytes {
+    local tmp:29;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH30 is op = 0x7d & push_next_inst & code_bytes {
+    local tmp:30;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH31 is op = 0x7e & push_next_inst & code_bytes {
+    local tmp:31;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH32 is op = 0x7f & push_next_inst & code_bytes {
+    local tmp:32;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
 }
