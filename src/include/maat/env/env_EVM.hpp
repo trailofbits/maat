@@ -71,6 +71,47 @@ private:
     void _expand_if_needed(const Value& addr, size_t nb_bytes);
 };
 
+
+class ValueHash {
+  public:
+    ::std::size_t operator ()(const Value& value) const
+    {
+        if (value.is_abstract())
+            return value.as_expr()->hash();
+        else
+            return value.as_uint(); // Not abstract so should be safe to call
+    }
+};
+
+class ValueEqual {
+  public:
+    bool operator ()(const Value& v1, const Value& v2) const
+    {
+        return v1.eq(v2);
+    }
+};
+
+/// Contract permananent storage
+class Storage
+{
+private:
+    /// Storage state for concrete addresses
+    std::unordered_map<Value, Value, ValueHash, ValueEqual> _storage;
+    /// History of storage writes, including symbolic addresses
+    std::vector<std::pair<Value, Value>> writes_history;
+    std::shared_ptr<VarContext> _varctx;
+    /// True if at least one address written to was symbolic
+    bool _has_symbolic_addresses; 
+public:
+    Storage(std::shared_ptr<VarContext> ctx);
+    ~Storage() = default;
+public:
+    /// Get storage word at 'addr'
+    Value read(const Value& addr);
+    /// Write storage word at 'addr'
+    void write(const Value& addr, const Value& val, const Settings& settings);
+};
+
 /// Deployed Smart-Contract
 class Contract
 {
@@ -78,6 +119,7 @@ public:
     Value address; ///< Address where the contract is deployed
     Stack stack; ///< Stack of the executing EVM
     Memory memory; ///< Volatile memory of the executing EVM
+    Storage storage; ///< Persistent contract storage
 public:
     /** Constructor. Create new deployed contract */
     Contract(const MaatEngine& engine, Value address);

@@ -465,6 +465,23 @@ void EVM_SWAP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
     contract->stack.set(tmp, 0);
 }
 
+void EVM_SLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    // Set result but don't push, push is done by next PCODE instruction
+    pinst.res = contract->storage.read(pinst.in1.value());
+}
+
+void EVM_SSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    contract->storage.write(
+        pinst.in1.value(),
+        pinst.in2.value(),
+        engine.settings
+    );
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -491,6 +508,8 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_MSIZE, EVM_MSIZE_handler);
     h.set_handler(Id::EVM_DUP, EVM_DUP_handler);
     h.set_handler(Id::EVM_SWAP, EVM_SWAP_handler);
+    h.set_handler(Id::EVM_SLOAD, EVM_SLOAD_handler);
+    h.set_handler(Id::EVM_SSTORE, EVM_SSTORE_handler);
 
     return h;
 }

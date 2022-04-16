@@ -542,7 +542,9 @@ public:
             {"evm_mstore8", callother::Id::EVM_MSTORE8},
             {"evm_msize", callother::Id::EVM_MSIZE},
             {"evm_dup", callother::Id::EVM_DUP},
-            {"evm_swap", callother::Id::EVM_SWAP}
+            {"evm_swap", callother::Id::EVM_SWAP},
+            {"evm_sload", callother::Id::EVM_SLOAD},
+            {"evm_sstore", callother::Id::EVM_SSTORE}
         };
 
         for (const auto& [op_str, op_id] : operators)

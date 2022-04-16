@@ -112,6 +112,9 @@ public:
         const Value& if_true, const Value& if_false
     );
 public:
+    /// Return true if value is the same as other
+    bool eq(const Value& other) const;
+public:
     friend std::ostream& operator<<(std::ostream& os, const Value& val);
 public:
     virtual uid_t class_uid() const;

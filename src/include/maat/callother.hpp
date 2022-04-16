@@ -50,6 +50,8 @@ enum class Id
     EVM_MSIZE,
     EVM_DUP,
     EVM_SWAP,
+    EVM_SLOAD,
+    EVM_SSTORE,
     UNSUPPORTED
 };
 

@@ -962,6 +962,20 @@ void Value::set_ITE(
     }
 }
 
+bool Value::eq(const Value& other) const
+{
+    if (is_abstract())
+        if (other.is_abstract())
+            return as_expr()->eq(other.as_expr());
+        else
+            return false;
+    else
+        if (other.is_abstract())
+            return false;
+        else
+            return as_number().equal_to(other.as_number());
+}
+
 std::ostream& operator<<(std::ostream& os, const Value& val)
 {
     if (val.is_none())

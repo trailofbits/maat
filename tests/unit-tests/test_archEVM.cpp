@@ -752,6 +752,80 @@ namespace test{
 
             return nb;
         }
+
+        unsigned int test_sload(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+            Value addr;
+    
+            contract_t contract = get_contract_for_engine(engine);
+            code = std::string("\x54", 1); // sload
+            write_inst(engine, 0x10, code);
+            
+            // Basic load at known address
+            addr = Value(256, "af66d5f4b5c5d5b55e5e5f5ddeeefa655", 16);
+            contract->stack.push(addr);
+            contract->storage.write(
+                addr,
+                Value(256, 42),
+                engine.settings
+            );
+            engine.run_from(0x10, 1);
+            nb += _assert( contract->stack.get(0).as_uint() == 42,
+                            "ArchEVM: failed to disassembly and/or execute SLOAD");
+
+            // Load at unknown address -> 0
+            contract->stack.push(Value(256, 368574691));
+            engine.run_from(0x10, 1);
+            nb += _assert( contract->stack.get(0).as_uint() == 0,
+                            "ArchEVM: failed to disassembly and/or execute SLOAD");
+
+
+            // Load at known symbolic address
+            addr = Value(exprvar(256, "symbolic_address"));
+            contract->stack.push(addr);
+            contract->storage.write(
+                addr,
+                Value(256, 12345678),
+                engine.settings
+            );
+            engine.run_from(0x10, 1);
+            nb += _assert( contract->stack.get(0).as_uint() == 12345678,
+                            "ArchEVM: failed to disassembly and/or execute SLOAD");
+
+            return nb;
+        }
+
+        unsigned int test_sstore(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+            Value addr;
+    
+            contract_t contract = get_contract_for_engine(engine);
+            code = std::string("\x55", 1); // sstore
+            write_inst(engine, 0x10, code);
+
+            // Basic store at known address
+            addr = Value(256, "af66d5f4b5c5d5b55e5e5f5ddeeefa655", 16);
+            contract->stack.push(Value(256, 1111));
+            contract->stack.push(addr);
+            engine.run_from(0x10, 1);
+            nb += _assert( contract->storage.read(addr).as_uint() == 1111,
+                            "ArchEVM: failed to disassembly and/or execute SSTORE");
+
+            // Store at symbolic address
+            addr = Value(exprvar(256, "symbolic_address"));
+            contract->stack.push(Value(256, 2222));
+            contract->stack.push(addr);
+            engine.run_from(0x10, 1);
+            nb += _assert( contract->storage.read(addr).as_uint() == 2222,
+                            "ArchEVM: failed to disassembly and/or execute SSTORE");
+
+            return nb;
+        }
+        
     }
 }
 
@@ -796,6 +870,8 @@ void test_archEVM()
     total += test_push(engine);
     total += test_dup(engine);
     total += test_swap(engine);
+    total += test_sload(engine);
+    total += test_sstore(engine);
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

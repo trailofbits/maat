@@ -102,8 +102,71 @@ void Memory::_expand_if_needed(const Value& addr, size_t nb_bytes)
     // bytes have been allocated
 }
 
+
+
+Storage::Storage(std::shared_ptr<VarContext> ctx)
+: _varctx(ctx), _has_symbolic_addresses(false)
+{};
+
+Value Storage::read(const Value& addr)
+{
+    // First see if we have an address that matches
+    auto base = _storage.find(addr);
+    Value res;
+    if (base == _storage.end())
+        res = Value(256, 0);
+    else
+        res = base->second;
+
+    // Then apply potential previous symbolic writes
+    for (auto it = writes_history.rbegin(); it != writes_history.rend(); it++)
+    {
+        const Value& prev_addr = it->first;
+        const Value& prev_val = it->second;
+        // If write address is same as 'addr', don't need to go further
+        if (prev_addr.eq(addr))
+            break;
+
+        // If both addresses are concrete and different, skip this one
+        if (
+            not prev_addr.is_abstract() and
+            not addr.is_abstract() and
+            not prev_addr.as_number(*_varctx).equal_to(addr.as_number(*_varctx))            
+        )
+            continue;
+
+        // Else add ITE clause
+        res.set_ITE(prev_addr, ITECond::EQ, addr, prev_val, res);
+    }
+
+    return res;
+}
+
+void Storage::write(const Value& addr, const Value& val, const Settings& settings)
+{
+    if (addr.is_symbolic(*_varctx) and not settings.symptr_write)
+        throw env_exception("Storage::write(): writing at fully symbolic address but symptr_write is disabled");
+    else if (addr.is_concrete(*_varctx) or not settings.symptr_write)
+    {
+        // Concrete or concolic without symptr enabled
+        Value concrete_addr(addr.as_number(*_varctx));
+        _storage[concrete_addr] = val;
+        // We only care recording concrete address writes when there are
+        // already symbolic writes that could be overwritten
+        if (_has_symbolic_addresses)
+            writes_history.push_back(std::make_pair(concrete_addr, val));
+    }
+    else
+    {
+        // Concolic or symbolic, with symptr enabled
+        _storage[addr] = val;
+        writes_history.push_back(std::make_pair(addr, val));
+        _has_symbolic_addresses = true;
+    }
+}
+
 Contract::Contract(const MaatEngine& engine, Value addr)
-: memory(Memory(engine.vars)), address(addr)
+: memory(engine.vars), address(addr), storage(engine.vars)
 {}
 
 

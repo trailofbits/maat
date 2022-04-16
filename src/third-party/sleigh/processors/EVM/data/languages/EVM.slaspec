@@ -29,6 +29,8 @@ define pcodeop evm_mstore8;
 define pcodeop evm_msize;
 define pcodeop evm_dup; # DUP1 to DUP16
 define pcodeop evm_swap; # SWAP1 to SWAP16
+define pcodeop evm_sload;
+define pcodeop evm_sstore;
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -239,7 +241,17 @@ define token opcode(8)
     evm_mstore8(addr, val:1);
 }
 
-# TODO: storage load/store operations
+:SLOAD is op = 0x54 {
+    local addr:32 = stack_pop();
+    local res:32 = evm_sload(addr);
+    stack_push(res);
+}
+
+:SSTORE is op = 0x55 {
+    local addr:32 = stack_pop();
+    local val:32 = stack_pop();
+    evm_sstore(addr, val);
+}
 
 :JUMP is op = 0x56 {
     local target:32 = stack_pop();
@@ -493,3 +505,4 @@ swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
 :SWAP swap_cnt is op_higher=9 & swap_cnt {
     evm_swap(swap_cnt);
 }
+
