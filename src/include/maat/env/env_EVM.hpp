@@ -91,6 +91,14 @@ class ValueEqual {
     }
 };
 
+class NumberEqual {
+  public:
+    bool operator ()(const Number& n1, const Number& n2) const
+    {
+        return n1.equal_to(n2);
+    }
+};
+
 /// Contract permananent storage
 class Storage
 {

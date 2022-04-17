@@ -14,6 +14,7 @@ void test_code_coverage();
 void test_solve_hash();
 void test_solve_symbolic_ptr();
 void test_adv_serialization();
+void test_adv_evm();
 
 int main(int argc, char ** argv)
 {
@@ -42,6 +43,7 @@ int main(int argc, char ** argv)
                 test_adv_serialization();
                 test_solve_hash();
                 test_solve_symbolic_ptr();
+                test_adv_evm();
             }
             else
             {
@@ -58,6 +60,8 @@ int main(int argc, char ** argv)
                         test_solve_hash();
                     else if( !strcmp(argv[i], "solve_symptr"))
                         test_solve_symbolic_ptr();
+                    else if (!strcmp(argv[i], "EVM"))
+                        test_adv_evm();
                     else
                         std::cout << "[" << red << "!" << def << "] Skipping unknown test: " << argv[i] << std::endl;
                 }

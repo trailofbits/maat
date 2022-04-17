@@ -108,6 +108,8 @@ Storage::Storage(std::shared_ptr<VarContext> ctx)
 : _varctx(ctx), _has_symbolic_addresses(false)
 {};
 
+
+
 Value Storage::read(const Value& addr)
 {
     // First see if we have an address that matches
@@ -117,6 +119,9 @@ Value Storage::read(const Value& addr)
         res = Value(256, 0);
     else
         res = base->second;
+    
+    auto cmp = [](const Number& a, const Number& b) { return a.less_than(b);};
+    std::set<Number, decltype(cmp)> seen_concrete_addresses(cmp);
 
     // Then apply potential previous symbolic writes
     for (auto it = writes_history.rbegin(); it != writes_history.rend(); it++)
@@ -126,6 +131,16 @@ Value Storage::read(const Value& addr)
         // If write address is same as 'addr', don't need to go further
         if (prev_addr.eq(addr))
             break;
+
+        // If write address is concrete and was already seen, don't 
+        // take older writes into account
+        if (not prev_addr.is_abstract())
+        {
+            if (seen_concrete_addresses.count(prev_addr.as_number(*_varctx)) > 0)
+                continue;
+            else
+                seen_concrete_addresses.insert(prev_addr.as_number(*_varctx));
+        }
 
         // If both addresses are concrete and different, skip this one
         if (

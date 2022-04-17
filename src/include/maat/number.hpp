@@ -34,6 +34,8 @@ public:
     Number(size_t bits);
     /// Constructor
     Number(size_t bits, cst_t value);
+    /// Constructor
+    Number(size_t bits, const std::string& value, int base = 10);
     /// Destructor
     ~Number();
     /// Copy constructor

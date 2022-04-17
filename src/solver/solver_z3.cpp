@@ -195,12 +195,16 @@ VarContext* SolverZ3::_get_model_raw()
     auto res = new VarContext(_model_id_cnt++);
     for (int i = 0; i < m.num_consts(); i++)
     {
+        size_t size = Z3_get_bv_sort_size(*ctx, m.get_const_interp(m[i]).get_sort());
+        Number val(size);
+        if (size <= 64)
+            val.set_cst(m.get_const_interp(m[i]).get_numeral_uint64());
+        else
+            val.set_mpz(m.get_const_interp(m[i]).get_decimal_string(1), 10);
+
         res->set(
             m[i].name().str(), 
-            cst_sign_extend( 
-                Z3_get_bv_sort_size(*ctx, m.get_const_interp(m[i]).get_sort()), 
-                m.get_const_interp(m[i]).get_numeral_uint64()
-            )
+            val
         );
     }
     return res;

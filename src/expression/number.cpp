@@ -27,9 +27,15 @@ void mpz_init_force_signed(mpz_t& res, const Number& src)
     }
 }
 
+// TODO(boyan): is setting mpz to zero causing memory allocation here ???
 Number::Number(): size(0), cst_(-1), mpz_(0){}
 
 Number::Number(size_t bits): size(bits), cst_(0), mpz_(0){}
+
+Number::Number(size_t bits, const std::string& value, int base): size(bits), cst_(0)
+{
+    set_mpz(value, base);
+}
 
 Number::~Number(){}
 
