@@ -65,17 +65,17 @@ addr_t Memory::size() const
 
 Value Memory::read(const Value& addr, size_t nb_bytes)
 {
-    _expand_if_needed(addr, nb_bytes);
+    expand_if_needed(addr, nb_bytes);
     return _mem.read(addr, nb_bytes);
 }
 
 void Memory::write(const Value& addr, const Value& val)
 {
-    _expand_if_needed(addr, val.size()/8);
+    expand_if_needed(addr, val.size()/8);
     _mem.write(addr, val);
 }
 
-void Memory::_expand_if_needed(const Value& addr, size_t nb_bytes)
+void Memory::expand_if_needed(const Value& addr, size_t nb_bytes)
 {
     if (not addr.is_symbolic(*_varctx))
     {
@@ -179,6 +179,21 @@ void Storage::write(const Value& addr, const Value& val, const Settings& setting
         _has_symbolic_addresses = true;
     }
 }
+
+Transaction::Transaction()
+: origin(256, 0), sender(256, 0), recipient(256, 0), value(256, 0), gas_limit(256, 0)
+{}
+
+Transaction::Transaction(
+    Value origin,
+    Value sender,
+    Number recipient,
+    Value value,
+    std::vector<Value> data,
+    Value gas_limit
+): origin(origin), sender(sender), recipient(recipient), value(value),
+   data(data), gas_limit(gas_limit)
+{}
 
 Contract::Contract(const MaatEngine& engine, Value addr)
 : memory(engine.vars), address(addr), storage(engine.vars)

@@ -544,7 +544,8 @@ public:
             {"evm_dup", callother::Id::EVM_DUP},
             {"evm_swap", callother::Id::EVM_SWAP},
             {"evm_sload", callother::Id::EVM_SLOAD},
-            {"evm_sstore", callother::Id::EVM_SSTORE}
+            {"evm_sstore", callother::Id::EVM_SSTORE},
+            {"evm_env_info", callother::Id::EVM_ENV_INFO}
         };
 
         for (const auto& [op_str, op_id] : operators)

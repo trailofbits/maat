@@ -33,7 +33,8 @@ namespace loader
 enum class Format
 {
     ELF32, ///< ELF 32-bits
-    ELF64 ///< ELF 64-bits
+    ELF64, ///< ELF 64-bits
+    NONE ///< Unspecified
 };
 
 
@@ -238,6 +239,18 @@ private:
         addr_t value
     );
     void elf_additional_processing(MaatEngine* engine, addr_t base);
+};
+
+/// Class for deploying ethereum smart-contracts into a MaatEngine
+class LoaderEVM
+{
+public:
+    /// Deploy a contract into 'engine'
+    void load(
+        MaatEngine* engine,
+        const std::string& contract_file,
+        Value address
+    );
 };
 
 // util function

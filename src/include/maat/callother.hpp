@@ -52,6 +52,7 @@ enum class Id
     EVM_SWAP,
     EVM_SLOAD,
     EVM_SSTORE,
+    EVM_ENV_INFO,
     UNSUPPORTED
 };
 

@@ -415,6 +415,7 @@ void EVM_BYTE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
 void EVM_MLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    contract->memory.expand_if_needed(pinst.in1.value(), inst.out.size());
     // Note: calling resolve_addr_param() should not be done from outside the MaatEngine
     // but here it's a hacky way to trigger the whole memory processing with handling of
     // symbolic pointers and triggering of event hooks
@@ -428,6 +429,7 @@ void EVM_MLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
 void EVM_MSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    contract->memory.expand_if_needed(pinst.in1.value(), inst.in[2].size());
     // Note: calling process_store() should not be done from outside the MaatEngine
     // but here it's a hacky way to trigger the whole memory processing with handling of
     // symbolic pointers and triggering of event hooks
@@ -482,6 +484,11 @@ void EVM_SSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
     );
 }
 
+void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    throw callother_exception("ENV_INFO: instruction not implemented");
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -510,6 +517,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_SWAP, EVM_SWAP_handler);
     h.set_handler(Id::EVM_SLOAD, EVM_SLOAD_handler);
     h.set_handler(Id::EVM_SSTORE, EVM_SSTORE_handler);
+    h.set_handler(Id::EVM_ENV_INFO, EVM_ENV_INFO_handler);
 
     return h;
 }

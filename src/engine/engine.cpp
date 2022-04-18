@@ -1324,25 +1324,35 @@ void MaatEngine::load(
     bool load_interp
 )
 {
+    if (arch->type == Arch::Type::EVM)
+    {
+        // TODO(boyan): find a way to explicitely pass address to constructor
+        // or generate it randomly/manually (if randome we want PRNG with same seed always)
+        // Use special loader for EVM
+        loader::LoaderEVM().load(this, binary, Value(256, "84685465846514651"));
+    }
+    else
+    {
 #ifdef MAAT_HAS_LOADER_BACKEND
-    // TODO(boyan): pass binary type to new_loader() so that it returns
-    // the appropriate loader. i.e LoaderLIEF of LoaderEVM...
-    std::unique_ptr<loader::Loader> l = loader::new_loader();
-    l->load(
-        this,
-        binary,
-        type,
-        base,
-        args,
-        envp,
-        virtual_fs,
-        libdirs,
-        ignore_libs,
-        load_interp
-    );
+        // TODO(boyan): pass binary type to new_loader() so that it returns
+        // the appropriate loader. i.e LoaderLIEF, LoaderXXXX...
+        std::unique_ptr<loader::Loader> l = loader::new_loader();
+        l->load(
+            this,
+            binary,
+            type,
+            base,
+            args,
+            envp,
+            virtual_fs,
+            libdirs,
+            ignore_libs,
+            load_interp
+        );
 #else
-    throw runtime_exception("Maat was compiled without a loader backend");
+        throw runtime_exception("Maat was compiled without a suitable loader backend");
 #endif
+    }
 }
 
 serial::uid_t MaatEngine::class_uid() const

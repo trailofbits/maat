@@ -66,9 +66,9 @@ public:
     Value read(const Value& addr, size_t nb_bytes);
     /// Write value to memory
     void write(const Value& addr, const Value& val);
-private:
-    // Expand memory if needed to write 'nb_bytes' at 'addr'
-    void _expand_if_needed(const Value& addr, size_t nb_bytes);
+public:
+    /// Expand memory if needed to write 'nb_bytes' at 'addr'
+    void expand_if_needed(const Value& addr, size_t nb_bytes);
 };
 
 
@@ -88,14 +88,6 @@ class ValueEqual {
     bool operator ()(const Value& v1, const Value& v2) const
     {
         return v1.eq(v2);
-    }
-};
-
-class NumberEqual {
-  public:
-    bool operator ()(const Number& n1, const Number& n2) const
-    {
-        return n1.equal_to(n2);
     }
 };
 
@@ -120,6 +112,30 @@ public:
     void write(const Value& addr, const Value& val, const Settings& settings);
 };
 
+/// Transaction that calls into a smart contract
+class Transaction
+{
+public:
+    Value origin; ///< Original account that initiated contract execution
+    Value sender; ///< Account/contract that initiated this transaction
+    Number recipient; ///< Recipient of the transaction
+    Value value; ///< Number of ether to transfer from sender to recipient
+    std::vector<Value> data; ///< Additionnal transaction data
+    Value gas_limit; ///< Maximum amount of gas that can be consumed by the transaction
+    std::vector<Value> return_data; ///< Data returned once the transaction finishes
+public:
+    Transaction();
+    Transaction(
+        Value origin,
+        Value sender,
+        Number recipient,
+        Value value,
+        std::vector<Value> data,
+        Value gas_limit
+    );
+};
+
+
 /// Deployed Smart-Contract
 class Contract
 {
@@ -128,6 +144,7 @@ public:
     Stack stack; ///< Stack of the executing EVM
     Memory memory; ///< Volatile memory of the executing EVM
     Storage storage; ///< Persistent contract storage
+    std::optional<Transaction> transaction; ///< Transaction being executed
 public:
     /** Constructor. Create new deployed contract */
     Contract(const MaatEngine& engine, Value address);

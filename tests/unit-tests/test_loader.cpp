@@ -55,6 +55,20 @@ namespace test
             return nb;
         }
 
+        unsigned int load_simple_ethereum_contract()
+        {
+            unsigned int nb = 0;
+            MaatEngine engine(Arch::Type::EVM);
+            engine.settings.log_insts = true; // DEBUG 
+            engine.load(
+                "tests/resources/smart_contracts/HelloWorld.bin",
+                loader::Format::NONE,
+                0,
+                {}, {}, {}, {}, {}
+            );
+            return nb;
+        }
+
 #endif // ifdef MAAT_HAS_LOADER_BACKEND
     }
 }
@@ -68,14 +82,14 @@ void test_loader()
     std::string def = "\033[0m";
     std::string bold = "\033[1m";
 
-#ifdef MAAT_HAS_LOADER_BACKEND
     std::cout   << bold << "[" << green << "+" 
                 << def << bold << "]" << def 
                 << " Testing loader interface... " << std::flush;
 
+#ifdef MAAT_HAS_LOADER_BACKEND
     total += load_simple_algo_2();
-
+#endif
+    total += load_simple_ethereum_contract();
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 
                 << def << std::endl;
-#endif
 }

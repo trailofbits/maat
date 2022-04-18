@@ -31,6 +31,7 @@ define pcodeop evm_dup; # DUP1 to DUP16
 define pcodeop evm_swap; # SWAP1 to SWAP16
 define pcodeop evm_sload;
 define pcodeop evm_sstore;
+define pcodeop evm_env_info; # Generic function used for 0x30's env operations (ADDRESS, BALANCE, etc)
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -215,8 +216,59 @@ define token opcode(8)
     stack_push(arg2 s>> arg1);
 }
 
+op_byte: b is op [b = op+0;] {export *[const]:1 b;}
 
-# TODO: 0x30's message operations
+:ADDRESS is op = 0x30 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:BALANCE is op = 0x31 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:ORIGIN is op = 0x32 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CALLER is op = 0x33 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CALLVALUE is op = 0x34 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CALLDATALOAD is op = 0x35 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CALLDATASIZE is op = 0x36 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CALLDATACOPY is op = 0x37 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CODESIZE is op = 0x38 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CODECOPY is op = 0x39 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+# TODO: other 0x30's env operations
 # TODO: 0x40's block operations
 
 :POP is op = 0x50 {

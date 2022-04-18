@@ -50,6 +50,7 @@ add_library(maat_maat
   src/ir/instruction.cpp
   src/ir/ir_cache.cpp
   src/loader/loader.cpp
+  src/loader/loader_EVM.cpp
   src/loader/loader_lief.cpp
   src/loader/loader_lief_elf.cpp
   src/memory/memory.cpp
