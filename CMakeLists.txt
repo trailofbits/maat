@@ -62,6 +62,7 @@ add_library(maat_maat
   src/solver/solver.cpp
   src/solver/solver_z3.cpp
   src/third-party/murmur3/murmur3.c
+  src/third-party/keccak/sha3.cpp
   src/third-party/sleigh/native/reg_translator.cpp
   src/third-party/sleigh/native/sleigh_interface.cpp
 )
@@ -83,6 +84,7 @@ target_include_directories(
   maat_maat ${warning_guard}
   PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>"
+  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/keccak>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/murmur3>"
 )
 

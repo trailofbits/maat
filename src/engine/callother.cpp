@@ -484,9 +484,49 @@ void EVM_SSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
     );
 }
 
+void _check_transaction_exists(env::EVM::contract_t contract)
+{
+    if (not contract->transaction.has_value())
+        throw callother_exception("Trying to access transaction but no transaction is set");
+}
+
 void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    throw callother_exception("ENV_INFO: instruction not implemented");
+    unsigned int evm_inst = pinst.in1.value().as_uint();
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    switch(evm_inst)
+    {
+        case 0x32: // ORIGIN
+            _check_transaction_exists(contract);
+            pinst.res = contract->transaction->origin;
+            break;
+        case 0x34: // CALLVALUE
+            _check_transaction_exists(contract);
+            pinst.res = contract->transaction->value;
+            break;
+        case 0x38: // CODESIZE
+            pinst.res = Value(256, contract->code_size);
+            break;
+        case 0x39: // CODECOPY
+        {
+            Value addr = contract->stack.get(0);
+            addr_t offset = contract->stack.get(1).as_uint(*engine.vars);
+            unsigned int size = contract->stack.get(2).as_uint(*engine.vars);
+            contract->stack.pop(3);
+            for (const auto& val : engine.mem->read_buffer(offset, size, 1))
+            {
+                contract->memory.write(addr, val);
+                addr = addr + val.size()/8;
+            }
+            break;
+        }
+        default:
+            throw callother_exception(
+                Fmt() << "ENV_INFO: instruction not implemented for 0x"
+                    << std::hex << evm_inst >> Fmt::to_str
+            );
+    }   
+    
 }
 
 /// Return the default handler map for CALLOTHER occurences

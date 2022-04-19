@@ -33,8 +33,8 @@ public:
     int size() const;
     /// Get value at given position. Position 0 is the top of the stack
     const Value& get(int pos) const;
-    /// Remove value from top of the stack
-    void pop();
+    /// Remove 'n' values from top of the stack
+    void pop(int n=1);
     /// Get value at given position. Position 0 is the top of the stack
     void set(const Value& value, int pos);
     /// Push new value at the top of the stack
@@ -146,11 +146,36 @@ public:
     Storage storage; ///< Persistent contract storage
     std::optional<Transaction> transaction; ///< Transaction being executed
 public:
+    unsigned int code_size; ///< Size of code currently executing
+public:
     /** Constructor. Create new deployed contract */
     Contract(const MaatEngine& engine, Value address);
 };
 
+// Util functions
+void _set_EVM_code(MaatEngine& engine, const std::vector<Value>& code);
+void _set_EVM_code(MaatEngine& engine, uint8_t* code, size_t code_size);
+
 typedef std::shared_ptr<Contract> contract_t;
+
+
+/// Helper class for simulating the KECCAK hash function symbolically
+class KeccakHelper
+{
+private:
+    std::string _symbolic_hash_prefix;
+    std::unordered_map<Value, Value, ValueHash, ValueEqual> known_hashes;
+public:
+    KeccakHelper();
+public:
+    /// Return the result of applying the KECCAK hash function to 'val'
+    Value apply(VarContext& ctx, const Value& val, uint8_t* raw_bytes);
+    /// Get the prefix used for symbolic hash results
+    const std::string& symbolic_hash_prefix() const;
+};
+
+// Compute the keccak hash of bytes and return the result as a 'Value'
+Value _do_keccak256(uint8_t* in, int size);
 
 /// Specialisation of 'EnvEmulator' for the Ethereum blockchain state
 class EthereumEmulator: public EnvEmulator
@@ -158,6 +183,8 @@ class EthereumEmulator: public EnvEmulator
 private:
     int _uid_cnt;
     std::unordered_map<int, contract_t> _contracts;
+public:
+    KeccakHelper keccak_helper;
 public:
     EthereumEmulator();
     virtual ~EthereumEmulator() = default;

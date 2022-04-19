@@ -1,5 +1,6 @@
 #include "maat/env/env_EVM.hpp"
 #include "maat/engine.hpp"
+#include "sha3.hpp"
 
 namespace maat{
 namespace env{
@@ -24,11 +25,14 @@ const Value& Stack::get(int pos) const
     return _stack[idx];
 }
 
-void Stack::pop()
+void Stack::pop(int n)
 {
-    if (size() == 0)
-        throw env_exception("EVM::Stack::pop(): stack is empty");
-    _stack.pop_back();
+    while (n-- > 0)
+    {
+        if (size() == 0)
+            throw env_exception("EVM::Stack::pop(): stack is empty");
+        _stack.pop_back();
+    }
 }
 
 void Stack::set(const Value& value, int pos)
@@ -196,9 +200,78 @@ Transaction::Transaction(
 {}
 
 Contract::Contract(const MaatEngine& engine, Value addr)
-: memory(engine.vars), address(addr), storage(engine.vars)
+: memory(engine.vars), address(addr), storage(engine.vars), code_size(0)
 {}
 
+void _set_EVM_code(MaatEngine& engine, uint8_t* code, size_t code_size)
+{
+    engine.mem->map(0x0, code_size);
+    engine.mem->write_buffer(0x0, code, code_size);
+    get_contract_for_engine(engine)->code_size = code_size;
+}
+
+void _set_EVM_code(MaatEngine& engine, const std::vector<Value>& code)
+{
+    addr_t code_size = 0;
+    for (const auto& val : code)
+        code_size += val.size()/8;
+    engine.mem->map(0x0, code_size);
+    engine.mem->write_buffer(0x0, code);
+    get_contract_for_engine(engine)->code_size = code_size;
+}
+
+
+KeccakHelper::KeccakHelper()
+: _symbolic_hash_prefix("keccak_hash")
+{}
+
+const std::string& KeccakHelper::symbolic_hash_prefix() const 
+{
+    return _symbolic_hash_prefix;
+}
+
+Value KeccakHelper::apply(VarContext& ctx, const Value& val, uint8_t* raw_bytes)
+{
+    // Check if the value hash already been hashed
+    Value res;
+    auto it = known_hashes.find(val);
+    if (it != known_hashes.end())
+        return it->second;
+    
+    if (val.is_concrete(ctx))
+    {
+        res = _do_keccak256(raw_bytes, val.size()/8);
+    }
+    else if (val.is_concolic(ctx))
+    {
+        Value concrete_hash = _do_keccak256(raw_bytes, val.size()/8);
+        Value concrete_value = Value(val.as_number(ctx));
+        res = exprvar(256, ctx.new_name_from(_symbolic_hash_prefix));
+        // Also record concrete hash mapping
+        known_hashes[concrete_value] = concrete_hash;
+        // Set concrete hash result in varctx
+        ctx.set(res.as_expr()->name(), concrete_hash.as_number());
+    }
+    else // purely symbolic value
+    {
+        res = exprvar(256, ctx.new_name_from(_symbolic_hash_prefix));
+    }
+    known_hashes[val] = res;
+    return res;
+}
+
+Value _do_keccak256(uint8_t* in, int size)
+{
+    uint8_t out[32];
+    sha3_return_t success = sha3_HashBuffer(256, SHA3_FLAGS_KECCAK, (void const*)in, (unsigned int)size, (void*)out, 32);
+    if (success != SHA3_RETURN_OK)
+        throw env_exception("_do_keccak256(): unexpected internal error");
+    // Read back hashed buffer into a big endian value
+    Value res(256, 0);
+    for (int i = 0; i < 32; i++)
+        res = (res<<8) | (ucst_t)out[i];
+    return res;
+}
 
 EthereumEmulator::EthereumEmulator(): EnvEmulator(Arch::Type::EVM, OS::NONE)
 {

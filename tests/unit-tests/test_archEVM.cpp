@@ -825,7 +825,19 @@ namespace test{
 
             return nb;
         }
-        
+
+        unsigned int test_keccak_helper()
+        {
+            unsigned int res = 0;
+            KeccakHelper helper;
+            const char* s("abc");
+            VarContext ctx;
+            // Just try to hash "abc"
+            Value src(24, 0x616263);
+            Value v = helper.apply(ctx, src, (uint8_t*)s);
+            return res;
+        }
+
     }
 }
 
@@ -872,6 +884,7 @@ void test_archEVM()
     total += test_swap(engine);
     total += test_sload(engine);
     total += test_sstore(engine);
+    total += test_keccak_helper();
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

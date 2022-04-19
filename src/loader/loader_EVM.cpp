@@ -40,11 +40,6 @@ void LoaderEVM::load(
         }
     }
 
-    // Write bytecode in memory
-    engine->mem->map(0x0, contents.size());
-    engine->mem->write_buffer(0x0, contents.data(), contents.size());
-    engine->cpu.ctx().set(EVM::PC, 0x0);
-
     // Create contract object
     engine->process->pid = get_ethereum(*engine)->add_contract(
         std::make_shared<Contract>(
@@ -52,6 +47,11 @@ void LoaderEVM::load(
             address
         )
     );
+    
+    // Write bytecode in memory AFTER creating contract
+    env::EVM::_set_EVM_code(*engine, contents.data(), contents.size());
+    engine->cpu.ctx().set(EVM::PC, 0x0);
+    
     env::EVM::contract_t contract = get_contract_for_engine(*engine);
     contract->transaction = Transaction();
 
@@ -64,7 +64,7 @@ void LoaderEVM::load(
     // Erase previous code
     engine->mem->write_buffer(0x0, std::vector<uint8_t>(contents.size(), 0x0).data(), contents.size());
     // Write new one
-    engine->mem->write_buffer(0x0, return_data);
+    env::EVM::_set_EVM_code(*engine, return_data);
 
     // Reset transaction
     contract->transaction = std::nullopt;
