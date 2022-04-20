@@ -2,8 +2,8 @@ contract HelloWorld {
 
    string public message;
 
-   constructor(string memory initMessage) {
-      message = initMessage;
+   constructor() {
+      message = "Hello world!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
    }
 
    function update(string memory newMessage) public {

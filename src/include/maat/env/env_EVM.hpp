@@ -112,7 +112,19 @@ public:
     void write(const Value& addr, const Value& val, const Settings& settings);
 };
 
-/// Transaction that calls into a smart contract
+/// Result of a call inside a contract
+class TransactionResult
+{
+private:
+    std::vector<Value> _return_data;
+public:
+    TransactionResult(std::vector<Value> return_data);
+public:
+    const std::vector<Value>& return_data() const;
+    size_t return_data_size() const;
+};
+
+/// Call into a smart contract
 class Transaction
 {
 public:
@@ -122,7 +134,7 @@ public:
     Value value; ///< Number of ether to transfer from sender to recipient
     std::vector<Value> data; ///< Additionnal transaction data
     Value gas_limit; ///< Maximum amount of gas that can be consumed by the transaction
-    std::vector<Value> return_data; ///< Data returned once the transaction finishes
+    std::optional<TransactionResult> result; ///< Result of the transaction
 public:
     Transaction();
     Transaction(
@@ -135,7 +147,6 @@ public:
     );
 };
 
-
 /// Deployed Smart-Contract
 class Contract
 {
@@ -145,6 +156,8 @@ public:
     Memory memory; ///< Volatile memory of the executing EVM
     Storage storage; ///< Persistent contract storage
     std::optional<Transaction> transaction; ///< Transaction being executed
+protected:
+    std::optional<TransactionResult> result_from_last_call; ///< Result of last call emitted from the current executing environment
 public:
     unsigned int code_size; ///< Size of code currently executing
 public:

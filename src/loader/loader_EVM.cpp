@@ -48,19 +48,19 @@ void LoaderEVM::load(
         )
     );
     
-    // Write bytecode in memory AFTER creating contract
+    // Write bytecode in memory
     env::EVM::_set_EVM_code(*engine, contents.data(), contents.size());
+    // TODO: write constructor data after the bytecode
     engine->cpu.ctx().set(EVM::PC, 0x0);
-    
+
     env::EVM::contract_t contract = get_contract_for_engine(*engine);
     contract->transaction = Transaction();
-
 
     // Execute init bytecode
     engine->run();
 
     // Setup proper runtime byte-code
-    std::vector<Value>& return_data = contract->transaction->return_data;
+    const std::vector<Value>& return_data = contract->transaction->result->return_data();
     // Erase previous code
     engine->mem->write_buffer(0x0, std::vector<uint8_t>(contents.size(), 0x0).data(), contents.size());
     // Write new one

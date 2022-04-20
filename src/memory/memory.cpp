@@ -884,6 +884,65 @@ Expr MemAbstractBuffer::read(offset_t off, unsigned int nb_bytes)
         return _read_big_endian(off, nb_bytes);
 }
 
+void MemAbstractBuffer::_read_optimised_buffer(std::vector<Value>& res, offset_t off, unsigned int nb_bytes)
+{
+    if (_endianness != Endian::BIG)
+        throw mem_exception("MemAbstractBuffer::_read_optimised_buffer(): only implemented for big endian");
+
+    int i = 0;
+    int off_byte, low_byte; 
+    Expr tmp=nullptr;
+    abstract_mem_t::iterator it, it2;
+    while (nb_bytes > 0)
+    {
+        it = _mem.find(off); // Take next byte 
+        tmp = it->second.first; // Get associated expr
+        off_byte = it->second.second; // Get associated exproffset
+        low_byte = off_byte;
+        /* Find until where the same expression is in memory */
+        i = 0;
+        while (i < nb_bytes)
+        {
+            it2 = _mem.find(off+i); // Get expr
+            if (it2->second.first->neq(tmp))
+            {
+                /* Found different expr */
+                res.push_back(Value(extract(tmp, (off_byte*8)+7, low_byte*8)));
+                break;
+            }
+            low_byte = it2->second.second; // Same expr, decrememnt exproffset counter
+            if (low_byte == 0)
+            {
+                // If the size corresponds to the offset_byte, then use the whole expr
+                // Else extract lower bits 
+                Expr val = (tmp->size == (off_byte+1)*8 ? tmp : extract(tmp, (off_byte*8)+7, 0));
+                res.push_back(Value(val));
+                break;
+            }
+            else
+            {
+                /* Not different expr, not beginning, continue to next */
+                i++; // Go to next offset 
+            }
+        }
+
+        // If nb_bytes wasn't reset to zero then we finished while in the middle of
+        // an expression
+        if (i == nb_bytes and nb_bytes != 0)
+        {
+            /* We reached the requested address, so extract and return */
+            res.push_back(Value(extract(tmp, (off_byte*8)+7, low_byte*8)));
+            break;
+        }
+        /* Else just loop back and read next expression */
+        else
+        {
+            nb_bytes -= i+1; // Updates nb bytes to read
+            off += i+1; // Update offset from where to read
+        }
+    }
+}
+
 void MemAbstractBuffer::write(offset_t off, Expr e)
 {
     for( offset_t i = 0; i < (e->size/8); i++ )
@@ -1304,6 +1363,50 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
                 res = tmp2;
             else
                 concat_endian(res, res, tmp2, _endianness);
+        }
+        from += bytes_to_read;
+    } while(nb_bytes > 0);
+}
+
+void MemSegment::_read_optimised_buffer(std::vector<Value>& res, addr_t addr, unsigned int nb_bytes)
+{
+    offset_t off = addr - start;
+    offset_t from = off, to, bytes_to_read;
+    Value tmp1, tmp2, tmp3;
+    Value n1, n2, n3, n4;
+
+    if( addr+nb_bytes-1 > end )
+    {
+        throw mem_exception("MemSegment::read(): try to read beyond segment's end");
+    }
+
+    do
+    {
+        /* Try if concrete or symbolic */
+        to = _bitmap.is_concrete_until(from, nb_bytes);
+        if (to != from)
+        {
+            /* Concrete */
+            bytes_to_read = to-from; // Bytes that can be read as concrete
+            if (bytes_to_read > nb_bytes) // We don't want more that what's left to read
+            { 
+                bytes_to_read = nb_bytes; 
+            }
+            nb_bytes -= bytes_to_read; // Update the number of bytes left to read
+            // Read 1-byte concrete values
+            for (int i = 0; i < bytes_to_read; i++)
+                res.push_back(Value(8, _concrete.read(from+i, 1)));
+        }
+        else
+        {
+            to = _bitmap.is_abstract_until(from, nb_bytes);
+            /* Symbolic */
+            bytes_to_read = to-from; // Bytes that can be read as concrete
+            if( bytes_to_read > nb_bytes ) // We don't want more that what's left to read
+                bytes_to_read = nb_bytes; 
+            nb_bytes -= bytes_to_read; // Update the number of bytes left to read
+            // Read optimised symbolic values
+            _abstract._read_optimised_buffer(res, from, bytes_to_read);
         }
         from += bytes_to_read;
     } while(nb_bytes > 0);
@@ -1876,6 +1979,58 @@ void MemEngine::read(Value& res, addr_t addr, unsigned int nb_bytes, mem_alert_t
             addr += tmp.size()/8;
             if( nb_bytes == 0 )
                 return;
+        }
+    }
+
+    /* If addr isn't in any segment, throw exception */
+    throw mem_exception(Fmt()
+        << "Trying to read " << std::dec << save_nb_bytes
+        << " bytes at address 0x" 
+        << std::hex << addr << " causing access to non-mapped memory"
+        >> Fmt::to_str
+    );
+}
+
+std::vector<Value> MemEngine::_read_optimised_buffer(addr_t addr, size_t nb_bytes)
+{
+    std::vector<Value> res;
+    size_t save_nb_bytes = nb_bytes;
+    // Check if the read is within an area where symbolic writes occured
+    if(symbolic_mem_engine.contains_symbolic_write(addr, addr-1+nb_bytes))
+    {
+       // Not possible to optimise so call regular function
+       return read_buffer(addr, nb_bytes, 1);
+    }
+
+    // Else do a read in the "sure" memory
+    // Find the segment we read from
+    for (auto& segment : _segments)
+    {
+        if (segment->intersects_with_range(addr, addr+nb_bytes-1))
+        {
+            // Check flags
+            if( !page_manager.has_flags(addr, maat::mem_flag_r))
+            {
+                throw mem_exception(Fmt() << "Reading at address 0x" << std::hex << addr << " in segment that doesn't have R flag set" << std::dec >> Fmt::to_str);
+            }
+
+            // Check if read exceeds segment
+            if( addr + nb_bytes-1 > segment->end)
+            {
+                // Read overlaps two segments
+                size_t tmp_nb_bytes = segment->end - addr+1;
+                segment->_read_optimised_buffer(res, addr, tmp_nb_bytes);
+                addr += tmp_nb_bytes;
+                nb_bytes -= tmp_nb_bytes;
+            }
+            else
+            {
+                segment->_read_optimised_buffer(res, addr, nb_bytes);
+                nb_bytes = 0;
+            }
+
+            if (nb_bytes == 0)
+                return res;
         }
     }
 

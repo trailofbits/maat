@@ -566,6 +566,36 @@ void EVM_KECCAK_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
     pinst.res = eth->keccak_helper.apply(*engine.vars, to_hash, raw_bytes);
 }
 
+void EVM_RETURN_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    Value addr = pinst.in1.value();
+    Value len = pinst.in2.value();
+
+    if (not len.is_concrete(*engine.vars))
+        throw callother_exception("RETURN: not supported with symbolic length");
+    if (not addr.is_concrete(*engine.vars))
+        throw callother_exception("RETURN: not supported with symbolic address");
+
+    std::vector<Value> return_data;
+    _check_transaction_exists(contract);
+    if (len.as_uint(*engine.vars) != 0)
+    {
+        return_data = contract->memory.mem()._read_optimised_buffer(
+            addr.as_uint(*engine.vars),
+            len.as_uint(*engine.vars)
+        );
+    }
+    contract->transaction->result = env::EVM::TransactionResult(return_data);
+    // TODO(boyan): use a specific exit status that says which instruction terminated execution
+    engine.terminate_process(Value(32, 0));
+}
+
+void EVM_INVALID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    throw callother_exception("INVALID: trying execute the 'INVALID' EVM instruction");
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -596,6 +626,8 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_SSTORE, EVM_SSTORE_handler);
     h.set_handler(Id::EVM_ENV_INFO, EVM_ENV_INFO_handler);
     h.set_handler(Id::EVM_KECCAK, EVM_KECCAK_handler);
+    h.set_handler(Id::EVM_RETURN, EVM_RETURN_handler);
+    h.set_handler(Id::EVM_INVALID, EVM_INVALID_handler);
 
     return h;
 }

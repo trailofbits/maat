@@ -54,6 +54,8 @@ enum class Id
     EVM_SSTORE,
     EVM_ENV_INFO,
     EVM_KECCAK,
+    EVM_RETURN,
+    EVM_INVALID,
     UNSUPPORTED
 };
 

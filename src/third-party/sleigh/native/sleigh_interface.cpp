@@ -546,7 +546,9 @@ public:
             {"evm_sload", callother::Id::EVM_SLOAD},
             {"evm_sstore", callother::Id::EVM_SSTORE},
             {"evm_env_info", callother::Id::EVM_ENV_INFO},
-            {"evm_keccak", callother::Id::EVM_KECCAK}
+            {"evm_keccak", callother::Id::EVM_KECCAK},
+            {"evm_return", callother::Id::EVM_RETURN},
+            {"evm_invalid", callother::Id::EVM_INVALID}
         };
 
         for (const auto& [op_str, op_id] : operators)

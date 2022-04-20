@@ -33,6 +33,8 @@ define pcodeop evm_sload;
 define pcodeop evm_sstore;
 define pcodeop evm_env_info; # Generic function used for 0x30's env operations (ADDRESS, BALANCE, etc)
 define pcodeop evm_keccak; # KECCAK
+define pcodeop evm_return; # RETURN
+define pcodeop evm_invalid; # INVALID
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -262,8 +264,7 @@ op_byte: b is op [b = op+0;] {export *[const]:1 b;}
 }
 
 :CALLDATACOPY is op = 0x37 & op_byte {
-    local a:32 = evm_env_info(op_byte);
-    stack_push(a);
+    evm_env_info(op_byte);
 }
 
 :CODESIZE is op = 0x38 & op_byte {
@@ -272,8 +273,7 @@ op_byte: b is op [b = op+0;] {export *[const]:1 b;}
 }
 
 :CODECOPY is op = 0x39 & op_byte {
-    local a:32 = evm_env_info(op_byte);
-    stack_push(a);
+    evm_env_info(op_byte);
 }
 
 # TODO: other 0x30's env operations
@@ -566,3 +566,13 @@ swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
     evm_swap(swap_cnt);
 }
 
+
+:RETURN is op = 0xf3 {
+    local addr:32 = stack_pop();
+    local len:32 = stack_pop();
+    evm_return(addr, len);
+}
+
+:INVALID is op = 0xfe {
+    evm_invalid();
+}

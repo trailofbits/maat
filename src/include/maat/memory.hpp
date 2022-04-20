@@ -182,6 +182,8 @@ public:
     void write(offset_t off, Expr val); ///< Write an abstract value at offset 'off'
     std::pair<Expr, uint8_t>& at(offset_t off); ///< Return the abstract value pair stored at offset 'off'
     void set(offset_t off, std::pair<Expr, uint8_t>& pair); ///< Set the abstract value pair at offset 'off' 
+public:
+    void _read_optimised_buffer(std::vector<Value>& res, addr_t addr, unsigned int nb_bytes);
 private:
     Expr _read_little_endian(offset_t off, unsigned int nb_bytes);
     Expr _read_big_endian(offset_t off, unsigned int nb_bytes);
@@ -240,7 +242,8 @@ public:
 
     /** \brief Read memory at the address pointed by a symbolic pointer */
     void symbolic_ptr_read(Value& res, const Expr& addr, ValueSet& addr_value_set, unsigned int nb_bytes, const Expr& base);
-
+public:
+    void _read_optimised_buffer(std::vector<Value>& res, addr_t addr, unsigned int nb_bytes);
 public:
     /* Special reading and writing (for snapshoting) */
     abstract_mem_chunk_t abstract_snapshot(addr_t addr, int nb_bytes); // Used for files
@@ -577,6 +580,10 @@ public:
     /** \brief Read a buffer of 'nb_elems' elements of size 'elem_size' from address 'addr'
      * and writes each element as an abstract expression in the vector 'res' */
     void read_buffer(std::vector<Value>& buffer, addr_t addr, unsigned int nb_elems, unsigned int elem_size=1);
+    /* Convenience method to read a buffer and return a list of values that tries to
+     * make symbolic expressions as clean as possible (without concatenation and extraction).
+     * Concrete bytes are returned as 1-byte values */
+    std::vector<Value> _read_optimised_buffer(addr_t addr, size_t nb_bytes);
     /** \brief Read a concrete string of length 'len' from address 'addr'. If len=0,
      * it reads a C-style string and stops at the first null-byte */
     std::string read_string(addr_t addr, unsigned int len=0);

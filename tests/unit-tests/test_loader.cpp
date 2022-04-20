@@ -59,7 +59,6 @@ namespace test
         {
             unsigned int nb = 0;
             MaatEngine engine(Arch::Type::EVM);
-            engine.settings.log_insts = true; // DEBUG 
             engine.load(
                 "tests/resources/smart_contracts/HelloWorld.bin",
                 loader::Format::NONE,

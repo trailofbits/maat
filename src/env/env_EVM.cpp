@@ -184,6 +184,23 @@ void Storage::write(const Value& addr, const Value& val, const Settings& setting
     }
 }
 
+TransactionResult::TransactionResult(std::vector<Value> return_data)
+: _return_data(return_data)
+{}
+
+const std::vector<Value>& TransactionResult::return_data() const
+{
+    return _return_data;
+}
+
+size_t TransactionResult::return_data_size() const
+{
+    size_t res = 0;
+    for (const auto& val : _return_data)
+        res += val.size()/8;
+    return res;
+}
+
 Transaction::Transaction()
 : origin(256, 0), sender(256, 0), recipient(256, 0), value(256, 0), gas_limit(256, 0)
 {}
