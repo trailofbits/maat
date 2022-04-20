@@ -53,6 +53,7 @@ enum class Id
     EVM_SLOAD,
     EVM_SSTORE,
     EVM_ENV_INFO,
+    EVM_KECCAK,
     UNSUPPORTED
 };
 

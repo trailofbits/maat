@@ -1096,6 +1096,9 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
             { 
                 bytes_to_read = nb_bytes; 
             }
+            // Max bytes we can read at a time is 32...
+            if (bytes_to_read > 32)
+                bytes_to_read = 32;
             nb_bytes -= bytes_to_read; // Update the number of bytes left to read
             /* Read */
             switch(bytes_to_read)

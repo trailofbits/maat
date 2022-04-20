@@ -415,7 +415,7 @@ void EVM_BYTE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
 void EVM_MLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
-    contract->memory.expand_if_needed(pinst.in1.value(), inst.out.size());
+    contract->memory.expand_if_needed(pinst.in1.value(), inst.out.size()/8);
     // Note: calling resolve_addr_param() should not be done from outside the MaatEngine
     // but here it's a hacky way to trigger the whole memory processing with handling of
     // symbolic pointers and triggering of event hooks
@@ -429,7 +429,7 @@ void EVM_MLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
 void EVM_MSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
-    contract->memory.expand_if_needed(pinst.in1.value(), inst.in[2].size());
+    contract->memory.expand_if_needed(pinst.in1.value(), inst.in[2].size()/8);
     // Note: calling process_store() should not be done from outside the MaatEngine
     // but here it's a hacky way to trigger the whole memory processing with handling of
     // symbolic pointers and triggering of event hooks
@@ -525,8 +525,45 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
                 Fmt() << "ENV_INFO: instruction not implemented for 0x"
                     << std::hex << evm_inst >> Fmt::to_str
             );
-    }   
-    
+    }
+}
+
+void EVM_KECCAK_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    auto eth = env::EVM::get_ethereum(engine);
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+
+    Value addr = pinst.in1.value();
+    Value len = pinst.in2.value();
+    uint8_t* raw_bytes = nullptr;
+
+    if (not len.is_concrete(*engine.vars))
+        throw callother_exception("KECCAK: not supported with symbolic length");
+
+    contract->memory.expand_if_needed(pinst.in1.value(), pinst.in2.value().as_uint());
+    ir::Param fake_param = ir::Param(
+        inst.in[1].type,
+        inst.in[1].tmp(),
+        len.as_uint(*engine.vars)*8-1,
+        0
+    ); // Ugly hack to craft fake param to read correct number of bytes from memory
+
+    if (not engine.resolve_addr_param(
+        fake_param,
+        pinst.in1,
+        contract->memory.mem())
+    )
+        throw callother_exception("KECCAK: fatal error reading memory");
+
+    Value to_hash = pinst.in1.value(); // Now contains the read value from memory
+
+    if (not addr.is_symbolic(*engine.vars))
+    {
+        addr_t a = addr.as_uint(*engine.vars);
+        raw_bytes = contract->memory.mem().raw_mem_at(a);
+    }
+
+    pinst.res = eth->keccak_helper.apply(*engine.vars, to_hash, raw_bytes);
 }
 
 /// Return the default handler map for CALLOTHER occurences
@@ -558,6 +595,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_SLOAD, EVM_SLOAD_handler);
     h.set_handler(Id::EVM_SSTORE, EVM_SSTORE_handler);
     h.set_handler(Id::EVM_ENV_INFO, EVM_ENV_INFO_handler);
+    h.set_handler(Id::EVM_KECCAK, EVM_KECCAK_handler);
 
     return h;
 }

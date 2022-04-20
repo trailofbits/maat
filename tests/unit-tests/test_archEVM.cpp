@@ -838,6 +838,69 @@ namespace test{
             return res;
         }
 
+        unsigned int test_keccak(MaatEngine& engine)
+        {
+            unsigned int nb = 0;
+            std::string code;
+            Value addr;
+    
+            contract_t contract = get_contract_for_engine(engine);
+            code = std::string("\x20", 1); // keccak
+            write_inst(engine, 0x10, code);
+
+            // Value equivalent to "abc"
+            contract->memory.write(Value(256, 100), Value(24, 0x616263));
+            contract->stack.push(Value(256, 3)); // len
+            contract->stack.push(Value(256, 100)); // addr
+            engine.run_from(0x10, 1);
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45",
+                "ArchEVM: failed to disassembly and/or execute KECCAK",
+                16
+            );
+
+            // Value equivalent to "abc"
+            contract->memory.write(Value(256, 100), Value(24, 0x616263));
+            contract->stack.push(Value(256, 3)); // len
+            contract->stack.push(Value(256, 100)); // addr
+            engine.run_from(0x10, 1);
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45",
+                "ArchEVM: failed to disassembly and/or execute KECCAK",
+                16
+            );
+
+            // Value equivalent to "a"*32
+            std::string a(32, 'a');
+            contract->memory.mem().write_buffer(0x0, (uint8_t*)a.c_str(), a.size());
+            contract->stack.push(Value(256, 32)); // len
+            contract->stack.push(Value(256, 0x0)); // addr
+            engine.run_from(0x10, 1);
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "47a01324181e85459310f8fb9b24dc09744323ebdcef26cbf98959effdc76e02",
+                "ArchEVM: failed to disassembly and/or execute KECCAK",
+                16
+            );
+
+            // Value equivalent to "b"*37
+            std::string b(37, 'b');
+            contract->memory.mem().write_buffer(0x0, (uint8_t*)b.c_str(), b.size());
+            contract->stack.push(Value(256, b.size())); // len
+            contract->stack.push(Value(256, 0x0)); // addr
+            engine.run_from(0x10, 1);
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "c3b726a06a6a694c8e02952f7d5f37970b0eed410058dbf490084d6ceb56f14f",
+                "ArchEVM: failed to disassembly and/or execute KECCAK",
+                16
+            );
+
+            return nb;
+        }
+
     }
 }
 
@@ -885,6 +948,7 @@ void test_archEVM()
     total += test_sload(engine);
     total += test_sstore(engine);
     total += test_keccak_helper();
+    total += test_keccak(engine);
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

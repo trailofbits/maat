@@ -32,6 +32,7 @@ define pcodeop evm_swap; # SWAP1 to SWAP16
 define pcodeop evm_sload;
 define pcodeop evm_sstore;
 define pcodeop evm_env_info; # Generic function used for 0x30's env operations (ADDRESS, BALANCE, etc)
+define pcodeop evm_keccak; # KECCAK
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -214,6 +215,13 @@ define token opcode(8)
     local arg1:32 = stack_pop();
     local arg2:32 = stack_pop();
     stack_push(arg2 s>> arg1);
+}
+
+:KECCAK is op = 0x20 {
+    local addr:32 = stack_pop();
+    local len:32 = stack_pop();
+    local res:32 = evm_keccak(addr, len);
+    stack_push(res);
 }
 
 op_byte: b is op [b = op+0;] {export *[const]:1 b;}
