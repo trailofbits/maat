@@ -184,13 +184,20 @@ void Storage::write(const Value& addr, const Value& val, const Settings& setting
     }
 }
 
-TransactionResult::TransactionResult(std::vector<Value> return_data)
-: _return_data(return_data)
+TransactionResult::TransactionResult(
+    TransactionResult::Type type,
+    std::vector<Value> return_data
+): _type(type), _return_data(return_data)
 {}
 
 const std::vector<Value>& TransactionResult::return_data() const
 {
     return _return_data;
+}
+
+TransactionResult::Type TransactionResult::type() const
+{
+    return _type;
 }
 
 size_t TransactionResult::return_data_size() const
@@ -215,6 +222,119 @@ Transaction::Transaction(
 ): origin(origin), sender(sender), recipient(recipient), value(value),
    data(data), gas_limit(gas_limit)
 {}
+
+size_t Transaction::data_size() const
+{
+    size_t res = 0;
+    for (const auto& val : data)
+        res += val.size()/8;
+    return res;
+}
+
+Value Transaction::data_load_word(size_t offset) const
+{
+    Value res;
+    size_t tmp_size = 0;
+    int i = 0;
+    offset *= 8; // convert size in bits
+
+    if (data.empty())
+        return Value(256, 0);
+
+    // Skip the first expressions to reach desired offset
+    for (i = 0; i < data.size() and offset > 0; i++)
+    {
+        const Value& val = data[i];
+        if (val.size() > offset)
+        {
+            if (val.size()-offset > 256)
+                res = extract(val, val.size()-1-offset, val.size()-256-offset);
+            else
+                res = extract(val, val.size()-1-offset, 0);
+            i++;
+            break;
+        }
+        else
+            offset -= val.size();
+    } 
+
+    // Read 32 bytes from next expresions in data
+    for (; (res.is_none() or res.size() < 256) and i < data.size(); i++)
+    {
+        const Value& val = data[i];
+        if (res.is_none())
+        {
+            if (val.size() > 256)
+                res = extract(val, val.size()-1, val.size()-256);
+            else
+                res = val;
+        }
+        else
+        {
+            if (val.size() + res.size() > 256)
+                res.set_concat(res, extract(val, val.size()-1, val.size()-256+res.size()));
+            else
+                res.set_concat(res, val);
+        }
+
+        if (res.size() == 256)
+            break;
+    }
+
+    // If not enough data, pad with zeros
+    if (res.size() < 256)
+        res.set_concat(res, Value(256-res.size(), 0));
+
+    return res;
+}
+
+std::vector<Value> Transaction::data_load_bytes(size_t offset, size_t len) const
+{
+    std::vector<Value> res;
+    size_t tmp_size = 0;
+    int i = 0;
+    offset *= 8; // convert size in bits
+    len *= 8; // convert len in bits
+
+    // Skip the first expressions to reach desired offset
+    for (i = 0; i < data.size() and offset > 0; i++)
+    {
+        const Value& val = data[i];
+        if (val.size() > offset)
+        {
+            if (val.size()-offset > len)
+            {
+                res.push_back(extract(val, val.size()-1-offset, val.size()-len-offset));
+                len = 0;
+            }
+            else
+            {
+                res.push_back(extract(val, val.size()-1-offset, 0));
+                len -= val.size()-offset;
+            }
+            i++;
+            break;
+        }
+        else
+            offset -= val.size();
+    }
+
+    // Read 32 bytes from next expresions in data
+    for (; len > 0 and i < data.size(); i++)
+    {
+        const Value& val = data[i];
+        if (val.size() > len)
+            res.push_back(extract(val, val.size()-1, val.size()-len));
+        else
+            res.push_back(val);
+        len -= res.back().size();
+    }
+
+    // If not enough data, pad with zeros
+    for (; len > 0; len--)
+        res.push_back(Value(8, 0));
+    return res;
+}
 
 Contract::Contract(const MaatEngine& engine, Value addr)
 : memory(engine.vars), address(addr), storage(engine.vars), code_size(0)
@@ -346,6 +466,17 @@ std::shared_ptr<EthereumEmulator> get_ethereum(MaatEngine& engine)
 contract_t get_contract_for_engine(MaatEngine& engine)
 {
     return get_ethereum(engine)->get_contract_by_uid(engine.process->pid);
+}
+
+std::vector<uint8_t> hex_string_to_bytes(const std::vector<char>& in)
+{
+    std::vector<uint8_t> res;
+    for(int i = 0; i < in.size(); i+=2)
+    {
+        uint8_t val = std::stoul(std::string(in.data()+i, 2), nullptr, 16);
+        res.push_back(val);
+    }
+    return res;
 }
 
 } // namespace EVM

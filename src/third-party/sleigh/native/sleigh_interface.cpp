@@ -390,7 +390,7 @@ public:
         bool            end_bb = false;
 
         PcodeEmitCacher    m_pcode(this);
-        AssemblyEmitCacher tmp_cacher;
+        AssemblyEmitCacher& tmp_cacher = asm_cache;
 
         // Reset state
         // TODO - is this useful ? will this hinder performance ?
@@ -548,7 +548,8 @@ public:
             {"evm_env_info", callother::Id::EVM_ENV_INFO},
             {"evm_keccak", callother::Id::EVM_KECCAK},
             {"evm_return", callother::Id::EVM_RETURN},
-            {"evm_invalid", callother::Id::EVM_INVALID}
+            {"evm_invalid", callother::Id::EVM_INVALID},
+            {"evm_revert", callother::Id::EVM_REVERT}
         };
 
         for (const auto& [op_str, op_id] : operators)

@@ -115,13 +115,23 @@ public:
 /// Result of a call inside a contract
 class TransactionResult
 {
+public:
+    enum class Type : uint8_t 
+    {
+        RETURN,
+        REVERT,
+        STOP,
+        NONE
+    };
 private:
+    Type _type;
     std::vector<Value> _return_data;
 public:
-    TransactionResult(std::vector<Value> return_data);
+    TransactionResult(Type type, std::vector<Value> return_data);
 public:
     const std::vector<Value>& return_data() const;
     size_t return_data_size() const;
+    Type type() const;
 };
 
 /// Call into a smart contract
@@ -145,6 +155,13 @@ public:
         std::vector<Value> data,
         Value gas_limit
     );
+public:
+    /// Total size of transaction data in bytes
+    size_t data_size() const;
+    /// Return 32 bytes from transaction data starting at byte 'offset'
+    Value data_load_word(size_t offset) const;
+    /// Return bytes [offset ... offset+len] from transaction data
+    std::vector<Value> data_load_bytes(size_t offset, size_t len) const;
 };
 
 /// Deployed Smart-Contract
@@ -221,6 +238,9 @@ std::shared_ptr<EthereumEmulator> get_ethereum(MaatEngine& engine);
 
 /// Helper function that gets the running contract associated to an engine
 contract_t get_contract_for_engine(MaatEngine& engine); 
+
+/// Helper function that converts a hex string into bytes. Eg "0102" -> "\x01\x02"
+std::vector<uint8_t> hex_string_to_bytes(const std::vector<char>& in);
 
 /** \} */ // doxygen group env
 

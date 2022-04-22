@@ -135,6 +135,7 @@ info::Stop MaatEngine::run(int max_inst)
         if (process->terminated)
         {
             info.stop = info::Stop::EXIT;
+            info.exit_status = process->exit_status;
             return info.stop;
         }
 
@@ -1125,6 +1126,7 @@ void MaatEngine::terminate_process(Value status)
     info.stop = info::Stop::EXIT;
     info.exit_status = status;
     process->terminated = true;
+    process->exit_status = status;
 }
 
 // Return the mean of min/max by taking stride into account

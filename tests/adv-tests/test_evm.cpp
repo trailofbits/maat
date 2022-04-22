@@ -103,6 +103,40 @@ int solve_symbolic_storage()
     return nb;
 }
 
+
+int execute_simple_transaction()
+{
+    MaatEngine engine(Arch::Type::EVM);
+    // Manually encode input data to call update("lala..... ") in the contract
+    std::string str_tx_data("3d7403a30000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003a226c616c616c616c616c616c616c616c616c616c616c616c616c6161616161616161616161616161616161616161616161616161616161616122000000000000");
+    std::vector<char> hex_tx_data(str_tx_data.begin(), str_tx_data.end());
+    std::vector<uint8_t> raw_tx_data = env::EVM::hex_string_to_bytes(hex_tx_data);
+    std::vector<Value> tx_data;
+    for (auto b : raw_tx_data)
+        tx_data.push_back(Value(8, b));
+
+    engine.load(
+        "tests/resources/smart_contracts/HelloWorld.bin",
+        loader::Format::NONE,
+        0,
+        {}, {}, {}, {}, {}
+    );
+    
+    // Send transaction
+    env::EVM::get_contract_for_engine(engine)->transaction = env::EVM::Transaction(
+        Value(256, 1), // origin
+        Value(256, 1), // sender
+        Number(256, 2), // recipient
+        Value(256, 0), // value
+        tx_data, // data
+        Value(256, 46546516351) // gas_limit
+    );
+
+    // Execute transaction
+    engine.run();
+    return 1;
+}
+
 #endif // ifdef MAAT_HAS_SOLVER_BACKEND
     }
 }
@@ -119,6 +153,7 @@ void test_adv_evm()
     cout << bold << "[" << green << "+" << def << bold << "]" << def << std::left << std::setw(34) << " Testing Ethereum environement... " << std::flush;
 
     total += solve_symbolic_storage();
+    total += execute_simple_transaction();
 
     cout << "\t" << total << "/" << total << green << "\t\tOK" << def << endl;
 #endif

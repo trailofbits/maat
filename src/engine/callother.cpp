@@ -277,9 +277,22 @@ void X86_INT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
+// Helper function that ensures a contract transaction is set
+void _check_transaction_exists(env::EVM::contract_t contract)
+{
+    if (not contract->transaction.has_value())
+        throw callother_exception("Trying to access transaction but no transaction is set");
+}
+
 void EVM_STOP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    throw callother_exception("STOP: instruction not implemented");
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+    engine.terminate_process(Value(32, (int)env::EVM::TransactionResult::Type::STOP));
+    contract->transaction->result = env::EVM::TransactionResult(
+        env::EVM::TransactionResult::Type::STOP,
+        {}
+    );
 }
 
 void EVM_STACK_POP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
@@ -484,12 +497,6 @@ void EVM_SSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
     );
 }
 
-void _check_transaction_exists(env::EVM::contract_t contract)
-{
-    if (not contract->transaction.has_value())
-        throw callother_exception("Trying to access transaction but no transaction is set");
-}
-
 void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     unsigned int evm_inst = pinst.in1.value().as_uint();
@@ -504,6 +511,33 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
             _check_transaction_exists(contract);
             pinst.res = contract->transaction->value;
             break;
+        case 0x35: // CALLDATALOAD
+        {
+            _check_transaction_exists(contract);
+            const Value& offset = pinst.in2.value();
+            if (not offset.is_concrete(*engine.vars))
+                throw callother_exception("CALLDATALOAD: not supported with symbolic offset");
+            pinst.res = contract->transaction->data_load_word(offset.as_uint(*engine.vars));
+            break;
+        }
+        case 0x36: // CALLDATASIZE
+            _check_transaction_exists(contract);
+            pinst.res = Value(256, contract->transaction->data_size());
+            break;
+        case 0x37: // CALLDATACOPY
+        {
+            _check_transaction_exists(contract);
+            Value addr = contract->stack.get(0);
+            addr_t offset = contract->stack.get(1).as_uint(*engine.vars);
+            unsigned int size = contract->stack.get(2).as_uint(*engine.vars);
+            contract->stack.pop(3);
+            for (const auto& val : contract->transaction->data_load_bytes(offset, size))
+            {
+                contract->memory.write(addr, val);
+                addr = addr + val.size()/8;
+            }
+            break;
+        }
         case 0x38: // CODESIZE
             pinst.res = Value(256, contract->code_size);
             break;
@@ -566,16 +600,14 @@ void EVM_KECCAK_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
     pinst.res = eth->keccak_helper.apply(*engine.vars, to_hash, raw_bytes);
 }
 
-void EVM_RETURN_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+void _set_return_data(MaatEngine& engine, const Value& addr, const Value& len, env::EVM::TransactionResult::Type type)
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
-    Value addr = pinst.in1.value();
-    Value len = pinst.in2.value();
 
     if (not len.is_concrete(*engine.vars))
-        throw callother_exception("RETURN: not supported with symbolic length");
+        throw callother_exception("Getting transaction return data: not supported with symbolic length");
     if (not addr.is_concrete(*engine.vars))
-        throw callother_exception("RETURN: not supported with symbolic address");
+        throw callother_exception("Getting transaction return data: not supported with symbolic address");
 
     std::vector<Value> return_data;
     _check_transaction_exists(contract);
@@ -586,9 +618,25 @@ void EVM_RETURN_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
             len.as_uint(*engine.vars)
         );
     }
-    contract->transaction->result = env::EVM::TransactionResult(return_data);
-    // TODO(boyan): use a specific exit status that says which instruction terminated execution
-    engine.terminate_process(Value(32, 0));
+    contract->transaction->result = env::EVM::TransactionResult(type, return_data);
+}
+
+void EVM_RETURN_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    Value addr = pinst.in1.value();
+    Value len = pinst.in2.value();
+    auto type = env::EVM::TransactionResult::Type::RETURN;
+    _set_return_data(engine, addr, len, type);
+    engine.terminate_process(Value(32, (int)type));
+}
+
+void EVM_REVERT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    Value addr = pinst.in1.value();
+    Value len = pinst.in2.value();
+    auto type = env::EVM::TransactionResult::Type::REVERT;
+    _set_return_data(engine, addr, len, type);
+    engine.terminate_process(Value(32, (int)type));
 }
 
 void EVM_INVALID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
@@ -628,6 +676,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_KECCAK, EVM_KECCAK_handler);
     h.set_handler(Id::EVM_RETURN, EVM_RETURN_handler);
     h.set_handler(Id::EVM_INVALID, EVM_INVALID_handler);
+    h.set_handler(Id::EVM_REVERT, EVM_REVERT_handler);
 
     return h;
 }

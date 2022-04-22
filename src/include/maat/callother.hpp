@@ -56,6 +56,7 @@ enum class Id
     EVM_KECCAK,
     EVM_RETURN,
     EVM_INVALID,
+    EVM_REVERT,
     UNSUPPORTED
 };
 

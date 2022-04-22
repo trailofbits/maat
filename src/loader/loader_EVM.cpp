@@ -33,11 +33,7 @@ void LoaderEVM::load(
     else
     {
         // Convert ASCII encoded bytes to real bytes
-        for(int i = 0; i < size; i+=2)
-        {
-            uint8_t val = std::stoul(std::string(buffer.data()+i, 2), nullptr, 16);
-            contents.push_back(val);
-        }
+        contents = env::EVM::hex_string_to_bytes(buffer);
     }
 
     // Create contract object
@@ -69,8 +65,13 @@ void LoaderEVM::load(
     // Reset transaction
     contract->transaction = std::nullopt;
 
+    // Reset memory
+    // TODO(boyan)
+
     // Reset PC at zero
     engine->cpu.ctx().set(EVM::PC, 0x0);
+    engine->info.reset();
+    engine->process->terminated = false;
 }
 
 } // namespace loader

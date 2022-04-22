@@ -35,6 +35,7 @@ define pcodeop evm_env_info; # Generic function used for 0x30's env operations 
 define pcodeop evm_keccak; # KECCAK
 define pcodeop evm_return; # RETURN
 define pcodeop evm_invalid; # INVALID
+define pcodeop evm_revert; # REVERT
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -254,7 +255,8 @@ op_byte: b is op [b = op+0;] {export *[const]:1 b;}
 }
 
 :CALLDATALOAD is op = 0x35 & op_byte {
-    local a:32 = evm_env_info(op_byte);
+    local offset:32 = stack_pop();
+    local a:32 = evm_env_info(op_byte, offset);
     stack_push(a);
 }
 
@@ -571,6 +573,12 @@ swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
     local addr:32 = stack_pop();
     local len:32 = stack_pop();
     evm_return(addr, len);
+}
+
+:REVERT is op = 0xfd {
+    local addr:32 = stack_pop();
+    local len:32 = stack_pop();
+    evm_revert(addr, len);
 }
 
 :INVALID is op = 0xfe {
