@@ -106,6 +106,7 @@ int solve_symbolic_storage()
 
 int execute_simple_transaction()
 {
+    int nb = 0;
     MaatEngine engine(Arch::Type::EVM);
     // Manually encode input data to call update("lala..... ") in the contract
     std::string str_tx_data("3d7403a30000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003a226c616c616c616c616c616c616c616c616c616c616c616c616c6161616161616161616161616161616161616161616161616161616161616122000000000000");
@@ -134,7 +135,12 @@ int execute_simple_transaction()
 
     // Execute transaction
     engine.run();
-    return 1;
+    nb += _assert(
+        engine.info.exit_status.has_value()
+        and engine.info.exit_status->as_uint() == (int)env::EVM::TransactionResult::Type::STOP,
+        "Transaction exited incorrectly"
+    );
+    return nb;
 }
 
 #endif // ifdef MAAT_HAS_SOLVER_BACKEND
