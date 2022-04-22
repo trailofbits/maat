@@ -176,9 +176,16 @@ void ProcessedInst::reset()
 }
 
 
-CPUContext::CPUContext(int nb_regs)
+CPUContext::CPUContext(int nb_regs): alias_setter(nullptr), alias_getter(nullptr)
 {
     regs = std::vector<Value>(nb_regs);
+    
+}
+
+void CPUContext::_set_aliased_reg(ir::reg_t reg, const Value& val)
+{
+    if (aliased_regs.find(reg) != aliased_regs.end())
+        alias_setter(*this, reg, val);
 }
 
 void CPUContext::set(ir::reg_t reg, const Value& value)
@@ -195,6 +202,7 @@ void CPUContext::set(ir::reg_t reg, const Value& value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
 void CPUContext::set(ir::reg_t reg, Expr value)
@@ -211,6 +219,7 @@ void CPUContext::set(ir::reg_t reg, Expr value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
 void CPUContext::set(ir::reg_t reg, cst_t value)
@@ -227,6 +236,7 @@ void CPUContext::set(ir::reg_t reg, cst_t value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, regs.at(idx));
 }
 
 void CPUContext::set(ir::reg_t reg, Number&& value)
@@ -243,6 +253,7 @@ void CPUContext::set(ir::reg_t reg, Number&& value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
 void CPUContext::set(ir::reg_t reg, const Number& value)
@@ -259,11 +270,15 @@ void CPUContext::set(ir::reg_t reg, const Number& value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
 const Value& CPUContext::get(ir::reg_t reg) const
 {
     int idx(reg);
+    if (aliased_regs.find(reg) != aliased_regs.end())
+        return alias_getter(*this, reg);
+
     try
     {
         return regs.at(idx);
