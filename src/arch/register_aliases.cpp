@@ -4,9 +4,13 @@
 namespace maat{
 namespace ir{
 
-inline void _set_flag_from_bit(CPUContext& ctx, ir::reg_t reg, const Value& val, int bit, int nb_bits=1)
-__attribute__((always_inline))
-{
+inline void __attribute__((always_inline)) _set_flag_from_bit(
+    CPUContext& ctx,
+    ir::reg_t reg,
+    const Value& val,
+    int bit,
+    int nb_bits=1
+){
     ctx.set(reg, concat(Value(8-nb_bits, 0), extract(val, nb_bits-1+bit, bit)));
 }
 
