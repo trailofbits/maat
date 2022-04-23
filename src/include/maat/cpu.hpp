@@ -35,7 +35,7 @@ namespace ir
 // Register aliases setter callback
 class CPUContext;
 using reg_alias_setter_t = std::function<void(CPUContext&, ir::reg_t, const Value&)>;
-using reg_alias_getter_t = std::function<Value(const CPUContext&, ir::reg_t)>;
+using reg_alias_getter_t = std::function<Value(CPUContext&, ir::reg_t)>;
 
 /** The CPU context in Maat's IR. It is basically
  * a mapping between abstract expressions and CPU registers */
@@ -72,11 +72,13 @@ public:
     void set(ir::reg_t reg, const Number& value);
 
     /// Get current value of register *reg* as an abstract expression
-    const Value& get(ir::reg_t reg) const;
+    const Value& get(ir::reg_t reg);
 
 private:
     // Internal method that handles setting register aliases
-    void _set_aliased_reg(ir::reg_t reg, const Value& val);
+    inline void _set_aliased_reg(ir::reg_t reg, const Value& val) __attribute__((always_inline));
+    // Internal method to check if a register is an alias
+    inline bool _is_alias(ir::reg_t reg) const __attribute__((always_inline));
 
 public:
     /// Print the CPU context to a stream

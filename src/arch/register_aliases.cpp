@@ -7,7 +7,7 @@ namespace ir{
 inline void _set_flag_from_bit(CPUContext& ctx, ir::reg_t reg, const Value& val, int bit, int nb_bits=1)
 __attribute__((always_inline))
 {
-    ctx.set(reg, concat(Value(8-nb_bits, 0), extract(val, nb_bits-1, 0)));
+    ctx.set(reg, concat(Value(8-nb_bits, 0), extract(val, nb_bits-1+bit, bit)));
 }
 
 void x86_alias_setter(CPUContext& ctx, ir::reg_t reg, const Value& val)
@@ -36,33 +36,33 @@ void x86_alias_setter(CPUContext& ctx, ir::reg_t reg, const Value& val)
         throw runtime_exception("x86_alias_setter: got unsupported register");
 }
 
-Value x86_alias_getter(const CPUContext& ctx, ir::reg_t reg)
+Value x86_alias_getter(CPUContext& ctx, ir::reg_t reg)
 {
     Value res;
     if (reg == X86::EFLAGS)
     {
         res = extract(ctx.get(X86::CF),0,0);
-        res.set_concat(res, Value(1,1));
-        res.set_concat(res, extract(ctx.get(X86::PF),0,0));
-        res.set_concat(res, Value(1,0));
-        res.set_concat(res, extract(ctx.get(X86::AF),0,0));
-        res.set_concat(res, Value(1,0));
-        res.set_concat(res, extract(ctx.get(X86::ZF),0,0));
-        res.set_concat(res, extract(ctx.get(X86::SF),0,0));
-        res.set_concat(res, extract(ctx.get(X86::TF),0,0));
-        res.set_concat(res, extract(ctx.get(X86::IF),0,0));
-        res.set_concat(res, extract(ctx.get(X86::DF),0,0));
-        res.set_concat(res, extract(ctx.get(X86::OF),0,0));
-        res.set_concat(res, extract(ctx.get(X86::IOPL),1,0));
-        res.set_concat(res, extract(ctx.get(X86::NT),0,0));
-        res.set_concat(res, Value(1,0));
-        res.set_concat(res, extract(ctx.get(X86::RF),0,0));
-        res.set_concat(res, extract(ctx.get(X86::VM),0,0));
-        res.set_concat(res, extract(ctx.get(X86::AC),0,0));
-        res.set_concat(res, extract(ctx.get(X86::VIF),0,0));
-        res.set_concat(res, extract(ctx.get(X86::VIP),0,0));
-        res.set_concat(res, extract(ctx.get(X86::ID),0,0));
-        res.set_concat(res, Value(10,0));
+        res.set_concat(Value(1,1), res);
+        res.set_concat(extract(ctx.get(X86::PF),0,0), res);
+        res.set_concat(Value(1,0), res);
+        res.set_concat(extract(ctx.get(X86::AF),0,0), res);
+        res.set_concat(Value(1,0), res);
+        res.set_concat(extract(ctx.get(X86::ZF),0,0), res);
+        res.set_concat(extract(ctx.get(X86::SF),0,0), res);
+        res.set_concat(extract(ctx.get(X86::TF),0,0), res);
+        res.set_concat(extract(ctx.get(X86::IF),0,0), res);
+        res.set_concat(extract(ctx.get(X86::DF),0,0), res);
+        res.set_concat(extract(ctx.get(X86::OF),0,0), res);
+        res.set_concat(extract(ctx.get(X86::IOPL),1,0), res);
+        res.set_concat(extract(ctx.get(X86::NT),0,0), res);
+        res.set_concat(Value(1,0), res);
+        res.set_concat(extract(ctx.get(X86::RF),0,0), res);
+        res.set_concat(extract(ctx.get(X86::VM),0,0), res);
+        res.set_concat(extract(ctx.get(X86::AC),0,0), res);
+        res.set_concat(extract(ctx.get(X86::VIF),0,0), res);
+        res.set_concat(extract(ctx.get(X86::VIP),0,0), res);
+        res.set_concat(extract(ctx.get(X86::ID),0,0), res);
+        res.set_concat(Value(10,0), res);
     }
     else
         throw runtime_exception("x86_alias_getter: got unsupported register");
@@ -97,33 +97,33 @@ void x64_alias_setter(CPUContext& ctx, ir::reg_t reg, const Value& val)
         throw runtime_exception("x64_alias_setter: got unsupported register");
 }
 
-Value x64_alias_getter(const CPUContext& ctx, ir::reg_t reg)
+Value x64_alias_getter(CPUContext& ctx, ir::reg_t reg)
 {
     Value res;
     if (reg == X64::RFLAGS)
     {
         res = extract(ctx.get(X64::CF),0,0);
-        res.set_concat(res, Value(1,1));
-        res.set_concat(res, extract(ctx.get(X64::PF),0,0));
-        res.set_concat(res, Value(1,0));
-        res.set_concat(res, extract(ctx.get(X64::AF),0,0));
-        res.set_concat(res, Value(1,0));
-        res.set_concat(res, extract(ctx.get(X64::ZF),0,0));
-        res.set_concat(res, extract(ctx.get(X64::SF),0,0));
-        res.set_concat(res, extract(ctx.get(X64::TF),0,0));
-        res.set_concat(res, extract(ctx.get(X64::IF),0,0));
-        res.set_concat(res, extract(ctx.get(X64::DF),0,0));
-        res.set_concat(res, extract(ctx.get(X64::OF),0,0));
-        res.set_concat(res, extract(ctx.get(X64::IOPL),1,0));
-        res.set_concat(res, extract(ctx.get(X64::NT),0,0));
-        res.set_concat(res, Value(1,0));
-        res.set_concat(res, extract(ctx.get(X64::RF),0,0));
-        res.set_concat(res, extract(ctx.get(X64::VM),0,0));
-        res.set_concat(res, extract(ctx.get(X64::AC),0,0));
-        res.set_concat(res, extract(ctx.get(X64::VIF),0,0));
-        res.set_concat(res, extract(ctx.get(X64::VIP),0,0));
-        res.set_concat(res, extract(ctx.get(X64::ID),0,0));
-        res.set_concat(res, Value(42,0));
+        res.set_concat(Value(1,1), res);
+        res.set_concat(extract(ctx.get(X64::PF),0,0), res);
+        res.set_concat(Value(1,0), res);
+        res.set_concat(extract(ctx.get(X64::AF),0,0), res);
+        res.set_concat(Value(1,0), res);
+        res.set_concat(extract(ctx.get(X64::ZF),0,0), res);
+        res.set_concat(extract(ctx.get(X64::SF),0,0), res);
+        res.set_concat(extract(ctx.get(X64::TF),0,0), res);
+        res.set_concat(extract(ctx.get(X64::IF),0,0), res);
+        res.set_concat(extract(ctx.get(X64::DF),0,0), res);
+        res.set_concat(extract(ctx.get(X64::OF),0,0), res);
+        res.set_concat(extract(ctx.get(X64::IOPL),1,0), res);
+        res.set_concat(extract(ctx.get(X64::NT),0,0), res);
+        res.set_concat(Value(1,0), res);
+        res.set_concat(extract(ctx.get(X64::RF),0,0), res);
+        res.set_concat(extract(ctx.get(X64::VM),0,0), res);
+        res.set_concat(extract(ctx.get(X64::AC),0,0), res);
+        res.set_concat(extract(ctx.get(X64::VIF),0,0), res);
+        res.set_concat(extract(ctx.get(X64::VIP),0,0), res);
+        res.set_concat(extract(ctx.get(X64::ID),0,0), res);
+        res.set_concat(Value(42,0), res);
     }
     else
         throw runtime_exception("x64_alias_getter: got unsupported register");
