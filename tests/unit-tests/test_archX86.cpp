@@ -6624,7 +6624,7 @@ namespace test
                
             return nb;
         }
-        
+
         unsigned int disass_pushad(MaatEngine& sym){
             unsigned int nb = 0;
             string code;
@@ -6660,6 +6660,27 @@ namespace test
                             "ArchX86: failed to disassembly and/or execute PUSHAD");
             nb += _assert(  (uint32_t)sym.mem->read(0x1800, 4).as_uint() == 0x11111111,
                             "ArchX86: failed to disassembly and/or execute PUSHAD");
+
+            return nb;
+        }
+
+        unsigned int disass_pushfd(MaatEngine& sym){
+            unsigned int nb = 0;
+            string code("\x9C", 1); // pushfd
+            sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+            sym.mem->write_buffer(0x1000+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
+            sym.cpu.ctx().set(X86::EFLAGS, 13);
+            sym.cpu.ctx().set(X86::ESP, 0x1904);
+            
+            sym.run_from(0x1000, 1);
+            nb += _assert(
+                sym.cpu.ctx().get(X86::ESP).as_uint() == 0x1900,
+                "ArchX86: failed to disassembly and/or execute PUSHFD"
+            );
+            nb += _assert(
+                sym.mem->read(0x1900, 4).as_uint() == sym.cpu.ctx().get(X86::EFLAGS).as_uint(),
+                "ArchX86: failed to disassembly and/or execute PUSHFD"
+            );
 
             return nb;
         }
@@ -9220,6 +9241,7 @@ void test_archX86(){
     total += disass_punpcklwd(engine);
     total += disass_push(engine);
     total += disass_pushad(engine);
+    total += disass_pushfd(engine);
     total += disass_pxor(engine);
 
     total += disass_rcl(engine);

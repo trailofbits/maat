@@ -477,6 +477,8 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "FPUDataPointer") return maat::ir::Reg(maat::X86::FPUDP, 32);
     if (reg_name == "FPULastInstructionOpcode") return maat::ir::Reg(maat::X86::FPUOP, 11);
     if (reg_name == "CR0") return maat::ir::Reg(maat::X86::CR0, 32);
+    if (reg_name == "eflags") return maat::ir::Reg(maat::X86::EFLAGS, 32);
+    if (reg_name == "flags") return maat::ir::Reg(maat::X86::EFLAGS, 16);
 
     throw maat::runtime_exception(maat::Fmt()
             << "X86: Register translation from SLEIGH to MAAT missing for register "
@@ -1291,6 +1293,10 @@ maat::ir::Param sleigh_reg_translate_X64(const std::string& reg_name)
     if (reg_name == "ST5") return maat::ir::Reg(maat::X64::ST5, 80);
     if (reg_name == "ST6") return maat::ir::Reg(maat::X64::ST6, 80);
     if (reg_name == "ST7") return maat::ir::Reg(maat::X64::ST7, 80);
+
+    if (reg_name == "rflags") return maat::ir::Reg(maat::X64::RFLAGS, 64);
+    if (reg_name == "eflags") return maat::ir::Reg(maat::X64::RFLAGS, 32);
+    if (reg_name == "flags") return maat::ir::Reg(maat::X64::RFLAGS, 16);
 
     throw maat::runtime_exception(maat::Fmt()
             << "X64: Register translation from SLEIGH to MAAT missing for register "
