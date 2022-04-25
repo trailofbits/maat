@@ -6217,7 +6217,6 @@ namespace test
         unsigned int disass_pslldq(MaatEngine& sym){
             unsigned int nb = 0;
             string code;
-
             code = string("\x66\x0F\x73\xF8\x03", 5); // pslldq xmm0, 3
             sym.mem->write_buffer(0x1040, (uint8_t*)code.c_str(), code.size());
             sym.mem->write_buffer(0x1040+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
@@ -9209,7 +9208,7 @@ void test_archX86(){
     total += disass_por(engine);
     total += disass_pshufd(engine);
     // TODO - ghidra bug: total += disass_pslld(engine); 
-    // total += disass_pslldq(engine);
+    total += disass_pslldq(engine);
     // TODO - ghidra bug: total += disass_psllq(engine);
     total += disass_psubb(engine);
     total += disass_punpckhdq(engine);
