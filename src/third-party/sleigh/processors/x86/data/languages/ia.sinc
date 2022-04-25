@@ -6914,7 +6914,7 @@ define pcodeop psignd;
 define pcodeop pslldq;
 :PSLLDQ         XmmReg2, imm8    is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x73; xmmmod = 3 & reg_opcode=7 & XmmReg2; imm8
 {
-    XmmReg2 = XmmReg2 << imm8;
+    XmmReg2 = XmmReg2 << (imm8 * 8); # Boyan: The shift is in bytes, not bits !
 }
 
 define pcodeop psllw;
@@ -6988,7 +6988,7 @@ define pcodeop psraw;
 :PSRAW          mmxreg, m64      is vexMode=0 &  mandover=0 & byte=0x0F; byte=0xE1; mmxreg ... & m64 ... { mmxreg = psraw(mmxreg, m64); }
 :PSRAW          mmxreg1, mmxreg2 is vexMode=0 &  mandover=0 & byte=0x0F; byte=0xE1; mmxmod = 3 & mmxreg1 & mmxreg2 { mmxreg1 = psraw(mmxreg1, mmxreg2); }
 :PSRAW          mmxreg2, imm8    is vexMode=0 &  mandover=0 & byte=0x0F; byte=0x71; mod = 0b11 & reg_opcode=4 & mmxreg2; imm8 { mmxreg2 = psraw(mmxreg2, imm8:8); }
-                    
+           
 :PSRAD          mmxreg, m64      is vexMode=0 &  mandover=0 & byte=0x0F; byte=0xE2; mmxreg ... & m64
 {
 # a count greater than 31 just clears all the bits
