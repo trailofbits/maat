@@ -1792,6 +1792,27 @@ namespace test{
 
             return nb;
         }
+
+        unsigned int disass_pushfq(MaatEngine& sym){
+            unsigned int nb = 0;
+            string code("\x9C", 1); // pushfd
+            sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+            sym.mem->write_buffer(0x1000+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
+            sym.cpu.ctx().set(X64::RFLAGS, 13);
+            sym.cpu.ctx().set(X64::RSP, 0x1908);
+
+            sym.run_from(0x1000, 1);
+            nb += _assert(
+                sym.cpu.ctx().get(X64::RSP).as_uint() == 0x1900,
+                "ArchX64: failed to disassembly and/or execute PUSHFQ"
+            );
+            nb += _assert(
+                sym.mem->read(0x1900, 8).as_uint() == sym.cpu.ctx().get(X64::RFLAGS).as_uint(),
+                "ArchX64: failed to disassembly and/or execute PUSHFQ"
+            );
+
+            return nb;
+        }
         
         unsigned int disass_pxor(MaatEngine& engine){
             unsigned int nb = 0;
@@ -2730,6 +2751,7 @@ void test_archX64(){
     */
     total += disass_punpcklwd(engine);
     total += disass_push(engine);
+    total += disass_pushfq(engine);
     total += disass_pxor(engine);
     total += disass_rcl(engine);
     total += disass_rcr(engine);
