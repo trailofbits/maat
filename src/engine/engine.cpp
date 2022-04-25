@@ -997,7 +997,7 @@ MaatEngine::snapshot_t MaatEngine::take_snapshot()
     snapshot.symbolic_mem = mem->symbolic_mem_engine.take_snapshot();
     snapshot.pending_ir_state = current_ir_state;
     snapshot.info = info;
-    snapshot.process = process;
+    snapshot.process = std::make_shared<ProcessInfo>(*process);
     snapshot.page_permissions = mem->page_manager.regions();
     snapshot.mem_mappings = mem->mappings.get_maps();
     snapshot.path = path.take_snapshot();
