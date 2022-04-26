@@ -7,6 +7,7 @@
 #include "maat/engine.hpp"
 #include "maat/varcontext.hpp"
 #include "maat/env/env_EVM.hpp"
+#include "maat/event.hpp"
 #include <fstream>
 
 using std::cout;
@@ -18,7 +19,7 @@ namespace adv_evm{
 #ifdef MAAT_HAS_SOLVER_BACKEND        
 
 using namespace maat;
-
+using namespace maat::event;
 
 unsigned int _assert(bool val, const string& msg)
 {
@@ -27,7 +28,7 @@ unsigned int _assert(bool val, const string& msg)
         cout << "\nFail: " << msg << endl << std::flush; 
         throw test_exception();
     }
-    return 1; 
+    return 1;
 }
 
 int solve_symbolic_storage()
@@ -143,12 +144,122 @@ int execute_simple_transaction()
     return nb;
 }
 
+
+bool _explore_all_states(MaatEngine& engine)
+{
+    solver::SolverZ3 sol;
+    bool snapshot_next = true;
+    // Path constraint callback
+    EventCallback path_cb = EventCallback(
+        [&snapshot_next](MaatEngine& engine)
+        {
+            if (snapshot_next)
+            {
+                engine.take_snapshot();
+            }
+            snapshot_next = true;
+            return Action::CONTINUE;
+        }
+    );
+
+    // Set breakpoints and handlers
+    engine.hooks.add(Event::PATH, When::BEFORE, EventCallback(path_cb), "path");
+
+    // Do code coverage
+    bool success = false;
+    bool cont = true;
+    engine.settings.record_path_constraints = true;
+
+    while (engine.run() == info::Stop::EXIT)
+    {
+        std::cout << "DEBUG ended new state\n";
+        
+        // Else go back to previous snapshot and invert condition
+        cont = false;
+        while (engine.nb_snapshots() > 0)
+        {
+            engine.restore_last_snapshot(true);
+            sol.reset();
+            for (auto c : engine.path.constraints())
+                sol.add(c);
+            // Add inverted path constraint
+            _assert(engine.info.branch->taken.has_value(), "do_code_coverage(): got invalid branch info on path constraint breakpoint");
+            if (*engine.info.branch->taken)
+                sol.add(engine.info.branch->cond->invert());
+            else
+                sol.add(engine.info.branch->cond);
+            std::cout << "DEBUG branch cond is : " << engine.info.branch->cond << "\n";
+            // _assert(sol.check(), "find_input(): couldn't find model to explore new branch");
+            if (sol.check())
+            {
+                // Get new input
+                auto model = sol.get_model();
+                // Update context and continue from here with new values
+                engine.vars->update_from(*model);
+                std::cout << "DEBUG trying new input " << engine.vars->get_as_number("input") << "\n";
+                cont = true;
+                snapshot_next = false; // Don't resnapshot this path constraint
+                break;
+            }
+            std::cout << "DEBUG failed to invert path constraint\n";
+        }
+        // If all snapshots consumed, we tried all possible paths, stop execution !
+        if (!cont)
+            break;
+    }
+    return success;
+}
+
+int explore_sqrt()
+{
+    int nb = 0;
+    MaatEngine engine(Arch::Type::EVM);
+    // Manually encode input data to call sqrt() in the contract
+    std::vector<Value> tx_data{
+        Value(32, 0x677342ce), // sqrt(uint256)
+        Value(exprvar(256, "input"))
+    };
+    engine.vars->set("input", Number(256, 4));
+
+    engine.settings.log_insts = true;
+
+    engine.load(
+        "tests/resources/smart_contracts/Sqrt.bin",
+        loader::Format::NONE,
+        0,
+        {}, {}, {}, {}, {}
+    );
+
+    // Send transaction
+    env::EVM::get_contract_for_engine(engine)->transaction = env::EVM::Transaction(
+        Value(256, 1), // origin
+        Value(256, 1), // sender
+        Number(256, 2), // recipient
+        Value(256, 0), // value
+        tx_data, // data
+        Value(256, 46546516351) // gas_limit
+    );
+
+    // Execute transaction
+    // engine.run();
+    _explore_all_states(engine);
+    nb += _assert(
+        engine.info.exit_status.has_value()
+        and engine.info.exit_status->as_uint() == (int)env::EVM::TransactionResult::Type::RETURN,
+        "Transaction exited incorrectly"
+    );
+
+    for (auto const& val : env::EVM::get_contract_for_engine(engine)->transaction->result->return_data())
+        std::cout << "DEBUG " << val.as_number(*engine.vars) << "\n";
+    return nb;
+}
+
 #endif // ifdef MAAT_HAS_SOLVER_BACKEND
     }
 }
 
 using namespace test::adv_evm;
- 
+
 void test_adv_evm()
 {
 #ifdef MAAT_HAS_SOLVER_BACKEND
@@ -160,6 +271,7 @@ void test_adv_evm()
 
     total += solve_symbolic_storage();
     total += execute_simple_transaction();
+    total += explore_sqrt();
 
     cout << "\t" << total << "/" << total << green << "\t\tOK" << def << endl;
 #endif
