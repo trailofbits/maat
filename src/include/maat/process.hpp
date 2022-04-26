@@ -19,6 +19,7 @@ public:
     std::optional<Value> exit_status; ///< Status with whom process exited
 public:
     ProcessInfo(): pid(0), pwd(""), binary_path(""), terminated(false){}
+    ProcessInfo(const ProcessInfo& other) = default;
     virtual ~ProcessInfo() = default;
 
     virtual serial::uid_t class_uid() const

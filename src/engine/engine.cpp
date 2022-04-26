@@ -61,6 +61,7 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr)
     callother_handlers = callother::default_handler_map();
     // Initialize all registers to their proper bit-size with value 0
     cpu = ir::CPU(arch->nb_regs);
+    cpu.ctx().init_alias_getset(arch->type);
     for (reg_t reg = 0; reg < arch->nb_regs; reg++)
         cpu.ctx().set(reg, Number(arch->reg_size(reg), 0));
     // Initialize some variables for execution statefullness
@@ -1019,7 +1020,7 @@ MaatEngine::snapshot_t MaatEngine::take_snapshot()
     snapshot.symbolic_mem = mem->symbolic_mem_engine.take_snapshot();
     snapshot.pending_ir_state = current_ir_state;
     snapshot.info = info;
-    snapshot.process = process;
+    snapshot.process = std::make_shared<ProcessInfo>(*process);
     snapshot.page_permissions = mem->page_manager.regions();
     snapshot.mem_mappings = mem->mappings.get_maps();
     snapshot.path = path.take_snapshot();
@@ -1384,6 +1385,7 @@ void MaatEngine::load(serial::Deserializer& d)
       >> snapshots >> arch >> vars >> mem
       >> cpu >> env >> symbols >> process
       >> info >> settings;
+    cpu.ctx().init_alias_getset(arch->type);
     // Lifter(s)
     size_t tmp_size;
     d >> bits(tmp_size);

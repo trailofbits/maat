@@ -185,7 +185,8 @@ namespace X86
     static constexpr reg_t ST5 = 66;
     static constexpr reg_t ST6 = 67;
     static constexpr reg_t ST7 = 68;
-    static constexpr reg_t NB_REGS = 69;
+    static constexpr reg_t EFLAGS = 69;
+    static constexpr reg_t NB_REGS = 70;
 
     /** \addtogroup arch
      * \{ */
@@ -304,7 +305,8 @@ namespace X64
     static constexpr reg_t ST5 = 76;
     static constexpr reg_t ST6 = 77;
     static constexpr reg_t ST7 = 78;
-    static constexpr reg_t NB_REGS = 87;
+    static constexpr reg_t RFLAGS = 87;
+    static constexpr reg_t NB_REGS = 88;
 
     /** \addtogroup arch
      * \{ */

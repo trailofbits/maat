@@ -21,6 +21,7 @@ add_library(maat_maat
   src/arch/arch_EVM.cpp
   src/arch/arch_X86.cpp
   src/arch/lifter.cpp
+  src/arch/register_aliases.cpp
   src/engine/callother.cpp
   src/engine/engine.cpp
   src/engine/event.cpp

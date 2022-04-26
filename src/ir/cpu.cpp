@@ -176,9 +176,16 @@ void ProcessedInst::reset()
 }
 
 
-CPUContext::CPUContext(int nb_regs)
+CPUContext::CPUContext(int nb_regs): alias_setter(nullptr), alias_getter(nullptr)
 {
     regs = std::vector<Value>(nb_regs);
+    
+}
+
+void CPUContext::_set_aliased_reg(ir::reg_t reg, const Value& val)
+{
+    if (_is_alias(reg))
+        alias_setter(*this, reg, val);
 }
 
 void CPUContext::set(ir::reg_t reg, const Value& value)
@@ -195,6 +202,7 @@ void CPUContext::set(ir::reg_t reg, const Value& value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
 void CPUContext::set(ir::reg_t reg, Expr value)
@@ -211,6 +219,7 @@ void CPUContext::set(ir::reg_t reg, Expr value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
 void CPUContext::set(ir::reg_t reg, cst_t value)
@@ -227,6 +236,7 @@ void CPUContext::set(ir::reg_t reg, cst_t value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, regs.at(idx));
 }
 
 void CPUContext::set(ir::reg_t reg, Number&& value)
@@ -243,6 +253,7 @@ void CPUContext::set(ir::reg_t reg, Number&& value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
 void CPUContext::set(ir::reg_t reg, const Number& value)
@@ -259,13 +270,22 @@ void CPUContext::set(ir::reg_t reg, const Number& value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
-const Value& CPUContext::get(ir::reg_t reg) const
+bool CPUContext::_is_alias(ir::reg_t reg) const
+{
+    return aliased_regs.find(reg) != aliased_regs.end();
+}
+
+const Value& CPUContext::get(ir::reg_t reg)
 {
     int idx(reg);
+
     try
     {
+        if (_is_alias(reg) and reg >= 0 and reg < regs.size())
+            regs[idx] = alias_getter(*this, reg);
         return regs.at(idx);
     }
     catch(const std::out_of_range&)
@@ -296,7 +316,11 @@ void CPUContext::load(serial::Deserializer& d)
 std::ostream& operator<<(std::ostream& os, const CPUContext& ctx)
 {
     for (int i = 0; i < ctx.regs.size(); i++)
+    {
+        if (ctx._is_alias(i))
+            continue;
         os << "REG_" << std::dec << i << ": " << ctx.regs[i] << "\n";
+    }
     return os;
 }
 
@@ -304,7 +328,11 @@ std::ostream& operator<<(std::ostream& os, const CPUContext& ctx)
 void CPUContext::print(std::ostream& os, const Arch& arch)
 {
     for (int i = 0; i < arch.nb_regs; i++)
+    {
+        if (_is_alias(i))
+            continue;
         os << arch.reg_name(i) << ": " << regs[i] << "\n";
+    }
 }
 
 
