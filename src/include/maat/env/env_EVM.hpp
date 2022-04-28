@@ -121,6 +121,7 @@ public:
         RETURN,
         REVERT,
         STOP,
+        INVALID,
         NONE
     };
 private:
@@ -180,6 +181,8 @@ public:
 public:
     /** Constructor. Create new deployed contract */
     Contract(const MaatEngine& engine, Value address);
+    Contract(const Contract& other) = default;
+    virtual ~Contract() = default;
 };
 
 // Util functions
@@ -211,12 +214,18 @@ Value _do_keccak256(uint8_t* in, int size);
 class EthereumEmulator: public EnvEmulator
 {
 private:
+    // pair<EnvEmulator snapshot, copy of ethereum>
+    using Snapshot = std::shared_ptr<EthereumEmulator>;
+    std::vector<Snapshot> _snapshots;
+private:
     int _uid_cnt;
     std::unordered_map<int, contract_t> _contracts;
 public:
     KeccakHelper keccak_helper;
 public:
     EthereumEmulator();
+    EthereumEmulator(const EthereumEmulator&);
+    EthereumEmulator& operator=(const EthereumEmulator& other);
     virtual ~EthereumEmulator() = default;
 private:
     /// In-place initialization function used by constructor and deserializer
@@ -226,6 +235,11 @@ public:
     int add_contract(contract_t contract);
     /// Get running contract by uid
     contract_t get_contract_by_uid(int uid) const;
+public:
+    /// Take a snapshot of the environment
+    virtual snapshot_t take_snapshot() override;
+    /// Restore a snapshot of the environment
+    virtual void restore_snapshot(snapshot_t snapshot, bool remove=false) override;
 public:
     virtual maat::serial::uid_t class_uid() const;
     virtual void dump(maat::serial::Serializer& s) const;

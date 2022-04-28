@@ -23,7 +23,7 @@ namespace test
             }
             return 1; 
         }
-        
+
         unsigned int _assert(bool val, const std::string& msg)
         {
             if( !val){
@@ -176,8 +176,10 @@ namespace test
         unsigned int concat_patterns(ExprSimplifier& s)
         {
             unsigned int nb = 0;
-            Expr e = exprvar(64, "var1");
+            Expr e = exprvar(64, "var1"),
+                 e2 = exprvar(64, "var2");
             Expr    v1 = exprvar(8, "a"),
+                    v2 = exprvar(8, "b"),
                     c1 = exprcst(24, 0x100c3);
             Expr e1 = concat(v1, c1);
             nb += _assert_simplify(concat(extract(e, 63,10), extract(e,9,0)), e, s);
@@ -195,6 +197,15 @@ namespace test
             e1 = exprcst(64, 0xffffffff00000000) & concat(exprcst(32, 0), exprvar(32, "blu"));
             nb += _assert_simplify(e1, exprcst(64, 0), s);
 
+            e1 = concat(exprcst(32, 0), ITE(v1, ITECond::EQ, v2, e, e2));
+            nb += _assert_simplify(
+                e1, ITE(
+                        v1, ITECond::EQ, v2, 
+                        concat(exprcst(32, 0),e),
+                        concat(exprcst(32, 0),e2)
+                    ),
+                s
+            );
             return nb; 
         }
         
@@ -218,6 +229,28 @@ namespace test
             nb += _assert_simplify(ITE(c2, ITECond::EQ, c1, e2, e3), e3, s);
             nb += _assert_simplify(ITE(c2, ITECond::LE, c1, e2, e3), e3, s);
             nb += _assert_simplify(ITE(c2, ITECond::LT, c1, e2, e3), e3, s);
+
+            return nb; 
+        }
+
+        unsigned int ite_patterns(ExprSimplifier& s)
+        {
+            unsigned int nb = 0;
+            Expr e1 = exprvar(32, "var1"), e2 = exprvar(32, "var2"), e3 = exprvar(32, "var3");
+            Expr    zero = exprcst(32, 0), 
+                    one = exprcst(32, 1);
+            
+            Expr e = ITE(
+                zero,
+                ITECond::EQ,
+                ITE(e1, ITECond::LT, e2, zero, one),
+                e1, e2
+            );
+            nb += _assert_simplify(
+                e,
+                ITE(e1, ITECond::LT, e2, e1, e2),
+                s
+            );
 
             return nb; 
         }
@@ -280,6 +313,7 @@ void test_simplification(){
     simp.add(es_concat_patterns);
     simp.add(es_arithmetic_factorize);
     simp.add(es_basic_ite);
+    simp.add(es_ite_patterns);
     //simp.add(es_generic_distribute);
     simp.add(es_generic_factorize);
     simp.add(es_deep_associative);
@@ -304,6 +338,7 @@ void test_simplification(){
     total += logical_properties(simp);
     total += concat_patterns(simp);
     total += basic_ite_condition(simp);
+    total += ite_patterns(simp);
     total += advanced(simp);
 
     std::cout   << "\t" << total << "/" << total << green << "\t\tOK" 

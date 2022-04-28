@@ -328,10 +328,11 @@ info::Stop MaatEngine::run(int max_inst)
             // Simplify abstract expressions
             if (settings.force_simplify)
             {
-                // Simplify only if not concrete
+                // Simplify only we set a register to a non concrete value
+                // or if the operation was a callother
                 if (
                     pinst.res.is_abstract() 
-                    and inst.out.is_reg()
+                    and (inst.out.is_reg() or inst.op == ir::Op::CALLOTHER)
                     and not pinst.res.expr()->is_concrete(*vars)
                 )
                 {
@@ -429,8 +430,8 @@ bool MaatEngine::process_branch(
     if (!ir::is_branch_op(inst.op))
         throw runtime_exception("MaatEngine::process_branch(): called with non-branching instruction!");
     
-    const Value&    in0 = pinst.in0.value(), 
-                    in1 = pinst.in1.value();
+    const Value& in0 = pinst.in0.value(); 
+    Value in1 = pinst.in1.value();
     Value next(arch->bits(), asm_inst.addr()+asm_inst.raw_size());
     bool taken = false;
     std::optional<bool> opt_taken;
@@ -486,6 +487,10 @@ bool MaatEngine::process_branch(
             info.reset();
             break;
         case ir::Op::CBRANCH:
+            // If we record a symbolic constraints, simplify it...
+            if (settings.record_path_constraints and not in1.is_concrete(*vars))
+                in1 = simplifier->simplify(in1.as_expr());
+
             // Try to resolve the branch is not symbolic
             if (not in1.is_symbolic(*vars))
             {
@@ -1024,7 +1029,7 @@ MaatEngine::snapshot_t MaatEngine::take_snapshot()
     snapshot.page_permissions = mem->page_manager.regions();
     snapshot.mem_mappings = mem->mappings.get_maps();
     snapshot.path = path.take_snapshot();
-    snapshot.env = env->fs.take_snapshot();
+    snapshot.env = env->take_snapshot();
     // Snapshot ID is its index in the snapshots list
     return snapshots->size()-1;
 }
@@ -1087,7 +1092,7 @@ void MaatEngine::restore_last_snapshot(bool remove)
     mem->page_manager.set_regions(std::move(snapshot.page_permissions));
     mem->mappings.set_maps(std::move(snapshot.mem_mappings));
     path.restore_snapshot(snapshot.path);
-    env->fs.restore_snapshot(snapshot.env);
+    env->restore_snapshot(snapshot.env, remove);
     // Restore memory segments
     for (addr_t start : snapshot.created_segments)
     {

@@ -127,12 +127,6 @@ bool IntervalTree::contains_interval(ucst_t min, ucst_t max, unsigned int max_co
     return false;
 }
 
-IntervalTree::~IntervalTree()
-{
-    // Now that left and right are unique_ptr they will be
-    // deleted automatically
-}
-
 uid_t IntervalTree::class_uid() const
 {
     return serial::ClassId::INTERVAL_TREE;
@@ -140,15 +134,12 @@ uid_t IntervalTree::class_uid() const
 
 void IntervalTree::dump(Serializer& s) const
 {
-    s << bits(center) << left.get() << right.get() << match_min << match_max;
+    s << bits(center) << left << right << match_min << match_max;
 }
 
 void IntervalTree::load(Deserializer& d)
 {
-    IntervalTree *t1, *t2;
-    d >> bits(center) >> t1 >> t2 >> match_min >> match_max;
-    left = std::unique_ptr<IntervalTree>(t1);
-    right = std::unique_ptr<IntervalTree>(t2);
+    d >> bits(center) >> left >> right >> match_min >> match_max;
 }
 
 

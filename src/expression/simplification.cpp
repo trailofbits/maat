@@ -120,6 +120,7 @@ std::shared_ptr<ExprSimplifier> NewDefaultExprSimplifier()
     simp->add(es_concat_patterns);
     simp->add(es_arithmetic_factorize);
     simp->add(es_basic_ite);
+    simp->add(es_ite_patterns);
     //simp->add(es_generic_distribute);
     simp->add(es_generic_factorize);
     //simp->add(es_deep_associative);
@@ -473,6 +474,17 @@ Expr es_concat_patterns(Expr e)
         return extract(e->args[0]->args[0], e->args[0]->args[1], e->args[1]->args[2]);
     }
     
+    // concat(X, ITE[](A,B)) --> ITE[](concat(X,A), concat(X,B))
+    if (e->is_type(ExprType::CONCAT) && e->args[1]->is_type(ExprType::ITE))
+    {
+        const Expr& ite = e->args[1];
+        return ITE(
+            ite->cond_left(), ite->cond_op(), ite->cond_right(),
+            concat(e->args[0], ite->if_true()),
+            concat(e->args[0], ite->if_false())  
+        );
+    }
+
     // TODO: support the below simplifications for expressions > 64bits also
     if (e->size > 64)
         return e;
@@ -659,6 +671,68 @@ Expr es_basic_ite(Expr e)
     if( e->if_true()->eq(e->if_false()))
     {
         return e->if_true();
+    }
+
+    return e;
+}
+
+/* Advanced patterns for ITE */
+Expr es_ite_patterns(Expr e)
+{
+    if(!e->is_type(ExprType::ITE))
+    {
+        return e;
+    }
+
+    // TODO: ITE[M!=ITE[X](N,M)](A,B) --> ...
+
+    // ITE[M==ITE[X](N,M)](A,B) --> ITE[X](B, A)
+    // ITE[M==ITE[X](M,N)](A,B) --> ITE[X](A, B)
+    Expr e_cst = nullptr, e_ite = nullptr;
+    if (
+        e->cond_op() == ITECond::EQ
+        and e->cond_right()->is_type(ExprType::ITE)
+        and e->cond_right()->if_true()->is_type(ExprType::CST)
+        and e->cond_right()->if_false()->is_type(ExprType::CST)
+    )
+    {
+        e_cst = e->cond_left();
+        e_ite = e->cond_right();
+    }
+    else if (
+        e->cond_op() == ITECond::EQ
+        and e->cond_left()->is_type(ExprType::ITE)
+        and e->cond_left()->if_true()->is_type(ExprType::CST)
+        and e->cond_left()->if_false()->is_type(ExprType::CST)
+    )
+    {
+        e_ite = e->cond_left();
+        e_cst = e->cond_right();
+    }
+    if (e_cst != nullptr and e_ite != nullptr)
+    {
+        // ITE[M==ITE[X](N,M)](A,B) --> ITE[X](B, A)
+        if (
+            not e_cst->eq(e_ite->if_true())
+            and e_cst->eq(e_ite->if_false())
+        ){
+            return ITE(
+                e_ite->cond_left(), e_ite->cond_op(), e_ite->cond_right(),
+                e->if_false(),
+                e->if_true()
+            );
+        } 
+        // ITE[M==ITE[X](M,N)](A,B) --> ITE[X](A, B)
+        else if (
+            e_cst->eq(e_ite->if_true())
+            and not e_cst->eq(e_ite->if_false())
+        ){
+            return ITE(
+                e_ite->cond_left(), e_ite->cond_op(), e_ite->cond_right(),
+                e->if_true(),
+                e->if_false()
+            );
+        }
     }
 
     return e;

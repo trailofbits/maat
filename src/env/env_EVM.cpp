@@ -415,6 +415,22 @@ EthereumEmulator::EthereumEmulator(): EnvEmulator(Arch::Type::EVM, OS::NONE)
     _init();
 }
 
+EthereumEmulator::EthereumEmulator(const EthereumEmulator& other)
+{
+    *this = other;
+}
+
+EthereumEmulator& EthereumEmulator::operator=(const EthereumEmulator& other)
+{
+    // Copy every contract
+    for (const auto& [addr,contract] : other._contracts)
+        _contracts[addr] = std::make_shared<Contract>(*contract);
+    _uid_cnt = other._uid_cnt;
+    keccak_helper = other.keccak_helper;
+    // We don't copy snapshots !!!
+    return *this;
+}
+
 void EthereumEmulator::_init()
 {
     EnvEmulator::_init(Arch::Type::NONE, OS::NONE);
@@ -454,6 +470,24 @@ void EthereumEmulator::load(serial::Deserializer& d)
    // TODO
 }
 
+
+EnvEmulator::snapshot_t EthereumEmulator::take_snapshot()
+{
+    _snapshots.push_back(
+        std::make_shared<EthereumEmulator>(*this)
+    );
+    return _snapshots.size()-1;
+}
+
+void EthereumEmulator::restore_snapshot(snapshot_t snapshot, bool remove)
+{
+    while (snapshot+1 < _snapshots.size())
+        _snapshots.pop_back();
+
+    *this = *_snapshots.back();
+    if (remove)
+        _snapshots.pop_back();
+}
 
 std::shared_ptr<EthereumEmulator> get_ethereum(MaatEngine& engine)
 {

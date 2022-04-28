@@ -641,7 +641,12 @@ void EVM_REVERT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
 
 void EVM_INVALID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    throw callother_exception("INVALID: trying execute the 'INVALID' EVM instruction");
+    // engine.log.warning("Executing the 'INVALID' EVM instruction");
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+    auto type = env::EVM::TransactionResult::Type::INVALID;
+    engine.terminate_process(Value(32, (int)type));
+    contract->transaction->result = env::EVM::TransactionResult(type,{});
 }
 
 /// Return the default handler map for CALLOTHER occurences

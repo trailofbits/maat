@@ -359,8 +359,8 @@ class IntervalTree: public serial::Serializable
 {
 public:
     ucst_t center;
-    std::unique_ptr<IntervalTree> left;
-    std::unique_ptr<IntervalTree> right;
+    std::shared_ptr<IntervalTree> left;
+    std::shared_ptr<IntervalTree> right;
     std::list<SimpleInterval> match_min; // Sorted by min
     std::list<SimpleInterval> match_max; // Sorted by max
 
@@ -369,7 +369,7 @@ public:
     bool contains_addr(ucst_t val, unsigned int max_count=0xffffffff);
     bool contains_interval(ucst_t min, ucst_t max, unsigned int max_count=0xffffffff);
     void restore(int write_count);
-    virtual ~IntervalTree();
+    virtual ~IntervalTree() = default;
 public:
     virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;

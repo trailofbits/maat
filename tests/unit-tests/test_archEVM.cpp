@@ -901,6 +901,31 @@ namespace test{
             return nb;
         }
 
+        unsigned int test_env_snapshots()
+        {
+            unsigned int nb = 0;
+            MaatEngine engine(Arch::Type::EVM);
+            engine.mem->map(0x0, 0xfff);
+            setup_dummy_contract(engine);
+            auto contract = env::EVM::get_contract_for_engine(engine);
+            contract->stack.push(Value(256, 1));
+            engine.take_snapshot();
+            contract->stack.push(Value(256, 2));
+            contract->stack.push(Value(256, 3));
+            engine.restore_last_snapshot(true);
+            contract = env::EVM::get_contract_for_engine(engine);
+            nb += _assert(
+                contract->stack.size() == 1,
+                "ArchEVM: failed to restore Ethereum snapshot"
+            );
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "1",
+                "ArchEVM: failed to restore Ethereum snapshot"
+            );
+            return nb;
+        }
+
     }
 }
 
@@ -949,6 +974,7 @@ void test_archEVM()
     total += test_sstore(engine);
     total += test_keccak_helper();
     total += test_keccak(engine);
+    total += test_env_snapshots();
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

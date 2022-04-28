@@ -60,6 +60,7 @@ Expr es_basic_transform(Expr e); ///< simplifier function
 Expr es_logical_properties(Expr e); ///< Logical properties simplifier function 
 Expr es_concat_patterns(Expr e); ///< Simplifier function for 'Concat' expressions
 Expr es_basic_ite(Expr e); ///< Simplifier function on If-Then-Else expressions
+Expr es_ite_patterns(Expr e); ///< Simplifier with advanced patterns on If-Then-Else expressions
 Expr es_arithmetic_factorize(Expr e); ///< Factorization simplifier function
 Expr es_generic_factorize(Expr e); ///< Generic factorization simplifier function
 Expr es_generic_distribute(Expr e);
