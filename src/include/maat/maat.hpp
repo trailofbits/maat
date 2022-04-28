@@ -21,6 +21,8 @@
 #include "maat/config.hpp"
 #include "maat/stats.hpp"
 #include "maat/serializer.hpp"
+#include "maat/env/env.hpp"
+#include "maat/env/env_EVM.hpp"
 #include "maat/serialization_helpers.hpp"
 
 

@@ -118,8 +118,12 @@ Serializable* Deserializer::Factory::new_object(uid_t class_uid)
             return new ir::CPU(0);
         case ClassId::ENV_EMULATOR:
             return new env::EnvEmulator();
+        case ClassId::ENV_ETHEREUM_EMULATOR:
+            return new env::EVM::EthereumEmulator();
         case ClassId::ENV_LINUX_EMULATOR:
             return new env::LinuxEmulator(Arch::Type::NONE);
+        case ClassId::EVM_CONTRACT:
+            return new env::EVM::Contract();
         case ClassId::EXPR_BINOP:
             return new ExprBinop();
         case ClassId::EXPR_CONCAT:

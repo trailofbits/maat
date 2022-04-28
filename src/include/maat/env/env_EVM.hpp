@@ -21,7 +21,7 @@ namespace EVM{
  * \{ */
 
 /// EVM Stack
-class Stack
+class Stack: public serial::Serializable
 {
 private:
     std::vector<Value> _stack;
@@ -44,10 +44,14 @@ public:
 private:
     // Convert a position to corresponding index in internal vector
     int _pos_to_idx(int pos) const;
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
 };
 
 /// EVM Volatile Memory
-class Memory
+class Memory: public serial::Serializable
 {
 private:
     MemEngine _mem;
@@ -69,6 +73,10 @@ public:
 public:
     /// Expand memory if needed to write 'nb_bytes' at 'addr'
     void expand_if_needed(const Value& addr, size_t nb_bytes);
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
 };
 
 
@@ -92,7 +100,7 @@ class ValueEqual {
 };
 
 /// Contract permananent storage
-class Storage
+class Storage: public serial::Serializable
 {
 private:
     /// Storage state for concrete addresses
@@ -110,10 +118,14 @@ public:
     Value read(const Value& addr);
     /// Write storage word at 'addr'
     void write(const Value& addr, const Value& val, const Settings& settings);
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
 };
 
 /// Result of a call inside a contract
-class TransactionResult
+class TransactionResult: public serial::Serializable
 {
 public:
     enum class Type : uint8_t 
@@ -128,15 +140,20 @@ private:
     Type _type;
     std::vector<Value> _return_data;
 public:
+    TransactionResult();
     TransactionResult(Type type, std::vector<Value> return_data);
 public:
     const std::vector<Value>& return_data() const;
     size_t return_data_size() const;
     Type type() const;
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
 };
 
 /// Call into a smart contract
-class Transaction
+class Transaction: public serial::Serializable
 {
 public:
     Value origin; ///< Original account that initiated contract execution
@@ -163,10 +180,14 @@ public:
     Value data_load_word(size_t offset) const;
     /// Return bytes [offset ... offset+len] from transaction data
     std::vector<Value> data_load_bytes(size_t offset, size_t len) const;
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
 };
 
 /// Deployed Smart-Contract
-class Contract
+class Contract: public serial::Serializable
 {
 public:
     Value address; ///< Address where the contract is deployed
@@ -179,10 +200,16 @@ protected:
 public:
     unsigned int code_size; ///< Size of code currently executing
 public:
+    /// Dummy constructor used by deserializer
+    Contract();
     /** Constructor. Create new deployed contract */
     Contract(const MaatEngine& engine, Value address);
     Contract(const Contract& other) = default;
     virtual ~Contract() = default;
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
 };
 
 // Util functions
@@ -193,7 +220,7 @@ typedef std::shared_ptr<Contract> contract_t;
 
 
 /// Helper class for simulating the KECCAK hash function symbolically
-class KeccakHelper
+class KeccakHelper: public serial::Serializable
 {
 private:
     std::string _symbolic_hash_prefix;
@@ -205,6 +232,10 @@ public:
     Value apply(VarContext& ctx, const Value& val, uint8_t* raw_bytes);
     /// Get the prefix used for symbolic hash results
     const std::string& symbolic_hash_prefix() const;
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
 };
 
 // Compute the keccak hash of bytes and return the result as a 'Value'

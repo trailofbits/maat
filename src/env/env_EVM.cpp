@@ -6,6 +6,8 @@ namespace maat{
 namespace env{
 namespace EVM{
 
+using maat::serial::bits;
+
 int Stack::size() const
 {
     return _stack.size();
@@ -43,6 +45,21 @@ void Stack::set(const Value& value, int pos)
 void Stack::push(const Value& value)
 {
     _stack.push_back(value);
+}
+
+serial::uid_t Stack::class_uid() const
+{
+    return serial::ClassId::EVM_STACK;
+}
+
+void Stack::dump(serial::Serializer& s) const
+{
+    s << _stack;
+}
+
+void Stack::load(serial::Deserializer& d)
+{
+   d >> _stack;
 }
 
 std::ostream& operator<<(std::ostream& os, const Stack& stack)
@@ -106,6 +123,20 @@ void Memory::expand_if_needed(const Value& addr, size_t nb_bytes)
     // bytes have been allocated
 }
 
+serial::uid_t Memory::class_uid() const
+{
+    return serial::ClassId::EVM_MEMORY;
+}
+
+void Memory::dump(serial::Serializer& s) const
+{
+    s << _mem << bits(_size) << bits(_limit) << bits(_alloc_size) << _varctx;
+}
+
+void Memory::load(serial::Deserializer& d)
+{
+   d >> _mem >> bits(_size) >> bits(_limit) >> bits(_alloc_size) >> _varctx;
+}
 
 
 Storage::Storage(std::shared_ptr<VarContext> ctx)
@@ -184,6 +215,39 @@ void Storage::write(const Value& addr, const Value& val, const Settings& setting
     }
 }
 
+serial::uid_t Storage::class_uid() const
+{
+    return serial::ClassId::EVM_STORAGE;
+}
+
+void Storage::dump(serial::Serializer& s) const
+{
+    s << _storage << _varctx << bits(_has_symbolic_addresses);
+    // History
+    size_t tmp_size = writes_history.size();
+    s << bits(tmp_size);
+    for (const auto& p : writes_history)
+        s << p.first << p.second;
+}
+
+void Storage::load(serial::Deserializer& d)
+{
+    d >> _storage >> _varctx >> bits(_has_symbolic_addresses);
+    // History
+    size_t tmp_size;
+    d >> bits(tmp_size);
+    for (int i = 0; i < tmp_size; i++)
+    {
+        Value v1, v2;
+        d >> v1 >> v2;
+        writes_history.push_back(std::make_pair(v1, v2));
+    }
+}
+
+TransactionResult::TransactionResult()
+: _type(TransactionResult::Type::NONE)
+{}
+
 TransactionResult::TransactionResult(
     TransactionResult::Type type,
     std::vector<Value> return_data
@@ -206,6 +270,21 @@ size_t TransactionResult::return_data_size() const
     for (const auto& val : _return_data)
         res += val.size()/8;
     return res;
+}
+
+serial::uid_t TransactionResult::class_uid() const
+{
+    return serial::ClassId::EVM_TRANSACTION_RESULT;
+}
+
+void TransactionResult::dump(serial::Serializer& s) const
+{
+    s << bits(_type) << _return_data;
+}
+
+void TransactionResult::load(serial::Deserializer& d)
+{
+   d >> bits(_type) >> _return_data;
 }
 
 Transaction::Transaction()
@@ -336,9 +415,47 @@ std::vector<Value> Transaction::data_load_bytes(size_t offset, size_t len) const
     return res;
 }
 
+serial::uid_t Transaction::class_uid() const
+{
+    return serial::ClassId::EVM_TRANSACTION;
+}
+
+void Transaction::dump(serial::Serializer& s) const
+{
+    s << origin << sender << recipient << value << data << gas_limit << result;
+}
+
+void Transaction::load(serial::Deserializer& d)
+{
+    d >> origin >> sender >> recipient >> value >> data >> gas_limit >> result;
+}
+
+
+
+Contract::Contract()
+: memory(nullptr), storage(nullptr)
+{}
+
 Contract::Contract(const MaatEngine& engine, Value addr)
 : memory(engine.vars), address(addr), storage(engine.vars), code_size(0)
 {}
+
+serial::uid_t Contract::class_uid() const
+{
+    return serial::ClassId::EVM_CONTRACT;
+}
+
+void Contract::dump(serial::Serializer& s) const
+{
+    s << address << stack << memory << storage << transaction << result_from_last_call;
+    s << bits(code_size);
+}
+
+void Contract::load(serial::Deserializer& d)
+{
+    d >> address >> stack >> memory >> storage >> transaction >> result_from_last_call;
+    d >> bits(code_size);
+}
 
 void _set_EVM_code(MaatEngine& engine, uint8_t* code, size_t code_size)
 {
@@ -395,6 +512,21 @@ Value KeccakHelper::apply(VarContext& ctx, const Value& val, uint8_t* raw_bytes)
     }
     known_hashes[val] = res;
     return res;
+}
+
+serial::uid_t KeccakHelper::class_uid() const
+{
+    return serial::ClassId::EVM_KECCAK_HELPER;
+}
+
+void KeccakHelper::dump(serial::Serializer& s) const
+{
+    s << _symbolic_hash_prefix << known_hashes;
+}
+
+void KeccakHelper::load(serial::Deserializer& d)
+{
+    d >> _symbolic_hash_prefix >> known_hashes;
 }
 
 Value _do_keccak256(uint8_t* in, int size)
@@ -462,14 +594,27 @@ serial::uid_t EthereumEmulator::class_uid() const
 
 void EthereumEmulator::dump(serial::Serializer& s) const
 {
-    // TODO 
+    s << bits(_uid_cnt) << _snapshots << keccak_helper;
+    // Contracts
+    s << bits(_contracts.size());
+    for (const auto& [uid, c] : _contracts)
+        s << bits(uid) << c;
 }
 
 void EthereumEmulator::load(serial::Deserializer& d)
 {
-   // TODO
+    d >> bits(_uid_cnt) >> _snapshots >> keccak_helper;
+    // Contracts
+    size_t tmp_size;
+    d >> bits(tmp_size);
+    for (int i = 0; i < tmp_size; i++)
+    {
+        contract_t contract;
+        int uid;
+        d >> bits(uid) >> contract;
+        _contracts[uid] = contract; 
+    }
 }
-
 
 EnvEmulator::snapshot_t EthereumEmulator::take_snapshot()
 {
