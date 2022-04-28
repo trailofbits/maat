@@ -5,6 +5,7 @@
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 namespace maat
 {
@@ -263,6 +264,22 @@ std::ostream& operator<<(std::ostream& os, MemPageManager& mem)
 
 MemStatusBitmap::MemStatusBitmap():_bitmap(nullptr), _size(0){}
 
+MemStatusBitmap::MemStatusBitmap(const MemStatusBitmap& other)
+:_size(other._size)
+{
+    try
+    {
+        _bitmap = new uint8_t[_size]{0};
+        memcpy(_bitmap, other._bitmap, _size);
+    }
+    catch(std::bad_alloc)
+    {
+        throw mem_exception(Fmt()
+            << "Failed to copy MemStatusBitmap of size " << _size
+            >> Fmt::to_str );
+    }
+}
+
 MemStatusBitmap::MemStatusBitmap(offset_t nb_bytes)
 {
     // +1 to be sure to not loose bytes if nb_bytes is
@@ -516,6 +533,22 @@ void MemStatusBitmap::load(Deserializer& d)
 MemConcreteBuffer::MemConcreteBuffer(Endian endian)
 :_mem(nullptr), _endianness(endian){}
 
+MemConcreteBuffer::MemConcreteBuffer(const MemConcreteBuffer& other)
+:_endianness(other._endianness), _size(other._size)
+{
+    try
+    {
+        _mem = new uint8_t[_size]{0};
+        memcpy(_mem, other._mem, _size);
+    }
+    catch(const std::bad_alloc&)
+    {
+        throw mem_exception(Fmt()
+            << "Failed to copy MemConcreteBuffer of size " << _size
+            >> Fmt::to_str );
+    }
+}
+
 MemConcreteBuffer::MemConcreteBuffer(offset_t nb_bytes, Endian endian)
 :_endianness(endian)
 {
@@ -524,7 +557,7 @@ MemConcreteBuffer::MemConcreteBuffer(offset_t nb_bytes, Endian endian)
         _size = nb_bytes;
         _mem = new uint8_t[nb_bytes]{0};
     }
-    catch(std::bad_alloc)
+    catch(const std::bad_alloc&)
     {
         throw mem_exception(Fmt()
             << "Failed to allocate MemConcreteBuffer of size " << nb_bytes

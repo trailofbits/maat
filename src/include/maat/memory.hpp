@@ -68,6 +68,7 @@ public:
     MemStatusBitmap();
     /** Constructor */
     MemStatusBitmap(offset_t nb_bytes);
+    MemStatusBitmap(const MemStatusBitmap&);
     /** Destructor */
     virtual ~MemStatusBitmap();
     /** Extend the bitmap to make it represent 'nb_bytes' more bytes of
@@ -110,7 +111,7 @@ private:
 public:
     MemConcreteBuffer(Endian endian=Endian::LITTLE); ///< Constructor
     MemConcreteBuffer(offset_t nb_bytes, Endian endian=Endian::LITTLE); ///< Constructor
-    MemConcreteBuffer(const MemConcreteBuffer& other) = delete;
+    MemConcreteBuffer(const MemConcreteBuffer& other);
     MemConcreteBuffer(MemConcreteBuffer&& other) = delete;
     MemConcreteBuffer& operator=(const MemConcreteBuffer& other) = delete;
     MemConcreteBuffer& operator=(MemConcreteBuffer&& other) = delete;
@@ -177,6 +178,7 @@ private:
     Endian _endianness;
 public:
     MemAbstractBuffer(Endian endian=Endian::LITTLE); ///< Constructor
+    MemAbstractBuffer(const MemAbstractBuffer&) = default;
     virtual ~MemAbstractBuffer() = default;
     Expr read(offset_t off, unsigned int nb_bytes); ///< Read 'nb_bytes' bytes as an abstract value from offset 'off'
     void write(offset_t off, Expr val); ///< Write an abstract value at offset 'off'
