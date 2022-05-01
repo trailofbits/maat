@@ -22,6 +22,8 @@ PyMethodDef module_methods[] = {
     {"Solver", (PyCFunction)maat_Solver, METH_NOARGS, "Create a constraint solver"},
     // SimpleStateManager
     {"SimpleStateManager", (PyCFunction)maat_SimpleStateManager, METH_VARARGS, "Create a new helper for serializing/deserializing engine states"},
+    // EVM
+    {"Transaction", (PyCFunction)maat_Transaction, METH_VARARGS, "Create an ethereum transaction"},
     {NULL}
 };
 

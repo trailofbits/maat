@@ -26,6 +26,7 @@ add_library(maat_python MODULE
   bindings/python/py_cpu.cpp
   bindings/python/py_engine.cpp
   bindings/python/py_env.cpp
+  bindings/python/py_env_EVM.cpp
   bindings/python/py_event.cpp
   bindings/python/py_filesystem.cpp
   bindings/python/py_info.cpp

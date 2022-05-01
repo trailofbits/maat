@@ -12,7 +12,7 @@
 
 namespace maat
 {
-    
+
 /// Simulation of the external environment in which a process is run
 namespace env
 {

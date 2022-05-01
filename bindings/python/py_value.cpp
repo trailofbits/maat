@@ -776,22 +776,7 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
     }
     
     // Build result back to python
-    // TODO: transforming a std::vector<Value> into a list of Value should
-    // be factorized in a util function
-    PyObject* list = PyList_New(0);
-    if( list == NULL )
-    {
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& e : res)
-    {
-        if( PyList_Append(list, PyValue_FromValue(e)) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-
-    return list;
+    return native_to_py(res);
 }
 
 static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args, PyObject* keywords)
@@ -826,23 +811,8 @@ static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args, 
     {
         return PyErr_Format(PyExc_ValueError, e.what());
     }
-    
-    // Build result back to python
-    // TODO: transforming a std::vector<Value> into a list of Value should
-    // be factorized in a util function
-    PyObject* list = PyList_New(0);
-    if( list == NULL )
-    {
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (Value& e : res)
-    {
-        if( PyList_Append(list, PyValue_FromValue(e)) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-    return list;
+
+    return native_to_py(res);
 }
 
 static PyObject* VarContext_remove(PyObject* self, PyObject* args)

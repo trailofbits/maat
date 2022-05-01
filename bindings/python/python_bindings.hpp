@@ -281,6 +281,43 @@ PyObject* get_SimpleStateManager_Type();
 PyObject* maat_SimpleStateManager(PyObject* self, PyObject* args);
 #define as_simple_serializer_object(x)  (*((SimpleStateManager_Object*)x))
 
+// ============== EVM ======================
+typedef struct{
+    PyObject_HEAD
+    maat::env::EVM::Contract* contract;
+} EVMContract_Object;
+PyObject* get_EVMContract_Type();
+PyObject* PyEVMContract_FromContract(env::EVM::Contract*);
+#define as_contract_object(x)  (*((EVMContract_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    bool is_ref;
+    maat::env::EVM::Transaction* transaction;
+} EVMTransaction_Object;
+PyObject* get_EVMTransaction_Type();
+PyObject* PyEVMTx_FromTx(env::EVM::Transaction*, bool is_ref);
+PyObject* maat_Transaction(PyObject* self, PyObject* args);
+#define as_tx_object(x)  (*((EVMTransaction_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    maat::env::EVM::TransactionResult* result;
+} EVMTransactionResult_Object;
+PyObject* get_EVMTransactionResult_Type();
+PyObject* PyEVMTxResult_FromTxResult(env::EVM::TransactionResult*);
+#define as_tx_result_object(x)  (*((EVMTransactionResult_Object*)x))
+
+
+// ====== Utils =======
+// Transform a list of values into a list of python values,
+// returns a python error on error
+PyObject* native_to_py(const std::vector<Value>&);
+
+// Python bigint into multiprecision number
+// num MUST be a PyLong object (no further type checks in the function)
+Number bigint_to_number(size_t bits, PyObject* num);
+
 } // namespace py
 } // namespace maat
 #endif

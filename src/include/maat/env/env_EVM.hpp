@@ -272,9 +272,9 @@ public:
     /// Restore a snapshot of the environment
     virtual void restore_snapshot(snapshot_t snapshot, bool remove=false) override;
 public:
-    virtual maat::serial::uid_t class_uid() const;
-    virtual void dump(maat::serial::Serializer& s) const;
-    virtual void load(maat::serial::Deserializer& d);
+    virtual maat::serial::uid_t class_uid() const override;
+    virtual void dump(maat::serial::Serializer& s) const override;
+    virtual void load(maat::serial::Deserializer& d) override;
 };
 
 /** \brief Helper function that gets the environment linked to an engine and casts it to EthereumEmulator.
