@@ -636,6 +636,9 @@ void EthereumEmulator::restore_snapshot(snapshot_t snapshot, bool remove)
 
 std::shared_ptr<EthereumEmulator> get_ethereum(MaatEngine& engine)
 {
+    if (engine.arch->type != Arch::Type::EVM)
+        throw env_exception("get_ethereum(): can't be called with an architecture other than EVM");
+
     std::shared_ptr<EthereumEmulator> res = std::dynamic_pointer_cast<EthereumEmulator>(
         engine.env
     );
@@ -644,6 +647,9 @@ std::shared_ptr<EthereumEmulator> get_ethereum(MaatEngine& engine)
 
 contract_t get_contract_for_engine(MaatEngine& engine)
 {
+    if (engine.arch->type != Arch::Type::EVM)
+        throw env_exception("get_contract_for_engine(): can't be called with an architecture other than EVM");
+
     return get_ethereum(engine)->get_contract_by_uid(engine.process->pid);
 }
 

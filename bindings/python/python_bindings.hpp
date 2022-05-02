@@ -308,6 +308,8 @@ PyObject* get_EVMTransactionResult_Type();
 PyObject* PyEVMTxResult_FromTxResult(env::EVM::TransactionResult*);
 #define as_tx_result_object(x)  (*((EVMTransactionResult_Object*)x))
 
+// Return the contract associated with an engine
+PyObject* maat_contract(PyObject* mod, PyObject* args);
 
 // ====== Utils =======
 // Transform a list of values into a list of python values,

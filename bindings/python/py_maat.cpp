@@ -24,6 +24,7 @@ PyMethodDef module_methods[] = {
     {"SimpleStateManager", (PyCFunction)maat_SimpleStateManager, METH_VARARGS, "Create a new helper for serializing/deserializing engine states"},
     // EVM
     {"Transaction", (PyCFunction)maat_Transaction, METH_VARARGS, "Create an ethereum transaction"},
+    {"contract", (PyCFunction)maat_contract, METH_VARARGS, "Get EVM contract associated with a MaatEngine"},
     {NULL}
 };
 

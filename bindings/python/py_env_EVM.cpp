@@ -86,7 +86,7 @@ PyTypeObject EVMContract_Type = {
     0,                                        /* tp_new */
 };
 
-PyObject* PyEVMContract_FromEVMContract(env::EVM::Contract* contract)
+PyObject* PyEVMContract_FromContract(env::EVM::Contract* contract)
 {
     EVMContract_Object* object;
 
@@ -202,12 +202,12 @@ PyObject* maat_Transaction(PyObject* self, PyObject* args){
     std::vector<Value> data;
 
     if( !PyArg_ParseTuple(args, "O!O!O!O!OO!",
-        &py_origin, get_Value_Type(),
-        &py_sender, get_Value_Type(),
-        &py_recipient, &PyLong_Type,
-        &py_value, get_Value_Type(),
+        get_Value_Type(), &py_origin,
+        get_Value_Type(), &py_sender,
+        &PyLong_Type, &py_recipient,
+        get_Value_Type(), &py_value,
         &py_data,
-        &py_gas_limit, get_Value_Type())
+        get_Value_Type(), &py_gas_limit)
     ){
         return NULL;
     }
@@ -328,5 +328,27 @@ PyObject* get_EVMTransactionResult_Type()
 }
 
 
+// Helper functions
+PyObject* maat_contract(PyObject* mod, PyObject* args)
+{
+    PyObject * engine;
+    if( !PyArg_ParseTuple(args, "O!", get_MaatEngine_Type(), &engine))
+    {
+        return NULL;
+    }
+    try
+    {
+        env::EVM::contract_t contract = env::EVM::get_contract_for_engine(*as_engine_object(engine).engine);
+        if (contract == nullptr)
+        {
+            return PyErr_Format(PyExc_RuntimeError, "No EVM contract loaded in this engine");
+        }
+        return PyEVMContract_FromContract(contract.get()); // Always ref
+    }
+    catch(maat::env_exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
 
 }} // namespaces maat::py
