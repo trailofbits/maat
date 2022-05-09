@@ -82,7 +82,7 @@ static PyObject* MaatEngine_restore_snapshot(PyObject* self, PyObject* args, PyO
 
 static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywords){
     char * name;
-    int bin_type;
+    int bin_type = (int)loader::Format::NONE;
     unsigned long long base = 0;
     PyObject* py_cmdline_args = nullptr, *arg = nullptr;
     PyObject *py_envp = nullptr;
@@ -99,7 +99,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
     char* keywd[] = {"", "", "base", "args", "envp", "libdirs", "ignore_libs", "virtual_fs", "load_interp", NULL};
 
     if( !PyArg_ParseTupleAndKeywords(
-            args, keywords, "si|KOOOOOp", keywd,
+            args, keywords, "s|iKOOOOOp", keywd,
             &name, &bin_type, &base, 
             &py_cmdline_args, &py_envp,
             &py_libs, &py_ignore_libs,
