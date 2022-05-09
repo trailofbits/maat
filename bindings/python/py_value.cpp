@@ -473,7 +473,7 @@ PyObject* maat_Cst(PyObject* self, PyObject* args, PyObject* keywords)
     else if (PyLong_Check(val))
     {
         CATCH_EXPRESSION_EXCEPTION(
-            return (PyObject*)PyValue_FromValue(exprcst(size, PyLong_AsLongLong(val)));
+            return (PyObject*)PyValue_FromValue(bigint_to_number(size, val));
         )
     }
     else
@@ -938,6 +938,17 @@ PyObject* maat_VarContext(PyObject* self, PyObject* args){
 }
 
 // ========= Module initialisation ===========
+void register_type(PyObject* module, PyTypeObject* type_obj)
+{
+    // TODO(boyan): We could use PyModule_AddType(module, get_Config_Type()); instead
+    // of the cumbersome code below but it's not avaialble before Python 3.10 and we
+    // don't want to force Python 3.10 yet
+    if (PyType_Ready(type_obj) < 0)
+        return;
+    Py_INCREF(type_obj);
+    PyModule_AddObject(module, type_obj->tp_name, (PyObject*)type_obj);
+}
+
 void init_expression(PyObject* module)
 {
     // Add number operators to Value
@@ -954,6 +965,8 @@ void init_expression(PyObject* module)
     Value_operators.nb_rshift = Value_nb_rshift;
     Value_operators.nb_negative = Value_nb_neg;
     Value_operators.nb_invert = Value_nb_not;
+
+    register_type(module, (PyTypeObject*)get_Value_Type());
 }
 
 } // namespace py
