@@ -590,13 +590,15 @@ static PyObject* VarContext_repr(PyObject* self)
 static PyObject* VarContext_set(PyObject* self, PyObject* args)
 {
     const char * name;
-    cst_t value;
+    PyObject* value;
+    int bits = 64;
 
-    if( !PyArg_ParseTuple(args, "sl", &name, &value)){
+    if( !PyArg_ParseTuple(args, "sO!|i", &name, &PyLong_Type, &value, &bits)){
         return NULL;
     }
 
-    as_varctx_object(self).ctx->set(std::string(name), value);
+    Number number = bigint_to_number(bits, value);
+    as_varctx_object(self).ctx->set(std::string(name), number);
     Py_RETURN_NONE;
 }
 
@@ -614,7 +616,10 @@ static PyObject* VarContext_get(PyObject* self, PyObject* args)
     }
     try
     {
-        return PyLong_FromUnsignedLongLong(as_varctx_object(self).ctx->get(sname));
+        const Number& res =  as_varctx_object(self).ctx->get_as_number(sname);
+        std::stringstream ss;
+        ss << std::hex << res;
+        return PyLong_FromString(ss.str().c_str(), NULL, 16);
     }
     catch(const var_context_exception& e)
     {
@@ -938,17 +943,6 @@ PyObject* maat_VarContext(PyObject* self, PyObject* args){
 }
 
 // ========= Module initialisation ===========
-void register_type(PyObject* module, PyTypeObject* type_obj)
-{
-    // TODO(boyan): We could use PyModule_AddType(module, get_Config_Type()); instead
-    // of the cumbersome code below but it's not avaialble before Python 3.10 and we
-    // don't want to force Python 3.10 yet
-    if (PyType_Ready(type_obj) < 0)
-        return;
-    Py_INCREF(type_obj);
-    PyModule_AddObject(module, type_obj->tp_name, (PyObject*)type_obj);
-}
-
 void init_expression(PyObject* module)
 {
     // Add number operators to Value
