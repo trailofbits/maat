@@ -76,6 +76,7 @@ PyMODINIT_FUNC PyInit_maat()
     init_env(module);
     init_config(module);
     init_stats(module);
+    init_evm(module);
 
     PyState_AddModule(module, &maat_module_def);
 

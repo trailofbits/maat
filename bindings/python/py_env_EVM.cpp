@@ -351,4 +351,28 @@ PyObject* maat_contract(PyObject* mod, PyObject* args)
     }
 }
 
+void init_evm(PyObject* module)
+{
+    /* EVM enum */
+    PyObject* evm_enum = PyDict_New();
+    PyDict_SetItemString(evm_enum, "RETURN", PyLong_FromLong(
+        (int)env::EVM::TransactionResult::Type::RETURN)
+    );
+    PyDict_SetItemString(evm_enum, "REVERT", PyLong_FromLong(
+        (int)env::EVM::TransactionResult::Type::REVERT)
+    );
+    PyDict_SetItemString(evm_enum, "STOP", PyLong_FromLong(
+        (int)env::EVM::TransactionResult::Type::STOP)
+    );
+    PyDict_SetItemString(evm_enum, "INVALID", PyLong_FromLong(
+        (int)env::EVM::TransactionResult::Type::INVALID)
+    );
+    PyDict_SetItemString(evm_enum, "NONE", PyLong_FromLong(
+        (int)env::EVM::TransactionResult::Type::NONE)
+    );
+
+    PyObject* evm_class = create_class(PyUnicode_FromString("EVM"), PyTuple_New(0), evm_enum);
+    PyModule_AddObject(module, "EVM", evm_class);
+};
+
 }} // namespaces maat::py

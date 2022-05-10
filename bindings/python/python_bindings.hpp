@@ -282,6 +282,8 @@ PyObject* maat_SimpleStateManager(PyObject* self, PyObject* args);
 #define as_simple_serializer_object(x)  (*((SimpleStateManager_Object*)x))
 
 // ============== EVM ======================
+void init_evm(PyObject* module);
+
 typedef struct{
     PyObject_HEAD
     maat::env::EVM::Contract* contract;
