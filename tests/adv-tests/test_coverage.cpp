@@ -36,20 +36,22 @@ namespace code_coverage{
             bool snapshot_next = true;
             // Path constraint callback
             EventCallback path_cb = EventCallback(
-                [&snapshot_next](MaatEngine& engine)
+                [](MaatEngine& engine, void* data)
                 {
+                    bool& snapshot_next = *(bool*)data;
                     if (snapshot_next)
                     {
                         engine.take_snapshot();
                     }
                     snapshot_next = true;
                     return Action::CONTINUE;
-                }
+                },
+                &snapshot_next
             );
 
             // Set breakpoints and handlers
             engine.hooks.add(Event::EXEC, When::BEFORE, "end", AddrFilter(end));
-            engine.hooks.add(Event::PATH, When::BEFORE, EventCallback(path_cb), "path");
+            engine.hooks.add(Event::PATH, When::BEFORE, path_cb, "path");
 
             // Set EIP at starting point
             engine.cpu.ctx().set(X86::EIP, start);

@@ -33,7 +33,7 @@ def test_crackme1():
     )
     stdin.write_buffer(buf)
 
-    def solve_chall(m: MaatEngine):
+    def solve_chall(m: MaatEngine, data):
         if m.info.addr != 0x040008b1:
             return
         s = Solver()

@@ -38,7 +38,7 @@ serial::SimpleStateManager state_manager(states_dir);
 // Path constraint callback
 static bool snapshot_next = true;
 EventCallback path_cb = EventCallback(
-    [](MaatEngine& engine)
+    [](MaatEngine& engine, void* data)
     {
         std::shared_ptr<VarContext> model;
         if (snapshot_next)

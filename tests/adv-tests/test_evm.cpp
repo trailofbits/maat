@@ -150,7 +150,7 @@ bool _explore_all_states_no_check(MaatEngine& engine)
     bool snapshot_next = true;
     // Path constraint callback
     EventCallback path_cb = EventCallback(
-        [&snapshot_next](MaatEngine& engine)
+        [&snapshot_next](MaatEngine& engine, void* data)
         {
             if (snapshot_next)
             {
