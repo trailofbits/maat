@@ -322,6 +322,9 @@ PyObject* native_to_py(const std::vector<Value>&);
 // num MUST be a PyLong object (no further type checks in the function)
 Number bigint_to_number(size_t bits, PyObject* num);
 
+// Expose a type in python module
+void register_type(PyObject* module, PyTypeObject* type_obj);
+
 } // namespace py
 } // namespace maat
 #endif

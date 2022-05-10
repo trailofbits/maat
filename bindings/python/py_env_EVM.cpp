@@ -125,9 +125,49 @@ static PyObject* EVMTransaction_get_result(PyObject* self, void* closure)
         );
 }
 
+static PyObject* EVMTransaction_get_data(PyObject* self, void* closure)
+{
+    // TODO(boyan): factorize this code with other places where we translate
+    // value lists to python
+    PyObject* list = PyList_New(0);
+    if( list == NULL ){
+        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
+    }
+    for (const Value& val : as_tx_object(self).transaction->data)
+    {
+        if( PyList_Append(list, PyValue_FromValue(val)) == -1){
+            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
+        }
+    }
+    return list;
+}
+
+static int EVMTransaction_set_data(PyObject* self, PyObject* py_data, void* closure){
+    std::vector<Value> data;
+    // TODO(boyan): factorize this with other code that translates a Value list
+    // from python to native
+    if (!PyList_Check(py_data) )
+    {
+        PyErr_SetString(PyExc_TypeError, "'data' must be a list of 'Value'");
+        return 1;
+    }
+    for (int i = 0; i < PyList_Size(py_data); i++)
+    {
+        PyObject* val = PyList_GetItem(py_data, i);
+        if (!PyObject_TypeCheck(val, (PyTypeObject*)get_Value_Type()))
+        {
+            PyErr_SetString(PyExc_TypeError, "'data' must be a list of 'Value'");
+            return 1;
+        }
+        data.push_back(*as_value_object(val).value);
+    }
+    as_tx_object(self).transaction->data = data;
+    return 0;
+}
 
 static PyGetSetDef EVMTransaction_getset[] = {
     {"result", EVMTransaction_get_result, NULL, "Result of the transaction", NULL},
+    {"data", EVMTransaction_get_data, EVMTransaction_set_data, "Transaction data", NULL},
     {NULL}
 };
 

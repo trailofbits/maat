@@ -45,5 +45,17 @@ Number bigint_to_number(size_t bits, PyObject* num)
     }
 }
 
+
+void register_type(PyObject* module, PyTypeObject* type_obj)
+{
+    // TODO(boyan): We could use PyModule_AddType(module, get_Config_Type()); instead
+    // of the cumbersome code below but it's not avaialble before Python 3.10 and we
+    // don't want to force Python 3.10 yet
+    if (PyType_Ready(type_obj) < 0)
+        return;
+    Py_INCREF(type_obj);
+    PyModule_AddObject(module, type_obj->tp_name, (PyObject*)type_obj);
+}
+
 } // namespace py
 } // namespace maat

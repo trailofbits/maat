@@ -154,6 +154,8 @@ void init_constraint(PyObject* module)
     Constraint_operators.nb_and = Constraint_nb_and;
     Constraint_operators.nb_or = Constraint_nb_or;
     Constraint_operators.nb_invert = Constraint_nb_not;
+
+    register_type(module, (PyTypeObject*)get_Constraint_Type());
 }
 
 } // namespace py
