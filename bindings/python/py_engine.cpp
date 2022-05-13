@@ -274,6 +274,16 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
 };
 
 
+static PyObject* MaatEngine_get_uid(PyObject* self, void* closure){
+    return PyLong_FromLong(as_engine_object(self).engine->uid());
+}
+
+
+static PyGetSetDef MaatEngine_getset[] = {
+    {"uid", MaatEngine_get_uid, NULL, "Unique ID for this MaatEngine instance", NULL},
+    {NULL}
+};
+
 static PyMethodDef MaatEngine_methods[] = {
     {"run", (PyCFunction)MaatEngine_run, METH_VARARGS, "Continue to run code from current location"},
     {"run_from", (PyCFunction)MaatEngine_run_from, METH_VARARGS, "Run code from a given address"},
@@ -327,7 +337,7 @@ PyTypeObject MaatEngine_Type = {
     0,                                        /* tp_iternext */
     MaatEngine_methods,                   /* tp_methods */
     MaatEngine_members,                   /* tp_members */
-    0,                                        /* tp_getset */
+    MaatEngine_getset,                         /* tp_getset */
     0,                                        /* tp_base */
     0,                                        /* tp_dict */
     0,                                        /* tp_descr_get */

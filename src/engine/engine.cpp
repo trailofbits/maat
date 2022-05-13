@@ -8,7 +8,9 @@ namespace maat
     
 using namespace maat::event;
 
-MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr)
+int MaatEngine::_uid_cnt = 0;
+
+MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_cnt)
 {
     Endian endianness = Endian::LITTLE;
     switch (_arch)
@@ -69,6 +71,10 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr)
 #ifdef MAAT_PYTHON_BINDINGS
     self_python_wrapper_object = nullptr;
 #endif
+}
+
+int MaatEngine::uid() const {
+    return _uid;
 }
 
 // TODO: such macros are probably not best practice...

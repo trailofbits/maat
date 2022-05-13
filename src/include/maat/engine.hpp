@@ -52,6 +52,9 @@ private:
     static constexpr int branch_native = 1;
     static constexpr int branch_pcode = 2;
 private:
+    static int _uid_cnt;
+    int _uid;
+private:
     CPUMode _current_cpu_mode;
 private:
     // Convenience variable to avoid passing it to all subfunctions
@@ -102,7 +105,7 @@ public:
     MaatEngine(Arch::Type arch, env::OS os = env::OS::NONE);
     MaatEngine(const MaatEngine& other) = delete;
     virtual ~MaatEngine() = default; ///< Destructor
-
+    int uid() const; ///< Return the UID of this engine instance
 public:
     /** \brief Continue executing from the current state. Execute at most
      * 'max_inst' before stopping */
