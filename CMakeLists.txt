@@ -110,6 +110,10 @@ if(maat_USE_EXTERNAL_SLEIGH)
   find_package(sleigh REQUIRED)
 else()
   set(sleigh_ENABLE_TESTS OFF CACHE BOOL "")
+  # See: https://developercommunity.visualstudio.com/t/error-c2872-byte-ambiguous-symbol/93889
+  if(MSVC)
+    add_compile_definitions(_HAS_STD_BYTE=0)
+  endif()
   add_subdirectory(src/third-party/sleigh/sleigh-cmake sleigh EXCLUDE_FROM_ALL)
 endif()
 
