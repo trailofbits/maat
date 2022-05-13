@@ -4,7 +4,7 @@
 namespace maat{
 namespace ir{
 
-inline void __attribute__((always_inline)) _set_flag_from_bit(
+inline ALWAYS_INLINE void _set_flag_from_bit(
     CPUContext& ctx,
     ir::reg_t reg,
     const Value& val,

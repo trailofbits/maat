@@ -1,5 +1,6 @@
 #include "maat/serializer.hpp"
 #include "maat/exception.hpp"
+#include "maat/types.hpp"
 
 namespace maat{
 namespace serial{

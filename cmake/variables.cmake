@@ -12,6 +12,9 @@ if(PROJECT_IS_TOP_LEVEL)
   option(maat_DEVELOPER_MODE "Enable developer mode" OFF)
   option(maat_RUN_PYTHON_TESTS "Enable running the Python tests" ON)
   option(BUILD_SHARED_LIBS "Build shared libs." OFF)
+  
+  # Enable folder support
+  set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
 
 # These variables correspond to the dependencies that maat doesn't

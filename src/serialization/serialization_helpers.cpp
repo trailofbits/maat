@@ -30,7 +30,7 @@ bool SimpleStateManager::dequeue_state(MaatEngine& engine)
     if (pending_states.empty())
         return false;
 
-    std::string filename = pending_states.front();
+    std::filesystem::path filename = pending_states.front();
     pending_states.pop();
 
     std::ifstream in(filename, std::ios_base::binary);
@@ -39,7 +39,7 @@ bool SimpleStateManager::dequeue_state(MaatEngine& engine)
     in.close();
 
     if (delete_on_load)
-        remove(filename.c_str());
+        remove(filename.string().c_str());
 
     return true;
 }
