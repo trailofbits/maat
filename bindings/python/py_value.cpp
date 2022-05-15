@@ -521,7 +521,7 @@ PyObject* maat_Extract(PyObject* self, PyObject* args)
     CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( extract(*(as_value_object(val).value), higher, lower)); )
 }
 
-// TODO SAR, ITE, ...
+// TODO SAR, ...
 
 PyObject* PyValue_FromValue(const Value& e)
 {
