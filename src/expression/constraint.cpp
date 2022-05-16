@@ -301,8 +301,8 @@ Expr ITE(Constraint cond, Expr if_true, Expr if_false)
 {
     ITECond itecond;
     bool swap = false;
-    auto l_e = cond->left_expr;
-    auto r_e = cond->right_expr;
+    auto& l_e = cond->left_expr;
+    auto& r_e = cond->right_expr;
 
     switch(cond->type)
     {
