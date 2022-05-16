@@ -301,20 +301,20 @@ Expr ITE(Constraint cond, Expr if_true, Expr if_false)
 {
     ITECond itecond;
     bool swap = false;
-    auto& l_e = cond->left_expr;
-    auto& r_e = cond->right_expr;
+    Expr l_e = cond->left_expr;
+    Expr r_e = cond->right_expr;
 
     switch(cond->type)
     {
         case ConstraintType::AND:
             l_e = ITE(cond->left_constr, exprcst(1, 1), exprcst(1, 0)) &
-				ITE(cond->right_constr, exprcst(1, 1), exprcst(1, 0));
+            ITE(cond->right_constr, exprcst(1, 1), exprcst(1, 0));
             r_e = exprcst(1, 1);
             itecond = ITECond::EQ;
             break;
         case ConstraintType::OR:
             l_e = ITE(cond->left_constr, exprcst(1, 1), exprcst(1, 0)) |
-				ITE(cond->right_constr, exprcst(1, 1), exprcst(1, 0));
+            ITE(cond->right_constr, exprcst(1, 1), exprcst(1, 0));
             r_e = exprcst(1, 1);
             itecond = ITECond::EQ;
             break;
