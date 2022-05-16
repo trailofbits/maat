@@ -88,12 +88,12 @@ PyObject* maat_ITE(PyObject* self, PyObject* args)
         return PyErr_Format(PyExc_TypeError, "Mismatching type for ITE arguments");
     }
 
-	try{
-		res = ITE(*(as_constraint_object(cond).constr), if_true_val.as_expr(), if_false_val.as_expr());
-		return PyValue_FromValue(res);
-	} catch(expression_exception e) {
-		return PyErr_Format(PyExc_ValueError, "%s", e.what());
-	}
+    try{
+        res = ITE(*(as_constraint_object(cond).constr), if_true_val.as_expr(), if_false_val.as_expr());
+	    return PyValue_FromValue(res);
+        } catch(expression_exception e) {
+            return PyErr_Format(PyExc_ValueError, "%s", e.what());
+        }
 }
 
 static PyMethodDef Constraint_methods[] = {
