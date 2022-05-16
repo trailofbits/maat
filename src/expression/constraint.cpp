@@ -341,11 +341,11 @@ Expr ITE(Constraint cond, Expr if_true, Expr if_false)
             throw runtime_exception("ITE(): got unknown constraint type");
     }
 
-	if (swap) {
-		return ITE(l_e, itecond, r_e, if_false, if_true);
-	} else {
-		return ITE(l_e, itecond, r_e, if_true, if_false);
-	}
+    if (swap) {
+        return ITE(l_e, itecond, r_e, if_false, if_true);
+    } else {
+        return ITE(l_e, itecond, r_e, if_true, if_false);
+    }
 }
 
 
