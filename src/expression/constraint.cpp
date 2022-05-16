@@ -338,7 +338,7 @@ Expr ITE(Constraint cond, Expr if_true, Expr if_false)
             itecond = ITECond::LT;
             break;
         default:
-            throw runtime_exception("ConstraintObject::invert() got unknown constraint type");
+            throw runtime_exception("ITE(): got unknown constraint type");
     }
 
 	if (swap) {
