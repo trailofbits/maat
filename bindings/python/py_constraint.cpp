@@ -67,23 +67,23 @@ PyObject* maat_ITE(PyObject* self, PyObject* args)
     }
 
     Value res;
-	Value if_true_val;
-	Value if_false_val;
-
-	// We cannot accept ITE with both if_true and if_false as constants without a size parameter
-
-	if( PyLong_Check(if_true) && PyLong_Check(if_false)) {
-		return PyErr_Format(PyExc_ValueError, "ITE requires at least one argument be a value inorder to deduce resulting size");
-	}else if( PyLong_Check(if_true) && PyObject_IsInstance(if_false, get_Value_Type())) {
-		if_false_val = *(as_value_object(if_false).value);
-		if_true_val.set_cst(if_false_val.size(), PyLong_AsLongLong(if_true));
-	}else if( PyLong_Check(if_false) && PyObject_IsInstance(if_true, get_Value_Type())) {
-		if_true_val = *(as_value_object(if_true).value);
-		if_false_val.set_cst(if_true_val.size(), PyLong_AsLongLong(if_false));
-	}else if( PyObject_IsInstance(if_true, get_Value_Type()) && PyObject_IsInstance(if_false, get_Value_Type())) {
-		// ExprITE will make sure sizes match
-		if_true_val = *(as_value_object(if_true).value);
-		if_false_val = *(as_value_object(if_false).value);
+    Value if_true_val;
+    Value if_false_val;
+    
+    // We cannot accept ITE with both if_true and if_false as constants without a size parameter
+    
+    if( PyLong_Check(if_true) && PyLong_Check(if_false)) {
+        return PyErr_Format(PyExc_ValueError, "ITE requires at least one argument be a value inorder to deduce resulting size");
+    }else if( PyLong_Check(if_true) && PyObject_IsInstance(if_false, get_Value_Type())) {
+        if_false_val = *(as_value_object(if_false).value);
+        if_true_val.set_cst(if_false_val.size(), PyLong_AsLongLong(if_true));
+    }else if( PyLong_Check(if_false) && PyObject_IsInstance(if_true, get_Value_Type())) {
+        if_true_val = *(as_value_object(if_true).value);
+        if_false_val.set_cst(if_true_val.size(), PyLong_AsLongLong(if_false));
+    }else if( PyObject_IsInstance(if_true, get_Value_Type()) && PyObject_IsInstance(if_false, get_Value_Type())) {
+        // ExprITE will make sure sizes match
+        if_true_val = *(as_value_object(if_true).value);
+        if_false_val = *(as_value_object(if_false).value);
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching type for ITE arguments");
     }
