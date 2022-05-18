@@ -1,6 +1,7 @@
 #include "maat/expression.hpp"
 #include "maat/solver.hpp"
 #include "maat/exception.hpp"
+#include "maat/constraint.hpp"
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -30,6 +31,10 @@ namespace test
             e2 = exprvar(64, "var2");
             e3 = exprvar(64, "var3");
             e4 = exprvar(64, "var4");
+            Constraint c1, c2, c3;
+            c1 = e1 == e2;
+            c2 = e3 != e4;
+            c3 = c1 || c2;
             
             s.reset();
             s.add(e1 == e2 && e2 == e3 && e3 == e4 && e1 != e4);
@@ -75,7 +80,12 @@ namespace test
             s.add( ITE( e1, ITECond::EQ, e2, exprcst(64,42), exprcst(64,1)) ==  42);
             s.add(e1 < e3);
             s.add(e3 <= e2);
+            nb += _assert(!s.check(), "Solver: got model for unsat constraint ! ");
 
+            s.reset();
+            s.add( ITE(c3, exprcst(64,42), exprcst(64,1)) == 42);
+            s.add(e1 < e2);
+            s.add(e3 == e4);
             nb += _assert(!s.check(), "Solver: got model for unsat constraint ! ");
 
             return nb;

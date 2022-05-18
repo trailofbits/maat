@@ -1,6 +1,7 @@
 #include "maat/expression.hpp"
 #include "maat/varcontext.hpp"
 #include "maat/exception.hpp"
+#include "maat/constraint.hpp"
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -59,6 +60,11 @@ namespace test
                     e7 = exprmem(32, e6),
                     e9 = e3 % e5,
                     e10 = ITE(e1, ITECond::EQ, e2, e6, e7);
+
+            Constraint c1 = e2 != e1;
+
+            Expr    e11 = ITE(c1, e6, e7);
+
             unsigned int nb = 0;
             // Hash equality 
             nb += _assert_hash_eq(e1, exprcst(32,1));
@@ -70,6 +76,7 @@ namespace test
             nb += _assert_hash_eq(e7, exprmem(32,e6));
             nb += _assert_hash_eq(e9, e3%e5);
             nb += _assert_hash_eq(e10, ITE(e1, ITECond::EQ, e2, e6, e7));
+            nb += _assert_hash_eq(e11, ITE(c1, e6, e7));
 
             // Hash inequality
             nb += _assert_hash_neq(e1, e2);
@@ -80,6 +87,7 @@ namespace test
             nb += _assert_hash_neq(e6,e7);
             nb += _assert_hash_neq(e9, e5%e3);
             nb += _assert_hash_neq(e10, ITE(e1, ITECond::EQ, e2, e7, e6));
+            nb += _assert_hash_eq(e11, ITE(c1, e7, e6));
             return nb;
         }
 
@@ -165,6 +173,7 @@ namespace test
             Expr    e1 = exprvar(32, "var1"),
                     e2 = exprvar(32, "var2", Taint::TAINTED),
                     e3 = exprvar(32, "var3");
+            Constraint c1 = e2 < e1;
             // Taint propagation basic
             nb += _assert(e2->is_tainted(), "Taint didn't propagate when it should ");
             nb += _assert((e1/e2)->is_tainted(), "Taint didn't propagate when it should ");
@@ -183,6 +192,7 @@ namespace test
             nb += _assert(!(concat(e3,e1))->is_tainted(), "Taint did propagate when it shouldn't ");
             nb += _assert(!(~e3)->is_tainted(), "Taint did propagate when it shouldn't ");
             nb += _assert(!ITE(e2, ITECond::LT, e1, e1, e3)->is_tainted(), "Taint did propagate when it shouldn't ");
+            nb += _assert(!ITE(c1, e1, e3)->is_tainted(), "Taint did propagate when it shouldn't ");
 
             // Taint mask propagation
             e1->make_tainted(0x0000f0f0);
@@ -226,6 +236,10 @@ namespace test
                     e3 = extract(v1, 8, 1),
                     e4 = concat(v2,v1),
                     e5 = ITE(v1, ITECond::LE, v2, v3, v4);
+            Constraint c1 = e1 == e2,
+                    c2 = e3 > e4,
+                    c3 = c1 && c3;
+            Expr    e6 = ITE(c3, v3, v4);
             
             ctx.set("var1", 10);
             ctx.set("var2", -2);
@@ -301,6 +315,7 @@ namespace test
             nb += _assert( e3->as_int(ctx) != e3->as_int(ctx2), "Concretization with different contexts gave same result");
             nb += _assert( e4->as_int(ctx) != e4->as_int(ctx2), "Concretization with different contexts gave same result");
             nb += _assert( e5->as_int(ctx) != e5->as_int(ctx2), "Concretization with different contexts gave same result");
+            nb += _assert( e6->as_int(ctx) != e6->as_int(ctx2), "Concretization with different contexts gave same result");
 
             // as unsigned
             nb += _assert( exprcst(7, 0xfffff)->as_uint() == 0x7f, "Interpretation as unsigned failed");
