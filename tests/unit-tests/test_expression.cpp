@@ -87,7 +87,7 @@ namespace test
             nb += _assert_hash_neq(e6,e7);
             nb += _assert_hash_neq(e9, e5%e3);
             nb += _assert_hash_neq(e10, ITE(e1, ITECond::EQ, e2, e7, e6));
-            nb += _assert_hash_eq(e11, ITE(c1, e7, e6));
+            nb += _assert_hash_neq(e11, ITE(c1, e7, e6));
             return nb;
         }
 
