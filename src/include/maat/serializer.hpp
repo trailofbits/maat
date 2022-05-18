@@ -9,6 +9,7 @@
 #include <set>
 #include <functional>
 #include <memory>
+#include <optional>
 #include "maat/exception.hpp"
 
 namespace maat{

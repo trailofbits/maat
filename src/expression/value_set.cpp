@@ -344,11 +344,29 @@ void ValueSet::set_mul(ValueSet& vs1, ValueSet& vs2)
     }
 }
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#include <cassert>
+
+static ucst_t mulhshr(ucst_t x, ucst_t y, int shift)
+{
+    assert(shift > 0);
+    unsigned __int64 hi;
+    unsigned __int64 lo = _umul128(x, y, &hi);
+    return (ucst_t)((hi << (64 - shift)) | ((lo >> (shift - 1)) >> 1));
+}
+#else
+static ucst_t mulhshr(ucst_t x, ucst_t y, int shift)
+{
+    return (ucst_t)(((__uint128_t)x * (__uint128_t)y) >> shift);
+}
+#endif // _MSC_VER
+
 void ValueSet::set_mulh(ValueSet& vs1, ValueSet& vs2)
 {
     // Simlar to MUL but there can not be an overflow on this one :)
-    ucst_t new_min = (ucst_t)(((__uint128_t)vs1.min * (__uint128_t)vs2.min) >> size ); 
-    ucst_t new_max = (ucst_t)(((__uint128_t)vs1.max * (__uint128_t)vs2.max) >> size );
+    ucst_t new_min = mulhshr(vs1.min, vs2.min, size);
+    ucst_t new_max = mulhshr(vs1.max, vs2.max, size);
     set(new_min, new_max, 1);
 }
 

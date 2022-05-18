@@ -672,7 +672,7 @@ bool ite_evaluate(Expr left, ITECond cond, Expr right, const VarContext* ctx = n
  * to *higher_bit-new_expr.size()+1* with the expression 'new_expr'. **WARNING**:
  * 'new_expr' is expected to be small enough to overwrite 'old_expr' from the 
  * specified bit, no check for potential overflow is performed */
-inline Expr __attribute__((always_inline)) overwrite_expr_bits(Expr old_expr, Expr new_expr, size_t higher_bit) 
+inline Expr ALWAYS_INLINE overwrite_expr_bits(Expr old_expr, Expr new_expr, size_t higher_bit)
 {
     if (new_expr->size >= old_expr->size)
         return new_expr;

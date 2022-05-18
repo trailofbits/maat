@@ -361,16 +361,16 @@ public:
 private:
     /// Raises a event_exception if a hook with name 'name' already exists
     void _check_unique_name(const std::string& str);
-    inline Action _trigger_hooks(
+    inline ALWAYS_INLINE Action _trigger_hooks(
         const std::vector<Event>& events,
         When when,
         MaatEngine& engine
-    ) __attribute__((always_inline));
-    inline Action _trigger_hooks(
+    );
+    inline ALWAYS_INLINE Action _trigger_hooks(
         Event event,
         When when,
         MaatEngine& engine
-    ) __attribute__((always_inline));
+    );
 public: 
     bool has_hooks(
         const std::vector<Event>& events,

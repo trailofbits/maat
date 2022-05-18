@@ -76,9 +76,9 @@ public:
 
 private:
     // Internal method that handles setting register aliases
-    inline void _set_aliased_reg(ir::reg_t reg, const Value& val) __attribute__((always_inline));
+    inline ALWAYS_INLINE void _set_aliased_reg(ir::reg_t reg, const Value& val);
     // Internal method to check if a register is an alias
-    inline bool _is_alias(ir::reg_t reg) const __attribute__((always_inline));
+    inline ALWAYS_INLINE bool _is_alias(ir::reg_t reg) const;
 
 public:
     /// Print the CPU context to a stream
@@ -147,35 +147,33 @@ private:
     /** \brief Extracts bit field (high_bit and low_bit included) from 'expr'. If
      * the extract extracts the whole expression, then simply returns 'expr'
      * without performing the extract */
-    inline Expr _extract_abstract_if_needed(Expr expr, size_t high_bit, size_t low_bit)
-    __attribute__((always_inline));
+    inline ALWAYS_INLINE Expr _extract_abstract_if_needed(Expr expr, size_t high_bit, size_t low_bit);
 
 
     /** \brief Extracts bit field (high_bit and low_bit included) from 'val'. 'val' is modified
      * **in place**. 
      * Returns a reference to 'val' */
-    inline Value _extract_value_bits(const Value& val, size_t high_bit, size_t low_bit)
-    __attribute__((always_inline));
+    inline ALWAYS_INLINE Value _extract_value_bits(const Value& val, size_t high_bit, size_t low_bit);
 
     /** \brief Get value of parameter 'param' (extract bits if needed).
      * get_full_register is set to true, the function doesn't truncate the
      * expression if the parameter is a register */
-    inline event::Action _get_param_value(
+    inline ALWAYS_INLINE event::Action _get_param_value(
         ProcessedInst::Param& dest,
         const ir::Param& param,
         MaatEngine& engine,
         bool get_full_register = false,
         bool trigger_events = true
-    ) __attribute__((always_inline));
+    );
 
     /** \brief Compute value to be assigned to the output parameter
      * for instruction 'inst' (with bit extract/concat if overwriting 
      * only a subset of the output current value). Set value to 'dest'. */
-    inline void _compute_res_value(
+    inline ALWAYS_INLINE void _compute_res_value(
         Value& dest,
         const ir::Inst& inst,
         ProcessedInst& pinst
-    ) __attribute__((always_inline));
+    );
 
 public:
     /** \brief Compute the values of the various parameters of the

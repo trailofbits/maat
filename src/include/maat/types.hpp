@@ -2,6 +2,13 @@
 #define TYPES_H
 
 #include <stdint.h>
+#include <iso646.h>
+
+#ifdef _MSC_VER
+#define ALWAYS_INLINE __forceinline
+#else
+#define ALWAYS_INLINE __attribute__((always_inline))
+#endif // _MSC_VER
 
 /// Main namespace for Maat's API
 namespace maat
