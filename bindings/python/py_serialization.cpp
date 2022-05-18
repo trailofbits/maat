@@ -22,7 +22,14 @@ static PyObject* SimpleStateManager_enqueue_state(PyObject* self, PyObject* args
         return NULL;
     }
     
-    as_simple_serializer_object(self).s->enqueue_state(*as_engine_object(engine).engine);
+    try
+    {
+        as_simple_serializer_object(self).s->enqueue_state(*as_engine_object(engine).engine);
+    }
+    catch(const runtime_exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
 
     Py_RETURN_NONE;
 }
@@ -36,9 +43,17 @@ static PyObject* SimpleStateManager_dequeue_state(PyObject* self, PyObject* args
         return NULL;
     }
 
-    bool res = as_simple_serializer_object(self).s->dequeue_state(
-        *as_engine_object(engine).engine
-    );
+    bool res = false;
+    try
+    {
+        res = as_simple_serializer_object(self).s->dequeue_state(
+            *as_engine_object(engine).engine
+        );
+    }
+    catch(const runtime_exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
 
     // IMPORTANT: we need to reinit the object attributes so that they point to the
     // fields of the new engine, otherwise they will continue pointing to the fields

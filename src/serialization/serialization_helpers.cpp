@@ -18,6 +18,13 @@ void SimpleStateManager::enqueue_state(MaatEngine& engine)
 {
     std::string filename = get_next_state_filename();
     std::ofstream out(filename, std::ios_base::binary);
+    if (!out)
+    {
+        throw runtime_exception(
+            Fmt() << "SimpleStateManager::enqueue_state(): couldn't create state file: "
+            << filename >> Fmt::to_str
+        );
+    }
     Serializer s(out);
     s.serialize(engine);
     out.close();
@@ -34,6 +41,13 @@ bool SimpleStateManager::dequeue_state(MaatEngine& engine)
     pending_states.pop();
 
     std::ifstream in(filename, std::ios_base::binary);
+    if (!in)
+    {
+        throw runtime_exception(
+            Fmt() << "SimpleStateManager::dequeue_state(): couldn't find state file: "
+            << filename >> Fmt::to_str
+        );
+    }
     Deserializer d(in);
     d.deserialize(engine);
     in.close();
