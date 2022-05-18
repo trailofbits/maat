@@ -236,9 +236,9 @@ namespace test
                     e3 = extract(v1, 8, 1),
                     e4 = concat(v2,v1),
                     e5 = ITE(v1, ITECond::LE, v2, v3, v4);
-            Constraint c1 = e1 == e2,
-                    c2 = e3 > e4,
-                    c3 = c1 && c3;
+            Constraint c1 = v1 == v2,
+                    c2 = v1 > v2,
+                    c3 = c1 || c2;
             Expr    e6 = ITE(c3, v3, v4);
             
             ctx.set("var1", 10);
