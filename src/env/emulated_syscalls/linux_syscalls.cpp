@@ -277,6 +277,7 @@ FunctionCallback::return_t sys_linux_fstatat(
 {
     cst_t AT_FDCWD = -100;
     cst_t AT_EMPTY_PATH = 0x1000;
+    cst_t ERR_ENOENT = 3025;
     std::string pathname = engine.mem->read_string(args[1]);
     addr_t statbuf = args[2].as_uint(*engine.vars);
     int dirfd = args[0].as_int(*engine.vars);
@@ -295,7 +296,6 @@ FunctionCallback::return_t sys_linux_fstatat(
         if (dirfd == AT_FDCWD) // Relative to current dir
         {
             filepath = engine.env->fs.path_from_relative_path(pathname, engine.process->pwd);
-            file = engine.env->fs.get_file(filepath);
         }
         else if (flags & AT_EMPTY_PATH) // dirfd points to the file, ignore pathname
         {
@@ -305,6 +305,13 @@ FunctionCallback::return_t sys_linux_fstatat(
         {
             throw env_exception("Emulated fstatat(): not supported for arbitrary dirfd");
         }
+    }
+    if (file == nullptr)
+    {
+        // Check if file exists
+        if (not engine.env->fs.file_exists(filepath))
+            return -ERR_ENOENT; // Error: No such path or directory
+        file = engine.env->fs.get_file(filepath);
     }
     return _stat(engine, file, statbuf);
 }
