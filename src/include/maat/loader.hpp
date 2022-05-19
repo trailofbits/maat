@@ -56,8 +56,8 @@ public:
     /// Create a concrete command-line argument
     CmdlineArg(const std::string& value);
     /** \brief Create a command-line argument from a buffer
-     * @param arg Argument as a buffer of values. Values in the buffer
-     must have a size of 1 byte. */
+     * @param arg Argument as a buffer of values that are concatenated
+     * to form the argument */
     CmdlineArg(const std::vector<Value>& arg);
 public:
     const std::string& string() const; ///< Return the concrete argument string
