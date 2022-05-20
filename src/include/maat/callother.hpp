@@ -57,6 +57,7 @@ enum class Id
     EVM_RETURN,
     EVM_INVALID,
     EVM_REVERT,
+    EVM_EXP,
     UNSUPPORTED
 };
 

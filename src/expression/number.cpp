@@ -319,6 +319,40 @@ void Number::set_srem(const Number& n1, const Number& n2)
     }
 }
 
+// Helper for exponentiation on integers
+ucst_t uint_pow(ucst_t base, ucst_t exp)
+{
+    ucst_t result = 1;
+    while (exp > 0)
+    {
+        if (exp % 2)
+           result *= base;
+        exp /= 2;
+        base *= base;
+    }
+    return result;
+}
+
+void Number::set_exp(const Number& n1, const Number& n2)
+{
+    size = n1.size;
+    if (size <= 64)
+    {
+        set_cst(uint_pow(n1.get_ucst(), n2.get_ucst()));
+    }
+    else
+    {
+        mpz_t mpz_mod;
+        mpz_init_set_ui(mpz_mod, 1);
+        mpz_mul_2exp(mpz_mod, mpz_mod, size);
+
+        mpz_powm(mpz_.get_mpz_t(), n1.mpz_.get_mpz_t(), n2.mpz_.get_mpz_t(), mpz_mod);
+        adjust_mpz();
+
+        mpz_clear(mpz_mod);
+    }
+}
+
 void Number::set_shl(const Number& n1, const Number& n2)
 {
     size = n1.size;

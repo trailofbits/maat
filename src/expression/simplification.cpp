@@ -190,9 +190,19 @@ Expr es_neutral_elements(Expr e)
         // 1 * X
         else if( (e->op() == Op::MUL || e->op() == Op::SMULL) && e->args[0]->cst() == 1)
             return e->args[1];
-        // 0xfffff.... & X
-        else if( e->op() == Op::AND && cst_sign_trunc(e->size, e->args[0]->cst()) == cst_mask(e->size))
+        // TODO(boyan): the one below can probably be removed since the
+        // bignum case after should also cover the sizes <= 64
+        // 0xfffff.... & X (for native types)
+        else if( e->size <= 64 && e->op() == Op::AND && cst_sign_trunc(e->size, e->args[0]->cst()) == cst_mask(e->size))
             return e->args[1];
+        // 0xfffff.... & X (for big nums)
+        else if (e->size > 64 && e->op() == Op::AND)
+        {
+            Number mask(e->args[0]->size, 0);
+            mask.set_not(mask);
+            if (e->args[0]->as_number().equal_to(mask))
+                return e->args[1];
+        }
         // 0 |^ X 
         else if( (e->op() == Op::OR || e->op() == Op::XOR)
                  && e->args[0]->cst() == 0)

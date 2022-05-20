@@ -12,7 +12,8 @@ using namespace env::EVM;
 void LoaderEVM::load(
     MaatEngine* engine,
     const std::string& filename,
-    Value address
+    Value address,
+    const std::vector<CmdlineArg>& args
 )
 {
     // Read file content
@@ -46,7 +47,21 @@ void LoaderEVM::load(
     
     // Write bytecode in memory
     env::EVM::_set_EVM_code(*engine, contents.data(), contents.size());
-    // TODO: write constructor data after the bytecode
+
+    // Write constructor data after the bytecode
+    for (auto arg : args)
+    {
+        if (arg.is_concrete())
+            env::EVM::_append_EVM_code(
+                *engine,
+                (uint8_t*)arg.string().c_str(),
+                arg.len()
+            );
+        else
+            env::EVM::_append_EVM_code(*engine, arg.buffer());
+    }
+
+    // Reset PC to zero
     engine->cpu.ctx().set(EVM::PC, 0x0);
 
     env::EVM::contract_t contract = get_contract_for_engine(*engine);
@@ -70,7 +85,6 @@ void LoaderEVM::load(
 
     // Reset PC at zero
     engine->cpu.ctx().set(EVM::PC, 0x0);
-    engine->info.reset();
     engine->process->terminated = false;
 }
 

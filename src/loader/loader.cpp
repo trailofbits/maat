@@ -13,6 +13,10 @@ CmdlineArg::CmdlineArg(const std::string& value):
     _len(value.size())
 {}
 
+CmdlineArg::CmdlineArg(const Value& value):
+    _buffer{value},
+    _len(value.size()/8)
+{}
 
 CmdlineArg::CmdlineArg(const std::vector<Value>& buffer):
     _buffer(buffer)

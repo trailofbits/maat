@@ -464,6 +464,14 @@ void _set_EVM_code(MaatEngine& engine, uint8_t* code, size_t code_size)
     get_contract_for_engine(engine)->code_size = code_size;
 }
 
+void _append_EVM_code(MaatEngine& engine, uint8_t* code, size_t code_size)
+{
+    contract_t contract = get_contract_for_engine(engine);
+    engine.mem->map(0x0, contract->code_size+code_size);
+    engine.mem->write_buffer(contract->code_size, code, code_size);
+    contract->code_size += code_size;
+}
+
 void _set_EVM_code(MaatEngine& engine, const std::vector<Value>& code)
 {
     addr_t code_size = 0;
@@ -474,6 +482,16 @@ void _set_EVM_code(MaatEngine& engine, const std::vector<Value>& code)
     get_contract_for_engine(engine)->code_size = code_size;
 }
 
+void _append_EVM_code(MaatEngine& engine, const std::vector<Value>& code)
+{
+    contract_t contract = get_contract_for_engine(engine);
+    addr_t code_size = 0;
+    for (const auto& val : code)
+        code_size += val.size()/8;
+    engine.mem->map(0x0, contract->code_size+code_size);
+    engine.mem->write_buffer(contract->code_size, code);
+    contract->code_size += code_size;
+}
 
 KeccakHelper::KeccakHelper()
 : _symbolic_hash_prefix("keccak_hash")

@@ -90,6 +90,8 @@ public:
     void set_sext(int ext_size, const Number& n);
     void set_rem(const Number& n1, const Number& n2);
     void set_srem(const Number& n1, const Number& n2);
+    // Exponentiation: (n1**n2)
+    void set_exp(const Number& n1, const Number& n2);
     void set_mask(int size);
 public:
     bool is_mpz() const;

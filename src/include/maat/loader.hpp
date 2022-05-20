@@ -55,6 +55,8 @@ private:
 public:
     /// Create a concrete command-line argument
     CmdlineArg(const std::string& value);
+    /// Create a command line argument from a single abstract value
+    CmdlineArg(const Value& value);
     /** \brief Create a command-line argument from a buffer
      * @param arg Argument as a buffer of values that are concatenated
      * to form the argument */
@@ -249,7 +251,8 @@ public:
     void load(
         MaatEngine* engine,
         const std::string& contract_file,
-        Value address
+        Value address,
+        const std::vector<CmdlineArg>& args
     );
 };
 

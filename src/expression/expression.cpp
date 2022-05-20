@@ -434,7 +434,7 @@ hash_t ExprCst::hash()
 
 cst_t ExprCst::cst()
 {
-    return _concrete.cst_;
+    return _concrete.get_cst();
 }
 
 void ExprCst::print(std::ostream& os)

@@ -212,9 +212,11 @@ public:
     virtual void load(maat::serial::Deserializer& d);
 };
 
-// Util functions
+// Util internal functions
 void _set_EVM_code(MaatEngine& engine, const std::vector<Value>& code);
 void _set_EVM_code(MaatEngine& engine, uint8_t* code, size_t code_size);
+void _append_EVM_code(MaatEngine& engine, const std::vector<Value>& code);
+void _append_EVM_code(MaatEngine& engine, uint8_t* code, size_t code_size);
 
 typedef std::shared_ptr<Contract> contract_t;
 

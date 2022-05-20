@@ -144,6 +144,49 @@ int execute_simple_transaction()
     return nb;
 }
 
+// Deploy a contract whose constructor takes arguments
+int contract_with_constructor_arguments()
+{
+    int nb = 0;
+    MaatEngine engine(Arch::Type::EVM);
+    // 256 bits for both because values the ABI pads values to 32 bytes
+    Value a(exprvar(256, "a")), b(exprcst(256, "-1"));
+    // Arguments to constructor
+    std::vector<loader::CmdlineArg> constructor_data
+    {
+        loader::CmdlineArg(a),
+        loader::CmdlineArg(b) 
+    };
+
+    engine.settings.log_insts = true;
+
+    engine.load(
+        "tests/resources/smart_contracts/SimpleConstructor.bin",
+        loader::Format::NONE,
+        0,
+        constructor_data, // args 
+        {}, {}, {}, {}
+    );
+
+    nb += _assert(
+        engine.info.exit_status.has_value()
+        and engine.info.exit_status->as_uint() == (int)env::EVM::TransactionResult::Type::RETURN,
+        "Constructor exited incorrectly"
+    );
+    
+    nb += _assert(
+        env::EVM::get_contract_for_engine(engine)->storage.read(Value(256, 0)).expr()->eq(a.expr()),
+        "Constructor failed to initialise contract state"
+    );
+
+    nb += _assert(
+        env::EVM::get_contract_for_engine(engine)->storage.read(Value(256, 1)).as_number().equal_to(Number(248, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)),
+        "Constructor failed to initialise contract state"
+    );
+
+    return nb;
+}
+
 // Explore all states without checking constraints at each branch
 bool _explore_all_states_no_check(MaatEngine& engine)
 {
@@ -267,6 +310,7 @@ void test_adv_evm()
 
     total += solve_symbolic_storage();
     total += execute_simple_transaction();
+    total += contract_with_constructor_arguments();
     total += explore_sqrt();
 
     cout << "\t" << total << "/" << total << green << "\t\tOK" << def << endl;

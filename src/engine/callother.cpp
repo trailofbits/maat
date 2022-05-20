@@ -374,6 +374,33 @@ void EVM_SMOD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
     }
 }
 
+// exponentiation
+void EVM_EXP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    // X**0 is always 1
+    if (in2.is_concrete(*engine.vars) and in2.as_number().equal_to(Number(in2.size(), 0)))
+        pinst.res.set_cst(inst.out.size(), 1);
+    else if (in1.is_symbolic(*engine.vars) or in2.is_symbolic(*engine.vars))
+    {
+        throw callother_exception("EXP: exponentiation operation not supported with fully symbolic arguments");
+    }
+    // TODO(boyan): we could concretize the arguments if they are concolic,
+    // but then if we later change the concrete values we loose soundness...
+    else if (in1.is_concolic(*engine.vars) or in2.is_concolic(*engine.vars))
+    {
+        throw callother_exception("EXP: exponentiation operation not yet supported with fully symbolic arguments");
+    }
+    else
+    {
+        Number res(256);
+        res.set_exp(in1.as_number(), in2.as_number());
+        pinst.res = Value(res);
+    }
+}
+
 // sext(byte, val) = sext(val[byte*8-1 : 0])
 void EVM_SIGNEXTEND_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
@@ -682,6 +709,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_RETURN, EVM_RETURN_handler);
     h.set_handler(Id::EVM_INVALID, EVM_INVALID_handler);
     h.set_handler(Id::EVM_REVERT, EVM_REVERT_handler);
+    h.set_handler(Id::EVM_EXP, EVM_EXP_handler);
 
     return h;
 }
