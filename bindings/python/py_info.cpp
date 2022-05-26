@@ -501,6 +501,9 @@ PyTypeObject Info_Type = {
     0,                                        /* tp_new */
 };
 
+PyObject* get_Info_Type(){
+    return (PyObject*)&Info_Type;
+}
 
 PyObject* PyInfo_FromInfo(info::Info* info, bool is_ref){
     Info_Object* object;

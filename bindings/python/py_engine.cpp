@@ -444,6 +444,8 @@ void init_engine(PyObject* module)
     PyDict_SetItemString(stop_enum, "NONE", PyLong_FromLong((int)info::Stop::NONE));
     PyObject* stop_class = create_class(PyUnicode_FromString("STOP"), PyTuple_New(0), stop_enum);
     PyModule_AddObject(module, "STOP", stop_class);
+
+    register_type(module, (PyTypeObject*)get_Info_Type());
 };
     
 } // namespace py

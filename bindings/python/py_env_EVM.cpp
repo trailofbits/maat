@@ -125,6 +125,11 @@ static PyObject* EVMTransaction_get_result(PyObject* self, void* closure)
         );
 }
 
+static PyObject* EVMTransaction_get_recipient(PyObject* self, void* closure)
+{
+    return number_to_bigint(as_tx_object(self).transaction->recipient);
+}
+
 static PyObject* EVMTransaction_get_data(PyObject* self, void* closure)
 {
     // TODO(boyan): factorize this code with other places where we translate
@@ -168,6 +173,7 @@ static int EVMTransaction_set_data(PyObject* self, PyObject* py_data, void* clos
 static PyGetSetDef EVMTransaction_getset[] = {
     {"result", EVMTransaction_get_result, NULL, "Result of the transaction", NULL},
     {"data", EVMTransaction_get_data, EVMTransaction_set_data, "Transaction data", NULL},
+    {"recipient", EVMTransaction_get_recipient, NULL, "Transaction recipient", NULL},
     {NULL}
 };
 

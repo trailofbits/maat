@@ -144,6 +144,7 @@ typedef struct{
 } Info_Object;
 PyObject* PyInfo_FromInfo(info::Info* info, bool is_ref);
 PyObject* PyInfo_FromInfoAndArch(info::Info* info, bool is_ref, Arch* arch);
+PyObject* get_Info_Type();
 #define as_info_object(x)  (*((Info_Object*)x))
 
 typedef struct {
@@ -321,6 +322,8 @@ PyObject* native_to_py(const std::vector<Value>&);
 // Python bigint into multiprecision number
 // num MUST be a PyLong object (no further type checks in the function)
 Number bigint_to_number(size_t bits, PyObject* num);
+// Multiprecision number to python bigint
+PyObject* number_to_bigint(const Number& num);
 
 // Expose a type in python module
 void register_type(PyObject* module, PyTypeObject* type_obj);

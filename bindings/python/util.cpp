@@ -45,6 +45,12 @@ Number bigint_to_number(size_t bits, PyObject* num)
     }
 }
 
+PyObject* number_to_bigint(const Number& num)
+{
+    std::stringstream ss;
+    ss << std::hex << num;
+    return PyLong_FromString(ss.str().c_str(), NULL, 16);
+}
 
 void register_type(PyObject* module, PyTypeObject* type_obj)
 {
