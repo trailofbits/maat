@@ -12,6 +12,40 @@ static void MaatEngine_dealloc(PyObject* self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 };
 
+static PyObject* MaatEngine_duplicate(PyObject* self, PyObject* args, PyObject* keywords)
+{
+    static char *kwlist[] = {"duplicate", "share", NULL};
+    PySetObject     *py_duplicate = nullptr,
+                    *py_share = nullptr; 
+
+    std::set<std::string> duplicate, share;
+
+    // Process arguments
+    if( ! PyArg_ParseTupleAndKeywords(
+            args, keywords, "|O!O!", kwlist,
+            &PySet_Type, &py_duplicate, &PySet_Type, &py_share
+    )){
+        return NULL;
+    }
+
+    if (py_duplicate)
+        if (not py_to_c_string_set(py_duplicate, duplicate))
+            return PyErr_Format(PyExc_RuntimeError, "Failed to process 'duplicate' argument");
+
+    if (py_share)
+        if (not py_to_c_string_set(py_share, share))
+            return PyErr_Format(PyExc_RuntimeError, "Failed to process 'share' argument");
+
+    // Create new engine
+    MaatEngine *new_engine = new MaatEngine(
+        *as_engine_object(self).engine,
+        duplicate,
+        share
+    );
+    // The python object will own the 'new_engine' pointer
+    return PyMaatEngine_FromMaatEngine(new_engine);
+};
+
 static PyObject* MaatEngine_run(PyObject* self, PyObject* args){
     unsigned int max_instr = 0;
     info::Stop res;
@@ -290,6 +324,7 @@ static PyMethodDef MaatEngine_methods[] = {
     {"take_snapshot", (PyCFunction)MaatEngine_take_snapshot, METH_NOARGS, "Take a snapshot of the symbolic engine"},
     {"restore_snapshot", (PyCFunction)MaatEngine_restore_snapshot, METH_VARARGS | METH_KEYWORDS, "Restore a snapshot of the symbolic engine"},
     {"load", (PyCFunction)MaatEngine_load, METH_VARARGS | METH_KEYWORDS, "Load an executable"},
+    {"_duplicate", (PyCFunction)MaatEngine_duplicate, METH_VARARGS | METH_KEYWORDS, "Duplicate a symbolic engine"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -404,13 +439,23 @@ PyObject* maat_MaatEngine(PyObject* self, PyObject* args){
     }
 
     // Create object
+    return PyMaatEngine_FromMaatEngine(
+        new MaatEngine((Arch::Type)arch, (env::OS)system)
+    );
+}
+
+
+PyObject* PyMaatEngine_FromMaatEngine(MaatEngine* engine)
+{
+    MaatEngine_Object* object;
+    // Create object
     try
     {
         PyType_Ready(&MaatEngine_Type);
         object = PyObject_New(MaatEngine_Object, &MaatEngine_Type);
         if (object != nullptr)
         {
-            object->engine = new MaatEngine((Arch::Type)arch, (env::OS)system);
+            object->engine = engine;
             _init_MaatEngine_attributes(object);
         }
     }
@@ -420,7 +465,6 @@ PyObject* maat_MaatEngine(PyObject* self, PyObject* args){
     }
     return (PyObject*)object;
 }
-
 
 /* ------------------------------------
  *          Init function

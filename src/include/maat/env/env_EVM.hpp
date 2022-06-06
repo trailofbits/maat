@@ -291,7 +291,7 @@ public:
 
 /** \brief Helper function that gets the environment linked to an engine and casts it to EthereumEmulator.
  * This function performs dynamic casting without further checks, use at your own risk */ 
-std::shared_ptr<EthereumEmulator> get_ethereum(MaatEngine& engine);
+std::shared_ptr<EthereumEmulator> get_ethereum(const MaatEngine& engine);
 
 /// Helper function that gets the running contract associated to an engine
 contract_t get_contract_for_engine(MaatEngine& engine); 

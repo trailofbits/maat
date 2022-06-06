@@ -63,5 +63,26 @@ void register_type(PyObject* module, PyTypeObject* type_obj)
     PyModule_AddObject(module, type_obj->tp_name, (PyObject*)type_obj);
 }
 
+bool py_to_c_string_set(PySetObject* set, std::set<std::string>& res)
+{
+    PyObject *iterator = PyObject_GetIter((PyObject*)set);
+    PyObject *item;
+    bool error = false;
+    while ((item = PyIter_Next(iterator))) {
+        // Translate item to string
+        const char* s = PyUnicode_AsUTF8(item);
+        if (s == nullptr)
+            error = true;
+        else
+            res.insert(std::string(s));
+        // Release reference when done
+        Py_DECREF(item);
+        if (error)
+            break;
+    }
+    Py_DECREF(iterator);
+    return !error;
+}
+
 } // namespace py
 } // namespace maat

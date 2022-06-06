@@ -8,6 +8,8 @@
 #include <memory>
 #include <filesystem>
 #include <optional>
+#include <set>
+#include <string>
 
 namespace maat
 {
@@ -101,6 +103,7 @@ typedef struct{
 } MaatEngine_Object;
 PyObject* get_MaatEngine_Type();
 PyObject* maat_MaatEngine(PyObject* self, PyObject* args);
+PyObject* PyMaatEngine_FromMaatEngine(MaatEngine*);
 // This method initializes all the attributes of a python MaatEngine object. It
 // is separate from the constructor because we also need to call it when deserializing
 // a MaatEngine. Indeed, attributes like 'vars', 'cpu', are already initialized
@@ -313,6 +316,7 @@ PyObject* PyEVMTxResult_FromTxResult(env::EVM::TransactionResult*);
 
 // Return the contract associated with an engine
 PyObject* maat_contract(PyObject* mod, PyObject* args);
+PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args);
 
 // ====== Utils =======
 // Transform a list of values into a list of python values,
@@ -327,6 +331,9 @@ PyObject* number_to_bigint(const Number& num);
 
 // Expose a type in python module
 void register_type(PyObject* module, PyTypeObject* type_obj);
+
+// Translate a python set to a set of strings in C++. Returns false on error
+bool py_to_c_string_set(PySetObject* set, std::set<std::string>& res);
 
 } // namespace py
 } // namespace maat

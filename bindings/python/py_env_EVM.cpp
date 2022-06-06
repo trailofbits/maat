@@ -397,6 +397,27 @@ PyObject* maat_contract(PyObject* mod, PyObject* args)
     }
 }
 
+PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args)
+{
+    PyObject *new_engine, *old_engine;
+    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &new_engine, get_MaatEngine_Type(), &old_engine))
+    {
+        return NULL;
+    }
+    try
+    {
+        env::EVM::new_evm_runtime(
+            *as_engine_object(new_engine).engine,
+            *as_engine_object(old_engine).engine
+        );
+    }
+    catch(maat::env_exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+    Py_RETURN_NONE;
+}
+
 void init_evm(PyObject* module)
 {
     /* EVM enum */

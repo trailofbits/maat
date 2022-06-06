@@ -674,7 +674,7 @@ void EthereumEmulator::restore_snapshot(snapshot_t snapshot, bool remove)
 }
 
 
-std::shared_ptr<EthereumEmulator> get_ethereum(MaatEngine& engine)
+std::shared_ptr<EthereumEmulator> get_ethereum(const MaatEngine& engine)
 {
     if (engine.arch->type != Arch::Type::EVM)
         throw env_exception("get_ethereum(): can't be called with an architecture other than EVM");
@@ -693,7 +693,7 @@ contract_t get_contract_for_engine(MaatEngine& engine)
     return get_ethereum(engine)->get_contract_by_uid(engine.process->pid);
 }
 
-void new_evm_runtime(MaatEngine& new_engine, MaatEngine& old_engine)
+void new_evm_runtime(MaatEngine& new_engine, const MaatEngine& old_engine)
 {
     if (
         old_engine.arch->type != Arch::Type::EVM 
