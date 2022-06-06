@@ -495,6 +495,21 @@ Expr es_concat_patterns(Expr e)
         );
     }
 
+    // concat(X,Y) >> sizeof(Y) == concat(0,X)
+    if (
+        e->is_type(ExprType::BINOP, Op::SHR) &&
+        e->args[1]->is_type(ExprType::CST) &&
+        e->args[0]->is_type(ExprType::CONCAT) &&
+        e->args[1]->as_number().get_ucst() == e->args[0]->args[1]->size
+    )
+    {
+        return concat(
+            exprcst(e->args[0]->args[1]->size, 0),
+            e->args[0]->args[0]
+        );
+    }
+
+
     // TODO: support the below simplifications for expressions > 64bits also
     if (e->size > 64)
         return e;

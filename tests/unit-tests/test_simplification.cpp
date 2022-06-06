@@ -206,6 +206,9 @@ namespace test
                     ),
                 s
             );
+
+            e1 = concat(e, e2) >> 64;
+            nb += _assert_simplify(e1, concat(exprcst(64, 0), e), s);
             return nb; 
         }
         
