@@ -41,10 +41,10 @@ int solve_symbolic_storage()
     std::unique_ptr<solver::Solver> sol = solver::new_solver();
 
     // Read/write symbolic
-    contract.storage.write(Value(exprvar(256, "a")), Value(256, 1), s);
-    contract.storage.write(Value(exprvar(256, "b")), Value(256, 2), s);
-    contract.storage.write(Value(exprvar(256, "c")), Value(256, 3), s);
-    v = contract.storage.read(Value(exprvar(256, "d")));
+    contract.storage->write(Value(exprvar(256, "a")), Value(256, 1), s);
+    contract.storage->write(Value(exprvar(256, "b")), Value(256, 2), s);
+    contract.storage->write(Value(exprvar(256, "c")), Value(256, 3), s);
+    v = contract.storage->read(Value(exprvar(256, "d")));
     sol->reset();
     sol->add(v == 2);
     nb += _assert(sol->check(), "Couldn't find model to solve symbolic storage read");
@@ -53,10 +53,10 @@ int solve_symbolic_storage()
     nb += _assert(not model->get_as_number("c").equal_to(model->get_as_number("d")), "Got wrong model when solving symbolic storage");
 
     // Write concrete, read symbolic
-    contract.storage.write(Value(256, 0xaaaa), Value(256, 5), s);
-    contract.storage.write(Value(256, 0xbbbb), Value(256, 6), s);
-    contract.storage.write(Value(256, 0xcccc), Value(256, 7), s);
-    v = contract.storage.read(Value(exprvar(256, "d")));
+    contract.storage->write(Value(256, 0xaaaa), Value(256, 5), s);
+    contract.storage->write(Value(256, 0xbbbb), Value(256, 6), s);
+    contract.storage->write(Value(256, 0xcccc), Value(256, 7), s);
+    v = contract.storage->read(Value(exprvar(256, "d")));
     sol->reset();
     sol->add(v == 6);
     nb += _assert(sol->check(), "Couldn't find model to solve symbolic storage read");
@@ -64,7 +64,7 @@ int solve_symbolic_storage()
     nb += _assert(model->get_as_number("d").equal_to(Number(256, 0xbbbb)), "Got wrong model when solving symbolic storage");
 
     // Write symbolic, read concrete
-    v = contract.storage.read(Value(256, 0xdedede));
+    v = contract.storage->read(Value(256, 0xdedede));
     sol->reset();
     sol->add(v == 1);
     nb += _assert(sol->check(), "Couldn't find model to solve symbolic storage read");
@@ -74,11 +74,11 @@ int solve_symbolic_storage()
     nb += _assert(not model->get_as_number("c").equal_to(Number(256, 0xdedede)), "Got wrong model when solving symbolic storage");
 
     // Overwrite symbolic address
-    contract.storage.write(Value(exprvar(256, "a")), Value(256, 15), s);
-    contract.storage.write(Value(exprvar(256, "a")), Value(256, 16), s);
-    contract.storage.write(Value(exprvar(256, "b")), Value(256, 17), s);
-    contract.storage.write(Value(exprvar(256, "a")), Value(256, 18), s);
-    v = contract.storage.read(Value(exprvar(256, "a")));
+    contract.storage->write(Value(exprvar(256, "a")), Value(256, 15), s);
+    contract.storage->write(Value(exprvar(256, "a")), Value(256, 16), s);
+    contract.storage->write(Value(exprvar(256, "b")), Value(256, 17), s);
+    contract.storage->write(Value(exprvar(256, "a")), Value(256, 18), s);
+    v = contract.storage->read(Value(exprvar(256, "a")));
     sol->reset();
     sol->add(v != 18);
     nb += _assert(not sol->check(), "Found model for unsolvable symbolic storage read");
@@ -87,11 +87,11 @@ int solve_symbolic_storage()
     nb += _assert(sol->check(), "Couldn't find model to solve symbolic storage read");
 
     // Overwrite concrete address
-    contract.storage.write(Value(256, 0x50), Value(256, 100), s);
-    contract.storage.write(Value(256, 0x51), Value(256, 101), s);
-    contract.storage.write(Value(256, 0x50), Value(256, 102), s);
-    contract.storage.write(Value(256, 0x52), Value(256, 103), s);
-    v = contract.storage.read(Value(exprvar(256, "blu")));
+    contract.storage->write(Value(256, 0x50), Value(256, 100), s);
+    contract.storage->write(Value(256, 0x51), Value(256, 101), s);
+    contract.storage->write(Value(256, 0x50), Value(256, 102), s);
+    contract.storage->write(Value(256, 0x52), Value(256, 103), s);
+    v = contract.storage->read(Value(exprvar(256, "blu")));
     sol->reset();
     sol->add(v == 100);
     nb += _assert(not sol->check(), "Found model for unsolvable symbolic storage read");
@@ -175,12 +175,12 @@ int contract_with_constructor_arguments()
     );
     
     nb += _assert(
-        env::EVM::get_contract_for_engine(engine)->storage.read(Value(256, 0)).expr()->eq(a.expr()),
+        env::EVM::get_contract_for_engine(engine)->storage->read(Value(256, 0)).expr()->eq(a.expr()),
         "Constructor failed to initialise contract state"
     );
 
     nb += _assert(
-        env::EVM::get_contract_for_engine(engine)->storage.read(Value(256, 1)).as_number().equal_to(Number(248, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)),
+        env::EVM::get_contract_for_engine(engine)->storage->read(Value(256, 1)).as_number().equal_to(Number(248, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)),
         "Constructor failed to initialise contract state"
     );
 

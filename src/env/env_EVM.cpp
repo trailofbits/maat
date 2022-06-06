@@ -443,6 +443,17 @@ Contract::Contract(const MaatEngine& engine, Value addr)
     code_size(0)
 {}
 
+void Contract::fork_from(const Contract& other)
+{
+    memory = Memory(other.memory._varctx);
+    address = other.address;
+    storage = other.storage;
+    code_size = other.code_size;
+    stack = Stack();
+    transaction = std::nullopt;
+    result_from_last_call = std::nullopt;
+}
+
 serial::uid_t Contract::class_uid() const
 {
     return serial::ClassId::EVM_CONTRACT;
@@ -599,6 +610,13 @@ int EthereumEmulator::add_contract(contract_t contract)
     return uid;
 }
 
+int EthereumEmulator::new_runtime_for_contract(int uid)
+{
+    contract_t new_contract = std::make_shared<Contract>();
+    new_contract->fork_from(*get_contract_by_uid(uid));
+    return add_contract(new_contract);
+}
+
 contract_t EthereumEmulator::get_contract_by_uid(int uid) const
 {
     auto res = _contracts.find(uid);
@@ -655,6 +673,7 @@ void EthereumEmulator::restore_snapshot(snapshot_t snapshot, bool remove)
         _snapshots.pop_back();
 }
 
+
 std::shared_ptr<EthereumEmulator> get_ethereum(MaatEngine& engine)
 {
     if (engine.arch->type != Arch::Type::EVM)
@@ -672,6 +691,18 @@ contract_t get_contract_for_engine(MaatEngine& engine)
         throw env_exception("get_contract_for_engine(): can't be called with an architecture other than EVM");
 
     return get_ethereum(engine)->get_contract_by_uid(engine.process->pid);
+}
+
+void new_evm_runtime(MaatEngine& new_engine, MaatEngine& old_engine)
+{
+    if (
+        old_engine.arch->type != Arch::Type::EVM 
+        or new_engine.arch->type != Arch::Type::EVM
+    )
+        throw env_exception("new_evm_runtime(): can't be called with an architecture other than EVM");
+
+    int new_contract_uid = get_ethereum(old_engine)->new_runtime_for_contract(old_engine.process->pid);
+    new_engine.process->pid = new_contract_uid;
 }
 
 std::vector<uint8_t> hex_string_to_bytes(const std::vector<char>& in)

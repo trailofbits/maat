@@ -766,7 +766,7 @@ namespace test{
             // Basic load at known address
             addr = Value(256, "af66d5f4b5c5d5b55e5e5f5ddeeefa655", 16);
             contract->stack.push(addr);
-            contract->storage.write(
+            contract->storage->write(
                 addr,
                 Value(256, 42),
                 engine.settings
@@ -785,7 +785,7 @@ namespace test{
             // Load at known symbolic address
             addr = Value(exprvar(256, "symbolic_address"));
             contract->stack.push(addr);
-            contract->storage.write(
+            contract->storage->write(
                 addr,
                 Value(256, 12345678),
                 engine.settings
@@ -812,7 +812,7 @@ namespace test{
             contract->stack.push(Value(256, 1111));
             contract->stack.push(addr);
             engine.run_from(0x10, 1);
-            nb += _assert( contract->storage.read(addr).as_uint() == 1111,
+            nb += _assert( contract->storage->read(addr).as_uint() == 1111,
                             "ArchEVM: failed to disassembly and/or execute SSTORE");
 
             // Store at symbolic address
@@ -820,7 +820,7 @@ namespace test{
             contract->stack.push(Value(256, 2222));
             contract->stack.push(addr);
             engine.run_from(0x10, 1);
-            nb += _assert( contract->storage.read(addr).as_uint() == 2222,
+            nb += _assert( contract->storage->read(addr).as_uint() == 2222,
                             "ArchEVM: failed to disassembly and/or execute SSTORE");
 
             return nb;

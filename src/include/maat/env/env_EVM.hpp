@@ -53,11 +53,13 @@ public:
 /// EVM Volatile Memory
 class Memory: public serial::Serializable
 {
+friend class Contract;
 private:
     MemEngine _mem;
     addr_t _size; // Current memory size in the EVM sense
     addr_t _limit; // Limit of internally allocated memory
     addr_t _alloc_size;
+protected:
     std::shared_ptr<VarContext> _varctx;
 public:
     Memory(std::shared_ptr<VarContext> ctx);
@@ -207,6 +209,9 @@ public:
     Contract(const Contract& other) = default;
     virtual ~Contract() = default;
 public:
+    /// Make this contract a fresh runtime that shares storage with `other`
+    void fork_from(const Contract& other);
+public:
     virtual maat::serial::uid_t class_uid() const;
     virtual void dump(maat::serial::Serializer& s) const;
     virtual void load(maat::serial::Deserializer& d);
@@ -272,7 +277,7 @@ public:
     fresh runtime (stack and memory are empty, storage is shared, no
     transaction set).
     Returns the unique id of the new contract */
-    int duplicate_contract(int uid);
+    int new_runtime_for_contract(int uid);
 public:
     /// Take a snapshot of the environment
     virtual snapshot_t take_snapshot() override;
@@ -293,6 +298,11 @@ contract_t get_contract_for_engine(MaatEngine& engine);
 
 /// Helper function that converts a hex string into bytes. Eg "0102" -> "\x01\x02"
 std::vector<uint8_t> hex_string_to_bytes(const std::vector<char>& in);
+
+/** Helper function that creates a new EVM contract runtime from an existing MaatEngine
+and binds it to a new MaatEngine. Calling this function requires that `new_engine` shares
+its memory (which contains the contract code) with `old_engine` */
+void new_evm_runtime(MaatEngine& new_engine, const MaatEngine& old_engine);
 
 /** \} */ // doxygen group env
 
