@@ -267,8 +267,8 @@ private:
     hook_map_t hook_map;
 public:
     EventManager(); ///< Default constructor
-    EventManager(const EventManager& other) = delete;
-    EventManager& operator=(const EventManager& other) = delete;
+    EventManager(const EventManager& other) = default;
+    EventManager& operator=(const EventManager& other) = default;
     ~EventManager() = default;
 public:
     // Reg events

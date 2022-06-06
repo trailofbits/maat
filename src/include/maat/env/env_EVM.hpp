@@ -186,7 +186,7 @@ public:
     virtual void load(maat::serial::Deserializer& d);
 };
 
-/// Deployed Smart-Contract
+/// Runtime for a deployed Smart-Contract
 class Contract: public serial::Serializable
 {
 public:
@@ -268,6 +268,11 @@ public:
     int add_contract(contract_t contract);
     /// Get running contract by uid
     contract_t get_contract_by_uid(int uid) const;
+    /** Duplicate contract 'uid' into an identical contract with
+    fresh runtime (stack and memory are empty, storage is shared, no
+    transaction set).
+    Returns the unique id of the new contract */
+    int duplicate_contract(int uid);
 public:
     /// Take a snapshot of the environment
     virtual snapshot_t take_snapshot() override;

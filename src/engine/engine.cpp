@@ -73,6 +73,55 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
 #endif
 }
 
+MaatEngine::MaatEngine(
+    const MaatEngine& other,
+    std::set<std::string>& duplicate,
+    std::set<std::string>& share
+): env(nullptr), _uid(++_uid_cnt)
+{
+    _current_cpu_mode = other._current_cpu_mode;
+    _halt_after_inst = other._halt_after_inst;
+    _previous_halt_before_exec = other._previous_halt_before_exec;
+    current_ir_state = other.current_ir_state;
+    lifters = other.lifters;
+    // snapshots
+    if (duplicate.count("snapshots"))
+        // TODO snapshots = std::make_shared<SnapshotManager<Snapshot>>(*other.snapshots);
+        throw runtime_exception("MaatEngine: duplication of snapshots manager not yet implemented");
+    else
+        snapshots = std::make_shared<SnapshotManager<Snapshot>>();
+    simplifier = other.simplifier;
+    callother_handlers = other.callother_handlers;
+    arch = other.arch;
+    symbols = std::make_shared<SymbolManager>();
+    // var context
+    if (share.count("vars"))
+        vars = other.vars;
+    else
+        vars = std::make_shared<VarContext>(*other.vars);
+    // memory
+    if (share.count("mem"))
+        mem = other.mem;
+    else
+        mem = std::make_shared<MemEngine>(*other.mem);
+    cpu = other.cpu;
+    // hooks
+    if (duplicate.count("hooks"))
+        hooks = other.hooks;
+    path = other.path;
+    symbols = other.symbols;
+    // process
+    if (share.count("process"))
+        process = other.process;
+    else
+        process = std::make_shared<ProcessInfo>();
+    // Always share environment for now
+    env = other.env;
+#ifdef MAAT_PYTHON_BINDINGS
+    self_python_wrapper_object = nullptr;
+#endif
+}
+
 int MaatEngine::uid() const {
     return _uid;
 }
@@ -1409,5 +1458,6 @@ void MaatEngine::load(serial::Deserializer& d)
         lifters[mode] = lifter;
     }
 }
+
 
 } // namespace maat

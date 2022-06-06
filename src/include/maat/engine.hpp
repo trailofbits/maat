@@ -103,6 +103,31 @@ public:
 public:
     /// Instanciate an engine for architecture 'arch' and operating system 'os'
     MaatEngine(Arch::Type arch, env::OS os = env::OS::NONE);
+    /* Duplicate a MaatEngine. (INTERNAL / Not part of the public API)
+    
+    @param other The engine to duplicate
+    @param duplicate A set of attributes that must be duplicated from `other`
+        into the new engine. If attributes are present in `duplicate`, they 
+        will not be shared by the two instances, but will be identical just
+        after the new instance is created. This parameter accepts the following
+        keys:
+        - <b>hooks</b>: duplicate all event hooks that are set in `other`
+    
+    @param share A set of attributes that must be shared between `other` and 
+        the new engine. If a shared attribute are essentially pointers so
+        a modification in one of the engines will also modify the other.
+        This parameter accepts the following keys:
+        - <b>vars</b>: shared the concolic variables context
+        - <b>mem</b>: shared the memory engine
+        - <b>process</b>: shared the same process information
+
+        Note: environment is always shared.
+    */
+    MaatEngine(
+        const MaatEngine& other,
+        std::set<std::string>& duplicate,
+        std::set<std::string>& share
+    );
     MaatEngine(const MaatEngine& other) = delete;
     virtual ~MaatEngine() = default; ///< Destructor
     int uid() const; ///< Return the UID of this engine instance
