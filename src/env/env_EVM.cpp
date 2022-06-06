@@ -437,7 +437,10 @@ Contract::Contract()
 {}
 
 Contract::Contract(const MaatEngine& engine, Value addr)
-: memory(engine.vars), address(addr), storage(engine.vars), code_size(0)
+:   memory(engine.vars), 
+    address(addr),
+    storage(std::make_shared<Storage>(engine.vars)),
+    code_size(0)
 {}
 
 serial::uid_t Contract::class_uid() const

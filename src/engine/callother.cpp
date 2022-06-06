@@ -511,13 +511,13 @@ void EVM_SLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
     // Set result but don't push, push is done by next PCODE instruction
-    pinst.res = contract->storage.read(pinst.in1.value());
+    pinst.res = contract->storage->read(pinst.in1.value());
 }
 
 void EVM_SSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
-    contract->storage.write(
+    contract->storage->write(
         pinst.in1.value(),
         pinst.in2.value(),
         engine.settings

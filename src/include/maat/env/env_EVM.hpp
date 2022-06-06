@@ -193,7 +193,7 @@ public:
     Value address; ///< Address where the contract is deployed
     Stack stack; ///< Stack of the executing EVM
     Memory memory; ///< Volatile memory of the executing EVM
-    Storage storage; ///< Persistent contract storage
+    std::shared_ptr<Storage> storage; ///< Persistent contract storage
     std::optional<Transaction> transaction; ///< Transaction being executed
 protected:
     std::optional<TransactionResult> result_from_last_call; ///< Result of last call emitted from the current executing environment
