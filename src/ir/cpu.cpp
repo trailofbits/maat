@@ -175,10 +175,15 @@ void ProcessedInst::reset()
     in2.set_none();
 }
 
-
-CPUContext::CPUContext(int nb_regs)
+CPUContext::CPUContext(int nb_regs): alias_setter(nullptr), alias_getter(nullptr)
 {
     regs = std::vector<Value>(nb_regs);
+}
+
+void CPUContext::_set_aliased_reg(ir::reg_t reg, const Value& val)
+{
+    if (_is_alias(reg))
+        alias_setter(*this, reg, val);
 }
 
 void CPUContext::set(ir::reg_t reg, const Value& value)
@@ -186,15 +191,17 @@ void CPUContext::set(ir::reg_t reg, const Value& value)
     int idx(reg);
     try
     {
+        _check_assignment_size(idx, value.size());
         regs.at(idx) = value;
     }
     catch(const std::out_of_range&)
     {
         throw ir_exception(Fmt()
                 << "CPUContext: Trying to set register " << std::dec << idx
-                << " which doesn't exist in current context"
+                << " which doesn't exist in current context" >> Fmt::to_str
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
 void CPUContext::set(ir::reg_t reg, Expr value)
@@ -202,6 +209,7 @@ void CPUContext::set(ir::reg_t reg, Expr value)
     int idx(reg);
     try
     {
+        _check_assignment_size(idx, value->size);
         regs.at(idx) = value;
     }
     catch(const std::out_of_range&)
@@ -211,6 +219,7 @@ void CPUContext::set(ir::reg_t reg, Expr value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
 void CPUContext::set(ir::reg_t reg, cst_t value)
@@ -227,6 +236,7 @@ void CPUContext::set(ir::reg_t reg, cst_t value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, regs.at(idx));
 }
 
 void CPUContext::set(ir::reg_t reg, Number&& value)
@@ -234,6 +244,7 @@ void CPUContext::set(ir::reg_t reg, Number&& value)
     int idx(reg);
     try
     {
+        _check_assignment_size(idx, value.size);
         regs.at(idx) = value;
     }
     catch(const std::out_of_range&)
@@ -243,6 +254,7 @@ void CPUContext::set(ir::reg_t reg, Number&& value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
 void CPUContext::set(ir::reg_t reg, const Number& value)
@@ -250,6 +262,7 @@ void CPUContext::set(ir::reg_t reg, const Number& value)
     int idx(reg);
     try
     {
+        _check_assignment_size(idx, value.size);
         regs.at(idx) = value;
     }
     catch(const std::out_of_range&)
@@ -259,13 +272,32 @@ void CPUContext::set(ir::reg_t reg, const Number& value)
                 << " which doesn't exist in current context"
             );
     }
+    _set_aliased_reg(reg, value);
 }
 
-const Value& CPUContext::get(ir::reg_t reg) const
+void CPUContext::_check_assignment_size(int idx, size_t size) const
+{
+    if (not regs.at(idx).is_none() and regs.at(idx).size() != size)
+        throw cpu_exception( Fmt()
+            << "Can't assign " << std::dec << size << "-bits value to "
+            << regs.at(idx).size() << "-bits register" << "\n" 
+            >> Fmt::to_str
+        );
+}
+
+bool CPUContext::_is_alias(ir::reg_t reg) const
+{
+    return aliased_regs.find(reg) != aliased_regs.end();
+}
+
+const Value& CPUContext::get(ir::reg_t reg)
 {
     int idx(reg);
+
     try
     {
+        if (_is_alias(reg) and reg >= 0 and reg < regs.size())
+            regs[idx] = alias_getter(*this, reg);
         return regs.at(idx);
     }
     catch(const std::out_of_range&)
@@ -296,7 +328,11 @@ void CPUContext::load(serial::Deserializer& d)
 std::ostream& operator<<(std::ostream& os, const CPUContext& ctx)
 {
     for (int i = 0; i < ctx.regs.size(); i++)
+    {
+        if (ctx._is_alias(i))
+            continue;
         os << "REG_" << std::dec << i << ": " << ctx.regs[i] << "\n";
+    }
     return os;
 }
 
@@ -304,7 +340,11 @@ std::ostream& operator<<(std::ostream& os, const CPUContext& ctx)
 void CPUContext::print(std::ostream& os, const Arch& arch)
 {
     for (int i = 0; i < arch.nb_regs; i++)
+    {
+        if (_is_alias(i))
+            continue;
         os << arch.reg_name(i) << ": " << regs[i] << "\n";
+    }
 }
 
 
@@ -576,7 +616,6 @@ ProcessedInst& CPU::pre_process_inst(
     MaatEngine& engine
 )
 {
-
     processed_inst.reset();
 
     // TODO: use Value& at least for input values....

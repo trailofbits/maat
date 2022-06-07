@@ -66,6 +66,46 @@ Also don't forget to register the new architecture by adding the appropriate lin
 `bindings/python/py_arch.cpp` so that the architecture becomes available in Python bindings
 in the `ARCH` enumeration.
 
+#### Optional register aliases
+
+Maat **optionally** allows to declare registers that are aliases for other registers. For instance for `X86`, Maat uses individual registers for the flags (`CF`, `OF`, `ZF`, etc). However, we created the `EFLAGS` alias that corresponds to all flags combined. Aliases are defined in the register enumeration just as other registers:
+
+```
+namespace X86
+{
+    /* Registers */
+    ....
+    static constexpr reg_t EFLAGS = ... ;
+    ...
+}
+```
+
+Aliases then need to be supported by a custom getter and setter function when read or assigned in the CPU. Get/sets for register aliases are implemented in `src/arch/register_aliases.cpp`. For `X86` the functions are `x86_alias_setter` and `x86_alias_getter`. You can see how the setter takes a 32-bits value for `EFLAGS` and then assigns each _real_ individual flag registers according to that value. Similarily, the getter reads each flag register and concatenates them to return a 32-bits value for `EFLAGS`.
+
+Note that aliases must be explicitely listed as such. The set of aliases is passed to the CPU, which then knows whether a register is an alias, and can call the custom getter/setter when required: 
+
+```
+    std::set x86_aliases{X86::EFLAGS};
+```
+
+Last but not least, update the `CPUContext::init_alias_getset()` method to support the new architecture, e.g: 
+
+```
+void CPUContext::init_alias_getset(Arch::Type arch)
+{
+    if (arch == Arch::Type::X86)
+    {
+        alias_setter = x86_alias_setter;
+        alias_getter = x86_alias_getter;
+        aliased_regs = x86_aliases;
+    } 
+    ...
+    // Your architecture goes here
+}
+```
+
+Keep in mind that register aliasing comes with a runtime cost, and should be used sparingly. 
+
 ### 2. Integrating the new architecture
 
 Now that the new architecture is specified, we need to integrate it in various places

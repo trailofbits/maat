@@ -32,19 +32,29 @@ namespace ir
     }\
 }
 
+// Register aliases setter callback
+class CPUContext;
+using reg_alias_setter_t = std::function<void(CPUContext&, ir::reg_t, const Value&)>;
+using reg_alias_getter_t = std::function<Value(CPUContext&, ir::reg_t)>;
+
 /** The CPU context in Maat's IR. It is basically
  * a mapping between abstract expressions and CPU registers */
 class CPUContext: public serial::Serializable
 {
 private:
     std::vector<Value> regs;
-
+private:
+    reg_alias_getter_t alias_getter;
+    reg_alias_setter_t alias_setter;
+    std::set<ir::reg_t> aliased_regs;
 public:
     CPUContext(int nb_regs);
     CPUContext(const CPUContext& other) = default;
     CPUContext& operator=(const CPUContext& other) = default;
     virtual ~CPUContext() = default;
-
+public:
+    /// Initialise special handling of alias registers for the given architecture
+    void init_alias_getset(Arch::Type arch);
 public:
     /// Assign abstract or concrete expression to register *reg*
     void set(ir::reg_t reg, const Value& value);
@@ -62,8 +72,17 @@ public:
     void set(ir::reg_t reg, const Number& value);
 
     /// Get current value of register *reg* as an abstract expression
-    const Value& get(ir::reg_t reg) const;
+    const Value& get(ir::reg_t reg);
 
+private:
+    // Internal method that handles setting register aliases
+    inline void _set_aliased_reg(ir::reg_t reg, const Value& val) __attribute__((always_inline));
+    // Internal method to check if a register is an alias
+    inline bool _is_alias(ir::reg_t reg) const __attribute__((always_inline));
+    // Check that new value assignment matches the current size of the register
+    // Throws cpu_exception on a wrong assignment size, and std::out_of_range
+    // if 'reg_idx' is invalid 
+    void _check_assignment_size(int reg_idx, size_t size) const;
 public:
     /// Print the CPU context to a stream
     friend std::ostream& operator<<(std::ostream& os, const CPUContext& ctx);
@@ -142,8 +161,9 @@ private:
     __attribute__((always_inline));
 
     /** \brief Get value of parameter 'param' (extract bits if needed).
-     * get_full_register is set to true, the function doesn't truncate the
-     * expression if the parameter is a register */
+      
+     If get_full_register is set to true, the function doesn't truncate the
+     expression if the parameter is a register. */
     inline event::Action _get_param_value(
         ProcessedInst::Param& dest,
         const ir::Param& param,

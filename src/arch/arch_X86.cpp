@@ -1,5 +1,6 @@
 #include "maat/arch.hpp"
 #include "maat/exception.hpp"
+#include "maat/cpu.hpp"
 
 namespace maat
 {
@@ -136,7 +137,8 @@ namespace X86
             {"st4", ST4},
             {"st5", ST5},
             {"st6", ST6},
-            {"st7", ST7}
+            {"st7", ST7},
+            {"eflags", EFLAGS}
         };
     }
 
@@ -223,6 +225,8 @@ namespace X86
             case ST6:
             case ST7:
                 return 80;
+            case EFLAGS:
+                return 32;
             default:
                 throw runtime_exception("ArchX86::reg_size(): got unsupported reg num");
         }
@@ -243,6 +247,8 @@ namespace X86
         return X86::TSC;
     }
 } // namespace X86
+
+
 
 
 namespace X64
@@ -338,7 +344,8 @@ namespace X64
             {"st6", ST6},
             {"st7", ST7},
             {"mxcsr", MXCSR},
-            {"ssp", SSP}
+            {"ssp", SSP},
+            {"rflags", RFLAGS}
         };
     }
 
@@ -444,6 +451,8 @@ namespace X64
             case ST6:
             case ST7:
                 return 80;
+            case RFLAGS:
+                return 64;
             default:
                 throw runtime_exception("ArchX64::reg_size(): got unsupported reg num");
         }
@@ -464,6 +473,6 @@ namespace X64
         return X64::TSC;
     }
 } // namespace X64
-    
+
 } // namespace maat
 

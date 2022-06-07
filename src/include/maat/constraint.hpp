@@ -112,6 +112,8 @@ Constraint ULT(ucst_t left, Expr right); ///< Create an unsigned less-than const
 Constraint operator&&(Constraint left, Constraint right); ///< Combine constraints (*left* AND *right*)
 Constraint operator||(Constraint left, Constraint right); ///< Combine constraints (*left* OR *right*)
 
+Expr ITE(Constraint cond, Expr if_true, Expr if_false); ///< Create new ExprITE instance from Constraint
+
 /** \} */ // End of doxygen group constraint
 
 // TODO add a .evaluate(VarContext) method...

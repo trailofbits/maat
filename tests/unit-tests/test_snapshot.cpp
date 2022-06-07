@@ -29,7 +29,8 @@ namespace test
         {
             Expr    e1 = exprvar(32, "var0"),
                     e2 = exprvar(64, "var1"),
-                    c1 = exprcst(64, 0x12345678c0c0babe);
+                    c1 = exprcst(64, 0x12345678c0c0babe),
+                    c2 = exprcst(32, 0x46581fa);
             MaatEngine engine = MaatEngine(Arch::Type::NONE);
             MaatEngine::snapshot_t s1, s2;
             unsigned int nb = 0;
@@ -38,7 +39,7 @@ namespace test
             // Init 
             engine.vars->set("var0", 0x41414141);
             engine.cpu.ctx().set(0, e1);
-            engine.cpu.ctx().set(1, e2);
+            engine.cpu.ctx().set(1, e1+43);
             engine.mem->map(0x2000, 0x2fff);
             engine.mem->write(0x21b4, e2);
             
@@ -62,7 +63,7 @@ namespace test
     
             engine.mem->write(0x2204, c1);
             engine.cpu.ctx().set(0, e1+e1);
-            engine.cpu.ctx().set(1,e2+c1);
+            engine.cpu.ctx().set(1,e1+c2);
             s2 = engine.take_snapshot();
             
             engine.cpu.ctx().set(0, e1*e1);
@@ -72,11 +73,11 @@ namespace test
             nb += _assert(engine.mem->read(0x2204, 8).as_expr()->eq(c1), "SnapshotManager: rewind failed for two consecutive snapshots");
             nb += _assert(engine.mem->read(0x2200, 8).as_expr()->eq(exprcst(64, 0xc0c0babec0c0babe)), "SnapshotManager: rewind failed for two consecutive snapshots");
             nb += _assert(engine.cpu.ctx().get(0).as_expr()->eq( e1+e1), "SnapshotManager: rewind failed for two consecutive snapshots");
-            nb += _assert(engine.cpu.ctx().get(1).as_expr()->eq(c1+e2), "SnapshotManager: rewind failed for two consecutive snapshots");
+            nb += _assert(engine.cpu.ctx().get(1).as_expr()->eq(c2+e1), "SnapshotManager: rewind failed for two consecutive snapshots");
             
             engine.restore_snapshot(s1, true);
             nb += _assert(engine.cpu.ctx().get(0).as_expr()->eq(e1), "SnapshotManager: rewind failed for two consecutive snapshots");
-            nb += _assert(engine.cpu.ctx().get(1).as_expr()->eq(e2), "SnapshotManager: rewind failed for two consecutive snapshots");
+            nb += _assert(engine.cpu.ctx().get(1).as_expr()->eq(e1+43), "SnapshotManager: rewind failed for two consecutive snapshots");
             nb += _assert(engine.mem->read(0x2200, 8).as_expr()->eq(c1), "SnapshotManager: rewind failed for two consecutive snapshots");
 
             // Rewind on mixed symbolic and concrete engine.memory writes

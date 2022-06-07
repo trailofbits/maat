@@ -94,7 +94,7 @@ public:
 class loader_exception: public generic_exception {
 public:
     explicit loader_exception(std::string msg): generic_exception(msg){};
-}; 
+};
 
 /** Event exception */
 class event_exception: public generic_exception {
@@ -106,6 +106,11 @@ public:
 class ir_exception: public generic_exception {
 public:
     explicit ir_exception(std::string msg): generic_exception(msg){};
+};
+
+class cpu_exception: public generic_exception {
+public:
+    explicit cpu_exception(std::string msg): generic_exception(msg){};
 };
 
 /** Symbolic engine exception */

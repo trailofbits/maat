@@ -277,6 +277,7 @@ FunctionCallback::return_t sys_linux_fstatat(
 {
     cst_t AT_FDCWD = -100;
     cst_t AT_EMPTY_PATH = 0x1000;
+    cst_t ERR_ENOENT = 3025;
     std::string pathname = engine.mem->read_string(args[1]);
     addr_t statbuf = args[2].as_uint(*engine.vars);
     int dirfd = args[0].as_int(*engine.vars);
@@ -295,7 +296,6 @@ FunctionCallback::return_t sys_linux_fstatat(
         if (dirfd == AT_FDCWD) // Relative to current dir
         {
             filepath = engine.env->fs.path_from_relative_path(pathname, engine.process->pwd);
-            file = engine.env->fs.get_file(filepath);
         }
         else if (flags & AT_EMPTY_PATH) // dirfd points to the file, ignore pathname
         {
@@ -305,6 +305,13 @@ FunctionCallback::return_t sys_linux_fstatat(
         {
             throw env_exception("Emulated fstatat(): not supported for arbitrary dirfd");
         }
+    }
+    if (file == nullptr)
+    {
+        // Check if file exists
+        if (not engine.env->fs.file_exists(filepath))
+            return -ERR_ENOENT; // Error: No such path or directory
+        file = engine.env->fs.get_file(filepath);
     }
     return _stat(engine, file, statbuf);
 }
@@ -759,6 +766,16 @@ FunctionCallback::return_t sys_linux_readlink(
     return res;
 }
 
+// void exit(int status);
+FunctionCallback::return_t sys_linux_exit(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    engine.terminate_process(args[0]);
+    return std::monostate();
+}
+
 // ================= Build the syscall maps =================
 syscall_func_map_t linux_x86_syscall_map()
 {
@@ -772,6 +789,7 @@ syscall_func_map_t linux_x86_syscall_map()
         {28, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
         {33, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
         {45, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {56, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
         {85, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {91, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
         {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
@@ -781,6 +799,7 @@ syscall_func_map_t linux_x86_syscall_map()
         {192, Function("sys_mmap2", FunctionCallback({env::abi::auto_argsize, 4, 4, 4, 4, 4}, sys_linux_mmap2))},
         {195, Function("sys_stat64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {197, Function("sys_fstat64", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))}, 
+        {212, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
         {295, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))}
     };
     return res;
@@ -803,9 +822,11 @@ syscall_func_map_t linux_x64_syscall_map()
         {17, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
         {20, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
         {21, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
+        {60, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
         {63, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {89, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
+        {231, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
         {257, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
         {262, Function("sys_newfstatat", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize, 4}, sys_linux_fstatat))}
     };
