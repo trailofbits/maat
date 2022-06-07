@@ -79,7 +79,10 @@ private:
     inline void _set_aliased_reg(ir::reg_t reg, const Value& val) __attribute__((always_inline));
     // Internal method to check if a register is an alias
     inline bool _is_alias(ir::reg_t reg) const __attribute__((always_inline));
-
+    // Check that new value assignment matches the current size of the register
+    // Throws cpu_exception on a wrong assignment size, and std::out_of_range
+    // if 'reg_idx' is invalid 
+    void _check_assignment_size(int reg_idx, size_t size) const;
 public:
     /// Print the CPU context to a stream
     friend std::ostream& operator<<(std::ostream& os, const CPUContext& ctx);
@@ -158,8 +161,9 @@ private:
     __attribute__((always_inline));
 
     /** \brief Get value of parameter 'param' (extract bits if needed).
-     * get_full_register is set to true, the function doesn't truncate the
-     * expression if the parameter is a register */
+      
+     If get_full_register is set to true, the function doesn't truncate the
+     expression if the parameter is a register. */
     inline event::Action _get_param_value(
         ProcessedInst::Param& dest,
         const ir::Param& param,
