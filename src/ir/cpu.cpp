@@ -175,11 +175,9 @@ void ProcessedInst::reset()
     in2.set_none();
 }
 
-
 CPUContext::CPUContext(int nb_regs): alias_setter(nullptr), alias_getter(nullptr)
 {
     regs = std::vector<Value>(nb_regs);
-    
 }
 
 void CPUContext::_set_aliased_reg(ir::reg_t reg, const Value& val)

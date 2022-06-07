@@ -42,8 +42,6 @@ using reg_alias_getter_t = std::function<Value(CPUContext&, ir::reg_t)>;
 class CPUContext: public serial::Serializable
 {
 private:
-    std::shared_ptr<Arch> _arch;
-private:
     std::vector<Value> regs;
 private:
     reg_alias_getter_t alias_getter;
