@@ -42,6 +42,8 @@ using reg_alias_getter_t = std::function<Value(CPUContext&, ir::reg_t)>;
 class CPUContext: public serial::Serializable
 {
 private:
+    std::shared_ptr<Arch> _arch;
+private:
     std::vector<Value> regs;
 private:
     reg_alias_getter_t alias_getter;
@@ -79,7 +81,10 @@ private:
     inline void _set_aliased_reg(ir::reg_t reg, const Value& val) __attribute__((always_inline));
     // Internal method to check if a register is an alias
     inline bool _is_alias(ir::reg_t reg) const __attribute__((always_inline));
-
+    // Check that new value assignment matches the current size of the register
+    // Throws cpu_exception on a wrong assignment size, and std::out_of_range
+    // if 'reg_idx' is invalid 
+    void _check_assignment_size(int reg_idx, size_t size) const;
 public:
     /// Print the CPU context to a stream
     friend std::ostream& operator<<(std::ostream& os, const CPUContext& ctx);
