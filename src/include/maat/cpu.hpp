@@ -165,15 +165,11 @@ private:
     /** \brief Get value of parameter 'param' (extract bits if needed).
       
      If get_full_register is set to true, the function doesn't truncate the
-     expression if the parameter is a register.
-     
-     If force_addr_64 is true, the function forces address constants to be
-     64-bit values */
+     expression if the parameter is a register. */
     inline event::Action _get_param_value(
         ProcessedInst::Param& dest,
         const ir::Param& param,
         MaatEngine& engine,
-        bool force_addr_64 = true,
         bool get_full_register = false,
         bool trigger_events = true
     ) __attribute__((always_inline));

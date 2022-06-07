@@ -374,7 +374,6 @@ event::Action CPU::_get_param_value(
     ProcessedInst::Param& dest,
     const ir::Param& param,
     MaatEngine& engine,
-    bool force_addr_64,
     bool get_full_register,
     bool trigger_events
 )
@@ -399,10 +398,7 @@ event::Action CPU::_get_param_value(
         // refer to the number of bits accessed, not the size of the address!
         // So address is size 64, and the engine will handle how many bits
         // to read or write later...
-        if (force_addr_64)
-            dest.set_cst(64, param.addr());
-        else
-            dest.set_cst(param.size(), param.addr());
+        dest.set_cst(64, param.addr());
     }
     else if (param.is_tmp())
     {
@@ -623,14 +619,10 @@ ProcessedInst& CPU::pre_process_inst(
 )
 {
     processed_inst.reset();
-    bool force_addr_64 = (
-        inst.op != ir::Op::BRANCH and
-        inst.op != ir::Op::CBRANCH and
-        inst.op != ir::Op::CALL
-    );
+
     // TODO: use Value& at least for input values....
-    _get_param_value(processed_inst.out, inst.out, engine, false, true, false);
-    event::merge_actions(action, _get_param_value(processed_inst.in0, inst.in[0], engine, force_addr_64));
+    _get_param_value(processed_inst.out, inst.out, engine, true, false);
+    event::merge_actions(action, _get_param_value(processed_inst.in0, inst.in[0], engine));
     event::merge_actions(action, _get_param_value(processed_inst.in1, inst.in[1], engine));
     event::merge_actions(action, _get_param_value(processed_inst.in2, inst.in[2], engine));
     return processed_inst;

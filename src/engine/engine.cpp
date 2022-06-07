@@ -413,15 +413,25 @@ bool MaatEngine::process_branch(
     if (!ir::is_branch_op(inst.op))
         throw runtime_exception("MaatEngine::process_branch(): called with non-branching instruction!");
     
-    const Value&    in0 = pinst.in0.value(), 
-                    in1 = pinst.in1.value();
+    Value in0 = pinst.in0.value(); 
+    const Value& in1 = pinst.in1.value();
     Value next(arch->bits(), asm_inst.addr()+asm_inst.raw_size());
     bool taken = false;
     std::optional<bool> opt_taken;
     bool pcode_rela = inst.in[0].is_cst();
+    size_t pc_size = arch->reg_size(arch->pc());
 
     if (in0.is_none())
         throw runtime_exception("MaatEngine::process_branch(): got empty input parameter!");
+
+    // Adjust operand size to PC size if needed
+    if (in0.size() < pc_size)
+        in0.set_concat(
+            Value(pc_size-in0.size(), 0),
+            in0
+        );
+    else if (in0.size() > pc_size)
+        in0.set_extract(in0, pc_size-1, 0);
 
     switch (inst.op)
     {
