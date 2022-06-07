@@ -434,6 +434,7 @@ bool MaatEngine::process_branch(
             }
             else // address, branch to it
             {
+                // Trigger hooks
                 if (hooks.has_hooks(Event::BRANCH, When::BEFORE))
                 {
                     info.addr = asm_inst.addr();
