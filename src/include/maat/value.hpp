@@ -181,6 +181,8 @@ Value operator-(const Value& arg); ///< Logical invert an expression
 Value extract(const Value& arg, unsigned long higher, unsigned long lower); ///< Extract bitfield from value
 Value concat(const Value& upper, const Value& lower); ///< Concatenate two values
 
+Value sext(int new_size, const Value& arg); ///< Sign-extend value to 'new_size' bits
+Value zext(int new_size, const Value& arg); ///< Zero-extend value to 'new_size' bits
 
 // Constraints
 Constraint operator==(const Value& left, const Value& right); ///< Equality constraint 

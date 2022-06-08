@@ -521,6 +521,26 @@ PyObject* maat_Extract(PyObject* self, PyObject* args)
     CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( extract(*(as_value_object(val).value), higher, lower)); )
 }
 
+PyObject* maat_Zext(PyObject* self, PyObject* args)
+{
+    Value_Object* val;
+    long new_size;
+    if( ! PyArg_ParseTuple(args, "lO!", &new_size, (PyObject*)&Value_Type, &val)){
+        return NULL;
+    }
+    CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( zext(new_size, *(as_value_object(val).value)));)
+}
+
+PyObject* maat_Sext(PyObject* self, PyObject* args)
+{
+    Value_Object* val;
+    long new_size;
+    if( ! PyArg_ParseTuple(args, "lO!", &new_size, (PyObject*)&Value_Type, &val)){
+        return NULL;
+    }
+    CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( sext(new_size, *(as_value_object(val).value)));)
+}
+
 // TODO SAR, ITE, ...
 
 PyObject* PyValue_FromValue(const Value& e)

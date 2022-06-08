@@ -417,6 +417,12 @@ void Value::set_popcount(int dest_size, const Value& n)
 
 void Value::set_zext(int ext_size, const Value& n)
 {
+    if (ext_size <= n.size())
+        throw expression_exception(Fmt()
+            << "Can not zero extend " << std::dec << (int)n.size()
+            << "-bits value to " << ext_size << "bits" >> Fmt::to_str
+        );
+
     if (n.is_abstract())
     {
         *this = maat::concat(
@@ -433,6 +439,12 @@ void Value::set_zext(int ext_size, const Value& n)
 
 void Value::set_sext(int ext_size, const Value& n)
 {
+    if (ext_size <= n.size())
+        throw expression_exception(Fmt()
+            << "Can not sign extend " << std::dec << (int)n.size()
+            << "-bits value to " << ext_size << "bits" >> Fmt::to_str
+        );
+
     if (n.is_abstract())
     {
         // Create mask
@@ -1452,6 +1464,20 @@ Value concat(const Value& upper, const Value& lower)
         n.set_concat(upper.as_number(), lower.as_number());
         res = n;
     }
+    return res;
+}
+
+Value sext(int new_size, const Value& arg)
+{
+    Value res;
+    res.set_sext(new_size, arg);
+    return res;
+}
+
+Value zext(int new_size, const Value& arg)
+{
+    Value res;
+    res.set_zext(new_size, arg);
     return res;
 }
 
