@@ -8,6 +8,9 @@ on:
 
   workflow_dispatch:
 
+env:
+  LIEF_VERSION: 0.12.1
+
 jobs:
 
   build_wheels_linux:
@@ -95,7 +98,7 @@ jobs:
         if: matrix.target_arch == 'x86_64'
         run: |
           brew install python3
-          wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+          wget -O - -c https://github.com/lief-project/LIEF/releases/download/$LIEF_VERSION/LIEF-$LIEF_VERSION-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
           wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz && mkdir -p gmp/build && tar --lzip -xvf gmp-6.2.1.tar.lz -C gmp --strip-components 1
           cd gmp/build && ../configure --enable-shared --disable-static CFLAGS='-mmacosx-version-min=10.15' CXXFLAGS='-mmacosx-version-min=10.15' LDFLAGS='-mmacosx-version-min=10.15' --build=x86_64-apple-darwin --disable-assembly --enable-cxx
@@ -110,7 +113,7 @@ jobs:
         if: matrix.target_arch == 'arm64'
         run: |
           mkdir -p "${{ github.workspace }}/arm64-cross"
-          wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.11.5/LIEF-0.11.5-Darwin-arm64.tar.gz | tar xz -C "${{ github.workspace }}/arm64-cross" --strip-components=1
+          wget -O - -c https://github.com/lief-project/LIEF/releases/download/$LIEF_VERSION/LIEF-$LIEF_VERSION-Darwin-arm64.tar.gz | tar xz -C "${{ github.workspace }}/arm64-cross" --strip-components=1
 
           wget https://gmplib.org/download/gmp/gmp-6.2.1.tar.lz && mkdir -p gmp/build && tar --lzip -xvf gmp-6.2.1.tar.lz -C gmp --strip-components 1
           cd gmp/build && ../configure --enable-shared --disable-static CFLAGS='-arch arm64 -mmacosx-version-min=11.0' CXXFLAGS='-arch arm64 -mmacosx-version-min=11.0' LDFLAGS='-arch arm64 -mmacosx-version-min=11.0' --build=x86_64-apple-darwin --host=aarch64-apple-darwin --target=aarch64-apple-darwin --disable-assembly --enable-cxx "--prefix=${{ github.workspace }}/arm64-cross"
