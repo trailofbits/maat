@@ -141,7 +141,7 @@ namespace test{
 
             nb += _assert_bignum_eq(
                 contract->stack.get(0),
-                "-7218217218218217217218488488369",
+                "-7218217218218217217218488488368",
                 "ArchEVM: failed to disassembly and/or execute SDIV"
             );
 
@@ -217,7 +217,17 @@ namespace test{
 
             nb += _assert_bignum_eq(
                 contract->stack.get(0),
-                "2134704038524283919590246551524",
+                "-1263775346215564019159140879423",
+                "ArchEVM: failed to disassembly and/or execute SMOD"
+            );
+
+            contract->stack.push(Value(256, "-3398479384739847938749387430947", 10));
+            contract->stack.push(Value(256, "21654651654654651651655465465105", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
+                "1263775346215564019159140879423",
                 "ArchEVM: failed to disassembly and/or execute SMOD"
             );
 

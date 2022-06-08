@@ -417,11 +417,16 @@ void Value::set_popcount(int dest_size, const Value& n)
 
 void Value::set_zext(int ext_size, const Value& n)
 {
-    if (ext_size <= n.size())
+    if (ext_size < n.size())
         throw expression_exception(Fmt()
             << "Can not zero extend " << std::dec << (int)n.size()
             << "-bits value to " << ext_size << "bits" >> Fmt::to_str
         );
+    else if (ext_size == n.size())
+    {
+        *this = n;
+        return;
+    }
 
     if (n.is_abstract())
     {
@@ -439,11 +444,16 @@ void Value::set_zext(int ext_size, const Value& n)
 
 void Value::set_sext(int ext_size, const Value& n)
 {
-    if (ext_size <= n.size())
+    if (ext_size < n.size())
         throw expression_exception(Fmt()
             << "Can not sign extend " << std::dec << (int)n.size()
             << "-bits value to " << ext_size << "bits" >> Fmt::to_str
         );
+    else if (ext_size == n.size())
+    {
+        *this = n;
+        return;
+    }
 
     if (n.is_abstract())
     {

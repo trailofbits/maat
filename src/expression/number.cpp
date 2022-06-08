@@ -312,7 +312,7 @@ void Number::set_srem(const Number& n1, const Number& n2)
         mpz_t tmp1, tmp2;
         mpz_init_force_signed(tmp1, n1);
         mpz_init_force_signed(tmp2, n2);
-        mpz_fdiv_r(mpz_.get_mpz_t(), tmp1, tmp2);
+        mpz_tdiv_r(mpz_.get_mpz_t(), tmp1, tmp2);
         adjust_mpz();
         mpz_clear(tmp1);
         mpz_clear(tmp2);
@@ -464,7 +464,7 @@ void Number::set_sdiv(const Number& n1, const Number& n2)
         mpz_t tmp1, tmp2;
         mpz_init_force_signed(tmp1, n1);
         mpz_init_force_signed(tmp2, n2);
-        mpz_fdiv_q(mpz_.get_mpz_t(), tmp1, tmp2);
+        mpz_tdiv_q(mpz_.get_mpz_t(), tmp1, tmp2);
         adjust_mpz();
         mpz_clear(tmp1);
         mpz_clear(tmp2);
