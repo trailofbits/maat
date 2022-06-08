@@ -6,7 +6,7 @@ namespace maat
 using namespace maat::serial;
 
 // Interpret src as a signed mpz value and puts it in res
-// src must be more than 64 bits, mpz_t is not initialized
+// src must be more than 64 bits, mpz_t is initialized
 void mpz_init_force_signed(mpz_t& res, const Number& src)
 {
     if (not src.is_mpz())
@@ -713,7 +713,13 @@ bool Number::sless_than(const Number& other) const
     {
         // mpz_cmp returns a positive value if op1 > op2, 
         // zero if op1 = op2, or a negative value if op1 < op2
-        return mpz_cmp(mpz_.get_mpz_t(),  other.mpz_.get_mpz_t()) < 0;
+        mpz_t s1, s2;
+        mpz_init_force_signed(s1, *this);
+        mpz_init_force_signed(s2, other);
+        int res = mpz_cmp(s1, s2);
+        mpz_clear(s1);
+        mpz_clear(s2);
+        return res < 0;
     }
 }
 
@@ -725,9 +731,7 @@ bool Number::slessequal_than(const Number& other) const
     }
     else
     {
-        // mpz_cmp returns a positive value if op1 > op2, 
-        // zero if op1 = op2, or a negative value if op1 < op2
-        return mpz_cmp(mpz_.get_mpz_t(), other.mpz_.get_mpz_t()) <= 0;
+        return sless_than(other) or equal_to(other);
     }
 }
 

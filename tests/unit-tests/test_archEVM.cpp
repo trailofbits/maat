@@ -407,6 +407,16 @@ namespace test{
 
             nb += _assert_bignum_eq(
                 contract->stack.get(0),
+                "0",
+                "ArchEVM: failed to disassembly and/or execute SGT"
+            );
+
+            contract->stack.push(Value(256, "-1", 10));
+            contract->stack.push(Value(256, "66847465436546516516546516516541", 10));
+            engine.run_from(0x10, 1);
+
+            nb += _assert_bignum_eq(
+                contract->stack.get(0),
                 "1",
                 "ArchEVM: failed to disassembly and/or execute SGT"
             );
