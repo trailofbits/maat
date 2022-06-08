@@ -328,8 +328,8 @@ Expr es_extract_patterns(Expr e)
                                 e->args[1]->cst(),
                                 e->args[2]->cst());
             }
-        // extract(extract(X,a,b),c,d) --> extract(X, a',b')
         }
+        // extract(extract(X,a,b),c,d) --> extract(X, c+b,d+b)
         else if( e->args[0]->is_type(ExprType::EXTRACT) && 
                 (e->args[0]->args[2]->size == e->args[1]->size) &&
                 (e->args[0]->args[2]->size == e->args[2]->size))
@@ -337,6 +337,25 @@ Expr es_extract_patterns(Expr e)
             return extract(e->args[0]->args[0],
                 e->args[0]->args[2]->cst()+e->args[1]->cst(),
                 e->args[0]->args[2]->cst()+e->args[2]->cst());
+        }
+
+        // ITE(A,B)[X:Y] = ITE(A[X:Y], B[X:Y])
+        if (e->args[0]->is_type(ExprType::ITE)){ 
+            return ITE(
+                e->args[0]->cond_left(),
+                e->args[0]->cond_op(),
+                e->args[0]->cond_right(),
+                extract(
+                    e->args[0]->if_true(), 
+                    e->args[1]->cst(),
+                    e->args[2]->cst()
+                ),
+                extract(
+                    e->args[0]->if_false(), 
+                    e->args[1]->cst(),
+                    e->args[2]->cst()
+                )
+            );
         }
     }
     return e;
@@ -501,14 +520,26 @@ Expr es_concat_patterns(Expr e)
         e->args[1]->is_type(ExprType::CST) &&
         e->args[0]->is_type(ExprType::CONCAT) &&
         e->args[1]->as_number().get_ucst() == e->args[0]->args[1]->size
-    )
-    {
+    ){
         return concat(
             exprcst(e->args[0]->args[1]->size, 0),
             e->args[0]->args[0]
         );
     }
 
+    // concat(X,Y) >> N == concat(0, X >> (N-sizeof(Y)))
+    // if N >= sizeof(Y)
+    if (
+        e->is_type(ExprType::BINOP, Op::SHR) &&
+        e->args[1]->is_type(ExprType::CST) &&
+        e->args[0]->is_type(ExprType::CONCAT) &&
+        e->args[1]->as_number().get_ucst() >= e->args[0]->args[1]->size
+    ){
+        return concat(
+            exprcst(e->args[0]->args[1]->size, 0),
+            e->args[0]->args[0] >> (e->args[1]->as_number().get_ucst()-e->args[0]->args[1]->size)
+        );
+    }
 
     // TODO: support the below simplifications for expressions > 64bits also
     if (e->size > 64)
