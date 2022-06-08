@@ -743,6 +743,8 @@ bool Number::less_than(const Number& other) const
     }
     else
     {   
+        // TODO(boyan): might work with a simple mpz_cmp() if we interpret everything
+        // as unsigned... instead of the if cases below
         if (mpz_sgn(mpz_.get_mpz_t()) == -1)
         {
             // this is a negative number
@@ -783,35 +785,7 @@ bool Number::lessequal_than(const Number& other) const
     }
     else
     {   
-        if (mpz_sgn(mpz_.get_mpz_t()) == -1)
-        {
-            // this is a negative number
-            if (mpz_sgn(other.mpz_.get_mpz_t()) == -1)
-            {
-                // both are negative, so the bigger one is also
-                // the bigger one when interpreted as unsigned
-                return mpz_cmp(mpz_.get_mpz_t(), other.mpz_.get_mpz_t()) <= 0;
-            }
-            else
-            {
-                // other one is positive so this one will be bigger (MSB == 1)
-                return false;
-            }
-        }
-        else
-        {
-            // this is a positive number
-            if (mpz_sgn(other.mpz_.get_mpz_t()) == -1)
-            {
-                // other is negative and will always be bigger (MSB == 1)
-                return true;
-            }
-            else
-            {
-                // both are positive
-                return mpz_cmp(mpz_.get_mpz_t(), other.mpz_.get_mpz_t()) <= 0;
-            }
-        }
+        return less_than(other) or equal_to(other);
     }
 }
 
