@@ -13,6 +13,8 @@ static void Path_dealloc(PyObject* self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 };
 
+
+
 static PyObject* Path_get_related_constraints(PyObject* self, PyObject* args)
 {
     PyObject* arg;
@@ -43,10 +45,21 @@ static PyObject* Path_constraints(PyObject* self, PyObject* args)
     return PyPathIterator_FromWrapper(
         as_path_object(self).path->_constraints_iterator()
     );
+};
+
+static PyObject* Path_add(PyObject* self, PyObject* args)
+{
+    PyObject* constr;
+    if (! PyArg_ParseTuple(args, "O!", get_Constraint_Type(), &constr)){
+        return NULL;
+    }
+
+    as_path_object(self).path->add(*as_constraint_object(constr).constr);
     Py_RETURN_NONE;
 };
 
 static PyMethodDef Path_methods[] = {
+    {"add", (PyCFunction)Path_add, METH_VARARGS, "Add a path constraint"},
     {"constraints", (PyCFunction)Path_constraints, METH_VARARGS, "Get current path constraints"},
     {"get_related_constraints", (PyCFunction)Path_get_related_constraints, METH_VARARGS, "Get current path constraints related to a constraint or expression"},
     {NULL, NULL, 0, NULL}
