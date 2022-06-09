@@ -418,6 +418,50 @@ PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args)
     Py_RETURN_NONE;
 }
 
+PyObject* maat_increment_block_number(PyObject* mod, PyObject* args)
+{
+    PyObject* engine;
+    PyObject* inc;
+    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &engine, get_Value_Type(), &inc))
+    {
+        return NULL;
+    }
+    try
+    {
+        auto eth = env::EVM::get_ethereum(*as_engine_object(engine).engine);
+        if (eth == nullptr)
+            return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
+        eth->current_block_number.increment(*as_value_object(inc).value);
+        Py_RETURN_NONE;
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
+
+PyObject* maat_increment_block_timestamp(PyObject* mod, PyObject* args)
+{
+    PyObject* engine;
+    PyObject* inc;
+    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &engine, get_Value_Type(), &inc))
+    {
+        return NULL;
+    }
+    try
+    {
+        auto eth = env::EVM::get_ethereum(*as_engine_object(engine).engine);
+        if (eth == nullptr)
+            return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
+        eth->current_block_timestamp.increment(*as_value_object(inc).value);
+        Py_RETURN_NONE;
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
+
 void init_evm(PyObject* module)
 {
     /* EVM enum */

@@ -319,6 +319,8 @@ PyObject* PyEVMTxResult_FromTxResult(env::EVM::TransactionResult*);
 // Return the contract associated with an engine
 PyObject* maat_contract(PyObject* mod, PyObject* args);
 PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args);
+PyObject* maat_increment_block_timestamp(PyObject* mod, PyObject* args);
+PyObject* maat_increment_block_number(PyObject* mod, PyObject* args);
 
 // ====== Utils =======
 // Transform a list of values into a list of python values,

@@ -206,6 +206,22 @@ static PyObject* Value_get_size(PyObject* self, void* closure)
     return PyLong_FromLong((*as_value_object(self).value).size());
 }
 
+static PyObject* Value_get_name(PyObject* self, void* closure)
+{
+    const Value& val = *as_value_object(self).value;
+    if( val.is_abstract() and val.expr()->is_type(ExprType::VAR)) 
+    {
+        return PyUnicode_FromString(val.expr()->name().c_str());
+    }
+    else
+    {
+        return PyErr_Format(
+            PyExc_AttributeError,
+            "Trying to get 'name' attribute but value is not a symbolic variable"
+        );
+    }
+}
+
 static PyMethodDef Value_methods[] = 
 {
     {"is_concolic", (PyCFunction)Value_is_concolic, METH_VARARGS, "Check whether the value is concolic"},
@@ -220,6 +236,7 @@ static PyMethodDef Value_methods[] =
 static PyGetSetDef Value_getset[] =
 {
     {"size", Value_get_size, NULL, "Value size in bits", NULL},
+    {"name", Value_get_name, NULL, "Variable name (throws AttributeError if the value is not a symbolic variable)", NULL},
     {NULL}
 };
 

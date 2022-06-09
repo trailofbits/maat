@@ -28,6 +28,8 @@ PyMethodDef module_methods[] = {
     {"EVMTransaction", (PyCFunction)maat_Transaction, METH_VARARGS, "Create an ethereum transaction"},
     {"contract", (PyCFunction)maat_contract, METH_VARARGS, "Get EVM contract associated with a MaatEngine"},
     {"new_evm_runtime", (PyCFunction)maat_new_evm_runtime, METH_VARARGS, "Create new EVM contract runtime for 'new_engine' based on runtime for 'old_engine'"},
+    {"increment_block_number", (PyCFunction)maat_increment_block_number, METH_VARARGS, "Increment the current block number by an abstract value"},
+    {"increment_block_timestamp", (PyCFunction)maat_increment_block_timestamp, METH_VARARGS, "Increment the current block timestamp by an abstract value"},
     {NULL}
 };
 
