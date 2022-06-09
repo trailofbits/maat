@@ -957,6 +957,7 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
         // TODO: check if code region is symbolic
         if (
             not lifters[_current_cpu_mode]->lift_block(
+                log,
                 ir_map,
                 addr,
                 mem->raw_mem_at(addr),
