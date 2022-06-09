@@ -35,7 +35,8 @@ typedef uint16_t uid_t;
  * for error detection */
 enum ClassId : uid_t
 {
-    ARCH_NONE=1,
+    ABSTRACT_COUNTER=1,
+    ARCH_NONE,
     ARCH_X64,
     ARCH_X86,
     BRANCH,

@@ -20,6 +20,27 @@ namespace EVM{
 /** \addtogroup env
  * \{ */
 
+/// Generic abstract counter used to model block number & timestamp
+class AbstractCounter: public serial::Serializable
+{
+private:
+    Value _current_value;
+public:
+    // Dummy constructor
+    AbstractCounter();
+    /// Constructor
+    AbstractCounter(Value initial_value);
+public:
+    /// Return the counters current value
+    const Value& current_value() const;
+    /// Increment the counter by an abstract value
+    void increment(const Value& inc);
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
+};
+
 /// EVM Stack
 class Stack: public serial::Serializable
 {
@@ -260,6 +281,8 @@ private:
     std::unordered_map<int, contract_t> _contracts;
 public:
     KeccakHelper keccak_helper;
+    AbstractCounter current_block_number;
+    AbstractCounter current_block_timestamp;
 public:
     EthereumEmulator();
     EthereumEmulator(const EthereumEmulator&);

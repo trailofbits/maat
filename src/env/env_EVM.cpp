@@ -8,6 +8,37 @@ namespace EVM{
 
 using maat::serial::bits;
 
+AbstractCounter::AbstractCounter(){}
+
+AbstractCounter::AbstractCounter(Value initial_value): _current_value(initial_value)
+{}
+
+const Value& AbstractCounter::current_value() const
+{
+    return _current_value;
+}
+
+void AbstractCounter::increment(const Value& inc)
+{
+    _current_value = _current_value + inc;
+}
+
+maat::serial::uid_t AbstractCounter::class_uid() const
+{
+    return serial::ClassId::ABSTRACT_COUNTER;
+}
+
+void AbstractCounter::dump(maat::serial::Serializer& s) const
+{
+    s << _current_value;
+}
+
+void AbstractCounter::load(maat::serial::Deserializer& d)
+{
+    d >> _current_value;
+}
+
+
 int Stack::size() const
 {
     return _stack.size();
@@ -591,6 +622,8 @@ EthereumEmulator& EthereumEmulator::operator=(const EthereumEmulator& other)
         _contracts[addr] = std::make_shared<Contract>(*contract);
     _uid_cnt = other._uid_cnt;
     keccak_helper = other.keccak_helper;
+    current_block_number = other.current_block_number;
+    current_block_timestamp = other.current_block_timestamp;
     // We don't copy snapshots !!!
     return *this;
 }
@@ -598,6 +631,12 @@ EthereumEmulator& EthereumEmulator::operator=(const EthereumEmulator& other)
 void EthereumEmulator::_init()
 {
     EnvEmulator::_init(Arch::Type::NONE, OS::NONE);
+    current_block_number = AbstractCounter(
+        Value(256, 4370000) // Initial byzantium block
+    );
+    current_block_timestamp = AbstractCounter(
+        Value(256, 1524785992) // Thu Apr 26 23:39:52 UTC 2018
+    );
 }
 
 int EthereumEmulator::add_contract(contract_t contract)
@@ -633,7 +672,8 @@ serial::uid_t EthereumEmulator::class_uid() const
 
 void EthereumEmulator::dump(serial::Serializer& s) const
 {
-    s << bits(_uid_cnt) << _snapshots << keccak_helper;
+    s   << bits(_uid_cnt) << _snapshots << keccak_helper 
+        << current_block_number << current_block_timestamp;
     // Contracts
     s << bits(_contracts.size());
     for (const auto& [uid, c] : _contracts)
@@ -642,7 +682,8 @@ void EthereumEmulator::dump(serial::Serializer& s) const
 
 void EthereumEmulator::load(serial::Deserializer& d)
 {
-    d >> bits(_uid_cnt) >> _snapshots >> keccak_helper;
+    d   >> bits(_uid_cnt) >> _snapshots >> keccak_helper
+        >> current_block_number >> current_block_timestamp;
     // Contracts
     size_t tmp_size;
     d >> bits(tmp_size);
