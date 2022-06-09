@@ -581,6 +581,20 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
             }
             break;
         }
+        case 0x42: // TIMESTAMP
+        {
+            contract->stack.push(
+                env::EVM::get_ethereum(engine)->current_block_timestamp.current_value()
+            );
+            break;
+        }
+        case 0x43: // NUMBER
+        {
+            contract->stack.push(
+                env::EVM::get_ethereum(engine)->current_block_number.current_value()
+            );
+            break;
+        }
         default:
             throw callother_exception(
                 Fmt() << "ENV_INFO: instruction not implemented for 0x"

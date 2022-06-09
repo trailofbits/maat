@@ -279,7 +279,16 @@ op_byte: b is op [b = op+0;] {export *[const]:1 b;}
 }
 
 # TODO: other 0x30's env operations
-# TODO: 0x40's block operations
+
+:TIMESTAMP is op = 0x42 & op_byte {
+    evm_env_info(op_byte);
+}
+
+:NUMBER is op = 0x43 & op_byte {
+    evm_env_info(op_byte);
+}
+
+# TODO: other 0x40's block operations
 
 :POP is op = 0x50 {
     local tmp:32 = stack_pop();
