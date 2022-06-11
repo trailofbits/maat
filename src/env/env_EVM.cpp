@@ -246,6 +246,16 @@ void Storage::write(const Value& addr, const Value& val, const Settings& setting
     }
 }
 
+Storage::const_iterator Storage::begin() const
+{
+    return _storage.begin();
+}
+
+Storage::const_iterator Storage::end() const
+{
+    return _storage.end();
+}
+
 serial::uid_t Storage::class_uid() const
 {
     return serial::ClassId::EVM_STORAGE;

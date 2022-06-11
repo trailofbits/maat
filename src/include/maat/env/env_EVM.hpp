@@ -125,9 +125,12 @@ class ValueEqual {
 /// Contract permananent storage
 class Storage: public serial::Serializable
 {
+public:
+    using slots = std::unordered_map<Value, Value, ValueHash, ValueEqual>;
+    using const_iterator = slots::const_iterator; 
 private:
     /// Storage state for concrete addresses
-    std::unordered_map<Value, Value, ValueHash, ValueEqual> _storage;
+    slots _storage;
     /// History of storage writes, including symbolic addresses
     std::vector<std::pair<Value, Value>> writes_history;
     std::shared_ptr<VarContext> _varctx;
@@ -141,6 +144,9 @@ public:
     Value read(const Value& addr);
     /// Write storage word at 'addr'
     void write(const Value& addr, const Value& val, const Settings& settings);
+public:
+    const_iterator begin() const;
+    const_iterator end() const;
 public:
     virtual maat::serial::uid_t class_uid() const;
     virtual void dump(maat::serial::Serializer& s) const;
