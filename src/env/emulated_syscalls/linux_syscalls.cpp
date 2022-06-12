@@ -776,6 +776,23 @@ FunctionCallback::return_t sys_linux_exit(
     return std::monostate();
 }
 
+// ssize_t getrandom(void *buf, size_t buflen, unsigned int flags);
+FunctionCallback::return_t sys_linux_getrandom(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    addr_t buf = args[0].as_uint(*engine.vars);
+    size_t buflen = args[1].as_uint(*engine.vars);
+    cst_t res;
+
+    // TODO: generate proper random bytes, if needed
+    std::string rand(buflen, 'A'); 
+    engine.mem->write_buffer(buf, (uint8_t*)rand.c_str(), buflen);
+    res = buflen;
+    return res;
+}
+
 // pid_t getpid(void);
 FunctionCallback::return_t sys_linux_getpid(
     MaatEngine& engine,
@@ -830,7 +847,8 @@ syscall_func_map_t linux_x86_syscall_map()
         {195, Function("sys_stat64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {197, Function("sys_fstat64", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))}, 
         {212, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
-        {295, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))}
+        {295, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
+        {355, Function("sys_getrandom", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getrandom))},
     };
     return res;
 }
@@ -861,7 +879,8 @@ syscall_func_map_t linux_x64_syscall_map()
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
         {231, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
         {257, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
-        {262, Function("sys_newfstatat", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize, 4}, sys_linux_fstatat))}
+        {262, Function("sys_newfstatat", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize, 4}, sys_linux_fstatat))},
+        {318, Function("sys_getrandom", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getrandom))},
     };
     return res;
 }
