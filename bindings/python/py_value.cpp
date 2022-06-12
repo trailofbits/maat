@@ -52,7 +52,7 @@ static PyObject* Value_is_concolic(PyObject* self, PyObject* args)
     else if (as_value_object(self).varctx)
         return PyBool_FromLong((*(as_value_object(self).value)).is_concolic(**as_value_object(self).varctx));
     else
-        return PyErr_Format(PyExc_RuntimeError, "Valueession isn't bound to a VarContext");
+        return PyErr_Format(PyExc_RuntimeError, "Value isn't bound to a VarContext");
 }
 
 static PyObject* Value_is_concrete(PyObject* self, PyObject* args)
@@ -67,7 +67,7 @@ static PyObject* Value_is_concrete(PyObject* self, PyObject* args)
     else if (as_value_object(self).varctx)
         return PyBool_FromLong((*(as_value_object(self).value)).is_concrete(**as_value_object(self).varctx));
     else
-        return PyErr_Format(PyExc_RuntimeError, "Valueession isn't bound to a VarContext");
+        return PyErr_Format(PyExc_RuntimeError, "Value isn't bound to a VarContext");
         
 }
 
@@ -82,7 +82,7 @@ static PyObject* Value_is_symbolic(PyObject* self, PyObject* args){
     else if (as_value_object(self).varctx)
         return PyBool_FromLong((*(as_value_object(self).value)).is_symbolic(**as_value_object(self).varctx));
     else
-        return PyErr_Format(PyExc_RuntimeError, "Valueession isn't bound to a VarContext");
+        return PyErr_Format(PyExc_RuntimeError, "Value isn't bound to a VarContext");
 }
 
 static PyObject* Value_as_uint(PyObject* self, PyObject* args)
@@ -271,6 +271,12 @@ static PyObject* Value_richcompare(PyObject* self, PyObject* other, int op)
     }
 }
 
+// Hash
+Py_hash_t Value_hash(PyObject* self)
+{
+    return as_value_object(self).value->as_expr()->hash();
+}
+
 static PyNumberMethods Value_operators; // Empty PyNumberMethods, will be filled in the init_expression() function
 
 /* Type description for python Value objects */
@@ -288,7 +294,7 @@ PyTypeObject Value_Type = {
     &Value_operators,                          /* tp_as_number */
     0,                                        /* tp_as_sequence */
     0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
+    (hashfunc)Value_hash,                     /* tp_hash  */
     0,                                        /* tp_call */
     Value_str,                                 /* tp_str */
     0,                                        /* tp_getattro */

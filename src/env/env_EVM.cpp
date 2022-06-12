@@ -8,7 +8,8 @@ namespace EVM{
 
 using maat::serial::bits;
 
-AbstractCounter::AbstractCounter(){}
+AbstractCounter::AbstractCounter()
+{}
 
 AbstractCounter::AbstractCounter(Value initial_value): _current_value(initial_value)
 {}
@@ -283,6 +284,14 @@ void Storage::load(serial::Deserializer& d)
         d >> v1 >> v2;
         writes_history.push_back(std::make_pair(v1, v2));
     }
+}
+
+
+std::ostream& operator<<(std::ostream& os, const Storage& storage)
+{
+    for (const auto& [key,val]: storage._storage)
+        os << key << ": " << val << "\n";
+    return os;
 }
 
 TransactionResult::TransactionResult()

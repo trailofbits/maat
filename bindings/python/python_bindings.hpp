@@ -290,9 +290,29 @@ PyObject* maat_SimpleStateManager(PyObject* self, PyObject* args);
 // ============== EVM ======================
 void init_evm(PyObject* module);
 
+typedef struct {
+    PyObject_HEAD
+    env::EVM::Storage::const_iterator current;
+    env::EVM::Storage::const_iterator end;
+} StorageIterator_Object;
+
+PyObject* PyStorageIterator(
+    env::EVM::Storage::const_iterator current,
+    env::EVM::Storage::const_iterator end
+);
+#define as_storageiterator_object(x) (*((StorageIterator_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    maat::env::EVM::Storage* storage;
+} EVMStorage_Object;
+PyObject* PyEVMStorage_FromStorage(env::EVM::Storage*);
+#define as_storage_object(x)  (*((EVMStorage_Object*)x))
+
 typedef struct{
     PyObject_HEAD
     maat::env::EVM::Contract* contract;
+    PyObject* storage;
 } EVMContract_Object;
 PyObject* get_EVMContract_Type();
 PyObject* PyEVMContract_FromContract(env::EVM::Contract*);

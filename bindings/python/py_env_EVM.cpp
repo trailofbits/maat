@@ -4,9 +4,191 @@
 namespace maat {
 namespace py {
 
+// =============== Storage =================
+static void EVMStorage_dealloc(PyObject* self){
+    as_storage_object(self).storage = nullptr;
+    Py_TYPE(self)->tp_free((PyObject *)self);
+};
+
+static PyObject* EVMStorage_str(PyObject* self){
+    std::stringstream res;
+    res << *as_storage_object(self).storage;
+    return PyUnicode_FromString(res.str().c_str());
+}
+
+static int EVMStorage_print(PyObject* self, void * io, int s){
+    std::cout << *as_storage_object(self).storage;
+    return 0;
+}
+
+static PyObject* EVMStorage_repr(PyObject* self) {
+    return EVMStorage_str(self);
+}
+
+static PyObject* Storage_used_slots(PyObject* self, PyObject* args)
+{
+    return PyStorageIterator(
+        as_storage_object(self).storage->begin(),
+        as_storage_object(self).storage->end()
+    );
+};
+
+static PyMethodDef Storage_methods[] = {
+    {"used_slots", (PyCFunction)Storage_used_slots, METH_VARARGS, "Iterate through all used storage slots"},
+    {NULL, NULL, 0, NULL}
+};
+
+PyTypeObject EVMStorage_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "EVMStorage",                                   /* tp_name */
+    sizeof(EVMStorage_Object),                      /* tp_basicsize */
+    0,                                        /* tp_itemsize */
+    (destructor)EVMStorage_dealloc,            /* tp_dealloc */
+    (printfunc)EVMStorage_print,               /* tp_print */
+    0,                                        /* tp_getattr */
+    0,                                        /* tp_setattr */
+    0,                                        /* tp_reserved */
+    EVMStorage_repr,                           /* tp_repr */
+    0,                                        /* tp_as_number */
+    0,                                        /* tp_as_sequence */
+    0,                                        /* tp_as_mapping */
+    0,                                        /* tp_hash  */
+    0,                                        /* tp_call */
+    EVMStorage_str,                            /* tp_str */
+    0,                                        /* tp_getattro */
+    0,                                        /* tp_setattro */
+    0,                                        /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
+    "EVM Storage memory",                     /* tp_doc */
+    0,                                        /* tp_traverse */
+    0,                                        /* tp_clear */
+    0,                                        /* tp_richcompare */
+    0,                                        /* tp_weaklistoffset */
+    0,                                        /* tp_iter */
+    0,                                        /* tp_iternext */
+    Storage_methods,                        /* tp_methods */
+    0,                                        /* tp_members */
+    0,                              /* tp_getset */
+    0,                                        /* tp_base */
+    0,                                        /* tp_dict */
+    0,                                        /* tp_descr_get */
+    0,                                        /* tp_descr_set */
+    0,                                        /* tp_dictoffset */
+    0,                                        /* tp_init */
+    0,                                        /* tp_alloc */
+    0,                                        /* tp_new */
+};
+
+PyObject* PyEVMStorage_FromStorage(env::EVM::Storage* s)
+{
+    EVMStorage_Object* object;
+
+    // Create object
+    PyType_Ready(&EVMStorage_Type);
+    object = PyObject_New(EVMStorage_Object, &EVMStorage_Type);
+    if( object != nullptr ){
+        object->storage = s;
+    }
+    return (PyObject*)object;
+}
+
+
+// =============== Storage slots iterator ===================
+static void StorageIterator_dealloc(PyObject* self)
+{
+    Py_TYPE(self)->tp_free((PyObject *)self);
+};
+
+PyObject* StorageIterator_iter(PyObject *self)
+{
+  Py_INCREF(self);
+  return self;
+}
+ 
+PyObject* StorageIterator_iternext(PyObject *self)
+{
+    StorageIterator_Object* p = (StorageIterator_Object*)self;
+    if (p->current != p->end)
+    {
+        PyObject *res = PyTuple_Pack(
+            2,
+            PyValue_FromValue(p->current->first),
+            PyValue_FromValue(p->current->second)
+        );
+        p->current++;
+        return res;
+    }
+    else
+    {
+        /* Raising of standard StopIteration exception with empty value. */
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+}
+
+static PyTypeObject StorageIterator_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "StorageIterator ",                            /* tp_name */
+    sizeof(StorageIterator_Object),                /* tp_basicsize */
+    0,                                        /* tp_itemsize */
+    (destructor)StorageIterator_dealloc,           /* tp_dealloc */
+    0,                                       /* tp_print */
+    0,                                        /* tp_getattr */
+    0,                                        /* tp_setattr */
+    0,                                        /* tp_reserved */
+    0,                                        /* tp_repr */
+    0,                                        /* tp_as_number */
+    0,                                        /* tp_as_sequence */
+    0,                                        /* tp_as_mapping */
+    0,                                        /* tp_hash  */
+    0,                                        /* tp_call */
+    0,                                        /* tp_str */
+    0,                                        /* tp_getattro */
+    0,                                        /* tp_setattro */
+    0,                                        /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
+    "EVM Storage iterator",                          /* tp_doc */
+    0,                                        /* tp_traverse */
+    0,                                        /* tp_clear */
+    0,                                        /* tp_richcompare */
+    0,                                        /* tp_weaklistoffset */
+    StorageIterator_iter,                                        /* tp_iter */
+    StorageIterator_iternext,                                        /* tp_iternext */
+    0,                       /* tp_methods */
+    0,                       /* tp_members */
+    0,                                        /* tp_getset */
+    0,                                        /* tp_base */
+    0,                                        /* tp_dict */
+    0,                                        /* tp_descr_get */
+    0,                                        /* tp_descr_set */
+    0,                                        /* tp_dictoffset */
+    0,                                        /* tp_init */
+    0,                                        /* tp_alloc */
+    0,                                        /* tp_new */
+};
+
+PyObject* PyStorageIterator(
+    env::EVM::Storage::const_iterator begin,
+    env::EVM::Storage::const_iterator end
+){
+    StorageIterator_Object* object;
+
+    // Create object
+    PyType_Ready(&StorageIterator_Type);
+    object = PyObject_New(StorageIterator_Object, &StorageIterator_Type);
+    if (object != nullptr)
+    {
+        object->current = begin;
+        object->end = end;
+    }
+    return (PyObject*)object;
+}
+
+
 // =============== Contract =================
 static void EVMContract_dealloc(PyObject* self){
     as_contract_object(self).contract = nullptr;
+    Py_XDECREF(as_storage_object(self).storage); as_storage_object(self).storage = nullptr;
     Py_TYPE(self)->tp_free((PyObject *)self);
 };
 
@@ -45,6 +227,11 @@ static PyGetSetDef EVMContract_getset[] = {
     {NULL}
 };
 
+static PyMemberDef EVMContract_members[] = {
+    {"storage", T_OBJECT_EX, offsetof(EVMContract_Object, storage), READONLY, "Contract storage"},
+    {NULL}
+};
+
 PyTypeObject EVMContract_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "EVMContract",                                   /* tp_name */
@@ -74,7 +261,7 @@ PyTypeObject EVMContract_Type = {
     0,                                        /* tp_iter */
     0,                                        /* tp_iternext */
     0,                                        /* tp_methods */
-    0,                                        /* tp_members */
+    EVMContract_members,                    /* tp_members */
     EVMContract_getset,                              /* tp_getset */
     0,                                        /* tp_base */
     0,                                        /* tp_dict */
@@ -95,6 +282,7 @@ PyObject* PyEVMContract_FromContract(env::EVM::Contract* contract)
     object = PyObject_New(EVMContract_Object, &EVMContract_Type);
     if( object != nullptr ){
         object->contract = contract;
+        object->storage = PyEVMStorage_FromStorage(contract->storage.get());
     }
     return (PyObject*)object;
 }

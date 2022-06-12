@@ -151,6 +151,8 @@ public:
     virtual maat::serial::uid_t class_uid() const;
     virtual void dump(maat::serial::Serializer& s) const;
     virtual void load(maat::serial::Deserializer& d);
+public:
+    friend std::ostream& operator<<(std::ostream& os, const Storage& storage);
 };
 
 /// Result of a call inside a contract
