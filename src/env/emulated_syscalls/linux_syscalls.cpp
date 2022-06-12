@@ -776,6 +776,33 @@ FunctionCallback::return_t sys_linux_exit(
     return std::monostate();
 }
 
+// pid_t getpid(void);
+FunctionCallback::return_t sys_linux_getpid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->pid;
+}
+
+// uid_t getuid(void);
+FunctionCallback::return_t sys_linux_getuid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->ruid;
+}
+
+// uid_t geteuid(void);
+FunctionCallback::return_t sys_linux_geteuid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->euid;
+}
+
 // ================= Build the syscall maps =================
 syscall_func_map_t linux_x86_syscall_map()
 {
@@ -786,9 +813,12 @@ syscall_func_map_t linux_x86_syscall_map()
         {5, Function("sys_open", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_open))},
         {6, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {18, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
+        {20, Function("sys_getpid", FunctionCallback({}, sys_linux_getpid))},
+        {24, Function("sys_getuid", FunctionCallback({}, sys_linux_getuid))},
         {28, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
         {33, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
         {45, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {49, Function("sys_geteuid", FunctionCallback({}, sys_linux_geteuid))},
         {56, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
         {85, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {91, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
@@ -822,9 +852,12 @@ syscall_func_map_t linux_x64_syscall_map()
         {17, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
         {20, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
         {21, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
+        {39, Function("sys_getpid", FunctionCallback({}, sys_linux_getpid))},
         {60, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
         {63, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {89, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
+        {102, Function("sys_getuid", FunctionCallback({}, sys_linux_getuid))},
+        {107, Function("sys_geteuid", FunctionCallback({}, sys_linux_geteuid))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
         {231, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
         {257, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
