@@ -812,6 +812,7 @@ bool FileSystem::add_real_file(
         );
     }
     pfile->copy_real_file(real_file_path);
+    return true;
 }
 
 physical_file_t FileSystem::get_file(const std::string& path, bool follow_symlink)
