@@ -6,6 +6,8 @@ namespace maat{
 namespace env{
 namespace emulated{
 
+const cst_t ERR_ENOSYS = 38;
+
 // ================= Syscall functions ==================
 
 // ssize_t read(int fd, void *buf, size_t count);
@@ -820,6 +822,58 @@ FunctionCallback::return_t sys_linux_geteuid(
     return engine.process->euid;
 }
 
+// pid_t gettid(void);
+FunctionCallback::return_t sys_linux_gettid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: implement
+    // In a single-threaded process, the thread ID is equal to the process ID
+    return sys_linux_getpid(engine, args);
+}
+
+// long set_tid_address(int *tidptr);
+FunctionCallback::return_t sys_linux_set_tid_address(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: implement
+    // Always return the caller's thread ID
+    return sys_linux_gettid(engine, args);
+}
+
+// long set_robust_list(struct robust_list_head *head, size_t len);
+FunctionCallback::return_t sys_linux_set_robust_list(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: implement
+    return -ERR_ENOSYS;
+}
+
+// int rseq(struct rseq *rseq, uint32_t rseq_len, int flags, uint32_t sig);
+FunctionCallback::return_t sys_linux_rseq(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: implement
+    return -ERR_ENOSYS;
+}
+
+// int prlimit(pid_t pid, int resource, const struct rlimit *new_limit, struct rlimit *old_limit);
+FunctionCallback::return_t sys_linux_prlimit64(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: implement
+    return -ERR_ENOSYS;
+}
+
 // ================= Build the syscall maps =================
 syscall_func_map_t linux_x86_syscall_map()
 {
@@ -847,7 +901,11 @@ syscall_func_map_t linux_x86_syscall_map()
         {195, Function("sys_stat64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {197, Function("sys_fstat64", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))}, 
         {212, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
+        {224, Function("sys_gettid", FunctionCallback({}, sys_linux_gettid))},
+        {258, Function("sys_set_tid_address", FunctionCallback({env::abi::auto_argsize}, sys_linux_set_tid_address))},
         {295, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
+        {311, Function("sys_set_robust_list", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_set_robust_list))},
+        {340, Function("sys_prlimit64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_prlimit64))},
         {355, Function("sys_getrandom", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getrandom))},
     };
     return res;
@@ -877,10 +935,15 @@ syscall_func_map_t linux_x64_syscall_map()
         {102, Function("sys_getuid", FunctionCallback({}, sys_linux_getuid))},
         {107, Function("sys_geteuid", FunctionCallback({}, sys_linux_geteuid))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
+        {186, Function("sys_gettid", FunctionCallback({}, sys_linux_gettid))},
+        {218, Function("sys_set_tid_address", FunctionCallback({env::abi::auto_argsize}, sys_linux_set_tid_address))},
         {231, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
         {257, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
         {262, Function("sys_newfstatat", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize, 4}, sys_linux_fstatat))},
+        {273, Function("sys_set_robust_list", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_set_robust_list))},
+        {302, Function("sys_prlimit64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_prlimit64))},
         {318, Function("sys_getrandom", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getrandom))},
+        {334, Function("sys_rseq", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_rseq))},
     };
     return res;
 }
