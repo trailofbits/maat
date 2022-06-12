@@ -50,6 +50,19 @@ public:
      * @param path Absolute path of the file
      * @param create_path If set to 'true', any missing directories in 'link' will be automatically created */
     bool create_file(const std::string& path, bool create_path=false);
+    /** \brief Create a file and initialize its content from a real file on
+    * the host system that runs Maat. 
+    * Returns 'true' on success and 'false' on failure.
+    * @param real_file_path Path to the real file on the host system
+    * @param virtual_file_path Full path where to create the virtual file in
+    * the symbolic filesystem
+    * @param create_path If set to 'false', any missing directory in 'virtual_file_path'
+    * will result in a failure */
+    bool add_real_file(
+        const std::string& real_file_path,
+        const std::string& virtual_file_path,
+        bool create_path=true
+    );
     /** \brief Delete a file
      * Returns 'true' on success and 'false' on failure
      * @param path Absolute path of the file

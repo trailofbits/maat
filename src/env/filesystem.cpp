@@ -797,6 +797,23 @@ bool FileSystem::create_file(const std::string& path, bool create_path)
     return true;
 }
 
+bool FileSystem::add_real_file(
+    const std::string& real_file_path,
+    const std::string& virtual_file_path,
+    bool create_path
+){
+    if (not create_file(virtual_file_path, create_path))
+        return false;
+
+    env::physical_file_t pfile = get_file(virtual_file_path);
+    if (pfile == nullptr) {
+        throw env_exception(
+            "FileSystem::add_real_file(): unexpected internal error while getting virtual file"
+        );
+    }
+    pfile->copy_real_file(real_file_path);
+}
+
 physical_file_t FileSystem::get_file(const std::string& path, bool follow_symlink)
 {
     Directory& dir = (path[0] == orphan_file_wildcard) ? orphan_files : root;
