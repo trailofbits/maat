@@ -10,6 +10,7 @@
 #include "maat/sleigh_interface.hpp"
 #include "maat/arch.hpp"
 #include "maat/serializer.hpp"
+#include "maat/logger.hpp"
 
 namespace maat
 {
@@ -47,6 +48,7 @@ public:
      *  @returns True on success and false on failure
      */
     virtual bool lift_block(
+        maat::Logger& logger,
         ir::IRMap& ir_map,
         uintptr_t addr,
         code_t code,
