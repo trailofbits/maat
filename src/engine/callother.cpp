@@ -85,7 +85,7 @@ void X86_PMINUB_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
             concat(extract(src2, i+7, i), res)
         );
     }
-    pinst.res = res;
+    pinst.res.set_overwrite(pinst.out.value(), res, inst.out.lb);
 }
 
 void X86_CPUID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
