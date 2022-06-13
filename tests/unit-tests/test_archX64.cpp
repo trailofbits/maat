@@ -1356,8 +1356,8 @@ namespace test{
             /* On 8 bits */
             code = string("\xF6\xFB", 2); // idiv bl
             engine.mem->write_buffer(0x1160, (uint8_t*)code.c_str(), 2);
-            engine.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
-            
+            engine.mem->write_buffer(0x1160+code.size(), (uint8_t*)string("\xfe\xff\xff", 3).c_str(), 2);
+
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x10000015));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,-4));
             engine.run_from(0x1160, 1);
@@ -1391,7 +1391,6 @@ namespace test{
             /* On 64 bits */
             code = string("\x48\xf7\xfb", 3); // idiv rbx
             engine.mem->write_buffer(0x1180, (uint8_t*)code.c_str(), 3);
-			engine.mem->write_buffer(0x1180+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
 
             engine.cpu.ctx().set(X64::RAX, exprcst(64,0x4400000001));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,-2));

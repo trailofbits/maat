@@ -942,7 +942,7 @@ int _get_distance_till_end_of_map(MemEngine& mem, addr_t addr)
     return res;
 }
 
-const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
+const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr, unsigned int max_inst)
 {
     ir::IRMap& ir_map = ir::get_ir_map(mem->uid());
     if (ir_map.contains_inst_at(addr))
@@ -951,8 +951,11 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
     // The code hasn't been lifted yet so we disassemble it
     try
     {
-        // Get the size of mapped code from the requested address
-        size_t code_size = _get_distance_till_end_of_map(*mem, addr);
+        // Number of instructions to lift is the max number of instructions
+        // to execute, or 'until end of basic block' (0xffffffff) if
+        // max_inst == 0
+        unsigned int code_size = (unsigned int)_get_distance_till_end_of_map(*mem, addr);
+        unsigned int max_inst_to_lift = max_inst == 0? 0xffffffff : max_inst;
 
         // TODO: check if code region is symbolic
         if (
@@ -962,7 +965,7 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
                 addr,
                 mem->raw_mem_at(addr),
                 code_size,
-                0xffffffff,
+                max_inst_to_lift,
                 nullptr, // is_symbolic
                 nullptr, // is_tainted
                 true
