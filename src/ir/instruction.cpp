@@ -115,7 +115,8 @@ std::ostream& operator<<(std::ostream& os, const ir::Op& op)
         case ir::Op::NEW: os << "NEW"; break;              
         case ir::Op::INSERT: os << "INSERT"; break;          
         case ir::Op::EXTRACT: os << "EXTRACT"; break;          
-        case ir::Op::POPCOUNT: os << "POPCOUNT"; break;  
+        case ir::Op::POPCOUNT: os << "POPCOUNT"; break;
+        case ir::Op::UNSUPPORTED: os << "UNSUPPORTED"; break;
         default: os << "???"; break;
     }
     return os;

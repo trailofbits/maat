@@ -99,6 +99,7 @@ enum class Op : uint8_t
         INSERT,        
         EXTRACT,        
         POPCOUNT,
+        UNSUPPORTED,
         NONE
 };
 

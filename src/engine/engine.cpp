@@ -240,6 +240,18 @@ info::Stop MaatEngine::run(int max_inst)
             //      log.debug("Run IR: ", inst);
             // std::cout << "DEBUG " << inst << std::endl;
 
+            // Check for unsupported instruction
+            if (inst.op == ir::Op::UNSUPPORTED)
+            {
+                info.stop = info::Stop::UNSUPPORTED_INST;
+                info.addr = asm_inst->addr();
+                log.fatal(
+                    "Could not lift instruction at 0x", std::hex, asm_inst->addr(),
+                    ": ", get_inst_asm(asm_inst->addr())
+                );
+                return info.stop;
+            }
+
             // Pre-process IR instruction
             event::Action tmp_action = event::Action::CONTINUE;
             info.addr = asm_inst->addr();

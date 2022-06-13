@@ -1368,7 +1368,6 @@ namespace test{
             /* On 16 bits */
             code = string("\x66\xF7\xFB", 3); // idiv bx
             engine.mem->write_buffer(0x1170, (uint8_t*)code.c_str(), 3);
-			engine.mem->write_buffer(0x1170+code.size(), (uint8_t*)string("\xeb\x0e", 2).c_str(), 2);
             
             engine.cpu.ctx().set(X64::RAX, exprcst(64,-21));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x4));
@@ -1378,7 +1377,7 @@ namespace test{
                             "ArchX64: failed to disassembly and/or execute IDIV");
             nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == exprcst(64, 0x10000003)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute IDIV");
-                            
+
             engine.cpu.ctx().set(X64::RAX, exprcst(64,-24));
             engine.cpu.ctx().set(X64::RBX, exprcst(64,0x67));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x10000000));
