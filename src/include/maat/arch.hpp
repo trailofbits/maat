@@ -175,6 +175,8 @@ namespace X86
     static constexpr reg_t FPUIP = 58; ///< FPU instruction pointer
     static constexpr reg_t FPUDP = 59; ///< FPU data pointer
     static constexpr reg_t FPUOP = 60; ///< FPU tag word (11 bits)
+    static constexpr reg_t FPUCS = 70; ///< FPU instruction pointer selector (16 bits)
+    static constexpr reg_t FPUDS = 71; ///< FPU data selector (16 bits)
     static constexpr reg_t ST0 = 61;
     static constexpr reg_t ST1 = 62;
     static constexpr reg_t ST2 = 63;
@@ -184,7 +186,7 @@ namespace X86
     static constexpr reg_t ST6 = 67;
     static constexpr reg_t ST7 = 68;
     static constexpr reg_t EFLAGS = 69;
-    static constexpr reg_t NB_REGS = 70;
+    static constexpr reg_t NB_REGS = 72;
 
     /** \addtogroup arch
      * \{ */
@@ -291,6 +293,8 @@ namespace X64
     static constexpr reg_t FPUIP = 66; ///< FPU instruction pointer
     static constexpr reg_t FPUDP = 67; ///< FPU data pointer
     static constexpr reg_t FPUOP = 68; ///< FPU tag word (11 bits)
+    static constexpr reg_t FPUCS = 88; ///< FPU instruction pointer selector (16 bits)
+    static constexpr reg_t FPUDS = 89; ///< FPU data selector (16 bits)
     // Shadow memory
     static constexpr reg_t SSP = 69; ///< Shadow stack pointer
     static constexpr reg_t MXCSR = 70; ///< SSE control register
@@ -304,7 +308,7 @@ namespace X64
     static constexpr reg_t ST6 = 77;
     static constexpr reg_t ST7 = 78;
     static constexpr reg_t RFLAGS = 87;
-    static constexpr reg_t NB_REGS = 88;
+    static constexpr reg_t NB_REGS = 90;
 
     /** \addtogroup arch
      * \{ */
