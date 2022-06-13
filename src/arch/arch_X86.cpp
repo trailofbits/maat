@@ -125,6 +125,8 @@ namespace X86
             {"fpuip", FPUIP},
             {"fpudp", FPUDP},
             {"fpuop", FPUOP},
+            {"fpucs", FPUCS},
+            {"fpuds", FPUDS},
             {"c0", C0},
             {"c1", C1},
             {"c2", C2},
@@ -210,6 +212,8 @@ namespace X86
             case FPUCW:
             case FPUSW:
             case FPUTW:
+            case FPUCS:
+            case FPUDS:
                 return 16;
             case FPUDP:
             case FPUIP:
@@ -330,6 +334,8 @@ namespace X64
             {"fpuip", FPUIP},
             {"fpudp", FPUDP},
             {"fpuop", FPUOP},
+            {"fpucs", FPUCS},
+            {"fpuds", FPUDS},
             {"c0", C0},
             {"c1", C1},
             {"c2", C2},
@@ -434,6 +440,8 @@ namespace X64
             case FPUCW:
             case FPUSW:
             case FPUTW:
+            case FPUCS:
+            case FPUDS:
                 return 16;
             case FPUDP:
             case FPUIP:
