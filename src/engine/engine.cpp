@@ -983,7 +983,7 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr, unsigned int max_inst)
                 true
             )
         ){
-            throw lifter_exception("MaatEngine::run(): failed to lift instructions");
+            throw lifter_exception("MaatEngine::get_asm_inst(): failed to lift instructions");
         }
         return ir_map.get_inst_at(addr);
     }
@@ -995,7 +995,7 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr, unsigned int max_inst)
     }
     catch(const lifter_exception& e)
     {
-        log.fatal("Lifter error: ", e.what());
+        log.error("Lifter error: ", e.what());
         this->info.stop = info::Stop::FATAL;
         throw lifter_exception("MaatEngine::get_asm_inst(): lifter error");
     }
@@ -1317,6 +1317,16 @@ int MaatEngine::nb_snapshots()
 const std::string& MaatEngine::get_inst_asm(addr_t addr)
 {
     return lifters[_current_cpu_mode]->get_inst_asm(addr, mem->raw_mem_at(addr));
+}
+
+std::vector<uint8_t> MaatEngine::get_inst_bytes(addr_t addr)
+{
+    const ir::AsmInst& inst = get_asm_inst(addr);
+    std::vector<uint8_t> res((size_t)inst.raw_size());
+    uint8_t* raw_bytes = mem->raw_mem_at(addr);
+    for (int i = 0; i < inst.raw_size(); i++)
+        res[i] = raw_bytes[i];
+    return res;
 }
 
 void MaatEngine::load(
