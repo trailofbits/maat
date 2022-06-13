@@ -125,17 +125,22 @@ info::Stop MaatEngine::run(int max_inst)
         }
 
         // Get next instruction to execute
-        if (current_ir_state.has_value())
-        {
-            to_execute = current_ir_state->addr;
-            ir_inst_id = current_ir_state->inst_id;
-        }
-        else if (not cpu.ctx().get(arch->pc()).is_symbolic(*vars))
+        if (not cpu.ctx().get(arch->pc()).is_symbolic(*vars))
         {
             to_execute = cpu.ctx().get(arch->pc()).as_uint(*vars);
-            ir_inst_id = 0;
-            // Reset temporaries in CPU for new instruction
-            cpu.reset_temporaries();
+            // Reload pending IR state if it matches current PC
+            if (
+                current_ir_state.has_value() and
+                current_ir_state->addr == to_execute
+            ){
+                ir_inst_id = current_ir_state->inst_id;
+            }
+            else
+            {
+                ir_inst_id = 0;
+                // Reset temporaries in CPU for new instruction
+                cpu.reset_temporaries();
+            }
         }
         else
         {
