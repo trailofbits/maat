@@ -93,7 +93,7 @@ bool Lifter::lift_block(
     }
     catch(std::exception& e)
     {
-        logger.fatal(
+        logger.error(
             "Sleigh failed to decode instructions in basic block starting at 0x",
             std::hex, addr, ". Raised the following error: \"", e.what(), "\""
         );

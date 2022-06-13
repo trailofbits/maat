@@ -161,6 +161,8 @@ public:
 public:
     /** \brief Return the assembly string for instruction at address 'addr' */ 
     const std::string& get_inst_asm(addr_t addr);
+    /** \brief Return the raw bytes of the instructions at address 'addr' */
+    std::vector<uint8_t> get_inst_bytes(addr_t addr);
 private:
     /** \brief Treat 'addr' as an Address parameter, load the actual value located
      * in memory and store it back in 'addr'. The previous address value stored in
@@ -222,8 +224,12 @@ private:
     bool process_callback_emulated_function(addr_t addr);
 private:
     /** \brief Get the AsmInst at address 'addr', lift to PCODE if needed.
-     * If an error occurs, sets info.stop and raises lifter_exception */
-    const ir::AsmInst& get_asm_inst(addr_t addr);
+     * If an error occurs, sets info.stop and raises lifter_exception
+     * @param addr Address of the instruction to get
+     * @param max_inst Maximum number of instructions to lift in the 
+     * basic block, starting at 'addr'
+     * */
+    const ir::AsmInst& get_asm_inst(addr_t addr, unsigned int max_inst=1);
 private:
     /** \brief Removes the instructions whose memory content has been tampered
      * by user callbacks or user scripts, and thus whose lift is no longer valid */

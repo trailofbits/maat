@@ -125,17 +125,22 @@ info::Stop MaatEngine::run(int max_inst)
         }
 
         // Get next instruction to execute
-        if (current_ir_state.has_value())
-        {
-            to_execute = current_ir_state->addr;
-            ir_inst_id = current_ir_state->inst_id;
-        }
-        else if (not cpu.ctx().get(arch->pc()).is_symbolic(*vars))
+        if (not cpu.ctx().get(arch->pc()).is_symbolic(*vars))
         {
             to_execute = cpu.ctx().get(arch->pc()).as_uint(*vars);
-            ir_inst_id = 0;
-            // Reset temporaries in CPU for new instruction
-            cpu.reset_temporaries();
+            // Reload pending IR state if it matches current PC
+            if (
+                current_ir_state.has_value() and
+                current_ir_state->addr == to_execute
+            ){
+                ir_inst_id = current_ir_state->inst_id;
+            }
+            else
+            {
+                ir_inst_id = 0;
+                // Reset temporaries in CPU for new instruction
+                cpu.reset_temporaries();
+            }
         }
         else
         {
@@ -239,6 +244,18 @@ info::Stop MaatEngine::run(int max_inst)
             // if settings.log_ir:
             //      log.debug("Run IR: ", inst);
             // std::cout << "DEBUG " << inst << std::endl;
+
+            // Check for unsupported instruction
+            if (inst.op == ir::Op::UNSUPPORTED)
+            {
+                info.stop = info::Stop::UNSUPPORTED_INST;
+                info.addr = asm_inst->addr();
+                log.fatal(
+                    "Could not lift instruction at 0x", std::hex, asm_inst->addr(),
+                    ": ", get_inst_asm(asm_inst->addr())
+                );
+                return info.stop;
+            }
 
             // Pre-process IR instruction
             event::Action tmp_action = event::Action::CONTINUE;
@@ -942,7 +959,7 @@ int _get_distance_till_end_of_map(MemEngine& mem, addr_t addr)
     return res;
 }
 
-const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
+const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr, unsigned int max_inst)
 {
     ir::IRMap& ir_map = ir::get_ir_map(mem->uid());
     if (ir_map.contains_inst_at(addr))
@@ -951,8 +968,11 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
     // The code hasn't been lifted yet so we disassemble it
     try
     {
-        // Get the size of mapped code from the requested address
-        size_t code_size = _get_distance_till_end_of_map(*mem, addr);
+        // Number of instructions to lift is the max number of instructions
+        // to execute, or 'until end of basic block' (0xffffffff) if
+        // max_inst == 0
+        unsigned int code_size = (unsigned int)_get_distance_till_end_of_map(*mem, addr);
+        unsigned int max_inst_to_lift = max_inst == 0? 0xffffffff : max_inst;
 
         // TODO: check if code region is symbolic
         if (
@@ -962,13 +982,13 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
                 addr,
                 mem->raw_mem_at(addr),
                 code_size,
-                0xffffffff,
+                max_inst_to_lift,
                 nullptr, // is_symbolic
                 nullptr, // is_tainted
                 true
             )
         ){
-            throw lifter_exception("MaatEngine::run(): failed to lift instructions");
+            throw lifter_exception("MaatEngine::get_asm_inst(): failed to lift instructions");
         }
         return ir_map.get_inst_at(addr);
     }
@@ -980,7 +1000,7 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
     }
     catch(const lifter_exception& e)
     {
-        log.fatal("Lifter error: ", e.what());
+        log.error("Lifter error: ", e.what());
         this->info.stop = info::Stop::FATAL;
         throw lifter_exception("MaatEngine::get_asm_inst(): lifter error");
     }
@@ -1302,6 +1322,16 @@ int MaatEngine::nb_snapshots()
 const std::string& MaatEngine::get_inst_asm(addr_t addr)
 {
     return lifters[_current_cpu_mode]->get_inst_asm(addr, mem->raw_mem_at(addr));
+}
+
+std::vector<uint8_t> MaatEngine::get_inst_bytes(addr_t addr)
+{
+    const ir::AsmInst& inst = get_asm_inst(addr);
+    std::vector<uint8_t> res((size_t)inst.raw_size());
+    uint8_t* raw_bytes = mem->raw_mem_at(addr);
+    for (int i = 0; i < inst.raw_size(); i++)
+        res[i] = raw_bytes[i];
+    return res;
 }
 
 void MaatEngine::load(
