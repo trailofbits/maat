@@ -183,6 +183,7 @@ ucst_t Number::get_ucst() const
 void Number::set_mpz(cst_t val)
 {
     mpz_ = mpz_class((unsigned long int)val);
+    adjust_mpz();
 }
 
 void Number::set_mpz(const std::string& val, int base)
@@ -492,6 +493,7 @@ void Number::set_extract(const Number& n, unsigned int high, unsigned int low)
 void Number::set_concat(const Number& n1, const Number& n2)
 {
     size_t tmp_size = n1.size + n2.size; // Use tmp size because *this might be n1 or n2
+
     if (tmp_size <= 64)
     {
         cst_t tmp = n2.cst_;
@@ -504,20 +506,24 @@ void Number::set_concat(const Number& n1, const Number& n2)
     }
     else
     {
+        // Need to create a tmp mpz in case *this is n1 or n2...
+        mpz_class tmp_mpz(0);
         // Set higher (set then shift)
         if (n1.is_mpz())
-            mpz_ = n1.mpz_;
+            tmp_mpz = n1.mpz_;
         else
-            mpz_ = mpz_class((unsigned long int)n1.get_ucst());
-        mpz_mul_2exp(mpz_.get_mpz_t(), mpz_.get_mpz_t(), n2.size); // shift left
+            tmp_mpz = mpz_class((unsigned long int)n1.get_ucst());
+        mpz_mul_2exp(tmp_mpz.get_mpz_t(), tmp_mpz.get_mpz_t(), n2.size); // shift left
         // Set lower
         if (n2.is_mpz())
-            mpz_ior(mpz_.get_mpz_t(), mpz_.get_mpz_t(), n2.mpz_.get_mpz_t());
+        {
+            mpz_ = tmp_mpz | n2.mpz_;
+        }
         else
         {
             mpz_t t1;
             mpz_init_set_ui(t1, (ucst_t)n2.get_ucst());
-            mpz_ior(mpz_.get_mpz_t(), mpz_.get_mpz_t(), t1);
+            mpz_ior(mpz_.get_mpz_t(), tmp_mpz.get_mpz_t(), t1);
             mpz_clear(t1);
         }
         size = tmp_size;

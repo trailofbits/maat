@@ -262,8 +262,9 @@ namespace test{
             Expr big = exprcst(128, "12345678abcdabcd0000000022223333");
             mem.write(0x1100, big, ctx);
             _assert_bignum_eq(mem.read(0x1100, 16), "0x12345678abcdabcd0000000022223333", "MemSegment failed to read then write big number"); 
+            mem.write(0x1110, c6, ctx);
+            _assert_bignum_eq(mem.read(0x1100, 20), "0xfeedbeef12345678abcdabcd0000000022223333", "MemSegment failed to read then write big number");
 
-            
             return nb;
         }
         

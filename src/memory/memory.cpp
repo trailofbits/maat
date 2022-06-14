@@ -603,6 +603,36 @@ uint64_t MemConcreteBuffer::read(offset_t off, int nb_bytes)
     return res;
 }
 
+Value MemConcreteBuffer::read_as_value(offset_t off, int nb_bytes)
+{
+    uint64_t val = 0;
+    Value res;
+    while (nb_bytes >= 8)
+    {
+        // Read val byte per byte to play nice with sanitizers
+        val = read(off, 8);
+        if (res.is_none())
+            res = Value(64, val);
+        else
+        {
+            // TODO: handle big endian when merging dev-evm
+            res.set_concat(Value(64,val), res);
+        }
+        nb_bytes -= 8;
+        off += 8;
+    }
+    if (nb_bytes > 0)
+    {
+        val = read(off, nb_bytes);
+        if (res.is_none())
+            res = Value(nb_bytes*8, val);
+        else
+            // TODO: handle big endian when merging dev-evm
+            res.set_concat(Value(nb_bytes*8,val), res);
+    }
+    return res;
+}
+
 void MemConcreteBuffer::write(offset_t off, int64_t val, int nb_bytes)
 {
     if( nb_bytes > 8 )
@@ -966,59 +996,10 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
                 bytes_to_read = nb_bytes; 
             }
             nb_bytes -= bytes_to_read; // Update the number of bytes left to read
-            /* Read */
-            switch(bytes_to_read)
-            {
-                case 1: tmp2.set_cst(8, _concrete.read(from, 1)); break;
-                case 2: tmp2.set_cst(16, _concrete.read(from, 2)); break;
-                case 3: tmp2.set_cst(24, _concrete.read(from, 3)); break; // Assumes little endian
-                case 4: tmp2.set_cst(32, _concrete.read(from, 4)); break;
-                case 5: tmp2.set_cst(40, _concrete.read(from, 5)); break;
-                case 6: tmp2.set_cst(48, _concrete.read(from, 6)); break;
-                case 7: tmp2.set_cst(56, _concrete.read(from, 7)); break;
-                case 8: tmp2.set_cst(64, _concrete.read(from, 8)); break;
-                case 9:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(8, _concrete.read(from+8, 1));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 10: 
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(16, _concrete.read(from+8, 2));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 11:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(24, _concrete.read(from+8, 3));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 12:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(32, _concrete.read(from+8, 4));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 13:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(40, _concrete.read(from+8, 5));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 14:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(48, _concrete.read(from+8, 6));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 15:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(56, _concrete.read(from+8, 7));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 16:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(64, _concrete.read(from+8, 8));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                default: throw mem_exception("MemSegment: should not be reading more than 16 bytes at a time!");
-            }
+            if (bytes_to_read <= 8)
+                tmp2.set_cst(bytes_to_read*8, _concrete.read(from, bytes_to_read));
+            else
+                tmp2 = _concrete.read_as_value(from, bytes_to_read);
             /* Update result */
             if (res.is_none())
                 res = tmp2;
@@ -1549,6 +1530,7 @@ void MemEngine::read(Value& res, addr_t addr, unsigned int nb_bytes, mem_alert_t
 {
     Value tmp;
     unsigned int save_nb_bytes = nb_bytes;
+    addr_t save_addr = addr;
 
     res.set_none();
 
@@ -1611,7 +1593,7 @@ void MemEngine::read(Value& res, addr_t addr, unsigned int nb_bytes, mem_alert_t
     throw mem_exception(Fmt()
         << "Trying to read " << std::dec << save_nb_bytes
         << " bytes at address 0x" 
-        << std::hex << addr << " causing access to non-mapped memory"
+        << std::hex << save_addr << " causing access to non-mapped memory"
         >> Fmt::to_str
     );
 }

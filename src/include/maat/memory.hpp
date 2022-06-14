@@ -118,7 +118,10 @@ public:
     void extend_before(offset_t nb_bytes);
 
 public:
+    /// Read nb_bytes starting at 'off'. 'nb_bytes' must be less or equal to 8
     uint64_t read(offset_t off, int nb_bytes);
+    /// Similar to read() but can read an arbitrary number of bytes
+    Value read_as_value(offset_t off, int nb_bytes);
     /// Write the value 'val' on 'nb_bytes' starting from offset 'off'
     void write(offset_t off, int64_t val, int nb_bytes);
     /// Write the value 'val' on 'nb_bytes' starting from offset 'off'
