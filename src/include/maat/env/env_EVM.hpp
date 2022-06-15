@@ -187,6 +187,16 @@ public:
 class Transaction: public serial::Serializable
 {
 public:
+    enum class Type : uint8_t 
+    {
+        EOA, ///< Initiated by an EOA
+        CALL, ///< Internal message with CALL
+        CALLCODE, ///< Internal message with CALLCODE
+        DELEGATECALL, ///< Internal message with DELEGATECALL
+        NONE
+    };
+public:
+    Type type; ///< Type of transaction
     Value origin; ///< Original account that initiated contract execution
     Value sender; ///< Account/contract that initiated this transaction
     Number recipient; ///< Recipient of the transaction
@@ -194,6 +204,8 @@ public:
     std::vector<Value> data; ///< Additionnal transaction data
     Value gas_limit; ///< Maximum amount of gas that can be consumed by the transaction
     std::optional<TransactionResult> result; ///< Result of the transaction
+    std::optional<Value> ret_offset; // Return data offset in calling contract
+    std::optional<Value> ret_len; // Return data len in calling contract
 public:
     Transaction();
     Transaction(
@@ -202,7 +214,10 @@ public:
         Number recipient,
         Value value,
         std::vector<Value> data,
-        Value gas_limit
+        Value gas_limit,
+        Type type = Type::EOA,
+        std::optional<Value> ret_offset = std::nullopt,
+        std::optional<Value> ret_len = std::nullopt
     );
 public:
     /// Total size of transaction data in bytes
@@ -211,39 +226,6 @@ public:
     Value data_load_word(size_t offset) const;
     /// Return bytes [offset ... offset+len] from transaction data
     std::vector<Value> data_load_bytes(size_t offset, size_t len) const;
-public:
-    virtual maat::serial::uid_t class_uid() const;
-    virtual void dump(maat::serial::Serializer& s) const;
-    virtual void load(maat::serial::Deserializer& d);
-};
-
-class InternalTransaction: public Transaction
-{
-    public:
-    enum class Type : uint8_t 
-    {
-        CALL,
-        CALLCODE,
-        DELEGATECALL,
-        NONE
-    };
-public:
-    Type type;
-    Value ret_offset; // Return data offset in calling contract
-    Value ret_len; // Return data len in calling contract
-public:
-    InternalTransaction();
-    InternalTransaction(
-        Type type,
-        Value origin,
-        Value sender,
-        Number recipient,
-        Value value,
-        std::vector<Value> data,
-        Value gas_limit,
-        Value ret_offset,
-        Value ret_len
-    );
 public:
     virtual maat::serial::uid_t class_uid() const;
     virtual void dump(maat::serial::Serializer& s) const;
@@ -260,7 +242,7 @@ public:
     std::shared_ptr<Storage> storage; ///< Persistent contract storage
     std::optional<Transaction> transaction; ///< Transaction being executed
     /// Internal transaction being sent to another contract
-    std::optional<InternalTransaction> outgoing_transaction;
+    std::optional<Transaction> outgoing_transaction;
 public:
     unsigned int code_size; ///< Size of code currently executing
 public:

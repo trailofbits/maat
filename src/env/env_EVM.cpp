@@ -338,7 +338,8 @@ void TransactionResult::load(serial::Deserializer& d)
 }
 
 Transaction::Transaction()
-: origin(256, 0), sender(256, 0), recipient(256, 0), value(256, 0), gas_limit(256, 0)
+:   origin(256, 0), sender(256, 0), recipient(256, 0), 
+    value(256, 0), gas_limit(256, 0), type(Type::NONE)
 {}
 
 Transaction::Transaction(
@@ -347,9 +348,13 @@ Transaction::Transaction(
     Number recipient,
     Value value,
     std::vector<Value> data,
-    Value gas_limit
+    Value gas_limit,
+    Type type,
+    std::optional<Value> ret_off,
+    std::optional<Value> ret_len
 ): origin(origin), sender(sender), recipient(recipient), value(value),
-   data(data), gas_limit(gas_limit)
+   data(data), gas_limit(gas_limit), type(type), ret_offset(ret_off),
+   ret_len(ret_len)
 {}
 
 size_t Transaction::data_size() const
@@ -472,49 +477,14 @@ serial::uid_t Transaction::class_uid() const
 
 void Transaction::dump(serial::Serializer& s) const
 {
-    s << origin << sender << recipient << value << data << gas_limit << result;
+    s   << origin << sender << recipient << value << data << gas_limit << result
+        << bits(type) << ret_offset << ret_len;
 }
 
 void Transaction::load(serial::Deserializer& d)
 {
-    d >> origin >> sender >> recipient >> value >> data >> gas_limit >> result;
-}
-
-
-InternalTransaction::InternalTransaction()
-:   Transaction(),
-    type(Type::NONE), ret_offset(256, 0), ret_len(256, 0)
-{}
-
-InternalTransaction::InternalTransaction(
-    Type type,
-    Value origin,
-    Value sender,
-    Number recipient,
-    Value value,
-    std::vector<Value> data,
-    Value gas_limit,
-    Value ret_offset,
-    Value ret_len
-): Transaction(origin, sender, recipient, value, data, gas_limit),
-    type(type), ret_offset(ret_offset), ret_len(ret_len)
-{}
-
-serial::uid_t InternalTransaction::class_uid() const
-{
-    return serial::ClassId::EVM_INTERNAL_TRANSACTION;
-}
-
-void InternalTransaction::dump(serial::Serializer& s) const
-{
-    Transaction::dump(s);
-    s << bits(type) << ret_offset << ret_len;
-}
-
-void InternalTransaction::load(serial::Deserializer& d)
-{
-    Transaction::load(d);
-    d >> bits(type) >> ret_offset >> ret_len;
+    d   >> origin >> sender >> recipient >> value >> data >> gas_limit >> result
+        >> bits(type) >> ret_offset >> ret_len;
 }
 
 

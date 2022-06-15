@@ -722,19 +722,19 @@ void _evm_generic_call(
         argsLen.as_uint(*engine.vars)
     );
 
-    env::EVM::InternalTransaction::Type msg_type = 
+    env::EVM::Transaction::Type tx_type = 
         is_callcode ?
-        env::EVM::InternalTransaction::Type::CALLCODE :
-        env::EVM::InternalTransaction::Type::CALL;
+        env::EVM::Transaction::Type::CALLCODE :
+        env::EVM::Transaction::Type::CALL;
 
-    contract->outgoing_transaction = env::EVM::InternalTransaction(
-        msg_type,
+    contract->outgoing_transaction = env::EVM::Transaction(
         contract->transaction->origin,
         contract->address,
         addr.as_number(),
         value,
         tx_data,
         gas,
+        tx_type,
         retOff,
         retLen
     );
@@ -782,14 +782,14 @@ void EVM_DELEGATECALL_handler(
         argsLen.as_uint(*engine.vars)
     );
 
-    contract->outgoing_transaction = env::EVM::InternalTransaction(
-        env::EVM::InternalTransaction::Type::DELEGATECALL,
+    contract->outgoing_transaction = env::EVM::Transaction(
         contract->transaction->origin,
         contract->transaction->sender, // same sender
         addr.as_number(),
         contract->transaction->value, // same value
         tx_data,
         gas,
+        env::EVM::Transaction::Type::DELEGATECALL,
         retOff,
         retLen
     );
