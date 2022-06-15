@@ -551,7 +551,9 @@ public:
             {"evm_invalid", callother::Id::EVM_INVALID},
             {"evm_revert", callother::Id::EVM_REVERT},
             {"evm_exp", callother::Id::EVM_EXP},
-            {"evm_call", callother::Id::EVM_CALL}
+            {"evm_call", callother::Id::EVM_CALL},
+            {"evm_callcode", callother::Id::EVM_CALLCODE},
+            {"evm_delegatecall", callother::Id::EVM_DELEGATECALL}
         };
 
         for (const auto& [op_str, op_id] : operators)

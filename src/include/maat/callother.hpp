@@ -59,6 +59,8 @@ enum class Id
     EVM_REVERT,
     EVM_EXP,
     EVM_CALL,
+    EVM_CALLCODE,
+    EVM_DELEGATECALL,
     UNSUPPORTED
 };
 

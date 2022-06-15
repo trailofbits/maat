@@ -37,6 +37,8 @@ define pcodeop evm_return; # RETURN
 define pcodeop evm_invalid; # INVALID
 define pcodeop evm_revert; # REVERT
 define pcodeop evm_call; # CALL
+define pcodeop evm_callcode; # CALLCODE
+define pcodeop evm_delegatecall; # DELEGATECALL
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -585,10 +587,18 @@ swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
     evm_call();
 }
 
+:CALLCODE is op = 0xf2 {
+    evm_callcode();
+}
+
 :RETURN is op = 0xf3 {
     local addr:32 = stack_pop();
     local len:32 = stack_pop();
     evm_return(addr, len);
+}
+
+:DELEGATECALL is op = 0xf4 {
+    evm_delegatecall();
 }
 
 :REVERT is op = 0xfd {
