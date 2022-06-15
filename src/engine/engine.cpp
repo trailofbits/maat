@@ -81,6 +81,7 @@ MaatEngine::MaatEngine(
 {
     _current_cpu_mode = other._current_cpu_mode;
     _halt_after_inst = other._halt_after_inst;
+    _halt_after_inst_reason = other._halt_after_inst_reason;
     _previous_halt_before_exec = other._previous_halt_before_exec;
     current_ir_state = other.current_ir_state;
     lifters = other.lifters;
@@ -147,7 +148,7 @@ if (statement != true)\
     }\
     else if (action == event::Action::HALT)\
     {\
-        _halt_after_inst = true;\
+        _stop_after_inst(info::Stop::HOOK);\
     }\
 }
 
@@ -162,7 +163,7 @@ if (statement != true)\
     }\
     else if (action == event::Action::HALT)\
     {\
-        _halt_after_inst = true;\
+        _stop_after_inst(info::Stop::HOOK);\
     }\
 }
 
@@ -178,6 +179,7 @@ info::Stop MaatEngine::run(int max_inst)
     // Reset info field
     info.reset();
     _halt_after_inst = false;
+    _halt_after_inst_reason = info::Stop::NONE;
 
     /* Execute forever while there is an instruction to execute */
     while (next_inst)
@@ -325,7 +327,7 @@ info::Stop MaatEngine::run(int max_inst)
             }
             else if (tmp_action == event::Action::HALT)
             {
-                _halt_after_inst = true;
+                _stop_after_inst(info::Stop::HOOK);
             }
             info.reset(); // Reset info here because the CPU can not do it
 
@@ -451,7 +453,7 @@ info::Stop MaatEngine::run(int max_inst)
 
         if (_halt_after_inst)
         {
-            info.stop = info::Stop::HOOK;
+            info.stop = _halt_after_inst_reason;
             info.addr = asm_inst->addr();
             return info.stop;
         }
@@ -1375,6 +1377,12 @@ const std::string& MaatEngine::get_inst_asm(addr_t addr)
     return lifters[_current_cpu_mode]->get_inst_asm(addr, mem->raw_mem_at(addr));
 }
 
+void MaatEngine::_stop_after_inst(info::Stop reason)
+{
+    _halt_after_inst = true;
+    _halt_after_inst_reason = reason;
+}
+
 void MaatEngine::load(
     const std::string& binary,
     loader::Format type,
@@ -1427,6 +1435,7 @@ serial::uid_t MaatEngine::class_uid() const
 void MaatEngine::dump(serial::Serializer& s) const
 {
     s << bits(_current_cpu_mode) << bits(_halt_after_inst)
+      << bits(_halt_after_inst_reason)
       << bits(_previous_halt_before_exec)
       << current_ir_state << path
       << snapshots << arch << vars << mem
@@ -1441,6 +1450,7 @@ void MaatEngine::dump(serial::Serializer& s) const
 void MaatEngine::load(serial::Deserializer& d)
 {
     d >> bits(_current_cpu_mode) >> bits(_halt_after_inst)
+      >> bits(_halt_after_inst_reason)
       >> bits(_previous_halt_before_exec)
       >> current_ir_state >> path
       >> snapshots >> arch >> vars >> mem

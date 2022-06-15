@@ -58,6 +58,7 @@ enum class Id
     EVM_INVALID,
     EVM_REVERT,
     EVM_EXP,
+    EVM_CALL,
     UNSUPPORTED
 };
 

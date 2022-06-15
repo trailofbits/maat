@@ -36,6 +36,7 @@ define pcodeop evm_keccak; # KECCAK
 define pcodeop evm_return; # RETURN
 define pcodeop evm_invalid; # INVALID
 define pcodeop evm_revert; # REVERT
+define pcodeop evm_call; # CALL
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -577,6 +578,12 @@ swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
     evm_swap(swap_cnt);
 }
 
+
+:CALL is op = 0xf1 {
+    # Note we can't pop the arguments in sleigh directly because there 
+    # are 6 arguments and max operands is 3 in pcode
+    evm_call();
+}
 
 :RETURN is op = 0xf3 {
     local addr:32 = stack_pop();

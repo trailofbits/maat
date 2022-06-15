@@ -217,6 +217,39 @@ public:
     virtual void load(maat::serial::Deserializer& d);
 };
 
+class InternalTransaction: public Transaction
+{
+    public:
+    enum class Type : uint8_t 
+    {
+        CALL,
+        CALLCODE,
+        DELEGATECALL,
+        NONE
+    };
+public:
+    Type type;
+    Value ret_offset; // Return data offset in calling contract
+    Value ret_len; // Return data len in calling contract
+public:
+    InternalTransaction();
+    InternalTransaction(
+        Type type,
+        Value origin,
+        Value sender,
+        Number recipient,
+        Value value,
+        std::vector<Value> data,
+        Value gas_limit,
+        Value ret_offset,
+        Value ret_len
+    );
+public:
+    virtual maat::serial::uid_t class_uid() const;
+    virtual void dump(maat::serial::Serializer& s) const;
+    virtual void load(maat::serial::Deserializer& d);
+};
+
 /// Runtime for a deployed Smart-Contract
 class Contract: public serial::Serializable
 {
@@ -226,8 +259,8 @@ public:
     Memory memory; ///< Volatile memory of the executing EVM
     std::shared_ptr<Storage> storage; ///< Persistent contract storage
     std::optional<Transaction> transaction; ///< Transaction being executed
-protected:
-    std::optional<TransactionResult> result_from_last_call; ///< Result of last call emitted from the current executing environment
+    /// Internal transaction being sent to another contract
+    std::optional<InternalTransaction> outgoing_transaction;
 public:
     unsigned int code_size; ///< Size of code currently executing
 public:

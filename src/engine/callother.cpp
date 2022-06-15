@@ -690,6 +690,49 @@ void EVM_INVALID_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processed
     contract->transaction->result = env::EVM::TransactionResult(type,{});
 }
 
+void EVM_CALL_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+
+    // Get parameters on stack
+    Value gas = contract->stack.get(0);
+    Value addr = contract->stack.get(1);
+    Value value = contract->stack.get(2);
+    Value argsOff = contract->stack.get(3);
+    Value argsLen = contract->stack.get(4);
+    Value retOff = contract->stack.get(5);
+    Value retLen = contract->stack.get(6);
+    contract->stack.pop(7);
+
+    // We don't support symbolic offsets to args data
+    if (not argsOff.is_concrete(*engine.vars))
+        throw callother_exception("CALL: argsOff parameter is symbolic. Not yet supported");
+    if (not argsLen.is_concrete(*engine.vars))
+        throw callother_exception("CALL: argsLen parameter is symbolic. Not yet supported");
+
+    // Read transaction data
+    std::vector<Value> tx_data = contract->memory.mem()._read_optimised_buffer(
+        argsOff.as_uint(*engine.vars),
+        argsLen.as_uint(*engine.vars)
+    );
+
+    contract->outgoing_transaction = env::EVM::InternalTransaction(
+        env::EVM::InternalTransaction::Type::CALL,
+        contract->transaction->origin,
+        contract->address,
+        addr.as_number(),
+        value,
+        tx_data,
+        gas,
+        retOff,
+        retLen
+    );
+    // Tell the engine to stop because execution must be transfered to
+    // another contract
+    engine._stop_after_inst(info::Stop::NONE);
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -724,6 +767,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_INVALID, EVM_INVALID_handler);
     h.set_handler(Id::EVM_REVERT, EVM_REVERT_handler);
     h.set_handler(Id::EVM_EXP, EVM_EXP_handler);
+    h.set_handler(Id::EVM_CALL, EVM_CALL_handler);
 
     return h;
 }

@@ -481,6 +481,42 @@ void Transaction::load(serial::Deserializer& d)
 }
 
 
+InternalTransaction::InternalTransaction()
+:   Transaction(),
+    type(Type::NONE), ret_offset(256, 0), ret_len(256, 0)
+{}
+
+InternalTransaction::InternalTransaction(
+    Type type,
+    Value origin,
+    Value sender,
+    Number recipient,
+    Value value,
+    std::vector<Value> data,
+    Value gas_limit,
+    Value ret_offset,
+    Value ret_len
+): Transaction(origin, sender, recipient, value, data, gas_limit),
+    type(type), ret_offset(ret_offset), ret_len(ret_len)
+{}
+
+serial::uid_t InternalTransaction::class_uid() const
+{
+    return serial::ClassId::EVM_INTERNAL_TRANSACTION;
+}
+
+void InternalTransaction::dump(serial::Serializer& s) const
+{
+    Transaction::dump(s);
+    s << bits(type) << ret_offset << ret_len;
+}
+
+void InternalTransaction::load(serial::Deserializer& d)
+{
+    Transaction::load(d);
+    d >> bits(type) >> ret_offset >> ret_len;
+}
+
 
 Contract::Contract()
 : memory(nullptr), storage(nullptr)
@@ -501,7 +537,7 @@ void Contract::fork_from(const Contract& other)
     code_size = other.code_size;
     stack = Stack();
     transaction = std::nullopt;
-    result_from_last_call = std::nullopt;
+    outgoing_transaction = std::nullopt;
 }
 
 serial::uid_t Contract::class_uid() const
@@ -511,13 +547,15 @@ serial::uid_t Contract::class_uid() const
 
 void Contract::dump(serial::Serializer& s) const
 {
-    s << address << stack << memory << storage << transaction << result_from_last_call;
+    s   << address << stack << memory << storage << transaction
+        << outgoing_transaction;
     s << bits(code_size);
 }
 
 void Contract::load(serial::Deserializer& d)
 {
-    d >> address >> stack >> memory >> storage >> transaction >> result_from_last_call;
+    d   >> address >> stack >> memory >> storage >> transaction
+        >> outgoing_transaction;
     d >> bits(code_size);
 }
 

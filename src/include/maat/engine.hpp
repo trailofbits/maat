@@ -59,6 +59,7 @@ private:
 private:
     // Convenience variable to avoid passing it to all subfunctions
     bool _halt_after_inst;
+    info::Stop _halt_after_inst_reason;
     // Indicates the last addr before which the engine halted because of an EXEC event
     // handler. It is used to avoid halting forever on the same instr once we resume 
     // execution
@@ -273,6 +274,9 @@ private:
     /** \brief Removes the instructions whose memory content has been tampered
      * by user callbacks or user scripts, and thus whose lift is no longer valid */
     void handle_pending_x_mem_overwrites();
+public:
+    /// **INTERNAL**: Tells the engine to stop once it finishes executing the current instruction
+    void _stop_after_inst(info::Stop reason);
 public:
     virtual serial::uid_t class_uid() const;
     /** Serialize the engine state

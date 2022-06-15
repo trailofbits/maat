@@ -158,8 +158,6 @@ int contract_with_constructor_arguments()
         loader::CmdlineArg(b) 
     };
 
-    engine.settings.log_insts = true;
-
     engine.load(
         "tests/resources/smart_contracts/SimpleConstructor.bin",
         loader::Format::NONE,
