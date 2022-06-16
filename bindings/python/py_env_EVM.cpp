@@ -318,6 +318,25 @@ static PyObject* EVMTransaction_get_recipient(PyObject* self, void* closure)
     return number_to_bigint(as_tx_object(self).transaction->recipient);
 }
 
+static PyObject* EVMTransaction_get_type(PyObject* self, void* closure)
+{
+    return PyLong_FromUnsignedLong((uint8_t)as_tx_object(self).transaction->type);
+}
+
+static PyObject* EVMTransaction_get_ret_offset(PyObject* self, void* closure)
+{
+    if (not as_tx_object(self).transaction->ret_offset.has_value())
+        Py_RETURN_NONE;
+    return PyValue_FromValue(*as_tx_object(self).transaction->ret_offset);
+}
+
+static PyObject* EVMTransaction_get_ret_len(PyObject* self, void* closure)
+{
+    if (not as_tx_object(self).transaction->ret_len.has_value())
+        Py_RETURN_NONE;
+    return PyValue_FromValue(*as_tx_object(self).transaction->ret_len);
+}
+
 static PyObject* EVMTransaction_get_data(PyObject* self, void* closure)
 {
     // TODO(boyan): factorize this code with other places where we translate
@@ -362,6 +381,9 @@ static PyGetSetDef EVMTransaction_getset[] = {
     {"result", EVMTransaction_get_result, NULL, "Result of the transaction", NULL},
     {"data", EVMTransaction_get_data, EVMTransaction_set_data, "Transaction data", NULL},
     {"recipient", EVMTransaction_get_recipient, NULL, "Transaction recipient", NULL},
+    {"type", EVMTransaction_get_type, NULL, "Transaction type", NULL},
+    {"ret_offset", EVMTransaction_get_ret_offset, NULL, "Return offset", NULL},
+    {"ret_len", EVMTransaction_get_ret_len, NULL, "Return length", NULL},
     {NULL}
 };
 
@@ -652,8 +674,9 @@ PyObject* maat_increment_block_timestamp(PyObject* mod, PyObject* args)
 
 void init_evm(PyObject* module)
 {
-    /* EVM enum */
+    /* TX_END enum */
     PyObject* evm_enum = PyDict_New();
+    // Transaction result types
     PyDict_SetItemString(evm_enum, "RETURN", PyLong_FromLong(
         (int)env::EVM::TransactionResult::Type::RETURN)
     );
@@ -670,8 +693,31 @@ void init_evm(PyObject* module)
         (int)env::EVM::TransactionResult::Type::NONE)
     );
 
-    PyObject* evm_class = create_class(PyUnicode_FromString("EVM"), PyTuple_New(0), evm_enum);
-    PyModule_AddObject(module, "EVM", evm_class);
+    PyObject* evm_class = create_class(PyUnicode_FromString("TX_RES"), PyTuple_New(0), evm_enum);
+    PyModule_AddObject(module, "TX_RES", evm_class);
+
+
+    /* TX enum */
+    PyObject* tx_enum = PyDict_New();
+    // Transaction result types
+    PyDict_SetItemString(tx_enum, "CALL", PyLong_FromLong(
+        (int)env::EVM::Transaction::Type::CALL)
+    );
+    PyDict_SetItemString(tx_enum, "CALLCODE", PyLong_FromLong(
+        (int)env::EVM::Transaction::Type::CALLCODE)
+    );
+    PyDict_SetItemString(tx_enum, "DELEGATECALL", PyLong_FromLong(
+        (int)env::EVM::Transaction::Type::DELEGATECALL)
+    );
+    PyDict_SetItemString(tx_enum, "EOA", PyLong_FromLong(
+        (int)env::EVM::Transaction::Type::EOA)
+    );
+    PyDict_SetItemString(tx_enum, "NONE", PyLong_FromLong(
+        (int)env::EVM::Transaction::Type::NONE)
+    );
+
+    PyObject* tx_class = create_class(PyUnicode_FromString("TX"), PyTuple_New(0), tx_enum);
+    PyModule_AddObject(module, "TX", tx_class);
 };
 
 }} // namespaces maat::py
