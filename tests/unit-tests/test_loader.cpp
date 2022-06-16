@@ -63,7 +63,9 @@ namespace test
                 "tests/resources/smart_contracts/HelloWorld.bin",
                 loader::Format::NONE,
                 0,
-                {}, {}, {}, {}, {}
+                {}, 
+                {{"address","12345678"}, {"deployer","AAAAAAABBBBB"}}, // envp 
+                {}, {}, {}
             );
             return nb;
         }

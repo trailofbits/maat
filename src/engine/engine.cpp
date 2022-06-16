@@ -1397,11 +1397,8 @@ void MaatEngine::load(
 {
     if (arch->type == Arch::Type::EVM)
     {
-        // TODO(boyan): find a way to explicitely pass address to constructor
-        // ---> pass it through ENVP
-
         // Use special loader for EVM
-        loader::LoaderEVM().load(this, binary, Value(256, "84685465846514651"), args);
+        loader::LoaderEVM().load(this, binary, args, envp);
     }
     else
     {

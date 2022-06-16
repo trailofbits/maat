@@ -247,12 +247,20 @@ private:
 class LoaderEVM
 {
 public:
-    /// Deploy a contract into 'engine'
+    /** \brief Deploy a contract into 'engine'. 
+    
+    @param engine The engine where to deploy the contract
+    @param contract_file The file containing the contract bytecode
+    @param args The arguments to the contract constructor
+    @param env Additional information. 'address' contains the address
+    where to deploy the contract. 'deployer' contains the address of the
+    deployer of the contract. Both must be encoded in hex form without
+    the preceeding '0x' */
     void load(
         MaatEngine* engine,
         const std::string& contract_file,
-        Value address,
-        const std::vector<CmdlineArg>& args
+        const std::vector<CmdlineArg>& args,
+        const environ_t& env
     );
 };
 

@@ -12,10 +12,23 @@ using namespace env::EVM;
 void LoaderEVM::load(
     MaatEngine* engine,
     const std::string& filename,
-    Value address,
-    const std::vector<CmdlineArg>& args
-)
-{
+    const std::vector<CmdlineArg>& args,
+    const environ_t& env
+){
+    // Parse deployment info
+    if (env.find("address") == env.end())
+        throw loader_exception(
+            "LoaderEVM::load() : Please specify contract deployment address." 
+            " Use the 'address' key in the environment"
+        );
+    if (env.find("deployer") == env.end())
+        throw loader_exception(
+            "LoaderEVM::load() : Please specify the deployer address." 
+            " Use the 'deployer' key in the environment"
+        );
+    Value address(256, env.at("address"), 16);
+    Value deployer(256, env.at("deployer"), 16);
+
     // Read file content
     std::ifstream file(filename, std::ios::binary | std::ios::ate);
     std::streamsize size = file.tellg();
@@ -65,7 +78,14 @@ void LoaderEVM::load(
     engine->cpu.ctx().set(EVM::PC, 0x0);
 
     env::EVM::contract_t contract = get_contract_for_engine(*engine);
-    contract->transaction = Transaction();
+    contract->transaction = env::EVM::Transaction(
+        deployer, // origin
+        deployer, // sender
+        address.as_number(), // recipient
+        Value(256, 0), // value
+        {}, // data (for deployment, args are appended after the bytecode)
+        Value(256, 123456) // gas_limit (TODO: what value should we use here??)
+    );
 
     // Execute init bytecode
     engine->run();

@@ -121,7 +121,9 @@ int execute_simple_transaction()
         "tests/resources/smart_contracts/HelloWorld.bin",
         loader::Format::NONE,
         0,
-        {}, {}, {}, {}, {}
+        {}, 
+        {{"address","1234568"}, {"deployer","AAABBBCFF0000000000000454F"}}, 
+        {}, {}, {}
     );
     
     // Send transaction
@@ -163,7 +165,8 @@ int contract_with_constructor_arguments()
         loader::Format::NONE,
         0,
         constructor_data, // args 
-        {}, {}, {}, {}
+        {{"address","1234568"}, {"deployer","AAABBBCFF0000000000000454F"}},
+        {}, {}, {}
     );
 
     nb += _assert(
@@ -257,7 +260,9 @@ int explore_sqrt()
         "tests/resources/smart_contracts/Sqrt.bin",
         loader::Format::NONE,
         0,
-        {}, {}, {}, {}, {}
+        {}, 
+        {{"address","12345678"}, {"deployer","123456789"}},
+        {}, {}, {}
     );
 
     // Send transaction
