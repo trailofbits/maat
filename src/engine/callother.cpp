@@ -534,6 +534,10 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
             _check_transaction_exists(contract);
             pinst.res = contract->transaction->origin;
             break;
+        case 0x33: // CALLER
+            _check_transaction_exists(contract);
+            pinst.res = contract->transaction->sender;
+            break;
         case 0x34: // CALLVALUE
             _check_transaction_exists(contract);
             pinst.res = contract->transaction->value;
