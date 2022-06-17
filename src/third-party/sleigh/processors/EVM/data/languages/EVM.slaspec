@@ -39,6 +39,7 @@ define pcodeop evm_revert; # REVERT
 define pcodeop evm_call; # CALL
 define pcodeop evm_callcode; # CALLCODE
 define pcodeop evm_delegatecall; # DELEGATECALL
+define pcodeop evm_create; # CREATE
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -580,6 +581,10 @@ swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
     evm_swap(swap_cnt);
 }
 
+:CREATE is op = 0xf0 {
+    # Pass zero to tell that it is not CREATE2
+    evm_create(0:32);
+}
 
 :CALL is op = 0xf1 {
     # Note we can't pop the arguments in sleigh directly because there 
@@ -599,6 +604,11 @@ swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
 
 :DELEGATECALL is op = 0xf4 {
     evm_delegatecall();
+}
+
+:CREATE2 is op = 0xf5 {
+    # Pass zero to tell that *is* not CREATE2
+    evm_create(1:32);
 }
 
 :REVERT is op = 0xfd {

@@ -715,6 +715,12 @@ void init_evm(PyObject* module)
     PyDict_SetItemString(tx_enum, "NONE", PyLong_FromLong(
         (int)env::EVM::Transaction::Type::NONE)
     );
+    PyDict_SetItemString(tx_enum, "CREATE", PyLong_FromLong(
+        (int)env::EVM::Transaction::Type::CREATE)
+    );
+    PyDict_SetItemString(tx_enum, "CREATE2", PyLong_FromLong(
+        (int)env::EVM::Transaction::Type::CREATE2)
+    );
 
     PyObject* tx_class = create_class(PyUnicode_FromString("TX"), PyTuple_New(0), tx_enum);
     PyModule_AddObject(module, "TX", tx_class);

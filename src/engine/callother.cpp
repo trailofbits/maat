@@ -757,6 +757,53 @@ void EVM_CALLCODE_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
     _evm_generic_call(engine, inst, pinst, true);
 }
 
+
+
+void EVM_CREATE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    bool is_create2 = (bool)pinst.in0.value().as_uint();
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+
+    // Get parameters on stack
+    Value value = contract->stack.get(0);
+    Value offset = contract->stack.get(1);
+    Value len = contract->stack.get(2);
+    // TODO: for CREATE2, we leave the salt on the stack? Or maybe append it
+    // in the tx_data?
+    contract->stack.pop(3);
+
+    // We don't support symbolic offsets to code data
+    if (not offset.is_concrete(*engine.vars))
+        throw callother_exception("CREATE: data 'offset' parameter is symbolic. Not supported");
+    if (not len.is_concrete(*engine.vars))
+        throw callother_exception("CREATE: data 'length' parameter is symbolic. Not supported");
+
+    // Read transaction data
+    std::vector<Value> tx_data = contract->memory.mem()._read_optimised_buffer(
+        offset.as_uint(*engine.vars),
+        len.as_uint(*engine.vars)
+    );
+
+    env::EVM::Transaction::Type tx_type = 
+        is_create2 ?
+        env::EVM::Transaction::Type::CREATE2 :
+        env::EVM::Transaction::Type::CREATE;
+
+    contract->outgoing_transaction = env::EVM::Transaction(
+        contract->transaction->origin,
+        contract->address,
+        Number(160, 0), // no recipient for CREATE
+        value,
+        tx_data,
+        Value(256, 0), // no gas
+        tx_type
+    );
+    // Tell the engine to stop because execution must be transfered to
+    // another contract
+    engine._stop_after_inst(info::Stop::NONE);
+}
+
 void EVM_DELEGATECALL_handler(
     MaatEngine& engine,
     const ir::Inst& inst,
@@ -839,6 +886,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_CALL, EVM_CALL_handler);
     h.set_handler(Id::EVM_CALLCODE, EVM_CALLCODE_handler);
     h.set_handler(Id::EVM_DELEGATECALL, EVM_DELEGATECALL_handler);
+    h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
 
     return h;
 }
