@@ -7,6 +7,7 @@
 #include "maat/serializer.hpp"
 #include "maat/types.hpp"
 #include <vector>
+#include <set>
 
 namespace maat 
 {
@@ -89,6 +90,7 @@ public:
     void update_from(VarContext& other);
     void print(std::ostream& os) const; ///< Print the context to a stream
     Endian endianness() const; ///< Return endianness
+    std::set<std::string> contained_vars() const; ///< Return the contained symbolic variables
 public:
     virtual serial::uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;

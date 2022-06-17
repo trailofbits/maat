@@ -268,6 +268,19 @@ Endian VarContext::endianness() const
     return _endianness;
 }
 
+std::set<std::string> VarContext::contained_vars() const
+{
+    std::set<std::string> res;
+    std::transform(
+        varmap.begin(),
+        varmap.end(),
+        std::inserter(res, res.end()),
+        [](auto pair){ return pair.first; }
+    );
+    return res;
+}
+
+
 std::ostream& operator<<(std::ostream& os, const VarContext& c)
 {
     c.print(os);

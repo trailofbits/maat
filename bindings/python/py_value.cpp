@@ -900,6 +900,24 @@ static PyObject* VarContext_update_from(PyObject* self, PyObject* args)
     Py_RETURN_NONE;
 }
 
+
+static PyObject* VarContext_contained_vars(PyObject* self)
+{
+    PyObject* list = PyList_New(0);
+    if( list == NULL )
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
+    }
+    for (const std::string& var : as_varctx_object(self).ctx->contained_vars())
+    {
+        if( PyList_Append(list, PyUnicode_FromString(var.c_str())) == -1)
+        {
+            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
+        }
+    }
+    return list;
+}
+
 static PyMethodDef VarContext_methods[] = {
     {"set", (PyCFunction)VarContext_set, METH_VARARGS, "Give a concrete value to a symbolic variable"},
     {"get", (PyCFunction)VarContext_get, METH_VARARGS, "Give the concrete value associated with a symbolic variable"},
@@ -907,6 +925,7 @@ static PyMethodDef VarContext_methods[] = {
     {"get_as_str", (PyCFunction)VarContext_get_as_string, METH_VARARGS, "Give the string associated with a certain symbolic variable prefix"},
     {"remove", (PyCFunction)VarContext_remove, METH_VARARGS, "Remove the concrete value associated with a symbolic variable"},
     {"contains", (PyCFunction)VarContext_contains, METH_VARARGS, "Check if a given symbolic variable has an associated concrete value"},
+    {"contained_vars", (PyCFunction)VarContext_contained_vars, METH_NOARGS, "Get the list of contained symbolic variables"},
     {"update_from", (PyCFunction)VarContext_update_from, METH_VARARGS, "Update concrete values associated with symbolic variables according to another VarContext"},
     {"new_concolic_buffer", (PyCFunction)VarContext_new_concolic_buffer, METH_VARARGS|METH_KEYWORDS, "Create a new buffer of concolic variables"},
     {"new_symbolic_buffer", (PyCFunction)VarContext_new_symbolic_buffer, METH_VARARGS|METH_KEYWORDS, "Create a new buffer of symbolic variables"},
