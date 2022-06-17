@@ -487,7 +487,7 @@ PyObject* maat_Transaction(PyObject* self, PyObject* args){
         new env::EVM::Transaction(
             *as_value_object(py_origin).value,
             *as_value_object(py_sender).value,
-            bigint_to_number(256, py_recipient),
+            bigint_to_number(160, py_recipient),
             *as_value_object(py_value).value,
             data,
             *as_value_object(py_gas_limit).value

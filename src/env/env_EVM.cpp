@@ -355,7 +355,17 @@ Transaction::Transaction(
 ): origin(origin), sender(sender), recipient(recipient), value(value),
    data(data), gas_limit(gas_limit), type(type), ret_offset(ret_off),
    ret_len(ret_len)
-{}
+{
+    // Sanity checks
+    if (origin.size() != 160)
+        throw env_exception("EVM::Transaction: origin must be 160-bits");
+    if (sender.size() != 160)
+        throw env_exception("EVM::Transaction: sender must be 160-bits");
+    if (recipient.size != 160)
+        throw env_exception("EVM::Transaction: recipient must be 160-bits");
+    if (value.size() != 256)
+        throw env_exception("EVM::Transaction: value must be 256-bits");
+}
 
 size_t Transaction::data_size() const
 {
