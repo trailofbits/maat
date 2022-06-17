@@ -26,8 +26,8 @@ void LoaderEVM::load(
             "LoaderEVM::load() : Please specify the deployer address." 
             " Use the 'deployer' key in the environment"
         );
-    Value address(256, env.at("address"), 16);
-    Value deployer(256, env.at("deployer"), 16);
+    Value address(160, env.at("address"), 16);
+    Value deployer(160, env.at("deployer"), 16);
 
     // Read file content
     std::ifstream file(filename, std::ios::binary | std::ios::ate);

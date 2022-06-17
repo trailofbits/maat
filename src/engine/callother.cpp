@@ -706,7 +706,7 @@ void _evm_generic_call(
 
     // Get parameters on stack
     Value gas = contract->stack.get(0);
-    Value addr = contract->stack.get(1);
+    Value addr = extract(contract->stack.get(1), 159, 0);
     Value value = contract->stack.get(2);
     Value argsOff = contract->stack.get(3);
     Value argsLen = contract->stack.get(4);
@@ -767,7 +767,7 @@ void EVM_DELEGATECALL_handler(
 
     // Get parameters on stack
     Value gas = contract->stack.get(0);
-    Value addr = contract->stack.get(1);
+    Value addr = extract(contract->stack.get(1), 159, 0);
     Value argsOff = contract->stack.get(2);
     Value argsLen = contract->stack.get(3);
     Value retOff = contract->stack.get(4);

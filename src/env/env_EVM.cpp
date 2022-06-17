@@ -338,7 +338,7 @@ void TransactionResult::load(serial::Deserializer& d)
 }
 
 Transaction::Transaction()
-:   origin(256, 0), sender(256, 0), recipient(256, 0), 
+:   origin(160, 0), sender(160, 0), recipient(160, 0), 
     value(256, 0), gas_limit(256, 0), type(Type::NONE)
 {}
 

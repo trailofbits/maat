@@ -128,9 +128,9 @@ int execute_simple_transaction()
     
     // Send transaction
     env::EVM::get_contract_for_engine(engine)->transaction = env::EVM::Transaction(
-        Value(256, 1), // origin
-        Value(256, 1), // sender
-        Number(256, 2), // recipient
+        Value(160, 1), // origin
+        Value(160, 1), // sender
+        Number(160, 2), // recipient
         Value(256, 0), // value
         tx_data, // data
         Value(256, 46546516351) // gas_limit
@@ -267,9 +267,9 @@ int explore_sqrt()
 
     // Send transaction
     env::EVM::get_contract_for_engine(engine)->transaction = env::EVM::Transaction(
-        Value(256, 1), // origin
-        Value(256, 1), // sender
-        Number(256, 2), // recipient
+        Value(160, 1), // origin
+        Value(160, 1), // sender
+        Number(160, 2), // recipient
         Value(256, 0), // value
         tx_data, // data
         Value(256, 46546516351) // gas_limit
