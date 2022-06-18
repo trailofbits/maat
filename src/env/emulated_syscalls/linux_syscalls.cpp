@@ -879,8 +879,8 @@ FunctionCallback::return_t sys_linux_set_robust_list(
     const std::vector<Value>& args
 )
 {
-    // TODO: implement
-    return -ERR_ENOSYS;
+    // TODO: for now, pretend everything went fine
+    return 0; // Success
 }
 
 // int rseq(struct rseq *rseq, uint32_t rseq_len, int flags, uint32_t sig);
@@ -889,8 +889,8 @@ FunctionCallback::return_t sys_linux_rseq(
     const std::vector<Value>& args
 )
 {
-    // TODO: implement
-    return -ERR_ENOSYS;
+    // TODO: for now, pretend everything went fine
+    return 0; // Success
 }
 
 // int prlimit(pid_t pid, int resource, const struct rlimit *new_limit, struct rlimit *old_limit);
@@ -899,8 +899,18 @@ FunctionCallback::return_t sys_linux_prlimit64(
     const std::vector<Value>& args
 )
 {
-    // TODO: implement
-    return -ERR_ENOSYS;
+    addr_t old_limit = args[3].as_uint(*engine.vars);
+
+    // TODO: for now, no limits for whatever resource
+    if (old_limit) {
+        const auto RLIM_INFINITY = (1 << engine.arch->bits()) - 1;
+        const auto rlim_cur = RLIM_INFINITY;
+        const auto rlim_max = RLIM_INFINITY;
+        const auto rlim_t_size = engine.arch->octets();
+        engine.mem->write(old_limit, rlim_cur, rlim_t_size);
+        engine.mem->write(old_limit + rlim_t_size, rlim_max, rlim_t_size);
+    }
+    return 0; // Success
 }
 
 // ================= Build the syscall maps =================
