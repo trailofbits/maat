@@ -325,6 +325,7 @@ FunctionCallback::return_t sys_linux_statfs(
 )
 {
     // TODO: for now, the filesystem doesn't support this call
+    engine.log.warning("Emulated statfs(): not implemented yet");
     return -ERR_ENOSYS;
 }
 
@@ -858,6 +859,7 @@ FunctionCallback::return_t sys_linux_getgroups(
 )
 {
     // TODO: for now, no supplementary group IDs
+    engine.log.warning("Emulated getgroups(): not implemented yet");
     return 0; // Success
 }
 
@@ -867,7 +869,6 @@ FunctionCallback::return_t sys_linux_gettid(
     const std::vector<Value>& args
 )
 {
-    // TODO: implement
     // In a single-threaded process, the thread ID is equal to the process ID
     return sys_linux_getpid(engine, args);
 }
@@ -878,7 +879,8 @@ FunctionCallback::return_t sys_linux_set_tid_address(
     const std::vector<Value>& args
 )
 {
-    // TODO: implement
+    // TODO: for now, pretend everything went fine
+    engine.log.warning("Emulated set_tid_address(): faking success");
     // Always return the caller's thread ID
     return sys_linux_gettid(engine, args);
 }
@@ -890,6 +892,7 @@ FunctionCallback::return_t sys_linux_set_robust_list(
 )
 {
     // TODO: for now, pretend everything went fine
+    engine.log.warning("Emulated set_robust_list(): faking success");
     return 0; // Success
 }
 
@@ -900,6 +903,7 @@ FunctionCallback::return_t sys_linux_rseq(
 )
 {
     // TODO: for now, pretend everything went fine
+    engine.log.warning("Emulated rseq(): faking success");
     return 0; // Success
 }
 
@@ -910,6 +914,7 @@ FunctionCallback::return_t sys_linux_rt_sigaction(
 )
 {
     // TODO: for now, pretend everything went fine
+    engine.log.warning("Emulated rt_sigaction(): faking success");
     return 0; // Success
 }
 
@@ -920,6 +925,7 @@ FunctionCallback::return_t sys_linux_rt_sigprocmask(
 )
 {
     // TODO: for now, pretend everything went fine
+    engine.log.warning("Emulated rt_sigprocmask(): faking success");
     return 0; // Success
 }
 
@@ -950,6 +956,7 @@ FunctionCallback::return_t sys_linux_socket(
 )
 {
     // TODO: implement
+    engine.log.warning("Emulated socket(): not implemented yet");
     return -ERR_ENOSYS;
 }
 
