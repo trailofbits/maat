@@ -117,12 +117,16 @@ void X86_CPUID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
         * additional feature info in register EBX */
 
         // Feature information (ecx, edx)
+        cst_t f_fpu = 1 << 0;
         cst_t f_tsc = 1 << 4;
+        cst_t f_cx8 = 1 << 8;
         cst_t f_sysenter = 1 << 11;
+        cst_t f_cmov = 1 << 15;
         cst_t f_mmx = 1 << 23;
+        cst_t f_fxsr = 1 << 24;
         cst_t f_sse = 1 << 25;
         cst_t f_sse2 = 1 << 26;
-        cst_t edx_feature_info = f_tsc | f_sysenter | f_mmx | f_sse | f_sse2;
+        cst_t edx_feature_info = f_fpu | f_tsc | f_cx8 | f_sysenter | f_cmov | f_mmx | f_fxsr | f_sse | f_sse2;
         cst_t ecx_feature_info = 0;
         // Additional information (ebx)
         cst_t additional_info = 0;
