@@ -585,6 +585,13 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
             }
             break;
         }
+        case 0x3d: // RETURNDATASIZE
+        {
+            if (not contract->result_from_last_call.has_value())
+                throw callother_exception("RETURNDATASIZE: contract runtime doesn't have any transaction result set");
+            contract->stack.push(Value(256, contract->result_from_last_call->return_data_size()));
+            break;
+        }
         case 0x42: // TIMESTAMP
         {
             contract->stack.push(

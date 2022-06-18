@@ -518,6 +518,7 @@ void Contract::fork_from(const Contract& other)
     stack = Stack();
     transaction = std::nullopt;
     outgoing_transaction = std::nullopt;
+    result_from_last_call = std::nullopt;
 }
 
 serial::uid_t Contract::class_uid() const
@@ -528,14 +529,14 @@ serial::uid_t Contract::class_uid() const
 void Contract::dump(serial::Serializer& s) const
 {
     s   << address << stack << memory << storage << transaction
-        << outgoing_transaction;
+        << outgoing_transaction << result_from_last_call;
     s << bits(code_size);
 }
 
 void Contract::load(serial::Deserializer& d)
 {
     d   >> address >> stack >> memory >> storage >> transaction
-        >> outgoing_transaction;
+        >> outgoing_transaction >> result_from_last_call;
     d >> bits(code_size);
 }
 

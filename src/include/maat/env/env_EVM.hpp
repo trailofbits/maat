@@ -245,6 +245,8 @@ public:
     std::optional<Transaction> transaction; ///< Transaction being executed
     /// Internal transaction being sent to another contract
     std::optional<Transaction> outgoing_transaction;
+    /// Result from last message call emitted by this contract
+    std::optional<TransactionResult> result_from_last_call;
 public:
     unsigned int code_size; ///< Size of code currently executing
 public:

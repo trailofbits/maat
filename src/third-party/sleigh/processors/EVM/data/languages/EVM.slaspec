@@ -282,6 +282,15 @@ op_byte: b is op [b = op+0;] {export *[const]:1 b;}
     evm_env_info(op_byte);
 }
 
+:RETURNDATASIZE is op = 0x3d & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:RETURNDATACOPY is op = 0x3e & op_byte {
+    evm_env_info(op_byte);
+}
+
 # TODO: other 0x30's env operations
 
 :TIMESTAMP is op = 0x42 & op_byte {
