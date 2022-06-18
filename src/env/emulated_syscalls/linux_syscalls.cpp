@@ -788,7 +788,8 @@ FunctionCallback::return_t sys_linux_getrandom(
     size_t buflen = args[1].as_uint(*engine.vars);
     cst_t res;
 
-    // TODO: generate proper random bytes, if needed
+    // TODO: generate proper random bytes, if needed. Since the symbolic execution process
+    // must be deterministic and reproducible, we must use a deterministic PRNG.
     std::string rand(buflen, 'A'); 
     engine.mem->write_buffer(buf, (uint8_t*)rand.c_str(), buflen);
     res = buflen;
