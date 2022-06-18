@@ -318,6 +318,16 @@ FunctionCallback::return_t sys_linux_fstatat(
     return _stat(engine, file, statbuf);
 }
 
+// int statfs(const char *path, struct statfs *buf);
+FunctionCallback::return_t sys_linux_statfs(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, the filesystem doesn't support this call
+    return -ERR_ENOSYS;
+}
+
 // void *mmap(void *addr, size_t length, int prot, int flags,
 //            int fd, off_t offset);
 // TODO: make this generic to support the old_mmap() syscall on X86 
@@ -933,6 +943,16 @@ FunctionCallback::return_t sys_linux_prlimit64(
     return 0; // Success
 }
 
+// int socket(int domain, int type, int protocol);
+FunctionCallback::return_t sys_linux_socket(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: implement
+    return -ERR_ENOSYS;
+}
+
 // ================= Build the syscall maps =================
 syscall_func_map_t linux_x86_syscall_map()
 {
@@ -955,6 +975,7 @@ syscall_func_map_t linux_x86_syscall_map()
         {80, Function("sys_getgroups", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getgroups))},
         {85, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {91, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
+        {99, Function("sys_statfs", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_statfs))},
         {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {125, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {146, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
@@ -971,6 +992,7 @@ syscall_func_map_t linux_x86_syscall_map()
         {311, Function("sys_set_robust_list", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_set_robust_list))},
         {340, Function("sys_prlimit64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_prlimit64))},
         {355, Function("sys_getrandom", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getrandom))},
+        {359, Function("sys_socket", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_socket))},
     };
     return res;
 }
@@ -995,6 +1017,7 @@ syscall_func_map_t linux_x64_syscall_map()
         {20, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
         {21, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
         {39, Function("sys_getpid", FunctionCallback({}, sys_linux_getpid))},
+        {41, Function("sys_socket", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_socket))},
         {60, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
         {63, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {89, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
@@ -1003,6 +1026,7 @@ syscall_func_map_t linux_x64_syscall_map()
         {107, Function("sys_geteuid", FunctionCallback({}, sys_linux_geteuid))},
         {108, Function("sys_getegid", FunctionCallback({}, sys_linux_getegid))},
         {115, Function("sys_getgroups", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getgroups))},
+        {137, Function("sys_statfs", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_statfs))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
         {186, Function("sys_gettid", FunctionCallback({}, sys_linux_gettid))},
         {218, Function("sys_set_tid_address", FunctionCallback({env::abi::auto_argsize}, sys_linux_set_tid_address))},
