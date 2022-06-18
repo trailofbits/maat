@@ -15,6 +15,8 @@ void LoaderEVM::load(
     const std::vector<CmdlineArg>& args,
     const environ_t& env
 ){
+    std::vector<uint8_t> contents; // raw init bytecode
+
     // Parse deployment info
     if (env.find("address") == env.end())
         throw loader_exception(
@@ -29,25 +31,29 @@ void LoaderEVM::load(
     Value address(160, env.at("address"), 16);
     Value deployer(160, env.at("deployer"), 16);
 
-    // Read file content
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-    std::vector<char> buffer(size); // ASCII encoded
-    std::vector<uint8_t> contents; // raw bytes
-    file.read(buffer.data(), size);
+    // If no file was specified, we don't load the bytecode from a file,
+    // and assume it is included in the args array !
+    if (not filename.empty())
+    {
+        // Read file content
+        std::ifstream file(filename, std::ios::binary | std::ios::ate);
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+        std::vector<char> buffer(size); // ASCII encoded
+        file.read(buffer.data(), size);
 
-    if (not file.good())
-    {
-        throw env_exception(
-            Fmt() << "Error reading contents of '" << filename << "'"
-            >> Fmt::to_str
-        );
-    }
-    else
-    {
-        // Convert ASCII encoded bytes to real bytes
-        contents = env::EVM::hex_string_to_bytes(buffer);
+        if (not file.good())
+        {
+            throw env_exception(
+                Fmt() << "Error reading contents of '" << filename << "'"
+                >> Fmt::to_str
+            );
+        }
+        else
+        {
+            // Convert ASCII encoded bytes to real bytes
+            contents = env::EVM::hex_string_to_bytes(buffer);
+        }
     }
 
     // Create contract object
@@ -87,8 +93,16 @@ void LoaderEVM::load(
         Value(256, 123456) // gas_limit (TODO: what value should we use here??)
     );
 
+    // TODO(boyan): allow users to NOT run init bytecode thanks to a key in 
+    // the envp
+
     // Execute init bytecode
     engine->run();
+    // Check that the transaction returned properly
+    if (not contract->transaction->result.has_value())
+    {
+        throw loader_exception("LoaderEVM::load(): init code didn't return any result");
+    }
 
     // Setup proper runtime byte-code
     const std::vector<Value>& return_data = contract->transaction->result->return_data();

@@ -799,8 +799,8 @@ void EVM_CREATE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
         Value(256, 0), // no gas
         tx_type
     );
-    // Tell the engine to stop because execution must be transfered to
-    // another contract
+
+    // Tell the engine to stop because we need to deploy the new contract
     engine._stop_after_inst(info::Stop::NONE);
 }
 
