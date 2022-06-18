@@ -311,8 +311,16 @@ PyObject* PyEVMStorage_FromStorage(env::EVM::Storage*);
 
 typedef struct{
     PyObject_HEAD
+    maat::env::EVM::Stack* stack;
+} EVMStack_Object;
+PyObject* PyEVMStack_FromStack(env::EVM::Stack*);
+#define as_stack_object(x)  (*((EVMStack_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
     maat::env::EVM::Contract* contract;
     PyObject* storage;
+    PyObject* stack;
 } EVMContract_Object;
 PyObject* get_EVMContract_Type();
 PyObject* PyEVMContract_FromContract(env::EVM::Contract*);

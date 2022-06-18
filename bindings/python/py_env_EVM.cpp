@@ -93,6 +93,98 @@ PyObject* PyEVMStorage_FromStorage(env::EVM::Storage* s)
 }
 
 
+// =============== Stack =================
+static void EVMStack_dealloc(PyObject* self){
+    as_stack_object(self).stack = nullptr;
+    Py_TYPE(self)->tp_free((PyObject *)self);
+};
+
+static PyObject* EVMStack_str(PyObject* self){
+    std::stringstream res;
+    res << *as_stack_object(self).stack;
+    return PyUnicode_FromString(res.str().c_str());
+}
+
+static int EVMStack_print(PyObject* self, void * io, int s){
+    std::cout << *as_stack_object(self).stack;
+    return 0;
+}
+
+static PyObject* EVMStack_repr(PyObject* self) {
+    return EVMStack_str(self);
+}
+
+static PyObject* Stack_push(PyObject* self, PyObject* args)
+{
+    Value_Object* value;
+
+    if (not PyArg_ParseTuple(args, "O!", get_Value_Type(), &value))
+        return NULL;
+
+    as_stack_object(self).stack->push(*(value->value));
+
+    Py_RETURN_NONE;
+};
+
+static PyMethodDef Stack_methods[] = {
+    {"push", (PyCFunction)Stack_push, METH_VARARGS, "Push a 256-bits value on the stack"},
+    {NULL, NULL, 0, NULL}
+};
+
+PyTypeObject EVMStack_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "EVMStack",                                   /* tp_name */
+    sizeof(EVMStack_Object),                      /* tp_basicsize */
+    0,                                        /* tp_itemsize */
+    (destructor)EVMStack_dealloc,            /* tp_dealloc */
+    (printfunc)EVMStack_print,               /* tp_print */
+    0,                                        /* tp_getattr */
+    0,                                        /* tp_setattr */
+    0,                                        /* tp_reserved */
+    EVMStack_repr,                           /* tp_repr */
+    0,                                        /* tp_as_number */
+    0,                                        /* tp_as_sequence */
+    0,                                        /* tp_as_mapping */
+    0,                                        /* tp_hash  */
+    0,                                        /* tp_call */
+    EVMStack_str,                            /* tp_str */
+    0,                                        /* tp_getattro */
+    0,                                        /* tp_setattro */
+    0,                                        /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
+    "EVM Stack",                     /* tp_doc */
+    0,                                        /* tp_traverse */
+    0,                                        /* tp_clear */
+    0,                                        /* tp_richcompare */
+    0,                                        /* tp_weaklistoffset */
+    0,                                        /* tp_iter */
+    0,                                        /* tp_iternext */
+    Stack_methods,                        /* tp_methods */
+    0,                                        /* tp_members */
+    0,                              /* tp_getset */
+    0,                                        /* tp_base */
+    0,                                        /* tp_dict */
+    0,                                        /* tp_descr_get */
+    0,                                        /* tp_descr_set */
+    0,                                        /* tp_dictoffset */
+    0,                                        /* tp_init */
+    0,                                        /* tp_alloc */
+    0,                                        /* tp_new */
+};
+
+PyObject* PyEVMStack_FromStack(env::EVM::Stack* s)
+{
+    EVMStack_Object* object;
+
+    // Create object
+    PyType_Ready(&EVMStack_Type);
+    object = PyObject_New(EVMStack_Object, &EVMStack_Type);
+    if( object != nullptr ){
+        object->stack = s;
+    }
+    return (PyObject*)object;
+}
+
 // =============== Storage slots iterator ===================
 static void StorageIterator_dealloc(PyObject* self)
 {
@@ -188,7 +280,8 @@ PyObject* PyStorageIterator(
 // =============== Contract =================
 static void EVMContract_dealloc(PyObject* self){
     as_contract_object(self).contract = nullptr;
-    Py_XDECREF(as_storage_object(self).storage); as_storage_object(self).storage = nullptr;
+    Py_XDECREF(as_contract_object(self).storage); as_contract_object(self).storage = nullptr;
+    Py_XDECREF(as_contract_object(self).stack); as_contract_object(self).stack = nullptr;
     Py_TYPE(self)->tp_free((PyObject *)self);
 };
 
@@ -253,6 +346,7 @@ static PyGetSetDef EVMContract_getset[] = {
 
 static PyMemberDef EVMContract_members[] = {
     {"storage", T_OBJECT_EX, offsetof(EVMContract_Object, storage), READONLY, "Contract storage"},
+    {"stack", T_OBJECT_EX, offsetof(EVMContract_Object, stack), READONLY, "Contract stack"},
     {NULL}
 };
 
@@ -307,6 +401,7 @@ PyObject* PyEVMContract_FromContract(env::EVM::Contract* contract)
     if( object != nullptr ){
         object->contract = contract;
         object->storage = PyEVMStorage_FromStorage(contract->storage.get());
+        object->stack = PyEVMStack_FromStack(&(contract->stack));
     }
     return (PyObject*)object;
 }
