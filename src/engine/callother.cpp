@@ -761,7 +761,7 @@ void EVM_CALLCODE_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
 
 void EVM_CREATE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    bool is_create2 = (bool)pinst.in0.value().as_uint();
+    bool is_create2 = (bool)pinst.in1.value().as_uint();
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
     _check_transaction_exists(contract);
 
