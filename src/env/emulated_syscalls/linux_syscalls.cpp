@@ -893,6 +893,26 @@ FunctionCallback::return_t sys_linux_rseq(
     return 0; // Success
 }
 
+// int rt_sigaction(int signum, const struct sigaction *restrict act, struct sigaction *restrict oldact);
+FunctionCallback::return_t sys_linux_rt_sigaction(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, pretend everything went fine
+    return 0; // Success
+}
+
+// int syscall(SYS_rt_sigprocmask, int how, const kernel_sigset_t *set, kernel_sigset_t *oldset, size_t sigsetsize);
+FunctionCallback::return_t sys_linux_rt_sigprocmask(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, pretend everything went fine
+    return 0; // Success
+}
+
 // int prlimit(pid_t pid, int resource, const struct rlimit *new_limit, struct rlimit *old_limit);
 FunctionCallback::return_t sys_linux_prlimit64(
     MaatEngine& engine,
@@ -938,6 +958,8 @@ syscall_func_map_t linux_x86_syscall_map()
         {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {125, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {146, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
+        {174, Function("sys_rt_sigaction", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_rt_sigaction))},
+        {175, Function("sys_rt_sigprocmask", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_rt_sigprocmask))},
         {180, Function("sys_pread", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
         {192, Function("sys_mmap2", FunctionCallback({env::abi::auto_argsize, 4, 4, 4, 4, 4}, sys_linux_mmap2))},
         {195, Function("sys_stat64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
@@ -967,6 +989,8 @@ syscall_func_map_t linux_x64_syscall_map()
         {11, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
         {10, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {12, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {13, Function("sys_rt_sigaction", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_rt_sigaction))},
+        {14, Function("sys_rt_sigprocmask", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_rt_sigprocmask))},
         {17, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
         {20, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
         {21, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
