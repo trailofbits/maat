@@ -237,6 +237,30 @@ FunctionCallback::return_t sys_linux_stat(
     return _stat(engine, file, statbuf);
 }
 
+// off_t lseek(int fd, off_t offset, int whence);
+FunctionCallback::return_t sys_linux_lseek(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    int fd = args[0].as_uint(*engine.vars);
+    offset_t offset = args[1].as_uint(*engine.vars);
+    int whence = args[2].as_uint(*engine.vars);
+    cst_t res = -1;
+
+    if (whence == SEEK_SET) {
+        // Get file accessor and set file offset
+        env::FileAccessor& fa = engine.env->fs.get_fa_by_handle(fd);
+        fa.seek(offset);
+        res = offset;
+    }
+    else {
+        // TODO: implement
+        engine.log.warning("Emulated lseek(): not implemented yet");
+    }
+    return res;
+}
+
 // int close(int fd);
 FunctionCallback::return_t sys_linux_close(
     MaatEngine& engine,
@@ -970,6 +994,7 @@ syscall_func_map_t linux_x86_syscall_map()
         {5, Function("sys_open", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_open))},
         {6, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {18, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
+        {19, Function("sys_lseek", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_lseek))},
         {20, Function("sys_getpid", FunctionCallback({}, sys_linux_getpid))},
         {24, Function("sys_getuid", FunctionCallback({}, sys_linux_getuid))},
         {28, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
@@ -1014,6 +1039,7 @@ syscall_func_map_t linux_x64_syscall_map()
         {3, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {4, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {5, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
+        {8, Function("sys_lseek", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_lseek))},
         {9, Function("sys_mmap", FunctionCallback({env::abi::auto_argsize, 4, 4, 4, 4, 4}, sys_linux_mmap))},
         {11, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
         {10, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},

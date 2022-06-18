@@ -372,6 +372,11 @@ unsigned int FileAccessor::read_buffer(
     return physical_file->read_buffer(buffer, state.read_ptr, nb_elems, elem_size);
 }
 
+void FileAccessor::seek(addr_t offset){
+    state.read_ptr = offset;
+    state.write_ptr = offset;
+}
+
 filehandle_t FileAccessor::handle() const
 {
     return _handle;

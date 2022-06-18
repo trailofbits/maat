@@ -55,6 +55,8 @@ public:
     unsigned int write_buffer(uint8_t* buffer, int len);
     /// Read abstract buffer from the file. Return the number of bytes read
     unsigned int read_buffer(std::vector<Value>& buffer, unsigned int nb_elems, unsigned int elem_size);
+    /// Reposition read/write offsets in file
+    void seek(addr_t offset);
 public:
     filehandle_t handle() const;
     const std::string& filename() const;
