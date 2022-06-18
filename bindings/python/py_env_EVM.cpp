@@ -216,6 +216,29 @@ static int EVMContract_set_transaction(PyObject* self, PyObject* tx, void* closu
     return 0;
 }
 
+static PyObject* EVMContract_get_out_transaction(PyObject* self, void* closure)
+{
+    if (not as_contract_object(self).contract->outgoing_transaction.has_value())
+        Py_RETURN_NONE;
+    else
+        return PyEVMTx_FromTx(
+            &(*as_contract_object(self).contract->outgoing_transaction),
+            true
+        );
+}
+
+static int EVMContract_set_out_transaction(PyObject* self, PyObject* tx, void* closure){
+    if (tx == Py_None)
+        as_contract_object(self).contract->outgoing_transaction = std::nullopt;
+    else if (PyObject_TypeCheck(tx, (PyTypeObject*)get_EVMTransaction_Type()))
+        as_contract_object(self).contract->outgoing_transaction = *as_tx_object(tx).transaction;
+    else{
+        PyErr_SetString(PyExc_TypeError, "Expected EVM transaction");
+        return 1;
+    }
+    return 0;
+}
+
 static PyObject* EVMContract_get_address(PyObject* self, void* closure){
     return PyValue_FromValue(as_contract_object(self).contract->address);
 }
@@ -223,6 +246,7 @@ static PyObject* EVMContract_get_address(PyObject* self, void* closure){
 
 static PyGetSetDef EVMContract_getset[] = {
     {"transaction", EVMContract_get_transaction, EVMContract_set_transaction, "Transaction being executed", NULL},
+    {"outgoing_transaction", EVMContract_get_out_transaction, EVMContract_set_out_transaction, "Transaction being sent", NULL},
     {"address", EVMContract_get_address, NULL, "Address of the contract", NULL},
     {NULL}
 };
