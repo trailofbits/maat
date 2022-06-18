@@ -19,7 +19,7 @@ public:
     std::string binary_path; ///< Path to the executable in the virtual file system
     bool terminated; ///< 'True' if the process exited or was killed
 public:
-    ProcessInfo(): pid(0), ruid(500), euid(500), pwd(""), binary_path(""), terminated(false){}
+    ProcessInfo(): pid(0), ruid(0), euid(0), pwd(""), binary_path(""), terminated(false){}
     ProcessInfo(const ProcessInfo& other) = default;
     virtual ~ProcessInfo() = default;
 
