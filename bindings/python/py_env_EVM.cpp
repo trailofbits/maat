@@ -337,6 +337,11 @@ static PyObject* EVMTransaction_get_result(PyObject* self, void* closure)
         );
 }
 
+static PyObject* EVMTransaction_get_sender(PyObject* self, void* closure)
+{
+    return PyValue_FromValue(as_tx_object(self).transaction->sender);
+}
+
 static PyObject* EVMTransaction_get_recipient(PyObject* self, void* closure)
 {
     return number_to_bigint(as_tx_object(self).transaction->recipient);
@@ -344,7 +349,7 @@ static PyObject* EVMTransaction_get_recipient(PyObject* self, void* closure)
 
 static PyObject* EVMTransaction_get_type(PyObject* self, void* closure)
 {
-    return PyLong_FromUnsignedLong((uint8_t)as_tx_object(self).transaction->type);
+    return PyLong_FromUnsignedLong((int)as_tx_object(self).transaction->type);
 }
 
 static PyObject* EVMTransaction_get_ret_offset(PyObject* self, void* closure)
@@ -402,6 +407,7 @@ static int EVMTransaction_set_data(PyObject* self, PyObject* py_data, void* clos
 }
 
 static PyGetSetDef EVMTransaction_getset[] = {
+    {"sender", EVMTransaction_get_sender, NULL, "Sender of the transaction", NULL},
     {"result", EVMTransaction_get_result, NULL, "Result of the transaction", NULL},
     {"data", EVMTransaction_get_data, EVMTransaction_set_data, "Transaction data", NULL},
     {"recipient", EVMTransaction_get_recipient, NULL, "Transaction recipient", NULL},
