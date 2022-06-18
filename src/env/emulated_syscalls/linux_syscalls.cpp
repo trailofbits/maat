@@ -823,6 +823,34 @@ FunctionCallback::return_t sys_linux_geteuid(
     return engine.process->euid;
 }
 
+// gid_t getgid(void);
+FunctionCallback::return_t sys_linux_getgid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->rgid;
+}
+
+// gid_t getegid(void);
+FunctionCallback::return_t sys_linux_getegid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->egid;
+}
+
+// int getgroups(int size, gid_t list[]);
+FunctionCallback::return_t sys_linux_getgroups(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, no supplementary group IDs
+    return 0; // Success
+}
+
 // pid_t gettid(void);
 FunctionCallback::return_t sys_linux_gettid(
     MaatEngine& engine,
@@ -890,8 +918,11 @@ syscall_func_map_t linux_x86_syscall_map()
         {28, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
         {33, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
         {45, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {47, Function("sys_getgid", FunctionCallback({}, sys_linux_getgid))},
         {49, Function("sys_geteuid", FunctionCallback({}, sys_linux_geteuid))},
+        {50, Function("sys_getegid", FunctionCallback({}, sys_linux_getegid))},
         {56, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
+        {80, Function("sys_getgroups", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getgroups))},
         {85, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {91, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
         {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
@@ -934,7 +965,10 @@ syscall_func_map_t linux_x64_syscall_map()
         {63, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {89, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {102, Function("sys_getuid", FunctionCallback({}, sys_linux_getuid))},
+        {104, Function("sys_getgid", FunctionCallback({}, sys_linux_getgid))},
         {107, Function("sys_geteuid", FunctionCallback({}, sys_linux_geteuid))},
+        {108, Function("sys_getegid", FunctionCallback({}, sys_linux_getegid))},
+        {115, Function("sys_getgroups", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getgroups))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
         {186, Function("sys_gettid", FunctionCallback({}, sys_linux_gettid))},
         {218, Function("sys_set_tid_address", FunctionCallback({env::abi::auto_argsize}, sys_linux_set_tid_address))},
