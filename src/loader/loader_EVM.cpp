@@ -30,6 +30,7 @@ void LoaderEVM::load(
         );
     Value address(160, env.at("address"), 16);
     Value deployer(160, env.at("deployer"), 16);
+    bool run_init_bytecode = (env.find("no_run_init_bytecode") == env.end());
 
     // If no file was specified, we don't load the bytecode from a file,
     // and assume it is included in the args array !
@@ -93,33 +94,35 @@ void LoaderEVM::load(
         Value(256, 123456) // gas_limit (TODO: what value should we use here??)
     );
 
-    // TODO(boyan): allow users to NOT run init bytecode thanks to a key in 
-    // the envp
-
-    // Execute init bytecode
-    engine->run();
-    // Check that the transaction returned properly
-    if (not contract->transaction->result.has_value())
+    // Users can prevent Maat from automatically running the init bytecode by
+    // specifying "no_run_init_bytecode" in the envp parameter
+    if (run_init_bytecode)
     {
-        throw loader_exception("LoaderEVM::load(): init code didn't return any result");
+        // Execute init bytecode
+        engine->run();
+        // Check that the transaction returned properly
+        if (not contract->transaction->result.has_value())
+        {
+            throw loader_exception("LoaderEVM::load(): init code didn't return any result");
+        }
+
+        // Setup proper runtime byte-code
+        const std::vector<Value>& return_data = contract->transaction->result->return_data();
+        // Erase previous code
+        engine->mem->write_buffer(0x0, std::vector<uint8_t>(contents.size(), 0x0).data(), contents.size());
+        // Write new one
+        env::EVM::_set_EVM_code(*engine, return_data);
+
+        // Reset transaction
+        contract->transaction = std::nullopt;
+
+        // Reset memory
+        // TODO(boyan)
+
+        // Reset PC at zero
+        engine->cpu.ctx().set(EVM::PC, 0x0);
+        engine->process->terminated = false;
     }
-
-    // Setup proper runtime byte-code
-    const std::vector<Value>& return_data = contract->transaction->result->return_data();
-    // Erase previous code
-    engine->mem->write_buffer(0x0, std::vector<uint8_t>(contents.size(), 0x0).data(), contents.size());
-    // Write new one
-    env::EVM::_set_EVM_code(*engine, return_data);
-
-    // Reset transaction
-    contract->transaction = std::nullopt;
-
-    // Reset memory
-    // TODO(boyan)
-
-    // Reset PC at zero
-    engine->cpu.ctx().set(EVM::PC, 0x0);
-    engine->process->terminated = false;
 }
 
 } // namespace loader
