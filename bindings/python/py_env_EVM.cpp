@@ -781,6 +781,41 @@ PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args)
     Py_RETURN_NONE;
 }
 
+PyObject* maat_set_evm_bytecode(PyObject* mod, PyObject* args)
+{
+    PyObject *engine, *bytecode;
+    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &engine, &PyList_Type, &bytecode))
+    {
+        return NULL;
+    }
+
+    std::vector<Value> data;
+    // TODO(boyan): factorize this with other code that translates a Value list
+    // from python to native
+    for (int i = 0; i < PyList_Size(bytecode); i++)
+    {
+        PyObject* val = PyList_GetItem(bytecode, i);
+        if (!PyObject_TypeCheck(val, (PyTypeObject*)get_Value_Type()))
+        {
+            return PyErr_Format(PyExc_TypeError, "'bytecode' must be a list of 'Value'");
+        }
+        data.push_back(*as_value_object(val).value);
+    }
+
+    try
+    {
+        env::EVM::_set_EVM_code(
+            *as_engine_object(engine).engine,
+            data
+        );
+    }
+    catch(maat::env_exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+    Py_RETURN_NONE;
+}
+
 PyObject* maat_increment_block_number(PyObject* mod, PyObject* args)
 {
     PyObject* engine;

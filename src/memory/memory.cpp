@@ -2979,6 +2979,11 @@ int MemEngine::uid() const
     return _uid;
 }
 
+Endian MemEngine::endianness() const
+{
+    return _endianness;
+}
+
 addr_t reserved_memory(MemEngine& mem)
 {
     auto seg = mem.get_segment_by_name("Reserved");

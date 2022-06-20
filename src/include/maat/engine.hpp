@@ -118,9 +118,9 @@ public:
         the new engine. If a shared attribute are essentially pointers so
         a modification in one of the engines will also modify the other.
         This parameter accepts the following keys:
-        - <b>vars</b>: shared the concolic variables context
-        - <b>mem</b>: shared the memory engine
-        - <b>process</b>: shared the same process information
+        - <b>vars</b>: share the concolic variables context
+        - <b>mem</b>: share the memory engine
+        - <b>process</b>: share the same process information
 
         Note: environment is always shared.
     */

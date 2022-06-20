@@ -530,6 +530,9 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
     switch(evm_inst)
     {
+        // TODO(boyan): most of these instructions could push the value on
+        // the stack directly to avoid executing an additional stack_push
+        // IR instruction to push the result
         case 0x32: // ORIGIN
             _check_transaction_exists(contract);
             pinst.res = zext(256, contract->transaction->origin);
@@ -605,7 +608,7 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
         {
             if (not contract->result_from_last_call.has_value())
                 throw callother_exception("RETURNDATASIZE: contract runtime doesn't have any transaction result set");
-            contract->stack.push(Value(256, contract->result_from_last_call->return_data_size()));
+            pinst.res = Value(256, contract->result_from_last_call->return_data_size());
             break;
         }
         case 0x42: // TIMESTAMP

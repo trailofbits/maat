@@ -350,12 +350,15 @@ op_byte: b is op [b = op+0;] {export *[const]:1 b;}
 
 :JUMP is op = 0x56 {
     local target:32 = stack_pop();
-    goto [target];
+    # Maat uses a 32-bits EVM PC
+    goto [target[0,32]];
 }
 
 jump_dest: is epsilon {
     target:32 = stack_pop();
-    export target;
+    # Maat uses a 32-bits EVM PC
+    local a:4 = target[0,32];
+    export a;
 }
 
 :JUMPI jump_dest is op = 0x57 & jump_dest {

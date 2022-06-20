@@ -99,12 +99,14 @@ MaatEngine::MaatEngine(
     if (share.count("vars"))
         vars = other.vars;
     else
-        vars = std::make_shared<VarContext>(*other.vars);
+        vars = std::make_shared<VarContext>();
     // memory
     if (share.count("mem"))
         mem = other.mem;
     else
-        mem = std::make_shared<MemEngine>(*other.mem);
+        mem = std::make_shared<MemEngine>(
+            vars, arch->bits(), snapshots, other.mem->endianness()
+        );
     cpu = other.cpu;
     // hooks
     if (duplicate.count("hooks"))
@@ -1019,8 +1021,9 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
 {
     ir::IRMap& ir_map = ir::get_ir_map(mem->uid());
     if (ir_map.contains_inst_at(addr))
+    {
         return ir_map.get_inst_at(addr);
-
+    }
     // The code hasn't been lifted yet so we disassemble it
     try
     {

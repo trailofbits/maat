@@ -112,7 +112,6 @@ const std::string& Lifter::get_inst_asm(addr_t addr, code_t inst)
     return sleigh_get_asm(sleigh_ctx, addr, inst);
 }
 
-
 serial::uid_t Lifter::class_uid() const
 {
     return serial::ClassId::LIFTER;

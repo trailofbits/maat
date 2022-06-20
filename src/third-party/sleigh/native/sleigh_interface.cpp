@@ -365,8 +365,10 @@ public:
 
     const std::string& get_asm(uintb address, const unsigned char* bytes)
     {
-        if (asm_cache.contains(address))
-            return asm_cache.get_asm(address);
+        // TODO: force relifting everytime until we support clearing the
+        // asm cache on X memory overwrites
+        // if (asm_cache.contains(address))
+        //     return asm_cache.get_asm(address);
 
         // Get asm
         m_loader.setData(address, bytes, 100); // TODO, 100 is arbitrary here

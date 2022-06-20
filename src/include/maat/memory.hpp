@@ -658,6 +658,9 @@ public:
     void _clear_pending_x_mem_overwrites();
 
 public:
+    Endian endianness() const;
+
+public:
     int uid() const;
     virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
