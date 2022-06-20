@@ -622,6 +622,12 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
             );
             break;
         }
+        case 0x5a: // GAS
+        {
+            _check_transaction_exists(contract);
+            pinst.res =contract->transaction->gas_limit - contract->consumed_gas;
+            break;
+        }
         default:
             throw callother_exception(
                 Fmt() << "ENV_INFO: instruction not implemented for 0x"
@@ -760,7 +766,8 @@ void _evm_generic_call(
         addr.as_number(),
         value,
         tx_data,
-        gas,
+        contract->transaction->gas_price,
+        gas, // gas limit is remaining gas
         tx_type,
         retOff,
         retLen
@@ -820,6 +827,7 @@ void EVM_CREATE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
         value,
         tx_data,
         Value(256, 0), // no gas
+        Value(256, 0), // null gas limit
         tx_type
     );
 
@@ -862,6 +870,7 @@ void EVM_DELEGATECALL_handler(
         addr.as_number(),
         contract->transaction->value, // same value
         tx_data,
+        contract->transaction->gas_price,
         gas,
         env::EVM::Transaction::Type::DELEGATECALL,
         retOff,

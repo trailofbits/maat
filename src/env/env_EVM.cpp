@@ -340,7 +340,7 @@ void TransactionResult::load(serial::Deserializer& d)
 
 Transaction::Transaction()
 :   origin(160, 0), sender(160, 0), recipient(160, 0), 
-    value(256, 0), gas_limit(256, 0), type(Type::NONE)
+    value(256, 0), gas_price(256, 0), gas_limit(256, 0), type(Type::NONE)
 {}
 
 Transaction::Transaction(
@@ -349,13 +349,14 @@ Transaction::Transaction(
     Number recipient,
     Value value,
     std::vector<Value> data,
+    Value gas_price,
     Value gas_limit,
     Type type,
     std::optional<Value> ret_off,
     std::optional<Value> ret_len
 ): origin(origin), sender(sender), recipient(recipient), value(value),
-   data(data), gas_limit(gas_limit), type(type), ret_offset(ret_off),
-   ret_len(ret_len)
+   data(data), gas_price(gas_price), gas_limit(gas_limit), type(type),
+   ret_offset(ret_off), ret_len(ret_len)
 {
     // Sanity checks
     if (origin.size() != 160)
@@ -489,25 +490,26 @@ serial::uid_t Transaction::class_uid() const
 void Transaction::dump(serial::Serializer& s) const
 {
     s   << origin << sender << recipient << value << data << gas_limit << result
-        << bits(type) << ret_offset << ret_len;
+        << bits(type) << ret_offset << ret_len << gas_price;
 }
 
 void Transaction::load(serial::Deserializer& d)
 {
     d   >> origin >> sender >> recipient >> value >> data >> gas_limit >> result
-        >> bits(type) >> ret_offset >> ret_len;
+        >> bits(type) >> ret_offset >> ret_len  >> gas_price;
 }
 
 
 Contract::Contract()
-: memory(nullptr), storage(nullptr)
+: memory(nullptr), storage(nullptr), consumed_gas(256, 0)
 {}
 
 Contract::Contract(const MaatEngine& engine, Value addr)
 :   memory(engine.vars), 
     address(addr),
     storage(std::make_shared<Storage>(engine.vars)),
-    code_size(0)
+    code_size(0),
+    consumed_gas(256, 0)
 {}
 
 void Contract::fork_from(const Contract& other)
@@ -520,6 +522,7 @@ void Contract::fork_from(const Contract& other)
     transaction = std::nullopt;
     outgoing_transaction = std::nullopt;
     result_from_last_call = std::nullopt;
+    consumed_gas = Value(256, 0);
 }
 
 serial::uid_t Contract::class_uid() const
@@ -530,14 +533,14 @@ serial::uid_t Contract::class_uid() const
 void Contract::dump(serial::Serializer& s) const
 {
     s   << address << stack << memory << storage << transaction
-        << outgoing_transaction << result_from_last_call;
+        << outgoing_transaction << result_from_last_call << consumed_gas;
     s << bits(code_size);
 }
 
 void Contract::load(serial::Deserializer& d)
 {
     d   >> address >> stack >> memory >> storage >> transaction
-        >> outgoing_transaction >> result_from_last_call;
+        >> outgoing_transaction >> result_from_last_call >> consumed_gas;
     d >> bits(code_size);
 }
 

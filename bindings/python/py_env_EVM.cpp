@@ -604,15 +604,17 @@ PyObject* maat_Transaction(PyObject* self, PyObject* args){
                 *py_value,
                 *py_recipient,
                 *py_data,
+                *py_gas_price,
                 *py_gas_limit;
     std::vector<Value> data;
 
-    if( !PyArg_ParseTuple(args, "O!O!O!O!OO!",
+    if( !PyArg_ParseTuple(args, "O!O!O!O!OO!O!",
         get_Value_Type(), &py_origin,
         get_Value_Type(), &py_sender,
         &PyLong_Type, &py_recipient,
         get_Value_Type(), &py_value,
         &py_data,
+        get_Value_Type(), &py_gas_price,
         get_Value_Type(), &py_gas_limit)
     ){
         return NULL;
@@ -640,6 +642,7 @@ PyObject* maat_Transaction(PyObject* self, PyObject* args){
             bigint_to_number(160, py_recipient),
             *as_value_object(py_value).value,
             data,
+            *as_value_object(py_gas_price).value,
             *as_value_object(py_gas_limit).value
         ),
         false // not ref, this object is owned by the python object

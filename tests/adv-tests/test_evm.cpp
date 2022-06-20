@@ -133,6 +133,7 @@ int execute_simple_transaction()
         Number(160, 2), // recipient
         Value(256, 0), // value
         tx_data, // data
+        Value(256, 50), // gas_price
         Value(256, 46546516351) // gas_limit
     );
 
@@ -272,6 +273,7 @@ int explore_sqrt()
         Number(160, 2), // recipient
         Value(256, 0), // value
         tx_data, // data
+        Value(256, 50), // gas_price
         Value(256, 46546516351) // gas_limit
     );
 

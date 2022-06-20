@@ -91,7 +91,8 @@ void LoaderEVM::load(
         address.as_number(), // recipient
         Value(256, 0), // value
         {}, // data (for deployment, args are appended after the bytecode)
-        Value(256, 123456) // gas_limit (TODO: what value should we use here??)
+        Value(256, 50), // gas_price
+        Value(256, 123456) // gas_limit
     );
 
     // Users can prevent Maat from automatically running the init bytecode by

@@ -373,7 +373,10 @@ jump_dest: is epsilon {
     stack_push(res);
 }
 
-# TODO: GAS operation
+:GAS is op = 0x5a & op_byte {
+    local res:32 = evm_env_info(op_byte);
+    stack_push(res);
+}
 
 :JUMPDEST is op = 0x5b {
     # No effects

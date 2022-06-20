@@ -204,6 +204,7 @@ public:
     Number recipient; ///< Recipient of the transaction
     Value value; ///< Number of ether to transfer from sender to recipient
     std::vector<Value> data; ///< Additionnal transaction data
+    Value gas_price; ///< Price in GWEI to pay per unit of gas consumed
     Value gas_limit; ///< Maximum amount of gas that can be consumed by the transaction
     std::optional<TransactionResult> result; ///< Result of the transaction
     std::optional<Value> ret_offset; // Return data offset in calling contract
@@ -216,6 +217,7 @@ public:
         Number recipient,
         Value value,
         std::vector<Value> data,
+        Value gas_price,
         Value gas_limit,
         Type type = Type::EOA,
         std::optional<Value> ret_offset = std::nullopt,
@@ -247,6 +249,8 @@ public:
     std::optional<Transaction> outgoing_transaction;
     /// Result from last message call emitted by this contract
     std::optional<TransactionResult> result_from_last_call;
+    /// Total amount of gas already consumed by the contract
+    Value consumed_gas;
 public:
     unsigned int code_size; ///< Size of code currently executing
 public:
