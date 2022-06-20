@@ -62,6 +62,7 @@ enum class Id
     EVM_CALLCODE,
     EVM_DELEGATECALL,
     EVM_CREATE,
+    EVM_SELFDESTRUCT,
     UNSUPPORTED
 };
 

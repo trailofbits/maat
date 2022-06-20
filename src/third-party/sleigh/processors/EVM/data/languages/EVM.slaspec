@@ -40,6 +40,8 @@ define pcodeop evm_call; # CALL
 define pcodeop evm_callcode; # CALLCODE
 define pcodeop evm_delegatecall; # DELEGATECALL
 define pcodeop evm_create; # CREATE
+define pcodeop evm_selfdestruct; # SELFDESTRUCT
+
 
 # Opcode token: EVM opcodes take 1 byte
 define token opcode(8)
@@ -279,6 +281,15 @@ op_byte: b is op [b = op+0;] {export *[const]:1 b;}
 }
 
 :CODECOPY is op = 0x39 & op_byte {
+    evm_env_info(op_byte);
+}
+
+:EXTCODESIZE is op = 0x3b & op_byte {
+    local s:32 = evm_env_info(op_byte);
+    stack_push(s);
+}
+
+:EXTCODECOPY is op = 0x3c & op_byte {
     evm_env_info(op_byte);
 }
 
@@ -628,4 +639,8 @@ swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
 
 :INVALID is op = 0xfe {
     evm_invalid();
+}
+
+:SELFDESTRUCT is op = 0xff {
+    evm_selfdestruct();
 }

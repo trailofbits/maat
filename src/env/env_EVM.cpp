@@ -1,6 +1,7 @@
 #include "maat/env/env_EVM.hpp"
 #include "maat/engine.hpp"
 #include "sha3.hpp"
+#include <algorithm>
 
 namespace maat{
 namespace env{
@@ -702,6 +703,20 @@ contract_t EthereumEmulator::get_contract_by_uid(int uid) const
     return res->second;
 }
 
+contract_t EthereumEmulator::get_contract_by_address(const Number& address) const
+{
+    const auto found = std::find_if(
+        _contracts.begin(),
+        _contracts.end(), 
+        [&address](const auto& element) {
+            return element.second->address.as_number().equal_to(address); 
+        }
+    );
+    if (found == _contracts.end())
+        return nullptr;
+    else
+        return found->second;
+}
 
 serial::uid_t EthereumEmulator::class_uid() const
 {

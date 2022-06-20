@@ -323,6 +323,8 @@ public:
     int add_contract(contract_t contract);
     /// Get running contract by uid
     contract_t get_contract_by_uid(int uid) const;
+    /// Get running contract by address
+    contract_t get_contract_by_address(const Number& address) const;
     /** Duplicate contract 'uid' into an identical contract with
     fresh runtime (stack and memory are empty, storage is shared, no
     transaction set).

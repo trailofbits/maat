@@ -585,6 +585,22 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
             }
             break;
         }
+        case 0x3b: // EXTCODESIZE
+        {
+            Value addr = contract->stack.get(0);
+            contract->stack.pop();
+            if (not addr.is_concrete(*engine.vars))
+                throw callother_exception("EXTCODESIZE: not supported for symbolic address");
+            env::EVM::contract_t ext_contract = env::EVM::get_ethereum(engine)->get_contract_by_address(
+                extract(addr, 159, 0).as_number() // Extract 160 bits for address
+            );
+            if (ext_contract == nullptr)
+                // If no contract at that address return 0
+                pinst.res = Value(256, 0);
+            else
+                pinst.res = Value(256, ext_contract->code_size);
+            break;
+        }
         case 0x3d: // RETURNDATASIZE
         {
             if (not contract->result_from_last_call.has_value())
@@ -856,6 +872,11 @@ void EVM_DELEGATECALL_handler(
     engine._stop_after_inst(info::Stop::NONE);
 }
 
+void EVM_SELFDESTRUCT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    throw callother_exception("SELFDESTRUCT: not implemented");
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -894,6 +915,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_CALLCODE, EVM_CALLCODE_handler);
     h.set_handler(Id::EVM_DELEGATECALL, EVM_DELEGATECALL_handler);
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
+    h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
 
     return h;
 }
