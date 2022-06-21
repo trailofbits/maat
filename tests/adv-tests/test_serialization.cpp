@@ -45,7 +45,7 @@ EventCallback path_cb = EventCallback(
         {
             solver::SolverZ3 sol;
             // Find model that inverts that branch
-            for (auto c : engine.path.constraints())
+            for (auto c : engine.path->constraints())
             {
                 sol.add(c);
             }
@@ -88,7 +88,7 @@ bool do_code_coverage_serialization(MaatEngine& engine, addr_t start, addr_t end
     {
         solver::SolverZ3 sol;
         // First try to find a model for EAX == 1
-        for (auto c : engine.path.constraints())
+        for (auto c : engine.path->constraints())
             sol.add(c);
         sol.add(engine.cpu.ctx().get(X86::EAX).as_expr() != 0);
         if (sol.check())

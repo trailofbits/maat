@@ -81,7 +81,7 @@ public:
     std::shared_ptr<MemEngine> mem;
     ir::CPU cpu;
     event::EventManager hooks;
-    PathManager path; // TODO: make this a shared_ptr<> when adding support for multi-engine runs
+    std::shared_ptr<PathManager> path;
     std::shared_ptr<env::EnvEmulator> env;
     std::shared_ptr<SymbolManager> symbols;
     std::shared_ptr<ProcessInfo> process;
@@ -121,6 +121,7 @@ public:
         - <b>vars</b>: share the concolic variables context
         - <b>mem</b>: share the memory engine
         - <b>process</b>: share the same process information
+        - <b>path</b>: share the path manager and path constraints
 
         Note: environment is always shared.
     */

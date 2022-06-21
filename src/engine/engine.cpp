@@ -55,6 +55,7 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
     }
 
     symbols = std::make_shared<SymbolManager>();
+    path = std::make_shared<PathManager>();
     vars = std::make_shared<VarContext>(0, endianness);
     snapshots = std::make_shared<SnapshotManager<Snapshot>>();
     mem = std::make_shared<MemEngine>(vars, arch->bits(), snapshots, endianness);
@@ -111,7 +112,12 @@ MaatEngine::MaatEngine(
     // hooks
     if (duplicate.count("hooks"))
         hooks = other.hooks;
-    path = other.path;
+    // path manager
+    if (share.count("path"))
+        path = other.path;
+    else
+        path = std::make_shared<PathManager>();
+
     symbols = other.symbols;
     // process
     if (share.count("process"))
@@ -633,7 +639,7 @@ bool MaatEngine::process_branch(
                     and not in1.is_concrete(*vars)
                 )
                 {
-                    path.add(in1 != 0);
+                    path->add(in1 != 0);
                 }
             }
             else // branch condition is false, so no branch
@@ -645,7 +651,7 @@ bool MaatEngine::process_branch(
                     and not in1.is_concrete(*vars)
                 )
                 {
-                    path.add(in1 == 0);
+                    path->add(in1 == 0);
                 }
             }
             if (
@@ -1088,7 +1094,7 @@ MaatEngine::snapshot_t MaatEngine::take_snapshot()
     snapshot.process = std::make_shared<ProcessInfo>(*process);
     snapshot.page_permissions = mem->page_manager.regions();
     snapshot.mem_mappings = mem->mappings.get_maps();
-    snapshot.path = path.take_snapshot();
+    snapshot.path = path->take_snapshot();
     snapshot.env = env->take_snapshot();
     // Snapshot ID is its index in the snapshots list
     return snapshots->size()-1;
@@ -1151,7 +1157,7 @@ void MaatEngine::restore_last_snapshot(bool remove)
     process = snapshot.process;
     mem->page_manager.set_regions(std::move(snapshot.page_permissions));
     mem->mappings.set_maps(std::move(snapshot.mem_mappings));
-    path.restore_snapshot(snapshot.path);
+    path->restore_snapshot(snapshot.path);
     env->restore_snapshot(snapshot.env, remove);
     // Restore memory segments
     for (addr_t start : snapshot.created_segments)
@@ -1270,8 +1276,10 @@ ValueSet MaatEngine::refine_value_set(Expr e)
     // Get path constraints involving same variables as expression 
     e->get_vars(var_list);
     solver->reset();
-    for (auto& constraint : path.constraints())
+    for (auto& constraint : path->constraints())
     {
+        // FIXME(boyan): we should use get_related_vars() once we
+        // fix the implementation
         if (constraint->contains_vars(var_list))
             solver->add(constraint);
     }

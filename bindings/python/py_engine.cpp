@@ -410,7 +410,7 @@ void _init_MaatEngine_attributes(MaatEngine_Object* object)
     object->mem = PyMemEngine_FromMemEngine(object->engine->mem.get(), true);
     object->hooks = PyEventManager_FromEventManager(&(object->engine->hooks), true);
     object->info = PyInfo_FromInfoAndArch(&(object->engine->info), true, &(*object->engine->arch));
-    object->path = PyPath_FromPath(&(object->engine->path), true);
+    object->path = PyPath_FromPath(object->engine->path.get(), true);
     object->env = PyEnv_FromEnvEmulator(object->engine->env.get(), true);
     object->settings = PySettings_FromSettings(&(object->engine->settings), true);
     object->process = PyProcessInfo_FromProcessInfo(object->engine->process.get(), true);

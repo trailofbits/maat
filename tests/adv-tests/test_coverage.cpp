@@ -65,7 +65,7 @@ namespace code_coverage{
             {
                 // First try to find a model for EAX == 1
                 sol.reset();
-                for (auto c : engine.path.constraints())
+                for (auto c : engine.path->constraints())
                     sol.add(c);
                 sol.add(engine.cpu.ctx().get(X86::EAX).as_expr() != 0);
                 if (sol.check())
@@ -84,7 +84,7 @@ namespace code_coverage{
                     {
                         engine.restore_last_snapshot(true);
                         sol.reset();
-                        for (auto c : engine.path.constraints())
+                        for (auto c : engine.path->constraints())
                             sol.add(c);
                         // Add inverted path constraint
                         _assert(engine.info.branch->taken.has_value(), "do_code_coverage(): got invalid branch info on path constraint breakpoint");
