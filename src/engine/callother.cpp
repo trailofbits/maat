@@ -533,6 +533,9 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
         // TODO(boyan): most of these instructions could push the value on
         // the stack directly to avoid executing an additional stack_push
         // IR instruction to push the result
+        case 0x30: // ADDRESS
+            pinst.res = contract->address;
+            break;
         case 0x32: // ORIGIN
             _check_transaction_exists(contract);
             pinst.res = zext(256, contract->transaction->origin);
