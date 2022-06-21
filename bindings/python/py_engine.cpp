@@ -175,17 +175,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
                             "Command line argument specified as a 'list' should only contain 'Value' elements"
                         );
                     }
-                    const Value& value = *as_value_object(val).value;
-                    if (value.size() != 8)
-                    {
-                        return PyErr_Format(
-                            PyExc_TypeError,
-                            "Abstract value in command line argument %d should have a size of 8 bits (got %d)",
-                            i,
-                            (int)value.size()
-                        );
-                    }
-                    arg_buffer.push_back(value);
+                    arg_buffer.push_back(*as_value_object(val).value);
                 }
                 cmdline_args.push_back(loader::CmdlineArg(arg_buffer));
             }
