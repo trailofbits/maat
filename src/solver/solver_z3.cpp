@@ -62,7 +62,7 @@ z3::expr expr_to_z3(z3::context* c, Expr e, size_t extend_to_size)
                                 .extract(e->size*2 - 1, e->size);
                 case Op::DIV: return z3::udiv(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
                 case Op::SDIV: return expr_to_z3(c, e->args[0]) / expr_to_z3(c, e->args[1]);
-                case Op::MOD: return z3::mod(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
+                case Op::MOD: return z3::urem(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
                 case Op::SMOD: return z3::srem(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
                 case Op::SHL: return z3::shl(
                     expr_to_z3(c, e->args[0]),
