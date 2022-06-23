@@ -93,6 +93,8 @@ public:
     Value read(const Value& addr, size_t nb_bytes);
     /// Write value to memory
     void write(const Value& addr, const Value& val);
+    /// Write buffer to memory
+    void write(const Value& addr, const std::vector<Value>& vals);
 public:
     /// Expand memory if needed to write 'nb_bytes' at 'addr'
     void expand_if_needed(const Value& addr, size_t nb_bytes);
@@ -175,6 +177,7 @@ public:
     TransactionResult(Type type, std::vector<Value> return_data);
 public:
     const std::vector<Value>& return_data() const;
+    std::vector<Value> return_data_load_bytes(size_t offset, size_t len) const;
     size_t return_data_size() const;
     Type type() const;
 public:

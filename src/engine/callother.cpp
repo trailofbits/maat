@@ -614,6 +614,21 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
             pinst.res = Value(256, contract->result_from_last_call->return_data_size());
             break;
         }
+        case 0x3e: // RETURNDATACOPY
+        {
+            if (not contract->result_from_last_call.has_value())
+                throw callother_exception("RETURNDATACOPY: contract runtime doesn't have any transaction result set");
+            Value addr = contract->stack.get(0);
+            addr_t offset = contract->stack.get(1).as_uint(*engine.vars);
+            unsigned int size = contract->stack.get(2).as_uint(*engine.vars);
+            contract->stack.pop(3);
+            for (const auto& val : contract->result_from_last_call->return_data_load_bytes(offset, size))
+            {
+                contract->memory.write(addr, val);
+                addr = addr + val.size()/8;
+            }
+            break;
+        }
         case 0x42: // TIMESTAMP
         {
             contract->stack.push(

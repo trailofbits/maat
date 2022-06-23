@@ -129,6 +129,20 @@ void Memory::write(const Value& addr, const Value& val)
     _mem.write(addr, val);
 }
 
+void Memory::write(const Value& addr, const std::vector<Value>& vals)
+{
+    Value a = addr;
+    for (const auto& val : vals)
+    {
+        // Sanity check on value sizes
+        if (val.size()%8 != 0)
+            throw env_exception("EVM::Memory::write(): value size must be a multiple of 8");
+        // Write
+        write(a, val);
+        a = a + val.size()/8;
+    }
+}
+
 void Memory::expand_if_needed(const Value& addr, size_t nb_bytes)
 {
     if (not addr.is_symbolic(*_varctx))
@@ -323,6 +337,59 @@ size_t TransactionResult::return_data_size() const
     return res;
 }
 
+std::vector<Value> _data_load_bytes(const std::vector<Value>& data, size_t offset, size_t len)
+{
+    std::vector<Value> res;
+    size_t tmp_size = 0;
+    int i = 0;
+    offset *= 8; // convert size in bits
+    len *= 8; // convert len in bits
+
+    // Skip the first expressions to reach desired offset
+    for (i = 0; i < data.size() and offset > 0; i++)
+    {
+        const Value& val = data[i];
+        if (val.size() > offset)
+        {
+            if (val.size()-offset > len)
+            {
+                res.push_back(extract(val, val.size()-1-offset, val.size()-len-offset));
+                len = 0;
+            }
+            else
+            {
+                res.push_back(extract(val, val.size()-1-offset, 0));
+                len -= val.size()-offset;
+            }
+            i++;
+            break;
+        }
+        else
+            offset -= val.size();
+    }
+
+    // Read 32 bytes from next expresions in data
+    for (; len > 0 and i < data.size(); i++)
+    {
+        const Value& val = data[i];
+        if (val.size() > len)
+            res.push_back(extract(val, val.size()-1, val.size()-len));
+        else
+            res.push_back(val);
+        len -= res.back().size();
+    }
+
+    // If not enough data, pad with zeros
+    for (; len > 0; len--)
+        res.push_back(Value(8, 0));
+    return res;
+}
+
+std::vector<Value> TransactionResult::return_data_load_bytes(size_t offset, size_t len) const
+{
+    return _data_load_bytes(_return_data, offset, len);
+}
+
 serial::uid_t TransactionResult::class_uid() const
 {
     return serial::ClassId::EVM_TRANSACTION_RESULT;
@@ -434,52 +501,11 @@ Value Transaction::data_load_word(size_t offset) const
     return res;
 }
 
+
+
 std::vector<Value> Transaction::data_load_bytes(size_t offset, size_t len) const
 {
-    std::vector<Value> res;
-    size_t tmp_size = 0;
-    int i = 0;
-    offset *= 8; // convert size in bits
-    len *= 8; // convert len in bits
-
-    // Skip the first expressions to reach desired offset
-    for (i = 0; i < data.size() and offset > 0; i++)
-    {
-        const Value& val = data[i];
-        if (val.size() > offset)
-        {
-            if (val.size()-offset > len)
-            {
-                res.push_back(extract(val, val.size()-1-offset, val.size()-len-offset));
-                len = 0;
-            }
-            else
-            {
-                res.push_back(extract(val, val.size()-1-offset, 0));
-                len -= val.size()-offset;
-            }
-            i++;
-            break;
-        }
-        else
-            offset -= val.size();
-    }
-
-    // Read 32 bytes from next expresions in data
-    for (; len > 0 and i < data.size(); i++)
-    {
-        const Value& val = data[i];
-        if (val.size() > len)
-            res.push_back(extract(val, val.size()-1, val.size()-len));
-        else
-            res.push_back(val);
-        len -= res.back().size();
-    }
-
-    // If not enough data, pad with zeros
-    for (; len > 0; len--)
-        res.push_back(Value(8, 0));
-    return res;
+    return _data_load_bytes(data, offset, len);
 }
 
 serial::uid_t Transaction::class_uid() const
@@ -662,7 +688,7 @@ EthereumEmulator& EthereumEmulator::operator=(const EthereumEmulator& other)
     // Copy every contract
     for (const auto& [addr,contract] : other._contracts)
         _contracts[addr] = std::make_shared<Contract>(*contract);
-    _uid_cnt = other._uid_cnt;
+    _uid_cnt = other._uid_cnt < _uid_cnt ? _uid_cnt : other._uid_cnt;
     keccak_helper = other.keccak_helper;
     current_block_number = other.current_block_number;
     current_block_timestamp = other.current_block_timestamp;
@@ -673,6 +699,7 @@ EthereumEmulator& EthereumEmulator::operator=(const EthereumEmulator& other)
 void EthereumEmulator::_init()
 {
     EnvEmulator::_init(Arch::Type::NONE, OS::NONE);
+    _uid_cnt = 1;
     current_block_number = AbstractCounter(
         Value(256, 4370000) // Initial byzantium block
     );
@@ -686,7 +713,10 @@ int EthereumEmulator::add_contract(contract_t contract)
     int uid = _uid_cnt++;
     const auto& exists = _contracts.find(uid);
     if (exists != _contracts.end())
-        throw env_exception("Ethereum: add_contract(): uid already used !");
+        throw env_exception(
+            Fmt() << "Ethereum: add_contract(): uid " << uid 
+            << " already used !" >> Fmt::to_str
+        );
     _contracts[uid] = contract;
     return uid;
 }
