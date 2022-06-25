@@ -420,7 +420,7 @@ void EVM_SIGNEXTEND_handler(MaatEngine& engine, const ir::Inst& inst, ir::Proces
     }
 }
 
-// byte(n, val) = val[n*8+7 : n*8]
+// byte(n, val) = nth byte of val, starting from most significant byte
 void EVM_BYTE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     const Value& in1 = pinst.in1.value();
@@ -433,7 +433,11 @@ void EVM_BYTE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
             pinst.res = Value(256, 0);
         else
         {
-            pinst.res.set_extract(in2, select*8+7, select*8);
+            pinst.res.set_extract(
+                in2,
+                in2.size()-1-(select*8),
+                in2.size()-8-(select*8)
+            );
             pinst.res.set_zext(256, pinst.res);
         }
     }
@@ -446,7 +450,7 @@ void EVM_BYTE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
         pinst.res.set_ITE(
             Value(256, 32), ITECond::LE, in1,
             Value(256, 0),
-            (in2 >> (in1*8)) & mask
+            (in2 >> (in2.size()-8-(in1*8))) & mask
         );
     }
 
