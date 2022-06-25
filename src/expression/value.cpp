@@ -838,9 +838,8 @@ void Value::set_bool_negate(const Value& n, size_t size)
     }
     else
     {
-        Number zero(n.size(), 0);
         _number.size = size;
-        if (n.number().equal_to(zero))
+        if (n.number().is_null())
             _number.set(1);
         else
             _number.set(0);
@@ -868,12 +867,10 @@ void Value::set_bool_and(const Value& n1, const Value& n2, size_t size)
     }
     else
     {
-        Number zero(n1.size(), 0);
-        Number zero1(n2.size(), 0);
         _number.size = size;
         if (
-            n1.as_number().equal_to(zero)
-            or n2.as_number().equal_to(zero1)
+            n1.as_number().is_null()
+            or n2.as_number().is_null()
         )
             _number.set(0);
         else
@@ -902,12 +899,10 @@ void Value::set_bool_or(const Value& n1, const Value& n2, size_t size)
     }
     else
     {
-        Number zero(n1.size(), 0);
-        Number zero1(n2.size(), 0);
         _number.size = size;
         if (
-            !n1.as_number().equal_to(zero)
-            or !n2.as_number().equal_to(zero1)
+            !n1.as_number().is_null()
+            or !n2.as_number().is_null()
         )
             _number.set(1);
         else
@@ -942,12 +937,10 @@ void Value::set_bool_xor(const Value& n1, const Value& n2, size_t size)
     }
     else
     {
-        Number zero(n1.size(), 0);
-        Number zero1(n2.size(), 0);
         _number.size = size;
         if (
-            (!n1.as_number().equal_to(zero) and n2.as_number().equal_to(zero1))
-            or (n1.as_number().equal_to(zero) and !n2.as_number().equal_to(zero1))
+            (!n1.as_number().is_null() and n2.as_number().is_null())
+            or (n1.as_number().is_null() and !n2.as_number().is_null())
         )
             _number.set(1);
         else

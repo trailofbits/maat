@@ -236,7 +236,7 @@ Expr es_absorbing_elements(Expr e)
     {
         // 0 &*//S X
         if( (e->op() == Op::AND || op_is_multiplication(e->op()) || e->op() == Op::DIV || e->op() == Op::SDIV) 
-             && e->args[0]->cst() == 0)
+             && e->args[0]->as_number().is_null())
             return e->args[0];
         // 0xffff..... | X 
         else if( (e->op() == Op::OR)

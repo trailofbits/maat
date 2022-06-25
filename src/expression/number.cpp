@@ -805,6 +805,13 @@ bool Number::equal_to(const Number& other) const
 }
 
 
+bool Number::is_null() const
+{
+    if (size <= 64)
+        return cst_ == 0;
+    else
+        return mpz_cmp_ui(mpz_.get_mpz_t(), 0) == 0;
+}
 
 bool Number::is_mpz() const
 {
