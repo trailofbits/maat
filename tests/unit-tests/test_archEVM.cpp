@@ -475,8 +475,8 @@ namespace test{
             write_inst(engine, 0x10, code);
             contract_t contract = get_contract_for_engine(engine);
 
-            contract->stack.push(Value(256, "ffff465135465868686514654846516586684646516168476847", 16));
-            contract->stack.push(Value(256, "21", 10));
+            contract->stack.push(Value(256, "ffff465135465868686514654846516586684646516168476847000000000000", 16));
+            contract->stack.push(Value(256, "4", 10));
             engine.run_from(0x10, 1);
 
             nb += _assert_bignum_eq(
@@ -496,13 +496,13 @@ namespace test{
                 "ArchEVM: failed to disassembly and/or execute BYTE"
             );
 
-            contract->stack.push(Value(256, "65465165465165146351", 16));
+            contract->stack.push(Value(256, "-1", 16));
             contract->stack.push(Value(256, "0", 10));
             engine.run_from(0x10, 1);
 
             nb += _assert_bignum_eq(
                 contract->stack.get(0),
-                "51",
+                "FF",
                 "ArchEVM: failed to disassembly and/or execute BYTE",
                 16
             );
