@@ -107,6 +107,9 @@ public:
     /// Return true if this number is equal to 'other'
     bool equal_to(const Number& other) const;
 public:
+    /// Return true if the number is null
+    bool is_null() const;
+public:
     /// Return the value (0 or 1) of the bit 'idx' in the number
     int get_bit(unsigned int idx) const;
 public:

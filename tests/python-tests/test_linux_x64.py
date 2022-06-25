@@ -46,4 +46,4 @@ def test_crackme1():
     m.hooks.add(EVENT.PATH, WHEN.BEFORE, callbacks=[solve_chall])
     m.run()
 
-    assert m.vars.get_as_str("input") == "1bHt56z0"
+    assert m.vars.get_as_str("input") == b'1bHt56z0'

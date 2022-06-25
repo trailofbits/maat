@@ -57,7 +57,7 @@ def test_crackme_vm():
     # Explore
     explore(m)
 
-    assert m.vars.get_as_str("input") == "I_L0v3_Z80_Opcod3s_!"
+    assert m.vars.get_as_str("input") == b'I_L0v3_Z80_Opcod3s_!'
 
 
 def test_crackme_vm_serialization():
@@ -121,4 +121,4 @@ def test_crackme_vm_serialization():
     # Explore
     explore(m)
 
-    assert m.vars.get_as_str("input") == "I_L0v3_Z80_Opcod3s_!"
+    assert m.vars.get_as_str("input") == b'I_L0v3_Z80_Opcod3s_!'

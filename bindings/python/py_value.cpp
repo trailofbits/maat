@@ -719,7 +719,7 @@ static PyObject* VarContext_get_as_string(PyObject* self, PyObject* args)
         return PyErr_Format(PyExc_ValueError, e.what());
     }
 
-    res = PyUnicode_FromFormat("%s", s.c_str());
+    res = PyBytes_FromString(s.c_str());
     if (res == nullptr)
     {
         return NULL;
