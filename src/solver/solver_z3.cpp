@@ -2,6 +2,7 @@
 
 #include "maat/solver.hpp"
 #include "maat/stats.hpp"
+#include "maat/exception.hpp"
 
 namespace maat
 {
@@ -139,6 +140,7 @@ void SolverZ3::reset()
 {
     constraints.clear();
     has_model = false;
+    _did_time_out = false;
 }
 
 void SolverZ3::add(const Constraint& constr)
@@ -173,7 +175,22 @@ bool SolverZ3::check()
     z3::params p(*ctx);
     p.set(":timeout", static_cast<unsigned>(timeout));
     sol->set(p);
-    has_model =  (sol->check() == z3::check_result::sat);
+    switch (sol->check())
+    {
+        case z3::check_result::sat:
+            has_model = true;
+            break;
+        case z3::check_result::unknown:
+            if (sol->reason_unknown() == "timeout")
+                _did_time_out = true;
+            break;
+        default:
+            throw solver_exception(
+                Fmt() << "SolverZ3::check() failed with unknown reason: "
+                << sol->reason_unknown() >> Fmt::to_str
+            );
+            break;
+    }
 
     // Statistics
     MaatStats::instance().done_solving();
