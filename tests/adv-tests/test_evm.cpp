@@ -225,10 +225,10 @@ bool _explore_all_states_no_check(MaatEngine& engine)
         if (engine.info.exit_status->as_uint() == (int)env::EVM::TransactionResult::Type::RETURN)
         {
             sol.reset();
-            for (auto c : engine.path->constraints())
-                sol.add(c);
             const Value& result = env::EVM::get_contract_for_engine(engine)->transaction->result->return_data()[0]; 
             sol.add(result == 2);
+            for (auto c : engine.path->get_related_constraints(result))
+                sol.add(c);
 
             if (sol.check())
             {

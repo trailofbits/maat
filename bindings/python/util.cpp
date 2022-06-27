@@ -31,6 +31,23 @@ PyObject* native_to_py(const std::vector<Value>& values)
     return list;
 }
 
+PyObject* native_to_py(const std::unordered_set<Constraint>& constraints)
+{
+    PyObject* list = PyList_New(0);
+    if( list == NULL )
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
+    }
+    for (const Constraint& c : constraints)
+    {
+        if( PyList_Append(list, PyConstraint_FromConstraint(c)) == -1)
+        {
+            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add constraint to python list");
+        }
+    }
+    return list;
+}
+
 Number bigint_to_number(size_t bits, PyObject* num)
 {
     if (bits <= 64)

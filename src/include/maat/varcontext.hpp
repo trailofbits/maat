@@ -26,6 +26,8 @@ private:
 private:
     /** Map concrete values to symbolic variables */
     std::map<std::string, maat::Number> varmap;
+public:
+    unsigned int id; ///< Unique identifier for the VarContext instance
 
 public:
     VarContext(unsigned int id=0, Endian endian=Endian::LITTLE); ///< Constructor
@@ -34,7 +36,6 @@ public:
     virtual ~VarContext() = default;
 
 public:
-    unsigned int id; ///< Unique identifier for the VarContext instance
     void set(const std::string& var, cst_t value); ///< Give a concrete value to a symbolic variable
     void set(const std::string& var, const Number& number); ///< Give a concrete value to a symbolic variable as a *maat::Number* instance
     cst_t get(const std::string& var) const; ///< Get the concrete value given to a symbolic variable

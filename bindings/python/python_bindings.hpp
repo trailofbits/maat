@@ -363,6 +363,7 @@ PyObject* maat_set_evm_bytecode(PyObject* mod, PyObject* args);
 // Transform a list of values into a list of python values,
 // returns a python error on error
 PyObject* native_to_py(const std::vector<Value>&);
+PyObject* native_to_py(const std::unordered_set<Constraint>& constraints);
 
 // Python bigint into multiprecision number
 // num MUST be a PyLong object (no further type checks in the function)

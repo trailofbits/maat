@@ -84,7 +84,7 @@ namespace code_coverage{
                     {
                         engine.restore_last_snapshot(true);
                         sol.reset();
-                        for (auto c : engine.path->constraints())
+                        for (auto c : engine.path->get_related_constraints(engine.info.branch->cond))
                             sol.add(c);
                         // Add inverted path constraint
                         _assert(engine.info.branch->taken.has_value(), "do_code_coverage(): got invalid branch info on path constraint breakpoint");

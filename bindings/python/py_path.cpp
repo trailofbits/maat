@@ -18,26 +18,47 @@ static void Path_dealloc(PyObject* self)
 static PyObject* Path_get_related_constraints(PyObject* self, PyObject* args)
 {
     PyObject* arg;
+    std::unordered_set<Constraint> res;
     if (! PyArg_ParseTuple(args, "O", &arg)){
         return NULL;
     }
 
     if (PyObject_TypeCheck(arg, (PyTypeObject*)get_Value_Type()))
     {
-        return PyPathIterator_FromWrapper(
-            as_path_object(self).path->get_related_constraints(as_value_object(arg).value->as_expr())
+        res = as_path_object(self).path->get_related_constraints(
+            as_value_object(arg).value->as_expr()
         );
     }
     else if (PyObject_TypeCheck(arg, (PyTypeObject*)get_Constraint_Type()))
     {
-        return PyPathIterator_FromWrapper(
-            as_path_object(self).path->get_related_constraints(*as_constraint_object(arg).constr)
+        res = as_path_object(self).path->get_related_constraints(
+            *as_constraint_object(arg).constr
         );
     }
     else
     {
-        return PyErr_Format(PyExc_TypeError, "Parameter must be 'Expr' or 'Constraint' object");
+        return PyErr_Format(PyExc_TypeError, "Parameter must be 'Value' or 'Constraint' object");
     }
+    // Translate result into python objects
+    return native_to_py(res);
+};
+
+static PyObject* Path_get_constraints_containing(PyObject* self, PyObject* args, PyObject* keywords)
+{
+    PySetObject* py_vars = nullptr;
+    std::set<std::string> vars;
+
+    // Process arguments
+    if( ! PyArg_ParseTuple(args, "O!", &PySet_Type, &py_vars)){
+        return NULL;
+    }
+
+    if (not py_to_c_string_set(py_vars, vars))
+        return PyErr_Format(PyExc_RuntimeError, "Failed to translate set of variables to native std::set");
+
+    return PyPathIterator_FromWrapper(
+        as_path_object(self).path->get_constraints_containing(vars)
+    );
 };
 
 static PyObject* Path_constraints(PyObject* self, PyObject* args)
@@ -61,7 +82,8 @@ static PyObject* Path_add(PyObject* self, PyObject* args)
 static PyMethodDef Path_methods[] = {
     {"add", (PyCFunction)Path_add, METH_VARARGS, "Add a path constraint"},
     {"constraints", (PyCFunction)Path_constraints, METH_VARARGS, "Get current path constraints"},
-    {"get_related_constraints", (PyCFunction)Path_get_related_constraints, METH_VARARGS, "Get current path constraints related to a constraint or expression"},
+    {"get_related_constraints", (PyCFunction)Path_get_related_constraints, METH_VARARGS, "Get all path constraints related to a constraint or expression"},
+    {"get_constraints_containing", (PyCFunction)Path_get_constraints_containing, METH_VARARGS, "Get current path constraints containing at least one variable from a given set"},
     {NULL, NULL, 0, NULL}
 };
 
