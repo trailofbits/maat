@@ -10,7 +10,8 @@ namespace maat
 
 IntervalTree::IntervalTree(ucst_t min, ucst_t max):left(nullptr), right(nullptr)
 {
-    center = min + (max-min)/2;
+    // DEBUG center = min + (max-min)/2;
+    center = (min+max)/2;
 }
 
 void IntervalTree::add_interval(ucst_t min, ucst_t max, int write_count)
@@ -28,7 +29,7 @@ void IntervalTree::add_interval(ucst_t min, ucst_t max, int write_count)
         )
         {
             return; // Don't add it
-        } 
+        }
 
         // Add the interval
         auto index_min = std::lower_bound(
@@ -60,7 +61,20 @@ void IntervalTree::add_interval(ucst_t min, ucst_t max, int write_count)
         // Add right
         if( right == nullptr )
         {
-            right = std::make_unique<IntervalTree>(center, max);
+            // If max == center+1 we increment center by 1. This is to account
+            // for the case
+            // where we try to add an interval which is actually a singleton
+            // value that is *odd*. Since center is computed with min+max/2,
+            // if we have max == center+1 then the call below creates a new
+            // interval between
+            // center and max that has a new center = center+center+1/2 = center...
+            // So we will keep creating trees centered on 'center' forever. 
+            // This is why we manually update center to match the singleton interval
+            // containing 'max'
+            right = std::make_unique<IntervalTree>(
+                center== max-1? center+1 : center,
+                max
+            );
         }
         right->add_interval(min, max, write_count);
     }
