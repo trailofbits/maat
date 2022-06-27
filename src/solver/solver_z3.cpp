@@ -184,6 +184,8 @@ bool SolverZ3::check()
             if (sol->reason_unknown() == "timeout")
                 _did_time_out = true;
             break;
+        case z3::check_result::unsat:
+            break;
         default:
             throw solver_exception(
                 Fmt() << "SolverZ3::check() failed with unknown reason: "
