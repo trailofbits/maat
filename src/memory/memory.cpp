@@ -2612,7 +2612,10 @@ std::string MemEngine::make_concolic(addr_t addr, unsigned int nb_elems, unsigne
         {
             throw mem_exception("MemEngine::make_concolic(): can not be called on memory region that contains full symbolic expressions");
         }
-        _varctx->set(ss.str(), prev_expr.as_uint(*_varctx));
+        _varctx->set(
+            ss.str(), 
+            Number(prev_expr.size(), prev_expr.as_uint(*_varctx))
+        );
         write(addr_val + i*elem_size, exprvar(elem_size*8, ss.str()));
     }
     return new_name;
