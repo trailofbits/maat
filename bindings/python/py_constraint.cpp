@@ -57,6 +57,45 @@ static PyObject* Constraint_contained_vars(PyObject* self) {
     return list;
 }
 
+PyObject* maat_ITE(PyObject* self, PyObject* args)
+{
+    Constraint_Object* cond;
+    PyObject* if_true;
+    PyObject* if_false;
+    if( ! PyArg_ParseTuple(args, "O!OO", get_Constraint_Type(), &cond, &if_true, &if_false)){
+        return NULL;
+    }
+
+    Value res;
+    Value if_true_val;
+    Value if_false_val;
+    
+    // We cannot accept ITE with both if_true and if_false as constants without a size parameter
+    
+    if( PyLong_Check(if_true) && PyLong_Check(if_false)) {
+        return PyErr_Format(PyExc_ValueError, "ITE requires at least one argument be a value inorder to deduce resulting size");
+    }else if( PyLong_Check(if_true) && PyObject_IsInstance(if_false, get_Value_Type())) {
+        if_false_val = *(as_value_object(if_false).value);
+        if_true_val.set_cst(if_false_val.size(), PyLong_AsLongLong(if_true));
+    }else if( PyLong_Check(if_false) && PyObject_IsInstance(if_true, get_Value_Type())) {
+        if_true_val = *(as_value_object(if_true).value);
+        if_false_val.set_cst(if_true_val.size(), PyLong_AsLongLong(if_false));
+    }else if( PyObject_IsInstance(if_true, get_Value_Type()) && PyObject_IsInstance(if_false, get_Value_Type())) {
+        // ExprITE will make sure sizes match
+        if_true_val = *(as_value_object(if_true).value);
+        if_false_val = *(as_value_object(if_false).value);
+    }else{
+        return PyErr_Format(PyExc_TypeError, "Mismatching type for ITE arguments");
+    }
+
+    try{
+        res = ITE(*(as_constraint_object(cond).constr), if_true_val.as_expr(), if_false_val.as_expr());
+	    return PyValue_FromValue(res);
+        } catch(expression_exception e) {
+            return PyErr_Format(PyExc_ValueError, "%s", e.what());
+        }
+}
+
 static PyMethodDef Constraint_methods[] = {
     {"invert", (PyCFunction)Constraint_invert, METH_NOARGS, "Returns the invert of the condition"},
     {"contained_vars", (PyCFunction)Constraint_contained_vars, METH_NOARGS, "Returns a list of involved symbolic variables"},

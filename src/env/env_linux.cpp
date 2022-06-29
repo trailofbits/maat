@@ -32,9 +32,7 @@ void LinuxEmulator::_init(Arch::Type arch)
 void LinuxEmulator::add_running_process(const ProcessInfo& pinfo, const std::string& filepath)
 {
     // Create actual file
-    fs.create_file(pinfo.binary_path, true); // create_path = true
-    physical_file_t file = fs.get_file(pinfo.binary_path);
-    file->copy_real_file(filepath);
+    fs.add_real_file(filepath, pinfo.binary_path, true);
 
     // Set symbolic links to loaded binary in /proc/<pid>/exe
     // and /proc/self/exe

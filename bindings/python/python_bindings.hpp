@@ -35,6 +35,7 @@ typedef struct {
 PyObject* maat_Cst(PyObject* self, PyObject* args, PyObject* keywords);
 PyObject* maat_Var(PyObject* self, PyObject* args, PyObject* keywords);
 PyObject* maat_Concat(PyObject* self, PyObject* args);
+PyObject* maat_ITE(PyObject* self, PyObject* args);
 PyObject* maat_Extract(PyObject* self, PyObject* args);
 PyObject* maat_Sext(PyObject* self, PyObject* args);
 PyObject* maat_Zext(PyObject* self, PyObject* args);

@@ -297,5 +297,56 @@ Constraint operator||(Constraint left, Constraint right)
     return std::make_shared<ConstraintObject>(ConstraintType::OR, left, right);
 }
 
+Expr ITE(Constraint cond, Expr if_true, Expr if_false)
+{
+    ITECond itecond;
+    bool swap = false;
+    Expr l_e = cond->left_expr;
+    Expr r_e = cond->right_expr;
+
+    switch(cond->type)
+    {
+        case ConstraintType::AND:
+            l_e = ITE(cond->left_constr, exprcst(1, 1), exprcst(1, 0)) &
+            ITE(cond->right_constr, exprcst(1, 1), exprcst(1, 0));
+            r_e = exprcst(1, 1);
+            itecond = ITECond::EQ;
+            break;
+        case ConstraintType::OR:
+            l_e = ITE(cond->left_constr, exprcst(1, 1), exprcst(1, 0)) |
+            ITE(cond->right_constr, exprcst(1, 1), exprcst(1, 0));
+            r_e = exprcst(1, 1);
+            itecond = ITECond::EQ;
+            break;
+        case ConstraintType::EQ:
+            itecond = ITECond::EQ;
+            break;
+        case ConstraintType::NEQ:
+            itecond = ITECond::EQ;
+            swap = true;
+            break;
+        case ConstraintType::LE:
+            itecond = ITECond::SLE;
+            break;
+        case ConstraintType::LT:
+            itecond = ITECond::SLT;
+            break;
+        case ConstraintType::ULE:
+            itecond = ITECond::LE;
+            break;
+        case ConstraintType::ULT:
+            itecond = ITECond::LT;
+            break;
+        default:
+            throw runtime_exception("ITE(): got unknown constraint type");
+    }
+
+    if (swap) {
+        return ITE(l_e, itecond, r_e, if_false, if_true);
+    } else {
+        return ITE(l_e, itecond, r_e, if_true, if_false);
+    }
+}
+
 
 } // namespace maat

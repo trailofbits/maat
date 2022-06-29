@@ -175,11 +175,9 @@ void ProcessedInst::reset()
     in2.set_none();
 }
 
-
 CPUContext::CPUContext(int nb_regs): alias_setter(nullptr), alias_getter(nullptr)
 {
     regs = std::vector<Value>(nb_regs);
-    
 }
 
 void CPUContext::_set_aliased_reg(ir::reg_t reg, const Value& val)
@@ -193,13 +191,14 @@ void CPUContext::set(ir::reg_t reg, const Value& value)
     int idx(reg);
     try
     {
+        _check_assignment_size(idx, value.size());
         regs.at(idx) = value;
     }
     catch(const std::out_of_range&)
     {
         throw ir_exception(Fmt()
                 << "CPUContext: Trying to set register " << std::dec << idx
-                << " which doesn't exist in current context"
+                << " which doesn't exist in current context" >> Fmt::to_str
             );
     }
     _set_aliased_reg(reg, value);
@@ -210,6 +209,7 @@ void CPUContext::set(ir::reg_t reg, Expr value)
     int idx(reg);
     try
     {
+        _check_assignment_size(idx, value->size);
         regs.at(idx) = value;
     }
     catch(const std::out_of_range&)
@@ -244,6 +244,7 @@ void CPUContext::set(ir::reg_t reg, Number&& value)
     int idx(reg);
     try
     {
+        _check_assignment_size(idx, value.size);
         regs.at(idx) = value;
     }
     catch(const std::out_of_range&)
@@ -261,6 +262,7 @@ void CPUContext::set(ir::reg_t reg, const Number& value)
     int idx(reg);
     try
     {
+        _check_assignment_size(idx, value.size);
         regs.at(idx) = value;
     }
     catch(const std::out_of_range&)
@@ -271,6 +273,16 @@ void CPUContext::set(ir::reg_t reg, const Number& value)
             );
     }
     _set_aliased_reg(reg, value);
+}
+
+void CPUContext::_check_assignment_size(int idx, size_t size) const
+{
+    if (not regs.at(idx).is_none() and regs.at(idx).size() != size)
+        throw cpu_exception( Fmt()
+            << "Can't assign " << std::dec << size << "-bits value to "
+            << regs.at(idx).size() << "-bits register" << "\n" 
+            >> Fmt::to_str
+        );
 }
 
 bool CPUContext::_is_alias(ir::reg_t reg) const
@@ -604,7 +616,6 @@ ProcessedInst& CPU::pre_process_inst(
     MaatEngine& engine
 )
 {
-
     processed_inst.reset();
 
     // TODO: use Value& at least for input values....

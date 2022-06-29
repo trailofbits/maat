@@ -18,6 +18,7 @@ PyMethodDef module_methods[] = {
     {"Extract", (PyCFunction)maat_Extract, METH_VARARGS, "Bitfield extract from an abstract expression"},
     {"Sext", (PyCFunction)maat_Sext, METH_VARARGS, "Sign-extend an abstract value"},
     {"Zext", (PyCFunction)maat_Zext, METH_VARARGS, "Zero-extend an abstract value"},
+    {"ITE", (PyCFunction)maat_ITE, METH_VARARGS, "Create an If-Then-Else expression from a Constraint and two abstract expressions"},
     // Engine
     {"MaatEngine", (PyCFunction)maat_MaatEngine, METH_VARARGS, "Create a new DSE engine"},
     // Solver

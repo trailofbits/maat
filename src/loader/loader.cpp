@@ -141,41 +141,40 @@ const std::string Loader::get_path_in_virtual_fs(
     // separator and is at least as long as the path separator
     if (default_dir.size() < engine->env->fs.path_separator().size() ||
         default_dir.substr(default_dir.size() -
-                                engine->env->fs.path_separator().size(),
-                            engine->env->fs.path_separator().size()) !=
+                           engine->env->fs.path_separator().size()) !=
             engine->env->fs.path_separator() ||
         default_dir.substr(0, engine->env->fs.path_separator().size()) !=
             engine->env->fs.path_separator()) {
-        throw loader_exception(
-            "Loader::get_path_in_virtual_fs(): default directory '" +
-            default_dir + "' must be an absolute path");
+        throw loader_exception("Loader::get_path_in_virtual_fs(): default directory '" +
+                               default_dir + "' must be an absolute path");
     }
 
     if (virtual_fs.find(filename) == virtual_fs.end()) {
         // If this file isn't in the virtual fs, just return the default full path
         virtual_path = default_dir + filename;
     } else if (virtual_fs.at(filename).size() >=
-                    engine->env->fs.path_separator().size() &&
-                virtual_fs.at(filename).substr(
-                    0, engine->env->fs.path_separator().size()) ==
-                    engine->env->fs.path_separator() &&
-                virtual_path.substr(virtual_path.size() -
-                                        engine->env->fs.path_separator().size(),
-                                    engine->env->fs.path_separator().size()) !=
-                    engine->env->fs.path_separator()) {
+                   engine->env->fs.path_separator().size() &&
+               virtual_fs.at(filename).substr(
+                   0, engine->env->fs.path_separator().size()) ==
+                   engine->env->fs.path_separator() &&
+               virtual_fs.at(filename).substr(
+                   virtual_fs.at(filename).size() -
+                   engine->env->fs.path_separator().size()) !=
+                   engine->env->fs.path_separator()) {
         // If the virtual file is not a directory (we assume it is not if it
         // does not end with path separator), then we will just return the
         // virtual file after making sure it is an absolute path
         virtual_path = virtual_fs.at(filename);
     } else if (virtual_fs.at(filename).size() >=
-                    engine->env->fs.path_separator().size() &&
-                virtual_fs.at(filename).substr(
-                    0, engine->env->fs.path_separator().size()) ==
-                    engine->env->fs.path_separator() &&
-                virtual_path.substr(virtual_path.size() -
-                                        engine->env->fs.path_separator().size(),
-                                    engine->env->fs.path_separator().size()) ==
-                    engine->env->fs.path_separator()) {
+                   engine->env->fs.path_separator().size() &&
+               virtual_fs.at(filename).substr(
+                   0, engine->env->fs.path_separator().size()) ==
+                   engine->env->fs.path_separator() &&
+               virtual_fs.at(filename).substr(
+                   virtual_fs.at(filename).size() -
+                       engine->env->fs.path_separator().size(),
+                   engine->env->fs.path_separator().size()) ==
+                   engine->env->fs.path_separator()) {
         // If the virtual file is a directory, we will return the virtual
         // directory path with the filename appended
         virtual_path = virtual_fs.at(filename) + filename;
@@ -187,8 +186,9 @@ const std::string Loader::get_path_in_virtual_fs(
         // libc-2.27.so to libc.so.6 for example)
         virtual_path = default_dir + virtual_fs.at(filename);
     }
+
     engine->log.info("Adding object '" + filename + "' to virtual fs at '" +
-                        virtual_path + "'");
+                     virtual_path + "'");
     return virtual_path;
 }
 

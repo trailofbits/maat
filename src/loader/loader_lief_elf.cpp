@@ -599,18 +599,7 @@ void LoaderLIEF::add_elf_dependencies_to_emulated_fs(
 
         const std::string lib_fs_path =
             get_path_in_virtual_fs(engine, virtual_fs, lib_name, "/usr/lib/");
-        const env::fspath_t virtual_path =
-            engine->env->fs.fspath_from_path(lib_fs_path);
-        engine->env->fs.create_file(lib_fs_path, true);
-        env::physical_file_t pfile = engine->env->fs.get_file(lib_fs_path);
-        if (pfile == nullptr) {
-            throw loader_exception(
-                Fmt() << "Error getting file in emulated filesystem: "
-                        << lib_fs_path >>
-                Fmt::to_str);
-        }
-        addr_t offset = 0;
-        pfile->copy_real_file(lib_path);
+        engine->env->fs.add_real_file(lib_path, lib_fs_path, true);
     }
 }
 

@@ -1,6 +1,7 @@
 #ifndef MAAT_SERIALIZER_HPP
 #define MAAT_SERIALIZER_HPP
 
+#include <optional>
 #include <unordered_map>
 #include <queue>
 #include <string>

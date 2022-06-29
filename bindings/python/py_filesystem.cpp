@@ -135,7 +135,33 @@ static PyObject* FileSystem_get_stdin_for_pid(PyObject* self, PyObject *args)
     }
 };
 
+static PyObject* FileSystem_add_real_file(PyObject* self, PyObject*args)
+{
+    const char* real_file_path;
+    const char* virtual_file_path;
+    int create_path = 1; // True by default
+
+    if( !PyArg_ParseTuple(args, "ss|p", &real_file_path, &virtual_file_path, &create_path))
+    {
+        return NULL;
+    }
+    try
+    {
+        bool res = as_fs_object(self).fs->add_real_file(
+            std::string(real_file_path),
+            std::string(virtual_file_path),
+            (bool)create_path
+        );
+        return PyBool_FromLong((int)res);
+    }
+    catch (const env_exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+}
+
 static PyMethodDef FileSystem_methods[] = {
+    {"add_real_file", (PyCFunction)FileSystem_add_real_file, METH_VARARGS, "Map a real file in the virtual file system"},
     {"new_fa", (PyCFunction)FileSystem_new_fa, METH_VARARGS, "Create a new file accessor for a file"},
     {"get_fa_by_handle", (PyCFunction)FileSystem_get_fa_by_handle, METH_VARARGS, "Get a file accessor by handle"},
     {"delete_fa", (PyCFunction)FileSystem_delete_fa, METH_VARARGS | METH_KEYWORDS, "Remove a file accessor"},
