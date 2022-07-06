@@ -52,13 +52,19 @@ Number bigint_to_number(size_t bits, PyObject* num)
 {
     if (bits <= 64)
     {
-        return Number(bits, PyLong_AsLongLong(num));
+        cst_t res = PyLong_AsLongLong(num);
+        if (PyErr_Occurred() != nullptr)
+        {
+            PyErr_Clear();
+            res = PyLong_AsUnsignedLongLong(num);
+        }
+        return Number(bits, res);
     }
     else
     {
-    PyObject* str = PyObject_Str(num);
-    const char* s = PyUnicode_AsUTF8(str);
-    return Number(bits, std::string(s), 10); // base 10
+        PyObject* str = PyObject_Str(num);
+        const char* s = PyUnicode_AsUTF8(str);
+        return Number(bits, std::string(s), 10); // base 10
     }
 }
 
