@@ -1,0 +1,94 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6debe35..64e0674 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -51,6 +51,7 @@ if(WIN32)
+ else()
+     option(GEN_FILES "Generate the auto-generated files as needed" ON)
+ endif()
++option(ENABLE_PTHREAD "Build mbed TLS with pthread" OFF)
+ 
+ string(REGEX MATCH "Clang" CMAKE_COMPILER_IS_CLANG "${CMAKE_C_COMPILER_ID}")
+ string(REGEX MATCH "GNU" CMAKE_COMPILER_IS_GNU "${CMAKE_C_COMPILER_ID}")
+@@ -243,12 +244,26 @@ else()
+     set(LIB_INSTALL_DIR lib)
+ endif()
+ 
++#include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/)
++
+ add_subdirectory(include)
+ 
+ add_subdirectory(3rdparty)
+ 
+ add_subdirectory(library)
+ 
++if(ENABLE_PTHREAD)
++    if(WIN32)
++        find_package(pthreads_windows REQUIRED)
++        include_directories(${PThreads4W_INCLUDE_DIR})
++    else()
++        set(CMAKE_THREAD_PREFER_PTHREAD ON)
++        find_package(Threads REQUIRED)
++    endif()
++    set(LINK_WITH_PTHREAD ON)
++endif()
++
++
+ #
+ # The C files in tests/src directory contain test code shared among test suites
+ # and programs. This shared test code is compiled and linked to test suites and
+diff --git a/include/CMakeLists.txt b/include/CMakeLists.txt
+index e693bc1..7f5216a 100644
+--- a/include/CMakeLists.txt
++++ b/include/CMakeLists.txt
+@@ -1,9 +1,13 @@
+ option(INSTALL_MBEDTLS_HEADERS "Install mbed TLS headers." ON)
+ 
++#configure_file(mbedtls/config_threading.h.in mbedtls/config_threading.h)
++
+ if(INSTALL_MBEDTLS_HEADERS)
+ 
+     file(GLOB headers "mbedtls/*.h")
+     file(GLOB psa_headers "psa/*.h")
++    
++    #set(headers ${headers} ${CMAKE_CURRENT_BINARY_DIR}/mbedtls/config_threading.h)
+ 
+     install(FILES ${headers}
+         DESTINATION include/mbedtls
+diff --git a/include/mbedtls/mbedtls_config.h b/include/mbedtls/mbedtls_config.h
+index 0558ee0..d2fd425 100644
+--- a/include/mbedtls/mbedtls_config.h
++++ b/include/mbedtls/mbedtls_config.h
+@@ -24,6 +24,15 @@
+  *  limitations under the License.
+  */
+ 
++
++
++
++
++#ifdef ENABLE_PTHREAD
++#define MBEDTLS_THREADING_C
++#define MBEDTLS_THREADING_PTHREAD
++#endif
++
+ /**
+  * This is an optional version symbol that enables comatibility handling of
+  * config files.
+diff --git a/library/CMakeLists.txt b/library/CMakeLists.txt
+index 07599f5..27e426d 100644
+--- a/library/CMakeLists.txt
++++ b/library/CMakeLists.txt
+@@ -189,7 +189,11 @@ if(HAIKU)
+ endif(HAIKU)
+ 
+ if(LINK_WITH_PTHREAD)
+-    set(libs ${libs} pthread)
++    if(WIN32)
++        set(libs ${libs} ${PThreads4W_LIBRARY})
++    else()
++        set(libs ${libs} pthread)
++    endif()
+ endif()
+ 
+ if(LINK_WITH_TRUSTED_STORAGE)

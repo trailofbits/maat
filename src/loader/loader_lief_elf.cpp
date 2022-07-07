@@ -346,7 +346,7 @@ void LoaderLIEF::force_relocation(MaatEngine* engine, addr_t base, const std::st
 {
     for (auto& rel : _elf->relocations())
     {
-        if (rel.has_symbol() and rel.symbol().name() == rel_name)
+        if (rel.has_symbol() and rel.symbol()->name() == rel_name)
         {
             engine->mem->write(base + rel.address(), value, engine->arch->octets(), true); // ignore perms
             return;
@@ -860,9 +860,9 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
 
         if (reloc.has_symbol())
         {
-            symbol_name = get_symbol_name(reloc.symbol());
-            S = reloc.symbol().value() + base_address; // Value of the symbol (its virtual address) (+ base_address)
-            symbol_size = reloc.symbol().size();
+            symbol_name = get_symbol_name(*reloc.symbol());
+            S = reloc.symbol()->value() + base_address; // Value of the symbol (its virtual address) (+ base_address)
+            symbol_size = reloc.symbol()->size();
         }
         else
         {
@@ -872,10 +872,10 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
         }
 
         // Check if the symbol is imported
-        if (reloc.has_symbol() and reloc.symbol().is_imported())
+        if (reloc.has_symbol() and reloc.symbol()->is_imported())
         {
             // Check if function
-            if (reloc.symbol().is_function())
+            if (reloc.symbol()->is_function())
             {
                 try
                 {
@@ -974,7 +974,7 @@ void LoaderLIEF::perform_elf_relocations(MaatEngine* engine, addr_t base_address
                 or reloc.type() == (uint32_t)LIEF::ELF::RELOC_x86_64::R_X86_64_COPY)
         {
             if( simu_data_symbol_addr != 0 ){
-                engine->mem->write_buffer(P, engine->mem->raw_mem_at(simu_data_symbol_addr), reloc.symbol().size(), true ); // Ignore memory flags
+                engine->mem->write_buffer(P, engine->mem->raw_mem_at(simu_data_symbol_addr), reloc.symbol()->size(), true ); // Ignore memory flags
             }
         }
         else if (reloc.type() == (uint32_t)LIEF::ELF::RELOC_i386::R_386_IRELATIVE

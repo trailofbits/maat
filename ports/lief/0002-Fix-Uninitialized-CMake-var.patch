@@ -1,0 +1,19 @@
+diff --git a/LIEFConfig.cmake.in b/LIEFConfig.cmake.in
+index 8c35eeab..ea09099f 100644
+--- a/LIEFConfig.cmake.in
++++ b/LIEFConfig.cmake.in
+@@ -165,7 +165,8 @@ set(LIEF_LIBRARIES LIEF::LIEF)
+ get_target_property(LIEF_INCLUDE_DIRS LIEF::LIEF INTERFACE_INCLUDE_DIRECTORIES)
+ 
+ # Set the following for backwards compatibility
+-if(LIEF_INCLUDE_DIR AND EXISTS "${LIEF_INCLUDE_DIR}/LIEF/version.h")
++if(LIEF_INCLUDE_DIR)
++if(EXISTS "${LIEF_INCLUDE_DIR}/LIEF/version.h")
+   file(STRINGS "${LIEF_INCLUDE_DIR}/LIEF/version.h" LIEF_H REGEX "^#define LIEF_VERSION \"[^\"]*\"$")
+ 
+   string(REGEX REPLACE "^.*LIEF_VERSION \"([0-9]+).*$" "\\1"                   LIEF_VERSION_MAJOR "${LIEF_H}")
+@@ -177,3 +178,4 @@ if(LIEF_INCLUDE_DIR AND EXISTS "${LIEF_INCLUDE_DIR}/LIEF/version.h")
+   set(LIEF_MINOR_VERSION "${LIEF_VERSION_MINOR}")
+   set(LIEF_PATCH_VERSION "${LIEF_VERSION_PATCH}")
+ endif()
++endif()
