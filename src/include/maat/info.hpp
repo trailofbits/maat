@@ -222,10 +222,12 @@ public:
                 os << "reached max instruction count\n";
                 break;
             case Stop::EXIT:
+            {
                 os << "program exited\n";
                 if (exit_status.has_value())
                     os << "Status:     " << *exit_status << "\n";
                 break;
+            }
             case Stop::ERROR:
                 os << "error in emulated code\n";
                 break;

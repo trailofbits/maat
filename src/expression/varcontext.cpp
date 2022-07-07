@@ -11,7 +11,7 @@ using serial::bits;
 /* ====================================== */
 unsigned int VarContext::_id_cnt = 0;
 
-VarContext::VarContext(unsigned int i): id(i)
+VarContext::VarContext(unsigned int i, Endian endian): id(i), _endianness(endian)
 {
     if(id == 0)
         id = ++(VarContext::_id_cnt);
@@ -19,7 +19,8 @@ VarContext::VarContext(unsigned int i): id(i)
 
 void VarContext::set(const std::string& name, cst_t value)
 {
-    varmap[name] = Number(64);
+    if (not contains(name))
+        varmap[name] = Number(64);
     varmap[name].set_cst(value);
     id = ++(VarContext::_id_cnt);
 }
@@ -83,8 +84,10 @@ std::vector<uint8_t> VarContext::get_as_buffer(std::string name, unsigned int el
         {
             for( ucst_t j = 0; j < elem_size; j++ )
             {
-                // Assume little endian
-                res.push_back((uint8_t)((get(var_name) >> (j*8)) & 0xff));
+                if (_endianness == Endian::LITTLE)
+                    res.push_back((uint8_t)((get(var_name) >> (j*8)) & 0xff));
+                else
+                    res.push_back((uint8_t)((get(var_name) >> ((elem_size-j-1)*8)) & 0xff));
             }
             i++;
         }
@@ -209,7 +212,7 @@ std::vector<Value> VarContext::new_concolic_buffer(
             );
         }
         res.push_back(Value(exprvar(elem_size*8, var_name)));
-        set(var_name, concrete_buffer[i]);
+        set(var_name, Number(8, concrete_buffer[i]));
     }
     if (trailing_value)
         res.push_back(Value(exprcst(elem_size*8, *trailing_value)));
@@ -257,9 +260,27 @@ void VarContext::print(std::ostream& os ) const
             os << var.first << " : 0x" << std::string(str) << std::endl;
         }
         else
-            os << var.first << " : " << std::hex << "0x" << var.second.cst_ << std::dec << std::endl;
+            os << var.first << " : " << std::hex << "0x" << var.second.get_ucst() << std::dec << std::endl;
     }
 }
+
+Endian VarContext::endianness() const 
+{
+    return _endianness;
+}
+
+std::set<std::string> VarContext::contained_vars() const
+{
+    std::set<std::string> res;
+    std::transform(
+        varmap.begin(),
+        varmap.end(),
+        std::inserter(res, res.end()),
+        [](auto pair){ return pair.first; }
+    );
+    return res;
+}
+
 
 std::ostream& operator<<(std::ostream& os, const VarContext& c)
 {
@@ -274,8 +295,8 @@ serial::uid_t VarContext::class_uid() const
 
 void VarContext::dump(Serializer& s) const
 {
-    s << bits(_id_cnt);
-    s << bits(varmap.size());
+    s << bits(_endianness);
+    s << bits(varmap.size()) << bits(id);
     for (const auto& [key,val] : varmap)
     {
         s << key << val;
@@ -286,7 +307,8 @@ void VarContext::load(Deserializer& d)
 {
     size_t size;
     varmap.clear();
-    d >> bits(_id_cnt) >> bits(size);
+    d   >> bits(_endianness)
+        >> bits(size) >> bits(id);
     for (int i = 0; i < size; i++)
     {
         std::string key;

@@ -27,6 +27,7 @@ class Solver
 {
 protected:
     static unsigned int model_id_cnt;
+    bool _did_time_out;
 public:
     /// Timeout in milliseconds when calling *check()* (default: 300000ms/5min)
     unsigned int timeout;
@@ -43,6 +44,8 @@ public:
      * on failure. If the check was successful, the generated model can be obtained
      * by calling *get_model()* */
     virtual bool check() = 0;
+    /// Return true if last call to check() timed out
+    bool did_time_out() const; 
     /** Get model for the last solved constraints. If the previous call to *check()*
      * had returned *false*, the function will return a null pointer */
     virtual std::shared_ptr<VarContext> get_model() = 0;

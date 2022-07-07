@@ -52,10 +52,14 @@ private:
     static constexpr int branch_native = 1;
     static constexpr int branch_pcode = 2;
 private:
+    static int _uid_cnt;
+    int _uid;
+private:
     CPUMode _current_cpu_mode;
 private:
     // Convenience variable to avoid passing it to all subfunctions
     bool _halt_after_inst;
+    info::Stop _halt_after_inst_reason;
     // Indicates the last addr before which the engine halted because of an EXEC event
     // handler. It is used to avoid halting forever on the same instr once we resume 
     // execution
@@ -77,7 +81,7 @@ public:
     std::shared_ptr<MemEngine> mem;
     ir::CPU cpu;
     event::EventManager hooks;
-    PathManager path; // TODO: make this a shared_ptr<> when adding support for multi-engine runs
+    std::shared_ptr<PathManager> path;
     std::shared_ptr<env::EnvEmulator> env;
     std::shared_ptr<SymbolManager> symbols;
     std::shared_ptr<ProcessInfo> process;
@@ -100,9 +104,35 @@ public:
 public:
     /// Instanciate an engine for architecture 'arch' and operating system 'os'
     MaatEngine(Arch::Type arch, env::OS os = env::OS::NONE);
+    /* Duplicate a MaatEngine. (INTERNAL / Not part of the public API)
+    
+    @param other The engine to duplicate
+    @param duplicate A set of attributes that must be duplicated from `other`
+        into the new engine. If attributes are present in `duplicate`, they 
+        will not be shared by the two instances, but will be identical just
+        after the new instance is created. This parameter accepts the following
+        keys:
+        - <b>hooks</b>: duplicate all event hooks that are set in `other`
+    
+    @param share A set of attributes that must be shared between `other` and 
+        the new engine. If a shared attribute are essentially pointers so
+        a modification in one of the engines will also modify the other.
+        This parameter accepts the following keys:
+        - <b>vars</b>: share the concolic variables context
+        - <b>mem</b>: share the memory engine
+        - <b>process</b>: share the same process information
+        - <b>path</b>: share the path manager and path constraints
+
+        Note: environment is always shared.
+    */
+    MaatEngine(
+        const MaatEngine& other,
+        std::set<std::string>& duplicate,
+        std::set<std::string>& share
+    );
     MaatEngine(const MaatEngine& other) = delete;
     virtual ~MaatEngine() = default; ///< Destructor
-
+    int uid() const; ///< Return the UID of this engine instance
 public:
     /** \brief Continue executing from the current state. Execute at most
      * 'max_inst' before stopping */
@@ -161,15 +191,42 @@ public:
 public:
     /** \brief Return the assembly string for instruction at address 'addr' */ 
     const std::string& get_inst_asm(addr_t addr);
-private:
+public:
     /** \brief Treat 'addr' as an Address parameter, load the actual value located
      * in memory and store it back in 'addr'. The previous address value stored in
      * 'addr' is put in its auxiliary field.
      * 
      * 'param' is a reference either to the parameter corresponding to 'addr' or - when
      * invoked by 'process_load' - to the output parameter. It's used to get the number
-     * of bits to read in memory */
-    bool resolve_addr_param(const ir::Param& param, ir::ProcessedInst::param_t& addr);
+     * of bits to read in memory 
+     * 
+     * 'mem' is the memory engine to use to read
+     */
+    bool resolve_addr_param(
+        const ir::Param& param,
+        ir::ProcessedInst::param_t& addr,
+        MemEngine& mem
+    );
+
+    /** \brief Perform STORE operation. If 'current_block' was lifted from a memory
+     * address that is overwritten by the operation, 'automodifying_block' is
+     * set to 'true' and 'current_block' is removed from the pool of lifted blocks.
+     * 
+     * This method returns 'true' on success and 'false' if an error occured
+     *
+     * 'treat_as_pcode_store' tells the engine to process the instruction just as
+     * a pcode STORE instruction event if it's not a STORE. 
+     * In that case the address MUST be in pinst.in1 and the value to store MUST be in pinst.in2
+     *
+     * WARNING: this method is for internal use. It is exposed only so that callother
+     * handlers might use it if needed */
+    bool process_store(
+        const ir::Inst& inst,
+        ir::ProcessedInst& pinst,
+        MemEngine& mem_engine,
+        bool treat_as_pcode_store = false
+    );
+private:
     /** \brief Resolve all Address parameters in the instruction if needed. This method
      * returns 'true' on success and 'false' if an error occured */
     bool process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pinst);
@@ -198,16 +255,6 @@ private:
      * This method returns 'true' on success and 'false' if an error occured */ 
     bool process_load(const ir::Inst& inst, ir::ProcessedInst& pinst);
     
-    /** \brief Perform STORE operation. If 'current_block' was lifted from a memory
-     * address that is overwritten by the operation, 'automodifying_block' is
-     * set to 'true' and 'current_block' is removed from the pool of lifted blocks.
-     * 
-     * This method returns 'true' on success and 'false' if an error occured */
-    bool process_store(
-        const ir::Inst& inst,
-        ir::ProcessedInst& pinst
-    );
-    
     /** \brief Perform CALLOTHER operation. CALLOTHER are used when sleigh
      * can not express an instruction semantics using the available pcode operations.
      * We need to define special handlers for them that will perform the operation.
@@ -228,6 +275,9 @@ private:
     /** \brief Removes the instructions whose memory content has been tampered
      * by user callbacks or user scripts, and thus whose lift is no longer valid */
     void handle_pending_x_mem_overwrites();
+public:
+    /// **INTERNAL**: Tells the engine to stop once it finishes executing the current instruction
+    void _stop_after_inst(info::Stop reason);
 public:
     virtual serial::uid_t class_uid() const;
     /** Serialize the engine state

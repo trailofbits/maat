@@ -39,6 +39,7 @@ namespace maat
     // Register SLEIGH to MAAT translator functions
     inline maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name);
     inline maat::ir::Param sleigh_reg_translate_X64(const std::string& reg_name);
+    inline maat::ir::Param sleigh_reg_translate_EVM(const std::string& reg_name);
 
 }
 

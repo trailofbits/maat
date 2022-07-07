@@ -9,6 +9,7 @@
 #include <set>
 #include <functional>
 #include <memory>
+#include <optional>
 #include "maat/exception.hpp"
 
 namespace maat{
@@ -35,7 +36,8 @@ typedef uint16_t uid_t;
  * for error detection */
 enum ClassId : uid_t
 {
-    ARCH_NONE=1,
+    ABSTRACT_COUNTER=1,
+    ARCH_NONE,
     ARCH_X64,
     ARCH_X86,
     BRANCH,
@@ -43,8 +45,16 @@ enum ClassId : uid_t
     CPU,
     CPU_CONTEXT,
     ENV_EMULATOR,
+    ENV_ETHEREUM_EMULATOR,
     ENV_LINUX_EMULATOR,
     ENV_SNAPSHOT,
+    EVM_CONTRACT,
+    EVM_KECCAK_HELPER,
+    EVM_MEMORY,
+    EVM_STACK,
+    EVM_STORAGE,
+    EVM_TRANSACTION,
+    EVM_TRANSACTION_RESULT,
     EXPR_BINOP,
     EXPR_CONCAT,
     EXPR_CST,
@@ -322,8 +332,8 @@ public:
     }
 
     /// Dump map non-primitive type
-    template<template <typename...> class Map, typename K, typename V>
-    Serializer& operator<<(const Map<K,V>& map)
+    template<template <typename...> class Map, typename K, typename V, typename H, typename CMP>
+    Serializer& operator<<(const Map<K,V,H,CMP>& map)
     {
         stream() << bits(map.size());
         for (const auto& [key,val] : map)
@@ -476,9 +486,9 @@ public:
         return *this;
     }
 
-    /// Dump map non-primitive type
-    template<template <typename...> class Map, typename K, typename V>
-    Deserializer& operator>>(Map<K,V>& map)
+    /// Load map non-primitive type
+    template<template <typename...> class Map, typename K, typename V, typename H, typename CMP>
+    Deserializer& operator>>(Map<K,V, H, CMP>& map)
     {
         size_t size;
         K key;

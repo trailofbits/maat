@@ -6,7 +6,7 @@ namespace maat
 using namespace maat::serial;
 
 // Interpret src as a signed mpz value and puts it in res
-// src must be more than 64 bits, mpz_t is not initialized
+// src must be more than 64 bits, mpz_t is initialized
 void mpz_init_force_signed(mpz_t& res, const Number& src)
 {
     if (not src.is_mpz())
@@ -27,9 +27,15 @@ void mpz_init_force_signed(mpz_t& res, const Number& src)
     }
 }
 
+// TODO(boyan): is setting mpz to zero causing memory allocation here ???
 Number::Number(): size(0), cst_(-1), mpz_(0){}
 
 Number::Number(size_t bits): size(bits), cst_(0), mpz_(0){}
+
+Number::Number(size_t bits, const std::string& value, int base): size(bits), cst_(0)
+{
+    set_mpz(value, base);
+}
 
 Number::~Number(){}
 
@@ -98,7 +104,7 @@ cst_t __number_cst_mask(size_t size)
 
 ucst_t __number_cst_unsign_trunc(size_t size, cst_t c)
 {
-    if( size == sizeof(cst_t)*8)
+    if( size >= sizeof(cst_t)*8)
     {
         return c;
     }
@@ -306,10 +312,44 @@ void Number::set_srem(const Number& n1, const Number& n2)
         mpz_t tmp1, tmp2;
         mpz_init_force_signed(tmp1, n1);
         mpz_init_force_signed(tmp2, n2);
-        mpz_fdiv_r(mpz_.get_mpz_t(), tmp1, tmp2);
+        mpz_tdiv_r(mpz_.get_mpz_t(), tmp1, tmp2);
         adjust_mpz();
         mpz_clear(tmp1);
         mpz_clear(tmp2);
+    }
+}
+
+// Helper for exponentiation on integers
+ucst_t uint_pow(ucst_t base, ucst_t exp)
+{
+    ucst_t result = 1;
+    while (exp > 0)
+    {
+        if (exp % 2)
+           result *= base;
+        exp /= 2;
+        base *= base;
+    }
+    return result;
+}
+
+void Number::set_exp(const Number& n1, const Number& n2)
+{
+    size = n1.size;
+    if (size <= 64)
+    {
+        set_cst(uint_pow(n1.get_ucst(), n2.get_ucst()));
+    }
+    else
+    {
+        mpz_t mpz_mod;
+        mpz_init_set_ui(mpz_mod, 1);
+        mpz_mul_2exp(mpz_mod, mpz_mod, size);
+
+        mpz_powm(mpz_.get_mpz_t(), n1.mpz_.get_mpz_t(), n2.mpz_.get_mpz_t(), mpz_mod);
+        adjust_mpz();
+
+        mpz_clear(mpz_mod);
     }
 }
 
@@ -423,8 +463,8 @@ void Number::set_sdiv(const Number& n1, const Number& n2)
         
         mpz_t tmp1, tmp2;
         mpz_init_force_signed(tmp1, n1);
-        mpz_init_force_signed(tmp2, n2); 
-        mpz_fdiv_q(mpz_.get_mpz_t(), tmp1, tmp2);
+        mpz_init_force_signed(tmp2, n2);
+        mpz_tdiv_q(mpz_.get_mpz_t(), tmp1, tmp2);
         adjust_mpz();
         mpz_clear(tmp1);
         mpz_clear(tmp2);
@@ -673,7 +713,13 @@ bool Number::sless_than(const Number& other) const
     {
         // mpz_cmp returns a positive value if op1 > op2, 
         // zero if op1 = op2, or a negative value if op1 < op2
-        return mpz_cmp(mpz_.get_mpz_t(),  other.mpz_.get_mpz_t()) < 0;
+        mpz_t s1, s2;
+        mpz_init_force_signed(s1, *this);
+        mpz_init_force_signed(s2, other);
+        int res = mpz_cmp(s1, s2);
+        mpz_clear(s1);
+        mpz_clear(s2);
+        return res < 0;
     }
 }
 
@@ -685,9 +731,7 @@ bool Number::slessequal_than(const Number& other) const
     }
     else
     {
-        // mpz_cmp returns a positive value if op1 > op2, 
-        // zero if op1 = op2, or a negative value if op1 < op2
-        return mpz_cmp(mpz_.get_mpz_t(), other.mpz_.get_mpz_t()) <= 0;
+        return sless_than(other) or equal_to(other);
     }
 }
 
@@ -699,6 +743,8 @@ bool Number::less_than(const Number& other) const
     }
     else
     {   
+        // TODO(boyan): might work with a simple mpz_cmp() if we interpret everything
+        // as unsigned... instead of the if cases below
         if (mpz_sgn(mpz_.get_mpz_t()) == -1)
         {
             // this is a negative number
@@ -739,35 +785,7 @@ bool Number::lessequal_than(const Number& other) const
     }
     else
     {   
-        if (mpz_sgn(mpz_.get_mpz_t()) == -1)
-        {
-            // this is a negative number
-            if (mpz_sgn(other.mpz_.get_mpz_t()) == -1)
-            {
-                // both are negative, so the bigger one is also
-                // the bigger one when interpreted as unsigned
-                return mpz_cmp(mpz_.get_mpz_t(), other.mpz_.get_mpz_t()) <= 0;
-            }
-            else
-            {
-                // other one is positive so this one will be bigger (MSB == 1)
-                return false;
-            }
-        }
-        else
-        {
-            // this is a positive number
-            if (mpz_sgn(other.mpz_.get_mpz_t()) == -1)
-            {
-                // other is negative and will always be bigger (MSB == 1)
-                return true;
-            }
-            else
-            {
-                // both are positive
-                return mpz_cmp(mpz_.get_mpz_t(), other.mpz_.get_mpz_t()) <= 0;
-            }
-        }
+        return less_than(other) or equal_to(other);
     }
 }
 
@@ -787,6 +805,13 @@ bool Number::equal_to(const Number& other) const
 }
 
 
+bool Number::is_null() const
+{
+    if (size <= 64)
+        return cst_ == 0;
+    else
+        return mpz_cmp_ui(mpz_.get_mpz_t(), 0) == 0;
+}
 
 bool Number::is_mpz() const
 {

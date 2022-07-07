@@ -1,14 +1,18 @@
 #include "maat/engine.hpp"
 #include "maat/solver.hpp"
 #include "maat/stats.hpp"
+#include "maat/env/env_EVM.hpp"
 
 namespace maat
 {
     
 using namespace maat::event;
 
-MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
+int MaatEngine::_uid_cnt = 0;
+
+MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_cnt)
 {
+    Endian endianness = Endian::LITTLE;
     switch (_arch)
     {
         case Arch::Type::X86:
@@ -21,6 +25,13 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
             lifters[CPUMode::X64] = std::make_shared<Lifter>(CPUMode::X64);
             _current_cpu_mode = CPUMode::X64;
             break;
+        case Arch::Type::EVM:
+            arch = std::make_shared<EVM::ArchEVM>();
+            lifters[CPUMode::EVM] = std::make_shared<Lifter>(CPUMode::EVM);
+            _current_cpu_mode = CPUMode::EVM;
+            env = std::make_shared<env::EVM::EthereumEmulator>();
+            endianness = Endian::BIG;
+            break;
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
             _current_cpu_mode = CPUMode::NONE;
@@ -28,19 +39,26 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
         default:
             throw runtime_exception("MaatEngine(): unsupported architecture");
     }
-    switch (os)
+
+    // Set environment if not already set automatically by architecture
+    if (env == nullptr)
     {
-        case env::OS::LINUX:
-            env = std::make_shared<env::LinuxEmulator>(_arch);
-            break;
-        default:
-            env = std::make_shared<env::EnvEmulator>(_arch, env::OS::NONE);
-            break;
+        switch (os)
+        {
+            case env::OS::LINUX:
+                env = std::make_shared<env::LinuxEmulator>(_arch);
+                break;
+            default:
+                env = std::make_shared<env::EnvEmulator>(_arch, env::OS::NONE);
+                break;
+        }
     }
+
     symbols = std::make_shared<SymbolManager>();
-    vars = std::make_shared<VarContext>();
+    path = std::make_shared<PathManager>();
+    vars = std::make_shared<VarContext>(0, endianness);
     snapshots = std::make_shared<SnapshotManager<Snapshot>>();
-    mem = std::make_shared<MemEngine>(vars, arch->bits(), snapshots);
+    mem = std::make_shared<MemEngine>(vars, arch->bits(), snapshots, endianness);
     process = std::make_shared<ProcessInfo>();
     simplifier = NewDefaultExprSimplifier();
     callother_handlers = callother::default_handler_map();
@@ -54,6 +72,67 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os)
 #ifdef MAAT_PYTHON_BINDINGS
     self_python_wrapper_object = nullptr;
 #endif
+}
+
+MaatEngine::MaatEngine(
+    const MaatEngine& other,
+    std::set<std::string>& duplicate,
+    std::set<std::string>& share
+): env(nullptr), _uid(++_uid_cnt)
+{
+    _current_cpu_mode = other._current_cpu_mode;
+    _halt_after_inst = other._halt_after_inst;
+    _halt_after_inst_reason = other._halt_after_inst_reason;
+    _previous_halt_before_exec = other._previous_halt_before_exec;
+    current_ir_state = other.current_ir_state;
+    lifters = other.lifters;
+    // snapshots
+    if (duplicate.count("snapshots"))
+        // TODO snapshots = std::make_shared<SnapshotManager<Snapshot>>(*other.snapshots);
+        throw runtime_exception("MaatEngine: duplication of snapshots manager not yet implemented");
+    else
+        snapshots = std::make_shared<SnapshotManager<Snapshot>>();
+    simplifier = other.simplifier;
+    callother_handlers = other.callother_handlers;
+    arch = other.arch;
+    symbols = std::make_shared<SymbolManager>();
+    // var context
+    if (share.count("vars"))
+        vars = other.vars;
+    else
+        vars = std::make_shared<VarContext>();
+    // memory
+    if (share.count("mem"))
+        mem = other.mem;
+    else
+        mem = std::make_shared<MemEngine>(
+            vars, arch->bits(), snapshots, other.mem->endianness()
+        );
+    cpu = other.cpu;
+    // hooks
+    if (duplicate.count("hooks"))
+        hooks = other.hooks;
+    // path manager
+    if (share.count("path"))
+        path = other.path;
+    else
+        path = std::make_shared<PathManager>();
+
+    symbols = other.symbols;
+    // process
+    if (share.count("process"))
+        process = other.process;
+    else
+        process = std::make_shared<ProcessInfo>();
+    // Always share environment for now
+    env = other.env;
+#ifdef MAAT_PYTHON_BINDINGS
+    self_python_wrapper_object = nullptr;
+#endif
+}
+
+int MaatEngine::uid() const {
+    return _uid;
 }
 
 // TODO: such macros are probably not best practice...
@@ -77,7 +156,7 @@ if (statement != true)\
     }\
     else if (action == event::Action::HALT)\
     {\
-        _halt_after_inst = true;\
+        _stop_after_inst(info::Stop::HOOK);\
     }\
 }
 
@@ -92,7 +171,7 @@ if (statement != true)\
     }\
     else if (action == event::Action::HALT)\
     {\
-        _halt_after_inst = true;\
+        _stop_after_inst(info::Stop::HOOK);\
     }\
 }
 
@@ -108,6 +187,7 @@ info::Stop MaatEngine::run(int max_inst)
     // Reset info field
     info.reset();
     _halt_after_inst = false;
+    _halt_after_inst_reason = info::Stop::NONE;
 
     /* Execute forever while there is an instruction to execute */
     while (next_inst)
@@ -121,6 +201,7 @@ info::Stop MaatEngine::run(int max_inst)
         if (process->terminated)
         {
             info.stop = info::Stop::EXIT;
+            info.exit_status = process->exit_status;
             return info.stop;
         }
 
@@ -254,7 +335,7 @@ info::Stop MaatEngine::run(int max_inst)
             }
             else if (tmp_action == event::Action::HALT)
             {
-                _halt_after_inst = true;
+                _stop_after_inst(info::Stop::HOOK);
             }
             info.reset(); // Reset info here because the CPU can not do it
 
@@ -299,7 +380,7 @@ info::Stop MaatEngine::run(int max_inst)
             {
                 info.addr = asm_inst->addr();
                 ASSERT_SUCCESS(
-                    process_store(inst, pinst)
+                    process_store(inst, pinst, *mem)
                 )
             }
 
@@ -312,10 +393,11 @@ info::Stop MaatEngine::run(int max_inst)
             // Simplify abstract expressions
             if (settings.force_simplify)
             {
-                // Simplify only if not concrete
+                // Simplify only we set a register to a non concrete value
+                // or if the operation was a callother
                 if (
                     pinst.res.is_abstract() 
-                    and inst.out.is_reg()
+                    and (inst.out.is_reg() or inst.op == ir::Op::CALLOTHER)
                     and not pinst.res.expr()->is_concrete(*vars)
                 )
                 {
@@ -379,7 +461,7 @@ info::Stop MaatEngine::run(int max_inst)
 
         if (_halt_after_inst)
         {
-            info.stop = info::Stop::HOOK;
+            info.stop = _halt_after_inst_reason;
             info.addr = asm_inst->addr();
             return info.stop;
         }
@@ -412,9 +494,9 @@ bool MaatEngine::process_branch(
 {
     if (!ir::is_branch_op(inst.op))
         throw runtime_exception("MaatEngine::process_branch(): called with non-branching instruction!");
-    
+
     Value in0 = pinst.in0.value(); 
-    const Value& in1 = pinst.in1.value();
+    Value in1 = pinst.in1.value();
     Value next(arch->bits(), asm_inst.addr()+asm_inst.raw_size());
     bool taken = false;
     std::optional<bool> opt_taken;
@@ -481,6 +563,10 @@ bool MaatEngine::process_branch(
             info.reset();
             break;
         case ir::Op::CBRANCH:
+            // If we record a symbolic constraints, simplify it...
+            if (settings.record_path_constraints and not in1.is_concrete(*vars))
+                in1 = simplifier->simplify(in1.as_expr());
+
             // Try to resolve the branch is not symbolic
             if (not in1.is_symbolic(*vars))
             {
@@ -564,7 +650,7 @@ bool MaatEngine::process_branch(
                     and not in1.is_concrete(*vars)
                 )
                 {
-                    path.add(in1 != 0);
+                    path->add(in1 != 0);
                 }
             }
             else // branch condition is false, so no branch
@@ -576,7 +662,7 @@ bool MaatEngine::process_branch(
                     and not in1.is_concrete(*vars)
                 )
                 {
-                    path.add(in1 == 0);
+                    path->add(in1 == 0);
                 }
             }
             if (
@@ -611,7 +697,11 @@ bool MaatEngine::process_branch(
 }
 
 
-bool MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::param_t& addr_param)
+bool MaatEngine::resolve_addr_param(
+    const ir::Param& param,
+    ir::ProcessedInst::param_t& addr_param,
+    MemEngine& mem_engine
+)
 {
     const Value& addr = addr_param.value();
     Value loaded;
@@ -665,11 +755,11 @@ bool MaatEngine::resolve_addr_param(const ir::Param& param, ir::ProcessedInst::p
                 range = refine_value_set(load_addr);
                 MaatStats::instance().done_refine_symptr_read();
             }
-            mem->symbolic_ptr_read(loaded, load_addr, range, load_size, settings);
+            mem_engine.symbolic_ptr_read(loaded, load_addr, range, load_size, settings);
         }
         else
         {
-            mem->read(loaded, addr_param.auxilliary.as_uint(*vars), load_size);
+            mem_engine.read(loaded, addr_param.auxilliary.as_uint(*vars), load_size);
         }
         // P-code can load a number of bits that's not a multiple of 8.
         // If that's the case, readjust the loaded value size by trimming
@@ -723,8 +813,8 @@ bool MaatEngine::process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pi
         return true;
 
     if (
-        (inst.in[0].is_addr() and !resolve_addr_param(inst.in[0], pinst.in0))
-        or (inst.in[1].is_addr() and !resolve_addr_param(inst.in[1], pinst.in1))
+        (inst.in[0].is_addr() and !resolve_addr_param(inst.in[0], pinst.in0, *mem))
+        or (inst.in[1].is_addr() and !resolve_addr_param(inst.in[1], pinst.in1, *mem))
     )
     {
         log.error("MaatEngine::process_addr_params(): failed to process IR inst: ", inst);
@@ -736,7 +826,7 @@ bool MaatEngine::process_addr_params(const ir::Inst& inst, ir::ProcessedInst& pi
 
 bool MaatEngine::process_load(const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    if (not resolve_addr_param(inst.out, pinst.in1))
+    if (not resolve_addr_param(inst.out, pinst.in1, *mem))
     {
         log.error("MaatEngine::process_load(): failed to resolve address parameter");
         return false;
@@ -760,7 +850,9 @@ bool MaatEngine::process_load(const ir::Inst& inst, ir::ProcessedInst& pinst)
 
 bool MaatEngine::process_store(
     const ir::Inst& inst,
-    ir::ProcessedInst& pinst
+    ir::ProcessedInst& pinst,
+    MemEngine& mem_engine,
+    bool treat_as_pcode_store
 )
 {
     mem_alert_t mem_alert = maat::mem_alert_none;
@@ -771,7 +863,7 @@ bool MaatEngine::process_store(
     Value to_store = pinst.in2.value();
 
     // Get address and value to store
-    if (inst.op == ir::Op::STORE)
+    if (inst.op == ir::Op::STORE or treat_as_pcode_store)
     {
         if (
             addr.is_concrete(*vars)
@@ -829,11 +921,11 @@ bool MaatEngine::process_store(
                 range = refine_value_set(abstract_store_addr);
                 MaatStats::instance().done_refine_symptr_write();
             }
-            mem->symbolic_ptr_write(abstract_store_addr, range, to_store, settings, &mem_alert, true);
+            mem_engine.symbolic_ptr_write(abstract_store_addr, range, to_store, settings, &mem_alert, true);
         }
         else
         {
-            mem->write(concrete_store_addr, to_store, &mem_alert, true);
+            mem_engine.write(concrete_store_addr, to_store, &mem_alert, true);
         }
         // Mem write event
         if (hooks.has_hooks({Event::MEM_W, Event::MEM_RW}, When::AFTER))
@@ -946,8 +1038,9 @@ const ir::AsmInst& MaatEngine::get_asm_inst(addr_t addr)
 {
     ir::IRMap& ir_map = ir::get_ir_map(mem->uid());
     if (ir_map.contains_inst_at(addr))
+    {
         return ir_map.get_inst_at(addr);
-
+    }
     // The code hasn't been lifted yet so we disassemble it
     try
     {
@@ -1012,8 +1105,8 @@ MaatEngine::snapshot_t MaatEngine::take_snapshot()
     snapshot.process = std::make_shared<ProcessInfo>(*process);
     snapshot.page_permissions = mem->page_manager.regions();
     snapshot.mem_mappings = mem->mappings.get_maps();
-    snapshot.path = path.take_snapshot();
-    snapshot.env = env->fs.take_snapshot();
+    snapshot.path = path->take_snapshot();
+    snapshot.env = env->take_snapshot();
     // Snapshot ID is its index in the snapshots list
     return snapshots->size()-1;
 }
@@ -1075,8 +1168,8 @@ void MaatEngine::restore_last_snapshot(bool remove)
     process = snapshot.process;
     mem->page_manager.set_regions(std::move(snapshot.page_permissions));
     mem->mappings.set_maps(std::move(snapshot.mem_mappings));
-    path.restore_snapshot(snapshot.path);
-    env->fs.restore_snapshot(snapshot.env);
+    path->restore_snapshot(snapshot.path);
+    env->restore_snapshot(snapshot.env, remove);
     // Restore memory segments
     for (addr_t start : snapshot.created_segments)
     {
@@ -1116,6 +1209,7 @@ void MaatEngine::terminate_process(Value status)
     info.stop = info::Stop::EXIT;
     info.exit_status = status;
     process->terminated = true;
+    process->exit_status = status;
 }
 
 // Return the mean of min/max by taking stride into account
@@ -1193,8 +1287,10 @@ ValueSet MaatEngine::refine_value_set(Expr e)
     // Get path constraints involving same variables as expression 
     e->get_vars(var_list);
     solver->reset();
-    for (auto& constraint : path.constraints())
+    for (auto& constraint : path->constraints())
     {
+        // FIXME(boyan): we should use get_related_vars() once we
+        // fix the implementation
         if (constraint->contains_vars(var_list))
             solver->add(constraint);
     }
@@ -1303,6 +1399,12 @@ const std::string& MaatEngine::get_inst_asm(addr_t addr)
     return lifters[_current_cpu_mode]->get_inst_asm(addr, mem->raw_mem_at(addr));
 }
 
+void MaatEngine::_stop_after_inst(info::Stop reason)
+{
+    _halt_after_inst = true;
+    _halt_after_inst_reason = reason;
+}
+
 void MaatEngine::load(
     const std::string& binary,
     loader::Format type,
@@ -1315,23 +1417,33 @@ void MaatEngine::load(
     bool load_interp
 )
 {
+    if (arch->type == Arch::Type::EVM)
+    {
+        // Use special loader for EVM
+        loader::LoaderEVM().load(this, binary, args, envp);
+    }
+    else
+    {
 #ifdef MAAT_HAS_LOADER_BACKEND
-    std::unique_ptr<loader::Loader> l = loader::new_loader();
-    l->load(
-        this,
-        binary,
-        type,
-        base,
-        args,
-        envp,
-        virtual_fs,
-        libdirs,
-        ignore_libs,
-        load_interp
-    );
+        // TODO(boyan): pass binary type to new_loader() so that it returns
+        // the appropriate loader. i.e LoaderLIEF, LoaderXXXX...
+        std::unique_ptr<loader::Loader> l = loader::new_loader();
+        l->load(
+            this,
+            binary,
+            type,
+            base,
+            args,
+            envp,
+            virtual_fs,
+            libdirs,
+            ignore_libs,
+            load_interp
+        );
 #else
-    throw runtime_exception("Maat was compiled without a loader backend");
+        throw runtime_exception("Maat was compiled without a suitable loader backend");
 #endif
+    }
 }
 
 serial::uid_t MaatEngine::class_uid() const
@@ -1342,6 +1454,7 @@ serial::uid_t MaatEngine::class_uid() const
 void MaatEngine::dump(serial::Serializer& s) const
 {
     s << bits(_current_cpu_mode) << bits(_halt_after_inst)
+      << bits(_halt_after_inst_reason)
       << bits(_previous_halt_before_exec)
       << current_ir_state << path
       << snapshots << arch << vars << mem
@@ -1356,6 +1469,7 @@ void MaatEngine::dump(serial::Serializer& s) const
 void MaatEngine::load(serial::Deserializer& d)
 {
     d >> bits(_current_cpu_mode) >> bits(_halt_after_inst)
+      >> bits(_halt_after_inst_reason)
       >> bits(_previous_halt_before_exec)
       >> current_ir_state >> path
       >> snapshots >> arch >> vars >> mem
@@ -1373,5 +1487,6 @@ void MaatEngine::load(serial::Deserializer& d)
         lifters[mode] = lifter;
     }
 }
+
 
 } // namespace maat

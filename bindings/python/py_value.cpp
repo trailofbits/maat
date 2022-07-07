@@ -52,7 +52,7 @@ static PyObject* Value_is_concolic(PyObject* self, PyObject* args)
     else if (as_value_object(self).varctx)
         return PyBool_FromLong((*(as_value_object(self).value)).is_concolic(**as_value_object(self).varctx));
     else
-        return PyErr_Format(PyExc_RuntimeError, "Valueession isn't bound to a VarContext");
+        return PyErr_Format(PyExc_RuntimeError, "Value isn't bound to a VarContext");
 }
 
 static PyObject* Value_is_concrete(PyObject* self, PyObject* args)
@@ -67,7 +67,7 @@ static PyObject* Value_is_concrete(PyObject* self, PyObject* args)
     else if (as_value_object(self).varctx)
         return PyBool_FromLong((*(as_value_object(self).value)).is_concrete(**as_value_object(self).varctx));
     else
-        return PyErr_Format(PyExc_RuntimeError, "Valueession isn't bound to a VarContext");
+        return PyErr_Format(PyExc_RuntimeError, "Value isn't bound to a VarContext");
         
 }
 
@@ -82,7 +82,7 @@ static PyObject* Value_is_symbolic(PyObject* self, PyObject* args){
     else if (as_value_object(self).varctx)
         return PyBool_FromLong((*(as_value_object(self).value)).is_symbolic(**as_value_object(self).varctx));
     else
-        return PyErr_Format(PyExc_RuntimeError, "Valueession isn't bound to a VarContext");
+        return PyErr_Format(PyExc_RuntimeError, "Value isn't bound to a VarContext");
 }
 
 static PyObject* Value_as_uint(PyObject* self, PyObject* args)
@@ -206,6 +206,22 @@ static PyObject* Value_get_size(PyObject* self, void* closure)
     return PyLong_FromLong((*as_value_object(self).value).size());
 }
 
+static PyObject* Value_get_name(PyObject* self, void* closure)
+{
+    const Value& val = *as_value_object(self).value;
+    if( val.is_abstract() and val.expr()->is_type(ExprType::VAR)) 
+    {
+        return PyUnicode_FromString(val.expr()->name().c_str());
+    }
+    else
+    {
+        return PyErr_Format(
+            PyExc_AttributeError,
+            "Trying to get 'name' attribute but value is not a symbolic variable"
+        );
+    }
+}
+
 static PyMethodDef Value_methods[] = 
 {
     {"is_concolic", (PyCFunction)Value_is_concolic, METH_VARARGS, "Check whether the value is concolic"},
@@ -220,6 +236,7 @@ static PyMethodDef Value_methods[] =
 static PyGetSetDef Value_getset[] =
 {
     {"size", Value_get_size, NULL, "Value size in bits", NULL},
+    {"name", Value_get_name, NULL, "Variable name (throws AttributeError if the value is not a symbolic variable)", NULL},
     {NULL}
 };
 
@@ -254,6 +271,12 @@ static PyObject* Value_richcompare(PyObject* self, PyObject* other, int op)
     }
 }
 
+// Hash
+Py_hash_t Value_hash(PyObject* self)
+{
+    return as_value_object(self).value->as_expr()->hash();
+}
+
 static PyNumberMethods Value_operators; // Empty PyNumberMethods, will be filled in the init_expression() function
 
 /* Type description for python Value objects */
@@ -271,7 +294,7 @@ PyTypeObject Value_Type = {
     &Value_operators,                          /* tp_as_number */
     0,                                        /* tp_as_sequence */
     0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
+    (hashfunc)Value_hash,                     /* tp_hash  */
     0,                                        /* tp_call */
     Value_str,                                 /* tp_str */
     0,                                        /* tp_getattro */
@@ -473,7 +496,7 @@ PyObject* maat_Cst(PyObject* self, PyObject* args, PyObject* keywords)
     else if (PyLong_Check(val))
     {
         CATCH_EXPRESSION_EXCEPTION(
-            return (PyObject*)PyValue_FromValue(exprcst(size, PyLong_AsLongLong(val)));
+            return (PyObject*)PyValue_FromValue(bigint_to_number(size, val));
         )
     }
     else
@@ -519,6 +542,27 @@ PyObject* maat_Extract(PyObject* self, PyObject* args)
         return NULL;
     }
     CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( extract(*(as_value_object(val).value), higher, lower)); )
+}
+
+
+PyObject* maat_Zext(PyObject* self, PyObject* args)
+{
+    Value_Object* val;
+    long new_size;
+    if( ! PyArg_ParseTuple(args, "lO!", &new_size, (PyObject*)&Value_Type, &val)){
+        return NULL;
+    }
+    CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( zext(new_size, *(as_value_object(val).value)));)
+}
+
+PyObject* maat_Sext(PyObject* self, PyObject* args)
+{
+    Value_Object* val;
+    long new_size;
+    if( ! PyArg_ParseTuple(args, "lO!", &new_size, (PyObject*)&Value_Type, &val)){
+        return NULL;
+    }
+    CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( sext(new_size, *(as_value_object(val).value)));)
 }
 
 // TODO SAR, ...
@@ -590,13 +634,15 @@ static PyObject* VarContext_repr(PyObject* self)
 static PyObject* VarContext_set(PyObject* self, PyObject* args)
 {
     const char * name;
-    cst_t value;
+    PyObject* value;
+    int bits = 64;
 
-    if( !PyArg_ParseTuple(args, "sl", &name, &value)){
+    if( !PyArg_ParseTuple(args, "sO!|i", &name, &PyLong_Type, &value, &bits)){
         return NULL;
     }
 
-    as_varctx_object(self).ctx->set(std::string(name), value);
+    Number number = bigint_to_number(bits, value);
+    as_varctx_object(self).ctx->set(std::string(name), number);
     Py_RETURN_NONE;
 }
 
@@ -614,7 +660,10 @@ static PyObject* VarContext_get(PyObject* self, PyObject* args)
     }
     try
     {
-        return PyLong_FromUnsignedLongLong(as_varctx_object(self).ctx->get(sname));
+        const Number& res =  as_varctx_object(self).ctx->get_as_number(sname);
+        std::stringstream ss;
+        ss << std::hex << res;
+        return PyLong_FromString(ss.str().c_str(), NULL, 16);
     }
     catch(const var_context_exception& e)
     {
@@ -671,7 +720,7 @@ static PyObject* VarContext_get_as_string(PyObject* self, PyObject* args)
         return PyErr_Format(PyExc_ValueError, e.what());
     }
 
-    res = PyUnicode_FromFormat("%s", s.c_str());
+    res = PyBytes_FromString(s.c_str());
     if (res == nullptr)
     {
         return NULL;
@@ -697,6 +746,7 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
         &bytes_len, &nb_elems, &elem_size, &PyLong_Type, &trailing_value))
     {
         PyErr_Clear();
+
         if (nb_elems == -1)
         {
             if (bytes_len % elem_size != 0)
@@ -718,7 +768,10 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
             cst_t val = 0;
             for (int j = elem_size-1; j >= 0; j--)
             {
-                val = (val << 8) | ((cst_t)(bytes[i*elem_size+j]) & 0xff);
+                if (as_varctx_object(self).ctx->endianness() == Endian::LITTLE)
+                    val = (val << 8) | ((cst_t)(bytes[i*elem_size+j]) & 0xff);
+                else
+                    val |= ((ucst_t)(bytes[i*elem_size+j]) << j);
             }
             concrete_buffer.push_back(val);
         }
@@ -772,22 +825,7 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
     }
     
     // Build result back to python
-    // TODO: transforming a std::vector<Value> into a list of Value should
-    // be factorized in a util function
-    PyObject* list = PyList_New(0);
-    if( list == NULL )
-    {
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& e : res)
-    {
-        if( PyList_Append(list, PyValue_FromValue(e)) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-
-    return list;
+    return native_to_py(res);
 }
 
 static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args, PyObject* keywords)
@@ -822,23 +860,8 @@ static PyObject* VarContext_new_symbolic_buffer(PyObject* self, PyObject* args, 
     {
         return PyErr_Format(PyExc_ValueError, e.what());
     }
-    
-    // Build result back to python
-    // TODO: transforming a std::vector<Value> into a list of Value should
-    // be factorized in a util function
-    PyObject* list = PyList_New(0);
-    if( list == NULL )
-    {
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (Value& e : res)
-    {
-        if( PyList_Append(list, PyValue_FromValue(e)) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-    return list;
+
+    return native_to_py(res);
 }
 
 static PyObject* VarContext_remove(PyObject* self, PyObject* args)
@@ -878,6 +901,24 @@ static PyObject* VarContext_update_from(PyObject* self, PyObject* args)
     Py_RETURN_NONE;
 }
 
+
+static PyObject* VarContext_contained_vars(PyObject* self)
+{
+    PyObject* list = PyList_New(0);
+    if( list == NULL )
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
+    }
+    for (const std::string& var : as_varctx_object(self).ctx->contained_vars())
+    {
+        if( PyList_Append(list, PyUnicode_FromString(var.c_str())) == -1)
+        {
+            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
+        }
+    }
+    return list;
+}
+
 static PyMethodDef VarContext_methods[] = {
     {"set", (PyCFunction)VarContext_set, METH_VARARGS, "Give a concrete value to a symbolic variable"},
     {"get", (PyCFunction)VarContext_get, METH_VARARGS, "Give the concrete value associated with a symbolic variable"},
@@ -885,6 +926,7 @@ static PyMethodDef VarContext_methods[] = {
     {"get_as_str", (PyCFunction)VarContext_get_as_string, METH_VARARGS, "Give the string associated with a certain symbolic variable prefix"},
     {"remove", (PyCFunction)VarContext_remove, METH_VARARGS, "Remove the concrete value associated with a symbolic variable"},
     {"contains", (PyCFunction)VarContext_contains, METH_VARARGS, "Check if a given symbolic variable has an associated concrete value"},
+    {"contained_vars", (PyCFunction)VarContext_contained_vars, METH_NOARGS, "Get the list of contained symbolic variables"},
     {"update_from", (PyCFunction)VarContext_update_from, METH_VARARGS, "Update concrete values associated with symbolic variables according to another VarContext"},
     {"new_concolic_buffer", (PyCFunction)VarContext_new_concolic_buffer, METH_VARARGS|METH_KEYWORDS, "Create a new buffer of concolic variables"},
     {"new_symbolic_buffer", (PyCFunction)VarContext_new_symbolic_buffer, METH_VARARGS|METH_KEYWORDS, "Create a new buffer of symbolic variables"},
@@ -980,6 +1022,8 @@ void init_expression(PyObject* module)
     Value_operators.nb_rshift = Value_nb_rshift;
     Value_operators.nb_negative = Value_nb_neg;
     Value_operators.nb_invert = Value_nb_not;
+
+    register_type(module, (PyTypeObject*)get_Value_Type());
 }
 
 } // namespace py

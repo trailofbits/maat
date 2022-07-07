@@ -33,7 +33,8 @@ namespace loader
 enum class Format
 {
     ELF32, ///< ELF 32-bits
-    ELF64 ///< ELF 64-bits
+    ELF64, ///< ELF 64-bits
+    NONE ///< Unspecified
 };
 
 
@@ -54,9 +55,11 @@ private:
 public:
     /// Create a concrete command-line argument
     CmdlineArg(const std::string& value);
+    /// Create a command line argument from a single abstract value
+    CmdlineArg(const Value& value);
     /** \brief Create a command-line argument from a buffer
-     * @param arg Argument as a buffer of values. Values in the buffer
-     must have a size of 1 byte. */
+     * @param arg Argument as a buffer of values that are concatenated
+     * to form the argument */
     CmdlineArg(const std::vector<Value>& arg);
 public:
     const std::string& string() const; ///< Return the concrete argument string
@@ -238,6 +241,27 @@ private:
         addr_t value
     );
     void elf_additional_processing(MaatEngine* engine, addr_t base);
+};
+
+/// Class for deploying ethereum smart-contracts into a MaatEngine
+class LoaderEVM
+{
+public:
+    /** \brief Deploy a contract into 'engine'. 
+    
+    @param engine The engine where to deploy the contract
+    @param contract_file The file containing the contract bytecode
+    @param args The arguments to the contract constructor
+    @param env Additional information. 'address' contains the address
+    where to deploy the contract. 'deployer' contains the address of the
+    deployer of the contract. Both must be encoded in hex form without
+    the preceeding '0x' */
+    void load(
+        MaatEngine* engine,
+        const std::string& contract_file,
+        const std::vector<CmdlineArg>& args,
+        const environ_t& env
+    );
 };
 
 // util function

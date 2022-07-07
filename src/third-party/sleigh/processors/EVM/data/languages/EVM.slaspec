@@ -1,0 +1,652 @@
+define endian=big;
+define alignment=1;
+
+# The RAM is used to store the contract code
+define space code type=ram_space size=4 wordsize=1 default;
+
+# Registers
+define space register type=register_space size=4 wordsize=1;
+define register offset=0 size=4 [PC];
+
+# Stack helpers
+define pcodeop stack_pop; # pop one word from stack
+define pcodeop stack_push; # push one word to stack
+define pcodeop stack_get; # get one word from stack at given position
+define pcodeop stack_set; # write one word to stack at given position
+
+# Instructions that can't be lifted to pcode
+define pcodeop stop; # STOP
+define pcodeop evm_div; # DIV that allows dividing by 0
+define pcodeop evm_sdiv; # SDIV that allows dividing by 0
+define pcodeop evm_mod; # MOD that allows dividing by 0
+define pcodeop evm_smod; # SMOD that allows dividing by 0
+define pcodeop evm_exp; # EXP
+define pcodeop evm_signextend; # SIGNEXTEND with variable # of bytes to extend
+define pcodeop evm_byte; # BYTE, extract single byte from word
+define pcodeop evm_mload; # MLOAD
+define pcodeop evm_mstore;
+define pcodeop evm_mstore8;
+define pcodeop evm_msize;
+define pcodeop evm_dup; # DUP1 to DUP16
+define pcodeop evm_swap; # SWAP1 to SWAP16
+define pcodeop evm_sload;
+define pcodeop evm_sstore;
+define pcodeop evm_env_info; # Generic function used for 0x30's env operations (ADDRESS, BALANCE, etc)
+define pcodeop evm_keccak; # KECCAK
+define pcodeop evm_return; # RETURN
+define pcodeop evm_invalid; # INVALID
+define pcodeop evm_revert; # REVERT
+define pcodeop evm_call; # CALL
+define pcodeop evm_callcode; # CALLCODE
+define pcodeop evm_delegatecall; # DELEGATECALL
+define pcodeop evm_create; # CREATE
+define pcodeop evm_selfdestruct; # SELFDESTRUCT
+
+
+# Opcode token: EVM opcodes take 1 byte
+define token opcode(8)
+	op = (0,7)
+    op_higher = (4,7)
+;
+
+:STOP is op = 0x0 {
+    stop();
+}
+
+:ADD is op = 0x1 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    stack_push(tmp1+tmp2);
+}
+
+:MUL is op = 0x2 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    stack_push(tmp1*tmp2);
+}
+
+:SUB is op = 0x3 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    stack_push(tmp1-tmp2);
+}
+
+:DIV is op = 0x4 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    local res:32 = evm_div(tmp1, tmp2);
+    stack_push(res);
+}
+
+:SDIV is op = 0x5 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    local res:32 = evm_sdiv(tmp1, tmp2);
+    stack_push(res);
+}
+
+:MOD is op = 0x6 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    local res:32 = evm_mod(tmp1, tmp2);
+    stack_push(res);
+}
+
+:SMOD is op = 0x7 {
+    local tmp1:32 = stack_pop();
+    local tmp2:32 = stack_pop();
+    local res:32 = evm_smod(tmp1, tmp2);
+    stack_push(res);
+}
+
+:ADDMOD is op = 0x8 {
+    local tmp:32 = stack_pop();
+    local arg1:64 = zext(tmp);
+    tmp = stack_pop();
+    local arg2:64 = zext(tmp);
+    tmp = stack_pop();
+    local arg3:64 = zext(tmp);
+
+    local res:64 = evm_mod(arg1+arg2, arg3);
+    stack_push(res[0,256]);
+}
+
+:MULMOD is op = 0x9 {
+    local tmp:32 = stack_pop();
+    local arg1:64 = zext(tmp);
+    tmp = stack_pop();
+    local arg2:64 = zext(tmp);
+    tmp = stack_pop();
+    local arg3:64 = zext(tmp);
+
+    local res:64 = evm_mod(arg1*arg2, arg3);
+    stack_push(res[0,256]);
+}
+
+:EXP is op = 0xa {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = evm_exp(arg1, arg2);
+    stack_push(res);
+}
+
+:SIGNEXTEND is op = 0xb {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = evm_signextend(arg1, arg2);
+    stack_push(res);
+}
+
+:LT is op = 0x10 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = zext(arg1 < arg2);
+    stack_push(res);
+}
+
+:GT is op = 0x11 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = zext(arg1 > arg2);
+    stack_push(res);
+}
+
+:SLT is op = 0x12 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = zext(arg1 s< arg2);
+    stack_push(res);
+}
+
+:SGT is op = 0x13 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = zext(arg1 s> arg2);
+    stack_push(res);
+}
+
+:EQ is op = 0x14 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = zext(arg1 == arg2);
+    stack_push(res);
+}
+
+:ISZERO is op = 0x15 {
+    local arg1:32 = stack_pop();
+    local res:32 = zext(arg1 == 0:32);
+    stack_push(res);
+}
+
+:AND is op = 0x16 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg1 & arg2);
+}
+
+:OR is op = 0x17 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg1 | arg2);
+}
+
+:XOR is op = 0x18 {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg1 ^ arg2);
+}
+
+:NOT is op = 0x19 {
+    local arg1:32 = stack_pop();
+    stack_push(~arg1);
+}
+
+:BYTE is op = 0x1a {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    local res:32 = evm_byte(arg1, arg2);
+    stack_push(res);
+}
+
+:SHL is op = 0x1b {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg2 << arg1);
+}
+
+:SHR is op = 0x1c {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg2 >> arg1);
+}
+
+:SAR is op = 0x1d {
+    local arg1:32 = stack_pop();
+    local arg2:32 = stack_pop();
+    stack_push(arg2 s>> arg1);
+}
+
+:KECCAK is op = 0x20 {
+    local addr:32 = stack_pop();
+    local len:32 = stack_pop();
+    local res:32 = evm_keccak(addr, len);
+    stack_push(res);
+}
+
+op_byte: b is op [b = op+0;] {export *[const]:1 b;}
+
+:ADDRESS is op = 0x30 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:BALANCE is op = 0x31 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:ORIGIN is op = 0x32 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CALLER is op = 0x33 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CALLVALUE is op = 0x34 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CALLDATALOAD is op = 0x35 & op_byte {
+    local offset:32 = stack_pop();
+    local a:32 = evm_env_info(op_byte, offset);
+    stack_push(a);
+}
+
+:CALLDATASIZE is op = 0x36 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CALLDATACOPY is op = 0x37 & op_byte {
+    evm_env_info(op_byte);
+}
+
+:CODESIZE is op = 0x38 & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:CODECOPY is op = 0x39 & op_byte {
+    evm_env_info(op_byte);
+}
+
+:EXTCODESIZE is op = 0x3b & op_byte {
+    local s:32 = evm_env_info(op_byte);
+    stack_push(s);
+}
+
+:EXTCODECOPY is op = 0x3c & op_byte {
+    evm_env_info(op_byte);
+}
+
+:RETURNDATASIZE is op = 0x3d & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
+:RETURNDATACOPY is op = 0x3e & op_byte {
+    evm_env_info(op_byte);
+}
+
+# TODO: other 0x30's env operations
+
+:TIMESTAMP is op = 0x42 & op_byte {
+    evm_env_info(op_byte);
+}
+
+:NUMBER is op = 0x43 & op_byte {
+    evm_env_info(op_byte);
+}
+
+# TODO: other 0x40's block operations
+
+:POP is op = 0x50 {
+    local tmp:32 = stack_pop();
+}
+
+:MLOAD is op = 0x51 {
+    local addr:32 = stack_pop();
+    local res:32 = evm_mload(addr);
+    stack_push(res);
+}
+
+:MSTORE is op = 0x52 {
+    local addr:32 = stack_pop();
+    local val:32 = stack_pop();
+    evm_mstore(addr, val);
+}
+
+:MSTORE8 is op = 0x53 {
+    local addr:32 = stack_pop();
+    local val:32 = stack_pop();
+    evm_mstore8(addr, val:1);
+}
+
+:SLOAD is op = 0x54 {
+    local addr:32 = stack_pop();
+    local res:32 = evm_sload(addr);
+    stack_push(res);
+}
+
+:SSTORE is op = 0x55 {
+    local addr:32 = stack_pop();
+    local val:32 = stack_pop();
+    evm_sstore(addr, val);
+}
+
+:JUMP is op = 0x56 {
+    local target:32 = stack_pop();
+    # Maat uses a 32-bits EVM PC
+    goto [target[0,32]];
+}
+
+jump_dest: is epsilon {
+    target:32 = stack_pop();
+    # Maat uses a 32-bits EVM PC
+    local a:4 = target[0,32];
+    export a;
+}
+
+:JUMPI jump_dest is op = 0x57 & jump_dest {
+    local cc:32 = stack_pop();
+    if (cc != 0) goto jump_dest;
+}
+
+:PC is op = 0x58 {
+    local current:32 = zext(PC);
+    stack_push(current);
+}
+
+:MSIZE is op = 0x59 {
+    local res:32 = evm_msize();
+    stack_push(res);
+}
+
+:GAS is op = 0x5a & op_byte {
+    local res:32 = evm_env_info(op_byte);
+    stack_push(res);
+}
+
+:JUMPDEST is op = 0x5b {
+    # No effects
+}
+
+#### Macros used for PUSH<n> instructions
+
+code_bytes: addr is epsilon [addr = inst_next;]{export *[const]:4 addr;}
+
+macro pushn(addr, tmp) {
+    tmp = *addr;
+    local val:32 = zext(tmp);
+    stack_push(val);
+}
+
+push_next_inst: next is op [ next=inst_next+op-95; ] { export *[code]:4 next; }
+
+# NOTE: the PUSH<n> instructions encodings can take up more than 16 bytes. However 
+# sleigh supports only instructions on less than 16 bytes. Therefore we can't disassemble
+# the raw bytes as part of the instruction but need to read them separately, and then
+# jump past the bytes.
+
+:PUSH1 is op = 0x60 & push_next_inst & code_bytes {
+    local tmp:1;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH2 is op = 0x61 & push_next_inst & code_bytes {
+    local tmp:2;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH3 is op = 0x62 & push_next_inst & code_bytes {
+    local tmp:3;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH4 is op = 0x63 & push_next_inst & code_bytes {
+    local tmp:4;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH5 is op = 0x64 & push_next_inst & code_bytes {
+    local tmp:5;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH6 is op = 0x65 & push_next_inst & code_bytes {
+    local tmp:6;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH7 is op = 0x66 & push_next_inst & code_bytes {
+    local tmp:7;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH8 is op = 0x67 & push_next_inst & code_bytes {
+    local tmp:8;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH9 is op = 0x68 & push_next_inst & code_bytes {
+    local tmp:9;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH10 is op = 0x69 & push_next_inst & code_bytes {
+    local tmp:10;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH11 is op = 0x6a & push_next_inst & code_bytes {
+    local tmp:11;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH12 is op = 0x6b & push_next_inst & code_bytes {
+    local tmp:12;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH13 is op = 0x6c & push_next_inst & code_bytes {
+    local tmp:13;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH14 is op = 0x6d & push_next_inst & code_bytes {
+    local tmp:14;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH15 is op = 0x6e & push_next_inst & code_bytes {
+    local tmp:15;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH16 is op = 0x6f & push_next_inst & code_bytes {
+    local tmp:16;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH17 is op = 0x70 & push_next_inst & code_bytes {
+    local tmp:17;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH18 is op = 0x71 & push_next_inst & code_bytes {
+    local tmp:18;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH19 is op = 0x72 & push_next_inst & code_bytes {
+    local tmp:19;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH20 is op = 0x73 & push_next_inst & code_bytes {
+    local tmp:20;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH21 is op = 0x74 & push_next_inst & code_bytes {
+    local tmp:21;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH22 is op = 0x75 & push_next_inst & code_bytes {
+    local tmp:22;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH23 is op = 0x76 & push_next_inst & code_bytes {
+    local tmp:23;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH24 is op = 0x77 & push_next_inst & code_bytes {
+    local tmp:24;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH25 is op = 0x78 & push_next_inst & code_bytes {
+    local tmp:25;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH26 is op = 0x79 & push_next_inst & code_bytes {
+    local tmp:26;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH27 is op = 0x7a & push_next_inst & code_bytes {
+    local tmp:27;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH28 is op = 0x7b & push_next_inst & code_bytes {
+    local tmp:28;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH29 is op = 0x7c & push_next_inst & code_bytes {
+    local tmp:29;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH30 is op = 0x7d & push_next_inst & code_bytes {
+    local tmp:30;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH31 is op = 0x7e & push_next_inst & code_bytes {
+    local tmp:31;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+:PUSH32 is op = 0x7f & push_next_inst & code_bytes {
+    local tmp:32;
+    pushn(code_bytes, tmp);
+    goto push_next_inst;
+}
+
+
+dup_cnt: cnt is op [cnt = op - 127;] { export *[const]:4 cnt;}
+
+:DUP dup_cnt is op_higher=8 & dup_cnt {
+    evm_dup(dup_cnt);
+}
+
+swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
+
+:SWAP swap_cnt is op_higher=9 & swap_cnt {
+    evm_swap(swap_cnt);
+}
+
+:CREATE is op = 0xf0 {
+    # Pass zero to tell that it is not CREATE2
+    evm_create(0:32);
+}
+
+:CALL is op = 0xf1 {
+    # Note we can't pop the arguments in sleigh directly because there 
+    # are 6 arguments and max operands is 3 in pcode
+    evm_call();
+}
+
+:CALLCODE is op = 0xf2 {
+    evm_callcode();
+}
+
+:RETURN is op = 0xf3 {
+    local addr:32 = stack_pop();
+    local len:32 = stack_pop();
+    evm_return(addr, len);
+}
+
+:DELEGATECALL is op = 0xf4 {
+    evm_delegatecall();
+}
+
+:CREATE2 is op = 0xf5 {
+    # Pass zero to tell that *is* not CREATE2
+    evm_create(1:32);
+}
+
+:REVERT is op = 0xfd {
+    local addr:32 = stack_pop();
+    local len:32 = stack_pop();
+    evm_revert(addr, len);
+}
+
+:INVALID is op = 0xfe {
+    evm_invalid();
+}
+
+:SELFDESTRUCT is op = 0xff {
+    evm_selfdestruct();
+}

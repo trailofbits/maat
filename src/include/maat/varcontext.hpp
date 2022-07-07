@@ -5,7 +5,9 @@
 #include <optional>
 #include "maat/number.hpp"
 #include "maat/serializer.hpp"
+#include "maat/types.hpp"
 #include <vector>
+#include <set>
 
 namespace maat 
 {
@@ -20,19 +22,20 @@ class VarContext: public serial::Serializable
 {
 private:
     static unsigned int _id_cnt;
-
+    Endian _endianness;
 private:
     /** Map concrete values to symbolic variables */
     std::map<std::string, maat::Number> varmap;
+public:
+    unsigned int id; ///< Unique identifier for the VarContext instance
 
 public:
-    VarContext(unsigned int id=0); ///< Constructor
+    VarContext(unsigned int id=0, Endian endian=Endian::LITTLE); ///< Constructor
     VarContext(const VarContext&) = default;
     VarContext& operator=(const VarContext&) = default;
     virtual ~VarContext() = default;
 
 public:
-    unsigned int id; ///< Unique identifier for the VarContext instance
     void set(const std::string& var, cst_t value); ///< Give a concrete value to a symbolic variable
     void set(const std::string& var, const Number& number); ///< Give a concrete value to a symbolic variable as a *maat::Number* instance
     cst_t get(const std::string& var) const; ///< Get the concrete value given to a symbolic variable
@@ -87,7 +90,8 @@ public:
      * */
     void update_from(VarContext& other);
     void print(std::ostream& os) const; ///< Print the context to a stream
-
+    Endian endianness() const; ///< Return endianness
+    std::set<std::string> contained_vars() const; ///< Return the contained symbolic variables
 public:
     virtual serial::uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;

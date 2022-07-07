@@ -18,6 +18,7 @@ include(cmake/variables.cmake)
 # ---- Declare library ----
 
 add_library(maat_maat
+  src/arch/arch_EVM.cpp
   src/arch/arch_X86.cpp
   src/arch/lifter.cpp
   src/arch/register_aliases.cpp
@@ -34,6 +35,7 @@ add_library(maat_maat
   src/env/emulated_libs/libc.cpp
   src/env/emulated_syscalls/linux_syscalls.cpp
   src/env/env.cpp
+  src/env/env_EVM.cpp
   src/env/env_linux.cpp
   src/env/filesystem.cpp
   src/env/library.cpp
@@ -49,6 +51,7 @@ add_library(maat_maat
   src/ir/instruction.cpp
   src/ir/ir_cache.cpp
   src/loader/loader.cpp
+  src/loader/loader_EVM.cpp
   src/loader/loader_lief.cpp
   src/loader/loader_lief_elf.cpp
   src/memory/memory.cpp
@@ -60,6 +63,7 @@ add_library(maat_maat
   src/solver/solver.cpp
   src/solver/solver_z3.cpp
   src/third-party/murmur3/murmur3.c
+  src/third-party/keccak/sha3.cpp
   src/third-party/sleigh/native/reg_translator.cpp
   src/third-party/sleigh/native/sleigh_interface.cpp
 )
@@ -81,6 +85,7 @@ target_include_directories(
   maat_maat ${warning_guard}
   PUBLIC
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>"
+  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/keccak>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/murmur3>"
 )
 
@@ -177,11 +182,13 @@ endmacro()
 
 maat_sleigh_compile(x86 x86-64)
 maat_sleigh_compile(x86 x86)
+maat_sleigh_compile(EVM EVM)
 
 # All of the sla spec targets are combined into this one
 add_custom_target(maat_all_sla_specs DEPENDS
   maat_sleigh_spec_x86-64
   maat_sleigh_spec_x86
+  maat_sleigh_spec_EVM
 )
 
 # Add sla specs as dependencies to our targets

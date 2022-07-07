@@ -8,6 +8,8 @@
 #include <memory>
 #include <filesystem>
 #include <optional>
+#include <set>
+#include <string>
 
 namespace maat
 {
@@ -35,6 +37,8 @@ PyObject* maat_Var(PyObject* self, PyObject* args, PyObject* keywords);
 PyObject* maat_Concat(PyObject* self, PyObject* args);
 PyObject* maat_ITE(PyObject* self, PyObject* args);
 PyObject* maat_Extract(PyObject* self, PyObject* args);
+PyObject* maat_Sext(PyObject* self, PyObject* args);
+PyObject* maat_Zext(PyObject* self, PyObject* args);
 PyObject* PyValue_FromValue(const Value& val);
 PyObject* PyValue_FromValueAndVarContext(const Value& val, std::shared_ptr<VarContext> ctx);
 PyObject* get_Value_Type();
@@ -102,6 +106,7 @@ typedef struct{
 } MaatEngine_Object;
 PyObject* get_MaatEngine_Type();
 PyObject* maat_MaatEngine(PyObject* self, PyObject* args);
+PyObject* PyMaatEngine_FromMaatEngine(MaatEngine*);
 // This method initializes all the attributes of a python MaatEngine object. It
 // is separate from the constructor because we also need to call it when deserializing
 // a MaatEngine. Indeed, attributes like 'vars', 'cpu', are already initialized
@@ -145,6 +150,7 @@ typedef struct{
 } Info_Object;
 PyObject* PyInfo_FromInfo(info::Info* info, bool is_ref);
 PyObject* PyInfo_FromInfoAndArch(info::Info* info, bool is_ref, Arch* arch);
+PyObject* get_Info_Type();
 #define as_info_object(x)  (*((Info_Object*)x))
 
 typedef struct {
@@ -281,6 +287,96 @@ typedef struct{
 PyObject* get_SimpleStateManager_Type();
 PyObject* maat_SimpleStateManager(PyObject* self, PyObject* args);
 #define as_simple_serializer_object(x)  (*((SimpleStateManager_Object*)x))
+
+// ============== EVM ======================
+void init_evm(PyObject* module);
+
+typedef struct {
+    PyObject_HEAD
+    env::EVM::Storage::const_iterator current;
+    env::EVM::Storage::const_iterator end;
+} StorageIterator_Object;
+
+PyObject* PyStorageIterator(
+    env::EVM::Storage::const_iterator current,
+    env::EVM::Storage::const_iterator end
+);
+#define as_storageiterator_object(x) (*((StorageIterator_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    maat::env::EVM::Storage* storage;
+} EVMStorage_Object;
+PyObject* PyEVMStorage_FromStorage(env::EVM::Storage*);
+#define as_storage_object(x)  (*((EVMStorage_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    maat::env::EVM::Memory* memory;
+} EVMMemory_Object;
+PyObject* PyEVMMemory_FromMemory(env::EVM::Memory*);
+#define as_evm_memory_object(x)  (*((EVMMemory_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    maat::env::EVM::Stack* stack;
+} EVMStack_Object;
+PyObject* PyEVMStack_FromStack(env::EVM::Stack*);
+#define as_stack_object(x)  (*((EVMStack_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    maat::env::EVM::Contract* contract;
+    PyObject* storage;
+    PyObject* stack;
+    PyObject* memory;
+} EVMContract_Object;
+PyObject* get_EVMContract_Type();
+PyObject* PyEVMContract_FromContract(env::EVM::Contract*);
+#define as_contract_object(x)  (*((EVMContract_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    bool is_ref;
+    maat::env::EVM::Transaction* transaction;
+} EVMTransaction_Object;
+PyObject* get_EVMTransaction_Type();
+PyObject* PyEVMTx_FromTx(env::EVM::Transaction*, bool is_ref);
+PyObject* maat_Transaction(PyObject* self, PyObject* args);
+#define as_tx_object(x)  (*((EVMTransaction_Object*)x))
+
+typedef struct{
+    PyObject_HEAD
+    maat::env::EVM::TransactionResult* result;
+} EVMTransactionResult_Object;
+PyObject* get_EVMTransactionResult_Type();
+PyObject* PyEVMTxResult_FromTxResult(env::EVM::TransactionResult*);
+#define as_tx_result_object(x)  (*((EVMTransactionResult_Object*)x))
+
+// Return the contract associated with an engine
+PyObject* maat_contract(PyObject* mod, PyObject* args);
+PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args);
+PyObject* maat_increment_block_timestamp(PyObject* mod, PyObject* args);
+PyObject* maat_increment_block_number(PyObject* mod, PyObject* args);
+PyObject* maat_set_evm_bytecode(PyObject* mod, PyObject* args);
+
+// ====== Utils =======
+// Transform a list of values into a list of python values,
+// returns a python error on error
+PyObject* native_to_py(const std::vector<Value>&);
+PyObject* native_to_py(const std::unordered_set<Constraint>& constraints);
+
+// Python bigint into multiprecision number
+// num MUST be a PyLong object (no further type checks in the function)
+Number bigint_to_number(size_t bits, PyObject* num);
+// Multiprecision number to python bigint
+PyObject* number_to_bigint(const Number& num);
+
+// Expose a type in python module
+void register_type(PyObject* module, PyTypeObject* type_obj);
+
+// Translate a python set to a set of strings in C++. Returns false on error
+bool py_to_c_string_set(PySetObject* set, std::set<std::string>& res);
 
 } // namespace py
 } // namespace maat

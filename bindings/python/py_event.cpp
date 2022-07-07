@@ -39,16 +39,17 @@ static PyObject* EventManager_add(PyObject* self, PyObject*args, PyObject* keywo
     unsigned long long  filter_min = 0,
                         filter_max = 0xffffffffffffffff;
     PyObject* callbacks = NULL;
+    PyObject* callback_data = NULL;
     std::vector<event::EventCallback> callbacks_list;
 
-    char* keywd[] = {"", "", "name", "filter", "callbacks", "group", NULL};
+    char* keywd[] = {"", "", "name", "filter", "callbacks", "data", "group", NULL};
 
     if( !PyArg_ParseTupleAndKeywords(
-        args, keywords, "ii|s(KK)Os", keywd, &int_event, &int_when, &name, &filter_min, &filter_max, &callbacks, &group))
+        args, keywords, "ii|s(KK)OOs", keywd, &int_event, &int_when, &name, &filter_min, &filter_max, &callbacks, &callback_data, &group))
     {
         PyErr_Clear();
         if( !PyArg_ParseTupleAndKeywords(
-        args, keywords, "ii|sOOs", keywd, &int_event, &int_when, &name, &filter, &callbacks, &group))
+        args, keywords, "ii|sOOOs", keywd, &int_event, &int_when, &name, &filter, &callbacks, &callback_data, &group))
         {
             return NULL;
         }
@@ -69,7 +70,7 @@ static PyObject* EventManager_add(PyObject* self, PyObject*args, PyObject* keywo
             {
                 return PyErr_Format(PyExc_TypeError, "Callback number %d is not a callable object", i);
             }
-            callbacks_list.push_back(event::EventCallback(cb));
+            callbacks_list.push_back(event::EventCallback(cb, callback_data));
         }
     }
 
