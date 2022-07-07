@@ -371,7 +371,8 @@ public:
         //     return asm_cache.get_asm(address);
 
         // Get asm
-        m_loader.setData(address, bytes, 100); // TODO, 100 is arbitrary here
+        // 16 bytes is the max instruction length supported by sleigh
+        m_loader.setData(address, bytes, 16); 
         Address addr(m_sleigh->getDefaultCodeSpace(), address);
         m_sleigh->printAssembly(asm_cache, addr);
 
@@ -462,12 +463,7 @@ public:
 
                         if (id == callother::Id::UNSUPPORTED)
                         {
-                            throw maat::lifter_exception(
-                                maat::Fmt() << "Can not lift instruction at 0x"
-                                << std::hex << tmp_addr << ": " << tmp_cacher.get_asm(tmp_addr)
-                                << " (unsupported callother occurence)"
-                                >> maat::Fmt::to_str
-                            );
+                            inst = ir::Inst(ir::Op::UNSUPPORTED);
                         }
                     }
 

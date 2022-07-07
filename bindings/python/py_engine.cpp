@@ -298,6 +298,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
 };
 
 
+
 static PyObject* MaatEngine_get_uid(PyObject* self, void* closure){
     return PyLong_FromLong(as_engine_object(self).engine->uid());
 }
@@ -308,6 +309,40 @@ static PyGetSetDef MaatEngine_getset[] = {
     {NULL}
 };
 
+static PyObject* MaatEngine_get_inst_asm(PyObject* self, PyObject* args){
+    unsigned long long addr;
+    
+    if( ! PyArg_ParseTuple(args, "K", &addr) ){
+        return NULL;
+    }
+    try
+    { 
+        const std::string& res = as_engine_object(self).engine->get_inst_asm(addr);
+        return PyUnicode_FromString(res.c_str());
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+};
+
+static PyObject* MaatEngine_get_inst_bytes(PyObject* self, PyObject* args){
+    unsigned long long addr;
+    
+    if( ! PyArg_ParseTuple(args, "K", &addr) ){
+        return NULL;
+    }
+    try
+    { 
+        std::vector<uint8_t> res = as_engine_object(self).engine->get_inst_bytes(addr);
+        return PyBytes_FromStringAndSize((char*)res.data(), res.size());
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+};
+
 static PyMethodDef MaatEngine_methods[] = {
     {"run", (PyCFunction)MaatEngine_run, METH_VARARGS, "Continue to run code from current location"},
     {"run_from", (PyCFunction)MaatEngine_run_from, METH_VARARGS, "Run code from a given address"},
@@ -315,6 +350,8 @@ static PyMethodDef MaatEngine_methods[] = {
     {"restore_snapshot", (PyCFunction)MaatEngine_restore_snapshot, METH_VARARGS | METH_KEYWORDS, "Restore a snapshot of the symbolic engine"},
     {"load", (PyCFunction)MaatEngine_load, METH_VARARGS | METH_KEYWORDS, "Load an executable"},
     {"_duplicate", (PyCFunction)MaatEngine_duplicate, METH_VARARGS | METH_KEYWORDS, "Duplicate a symbolic engine"},
+    {"get_inst_asm", (PyCFunction)MaatEngine_get_inst_asm, METH_VARARGS, "Get assembly code of an instruction"},
+    {"get_inst_bytes", (PyCFunction)MaatEngine_get_inst_bytes, METH_VARARGS, "Get raw bytes of an instruction"},
     {NULL, NULL, 0, NULL}
 };
 
