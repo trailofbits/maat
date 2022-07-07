@@ -659,8 +659,10 @@ Value MemConcreteBuffer::read_as_value(offset_t off, int nb_bytes)
             res = Value(64, val);
         else
         {
-            // TODO: handle big endian when merging dev-evm
-            res.set_concat(Value(64,val), res);
+            if (_endianness == Endian::LITTLE)
+                res.set_concat(Value(64,val), res);
+            else
+                res.set_concat(res, Value(64, val));
         }
         nb_bytes -= 8;
         off += 8;
@@ -671,8 +673,10 @@ Value MemConcreteBuffer::read_as_value(offset_t off, int nb_bytes)
         if (res.is_none())
             res = Value(nb_bytes*8, val);
         else
-            // TODO: handle big endian when merging dev-evm
-            res.set_concat(Value(nb_bytes*8,val), res);
+            if (_endianness == Endian::LITTLE)
+                res.set_concat(Value(nb_bytes*8,val), res);
+            else
+                res.set_concat(res, Value(nb_bytes*8,val));
     }
     return res;
 }
