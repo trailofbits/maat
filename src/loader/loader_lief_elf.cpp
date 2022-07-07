@@ -23,14 +23,8 @@ std::string _clean_interpreter_name(const std::string& name)
 
 std::string get_symbol_name(LIEF::ELF::Symbol& symbol)
 {
-    try
-    {
-        return symbol.demangled_name();
-    }
-    catch(const LIEF::not_supported& e)
-    {
-        return symbol.name();
-    }
+    std::string res = symbol.demangled_name();
+    return res.empty()? symbol.name() : res;
 }
 
 // Return first address after 'name' ends
