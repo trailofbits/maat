@@ -251,6 +251,7 @@ const std::string& PhysicalFile::symlink()
 
 void PhysicalFile::_set_symlink(const std::string& target)
 {
+    data = nullptr;
     type = PhysicalFile::Type::SYMLINK;
     _symlink = target;
 }
@@ -859,7 +860,14 @@ bool FileSystem::create_symlink(
     bool create_path
 )
 {
-    create_file(link, create_path); // create_file() handles snapshoting
+    if (file_exists(link))
+        throw env_exception(
+            Fmt() << "FileSystem::create_symlink(): file " << link 
+            << " already exists" >> Fmt::to_str
+        );
+
+    if (not create_file(link, create_path)) // create_file() handles snapshoting
+        return false;
     physical_file_t file = get_file(link);
     file->_set_symlink(pointed_file);
     return true;
