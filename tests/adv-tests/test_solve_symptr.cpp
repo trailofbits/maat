@@ -167,7 +167,7 @@ namespace solve_symbolic_ptr{
 
             // Check if there is a value for the argument so that we return '1' (SUCCESS)
             sol->reset();
-            for (auto& constraint : engine.path.constraints())
+            for (auto& constraint : engine.path->constraints())
                 sol->add(constraint);
             sol->add(engine.cpu.ctx().get(X86::EAX).as_expr() == 42);
 

@@ -112,7 +112,7 @@ class EventCallback
 public:
     /** \typedef native_cb_t 
      * \brief A callback function taking a pointer to  the MaatEngine */
-    using native_cb_t = std::function<Action(MaatEngine&)>;// Action (*)(maat::MaatEngine&);
+    using native_cb_t = std::function<Action(MaatEngine&, void*)>;// Action (*)(maat::MaatEngine&, void*);
     enum class Type
     {
         NATIVE,
@@ -122,11 +122,12 @@ public:
 private:
     EventCallback::Type type;
     native_cb_t native_cb;
+    void* native_cb_data;
 public:
     /// Default constructor
     EventCallback();
     /// Create a callback calling a native function
-    EventCallback(native_cb_t cb);
+    EventCallback(native_cb_t cb, void* cb_data=nullptr);
     EventCallback(const EventCallback& other);
     EventCallback& operator=(const EventCallback& other);
     EventCallback(EventCallback&& other);
@@ -142,9 +143,10 @@ public:
 public:
     using python_cb_t = PyObject*;
     /// Create a callback calling a python function
-    EventCallback(python_cb_t cb);
+    EventCallback(python_cb_t cb, PyObject* cb_data=nullptr);
 private:
     python_cb_t python_cb;
+    PyObject* python_cb_data;
 #endif
 };
 
@@ -265,8 +267,8 @@ private:
     hook_map_t hook_map;
 public:
     EventManager(); ///< Default constructor
-    EventManager(const EventManager& other) = delete;
-    EventManager& operator=(const EventManager& other) = delete;
+    EventManager(const EventManager& other) = default;
+    EventManager& operator=(const EventManager& other) = default;
     ~EventManager() = default;
 public:
     // Reg events

@@ -68,6 +68,7 @@ public:
     MemStatusBitmap();
     /** Constructor */
     MemStatusBitmap(offset_t nb_bytes);
+    MemStatusBitmap(const MemStatusBitmap&);
     /** Destructor */
     virtual ~MemStatusBitmap();
     /** Extend the bitmap to make it represent 'nb_bytes' more bytes of
@@ -106,9 +107,14 @@ class MemConcreteBuffer: public serial::Serializable
 private:
     unsigned int _size;
     uint8_t* _mem;
+    Endian _endianness;
 public:
-    MemConcreteBuffer(); ///< Constructor
-    MemConcreteBuffer(offset_t nb_bytes); ///< Constructor
+    MemConcreteBuffer(Endian endian=Endian::LITTLE); ///< Constructor
+    MemConcreteBuffer(offset_t nb_bytes, Endian endian=Endian::LITTLE); ///< Constructor
+    MemConcreteBuffer(const MemConcreteBuffer& other);
+    MemConcreteBuffer(MemConcreteBuffer&& other) = delete;
+    MemConcreteBuffer& operator=(const MemConcreteBuffer& other) = delete;
+    MemConcreteBuffer& operator=(MemConcreteBuffer&& other) = delete;
     virtual ~MemConcreteBuffer(); ///< Destructor
     /** Extend the buffer to make it represent 'nb_bytes' more bytes of
      * memory. The new bytes are inserted at the end of the buffer */
@@ -172,13 +178,20 @@ public:
     using abstract_mem_t = std::unordered_map<offset_t, std::pair<Expr, uint8_t>>;
 private:
     abstract_mem_t _mem;
+    Endian _endianness;
 public:
-    MemAbstractBuffer(); ///< Constructor
+    MemAbstractBuffer(Endian endian=Endian::LITTLE); ///< Constructor
+    MemAbstractBuffer(const MemAbstractBuffer&) = default;
     virtual ~MemAbstractBuffer() = default;
     Expr read(offset_t off, unsigned int nb_bytes); ///< Read 'nb_bytes' bytes as an abstract value from offset 'off'
     void write(offset_t off, Expr val); ///< Write an abstract value at offset 'off'
     std::pair<Expr, uint8_t>& at(offset_t off); ///< Return the abstract value pair stored at offset 'off'
     void set(offset_t off, std::pair<Expr, uint8_t>& pair); ///< Set the abstract value pair at offset 'off' 
+public:
+    void _read_optimised_buffer(std::vector<Value>& res, addr_t addr, unsigned int nb_bytes);
+private:
+    Expr _read_little_endian(offset_t off, unsigned int nb_bytes);
+    Expr _read_big_endian(offset_t off, unsigned int nb_bytes);
 public:
     virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
@@ -197,6 +210,7 @@ private:
     MemConcreteBuffer _concrete;
     MemAbstractBuffer _abstract;
     bool _is_engine_special_segment;
+    Endian _endianness;
 
 public:
     addr_t start; ///< Beginning of the memory segment 
@@ -204,7 +218,13 @@ public:
     std::string name; ///< Optional. Name of the segment
 
 public:
-    MemSegment(addr_t start, addr_t end, const std::string& name="", bool is_engine_special_segment=false); ///< Constructor
+    MemSegment(
+        addr_t start,
+        addr_t end,
+        const std::string& name="",
+        bool is_engine_special_segment=false,
+        Endian endian=Endian::LITTLE
+    ); ///< Constructor
     virtual ~MemSegment() = default;
     bool contains(addr_t addr);
     addr_t size(); ///< Number of bytes 
@@ -227,7 +247,8 @@ public:
 
     /** \brief Read memory at the address pointed by a symbolic pointer */
     void symbolic_ptr_read(Value& res, const Expr& addr, ValueSet& addr_value_set, unsigned int nb_bytes, const Expr& base);
-
+public:
+    void _read_optimised_buffer(std::vector<Value>& res, addr_t addr, unsigned int nb_bytes);
 public:
     /* Special reading and writing (for snapshoting) */
     abstract_mem_chunk_t abstract_snapshot(addr_t addr, int nb_bytes); // Used for files
@@ -343,8 +364,8 @@ class IntervalTree: public serial::Serializable
 {
 public:
     ucst_t center;
-    std::unique_ptr<IntervalTree> left;
-    std::unique_ptr<IntervalTree> right;
+    std::shared_ptr<IntervalTree> left;
+    std::shared_ptr<IntervalTree> right;
     std::list<SimpleInterval> match_min; // Sorted by min
     std::list<SimpleInterval> match_max; // Sorted by max
 
@@ -353,7 +374,7 @@ public:
     bool contains_addr(ucst_t val, unsigned int max_count=0xffffffff);
     bool contains_interval(ucst_t min, ucst_t max, unsigned int max_count=0xffffffff);
     void restore(int write_count);
-    virtual ~IntervalTree();
+    virtual ~IntervalTree() = default;
 public:
     virtual uid_t class_uid() const;
     virtual void dump(serial::Serializer& s) const;
@@ -371,6 +392,7 @@ private:
     unsigned int write_count; ///< Number of symbolic writes that have been performed
     std::vector<SymbolicMemWrite> writes; ///< List of memory writes performed
     IntervalTree write_intervals;
+    Endian _endianness;
 private:
     std::shared_ptr<VarContext> _varctx;
 public:
@@ -380,7 +402,7 @@ public:
     bool symptr_force_aligned;
 
 public:
-    SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContext> varctx);
+    SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContext> varctx, Endian endian);
     virtual ~SymbolicMemEngine() = default;
     /** \brief Record symbolic pointer write. 'addr_min' and 'addr_max' are the
      * minimal and maximal concrete values that the 'addr' expression can take */
@@ -426,6 +448,7 @@ private:
     static int _uid_cnt;
 private:
     int _uid;
+    Endian _endianness;
     size_t _arch_bits;
     std::list<std::shared_ptr<MemSegment>> _segments;
     std::shared_ptr<VarContext> _varctx;
@@ -439,8 +462,15 @@ public:
      * 
      * @param varctx VarContext to use when concretising abstract expressions
      * @param arch_bits Default address size in bits
-     * @param snap Snapshot manager to use if snapshots are enabled */
-    MemEngine(std::shared_ptr<VarContext> varctx=nullptr, size_t arch_bits=64, std::shared_ptr<SnapshotManager<Snapshot>> snap=nullptr);
+     * @param snap Snapshot manager to use if snapshots are enabled 
+     * @param endian Memory endianness
+     */
+    MemEngine(
+        std::shared_ptr<VarContext> varctx=nullptr,
+        size_t arch_bits=64,
+        std::shared_ptr<SnapshotManager<Snapshot>> snap=nullptr,
+        Endian endian = Endian::LITTLE
+    );
     virtual ~MemEngine();
 
     /** \brief Map memory from 'start' to 'end' (included), with permissions 'mflags'. 
@@ -555,6 +585,10 @@ public:
     /** \brief Read a buffer of 'nb_elems' elements of size 'elem_size' from address 'addr'
      * and writes each element as an abstract expression in the vector 'res' */
     void read_buffer(std::vector<Value>& buffer, addr_t addr, unsigned int nb_elems, unsigned int elem_size=1);
+    /* Convenience method to read a buffer and return a list of values that tries to
+     * make symbolic expressions as clean as possible (without concatenation and extraction).
+     * Concrete bytes are returned as 1-byte values */
+    std::vector<Value> _read_optimised_buffer(addr_t addr, size_t nb_bytes);
     /** \brief Read a concrete string of length 'len' from address 'addr'. If len=0,
      * it reads a C-style string and stops at the first null-byte */
     std::string read_string(addr_t addr, unsigned int len=0);
@@ -625,6 +659,9 @@ public:
     /** \brief Clear the list of pending executable memory overwrites (to be used
      * by the engine only) */
     void _clear_pending_x_mem_overwrites();
+
+public:
+    Endian endianness() const;
 
 public:
     int uid() const;

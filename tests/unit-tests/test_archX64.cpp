@@ -1395,9 +1395,9 @@ namespace test{
             engine.cpu.ctx().set(X64::RBX, exprcst(64,-2));
             engine.cpu.ctx().set(X64::RDX, exprcst(64,0x1004641651));
             engine.run_from(0x1180, 1);
-            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x7fffffddffffffff)->as_uint(),
+            nb += _assert(  engine.cpu.ctx().get(X64::RAX).as_uint() == exprcst(64, 0x7fffffde00000000)->as_uint(),
                             "ArchX64: failed to disassembly and/or execute IDIV");
-            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == 0xffffffffffffffff,
+            nb += _assert(  engine.cpu.ctx().get(X64::RDX).as_uint() == 1,
                             "ArchX64: failed to disassembly and/or execute IDIV");
 
             return nb;

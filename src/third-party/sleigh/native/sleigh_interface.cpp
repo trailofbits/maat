@@ -292,6 +292,7 @@ public:
     TmpCache            tmp_cache;
     maat::Arch::Type    arch;
     AssemblyEmitCacher  asm_cache;
+    std::unordered_map<uintm, maat::callother::Id> callother_mapping;
 
     TranslationContext(maat::Arch::Type a, const std::string& slafile, const std::string& pspecfile): arch(a)
     {
@@ -303,6 +304,11 @@ public:
         {
             throw runtime_exception(Fmt() << "Sleigh: failed to load pspecfile: " << pspecfile >> Fmt::to_str);
         }
+
+        // For EVM we add special callother operations, need to build the mapping to callother::Id
+        // for them
+        if (a == maat::Arch::Type::EVM)
+            build_callother_mapping_EVM();
     }
 
     ~TranslationContext()
@@ -359,8 +365,10 @@ public:
 
     const std::string& get_asm(uintb address, const unsigned char* bytes)
     {
-        if (asm_cache.contains(address))
-            return asm_cache.get_asm(address);
+        // TODO: force relifting everytime until we support clearing the
+        // asm cache on X memory overwrites
+        // if (asm_cache.contains(address))
+        //     return asm_cache.get_asm(address);
 
         // Get asm
         // 16 bytes is the max instruction length supported by sleigh
@@ -385,7 +393,7 @@ public:
         bool            end_bb = false;
 
         PcodeEmitCacher    m_pcode(this);
-        AssemblyEmitCacher tmp_cacher;
+        AssemblyEmitCacher& tmp_cacher = asm_cache;
 
         // Reset state
         // TODO - is this useful ? will this hinder performance ?
@@ -439,7 +447,17 @@ public:
                         );
                         std::string mnem = tmp_cacher.get_mnemonic(tmp_addr);
                         // Get callother id in maat
-                        callother::Id id = callother::mnemonic_to_id(mnem, arch);
+                        callother::Id id = callother::Id::UNSUPPORTED;
+                        // Try using the sleigh symbol id directly
+                        uintm sleigh_pcodeop_id = inst.in[0].cst();
+                        auto match = callother_mapping.find(sleigh_pcodeop_id);
+                        if (match != callother_mapping.end())
+                            id = match->second;
+                        // If no match found in sleigh_id <-> callother_id mapping,
+                        // try matching the mnemonic
+                        if (id == callother::Id::UNSUPPORTED)
+                            id = callother::mnemonic_to_id(mnem, arch);
+
                         // Set the callother_id in inst
                         inst.callother_id = id;
 
@@ -502,6 +520,58 @@ public:
     {
         return m_sleigh->getRegisterName(as, off, size);
     }
+
+    void build_callother_mapping_EVM()
+    {
+        SleighSymbol* symbol = nullptr;
+        // Note: the operator names MUST match the names in EVM.slaspec
+        std::unordered_map<std::string, callother::Id> operators = {
+            {"stack_pop",callother::Id::EVM_STACK_POP}, 
+            {"stack_push",callother::Id::EVM_STACK_PUSH},
+            {"stop",callother::Id::EVM_STOP},
+            {"evm_div",callother::Id::EVM_DIV},
+            {"evm_sdiv",callother::Id::EVM_SDIV},
+            {"evm_mod",callother::Id::EVM_MOD},
+            {"evm_smod",callother::Id::EVM_SMOD},
+            {"evm_signextend", callother::Id::EVM_SIGNEXTEND},
+            {"evm_byte", callother::Id::EVM_BYTE},
+            {"evm_mload", callother::Id::EVM_MLOAD},
+            {"evm_mstore", callother::Id::EVM_MSTORE},
+            {"evm_mstore8", callother::Id::EVM_MSTORE8},
+            {"evm_msize", callother::Id::EVM_MSIZE},
+            {"evm_dup", callother::Id::EVM_DUP},
+            {"evm_swap", callother::Id::EVM_SWAP},
+            {"evm_sload", callother::Id::EVM_SLOAD},
+            {"evm_sstore", callother::Id::EVM_SSTORE},
+            {"evm_env_info", callother::Id::EVM_ENV_INFO},
+            {"evm_keccak", callother::Id::EVM_KECCAK},
+            {"evm_return", callother::Id::EVM_RETURN},
+            {"evm_invalid", callother::Id::EVM_INVALID},
+            {"evm_revert", callother::Id::EVM_REVERT},
+            {"evm_exp", callother::Id::EVM_EXP},
+            {"evm_call", callother::Id::EVM_CALL},
+            {"evm_callcode", callother::Id::EVM_CALLCODE},
+            {"evm_delegatecall", callother::Id::EVM_DELEGATECALL},
+            {"evm_create", callother::Id::EVM_CREATE},
+            {"evm_selfdestruct", callother::Id::EVM_SELFDESTRUCT}
+        };
+
+        for (const auto& [op_str, op_id] : operators)
+        {
+            symbol = m_sleigh->findSymbol(op_str);
+            if (symbol == nullptr)
+                throw lifter_exception(
+                    Fmt() << "Error instanciating sleigh lifter, didn't find symbol for operator "
+                    << op_str >> Fmt::to_str
+                );
+            if (symbol->getType() != SleighSymbol::symbol_type::userop_symbol)
+                throw lifter_exception(
+                    Fmt() << "Error instanciating sleigh lifter, wrong symbol type for operator "
+                    << op_str >> Fmt::to_str
+                );
+            callother_mapping[((UserOpSymbol*)symbol)->getIndex()] = op_id;
+        }
+    }
 };
 
 // Translate a sleigh register name into a maat::ir::Param register
@@ -519,6 +589,7 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
     }
     else
     {
+        // TODO(boyan): use v->space->getType() here instead of the name :/
         // Is reg or tmp
         const std::string& addr_space_name = v->space->getName();
         if (addr_space_name == "register")
@@ -531,7 +602,7 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
             int tmp = ctx->tmp_cache.get_tmp_from_unique(v->offset);
             return std::move(maat::ir::Tmp(tmp, v->size*8));
         }
-        else if (addr_space_name == "ram")
+        else if (addr_space_name == "ram" or addr_space_name == "code")
         {
             // just store the address
             // the size of the output var will give the nb of accessed bytes
@@ -555,6 +626,8 @@ maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& r
         return sleigh_reg_translate_X86(reg_name);
     else if (arch == Arch::Type::X64)
         return sleigh_reg_translate_X64(reg_name);
+    else if (arch == Arch::Type::EVM)
+        return sleigh_reg_translate_EVM(reg_name);
     else
         throw maat::runtime_exception("Register translation from SLEIGH to MAAT not implemented for this architecture!");
 }

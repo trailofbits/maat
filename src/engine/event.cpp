@@ -54,29 +54,34 @@ bool is_exec_event(Event event)
 
 EventCallback::EventCallback():
     type(EventCallback::Type::NONE),
-    native_cb(nullptr)
-{
-#ifdef MAAT_PYTHON_BINDINGS
-    python_cb = nullptr;
-#endif
-}
-
-EventCallback::EventCallback(native_cb_t cb):
-    type(EventCallback::Type::NATIVE),
-    native_cb(cb)
-{
-#ifdef MAAT_PYTHON_BINDINGS
-    python_cb = nullptr;
-#endif
-}
-
-#ifdef MAAT_PYTHON_BINDINGS
-EventCallback::EventCallback(python_cb_t cb):
-    type(EventCallback::Type::PYTHON),
     native_cb(nullptr),
-    python_cb(cb)
+    native_cb_data(nullptr)
+{
+#ifdef MAAT_PYTHON_BINDINGS
+    python_cb = nullptr;
+#endif
+}
+
+EventCallback::EventCallback(native_cb_t cb, void* cb_data):
+    type(EventCallback::Type::NATIVE),
+    native_cb(cb),
+    native_cb_data(cb_data)
+{
+#ifdef MAAT_PYTHON_BINDINGS
+    python_cb = nullptr;
+    python_cb_data = nullptr;
+#endif
+}
+
+#ifdef MAAT_PYTHON_BINDINGS
+EventCallback::EventCallback(python_cb_t cb, PyObject* cb_data):
+    type(EventCallback::Type::PYTHON),
+    native_cb(nullptr), native_cb_data(nullptr),
+    python_cb(cb), python_cb_data(cb_data)
+
 {
     Py_XINCREF(python_cb); // Increment python ref count for callback 
+    Py_XINCREF(python_cb_data); // Increment ref count for callback data
 }
 #endif
 
@@ -94,9 +99,12 @@ EventCallback& EventCallback::operator=(const EventCallback& other)
 {
     type = other.type;
     native_cb = other.native_cb;
+    native_cb_data = other.native_cb_data;
 #ifdef MAAT_PYTHON_BINDINGS
     python_cb = other.python_cb;
+    python_cb_data = other.python_cb_data;
     Py_XINCREF(python_cb);
+    Py_XINCREF(python_cb_data);
 #endif
     return *this;
 }
@@ -105,9 +113,12 @@ EventCallback& EventCallback::operator=(EventCallback&& other)
 {
     type = other.type;
     native_cb = other.native_cb;
+    native_cb_data = other.native_cb_data;
 #ifdef MAAT_PYTHON_BINDINGS
     python_cb = other.python_cb;
+    python_cb_data = other.python_cb_data;
     Py_XINCREF(python_cb);
+    Py_XINCREF(python_cb_data);
 #endif
     return *this;
 }
@@ -116,7 +127,9 @@ EventCallback::~EventCallback()
 {
 #ifdef MAAT_PYTHON_BINDINGS
     Py_XDECREF(python_cb);
+    Py_XDECREF(python_cb_data);
     python_cb = nullptr;
+    python_cb_data = nullptr;
 #endif
 }
 
@@ -133,7 +146,7 @@ Action EventCallback::execute(MaatEngine& engine) const
     {
         try
         {
-            return native_cb(engine);
+            return native_cb(engine, native_cb_data);
         }
         catch (const std::exception& e)
         {
@@ -146,7 +159,13 @@ Action EventCallback::execute(MaatEngine& engine) const
         Action res = Action::CONTINUE;
 #ifdef MAAT_PYTHON_BINDINGS
             // Build args list
-            PyObject* argslist = PyTuple_Pack(1, engine.self_python_wrapper_object);
+            PyObject* cb_data = nullptr;
+            if (python_cb_data == nullptr)
+                cb_data = Py_None;
+            else
+                cb_data = python_cb_data;
+            // Note: PyTuple_Pack does increment the ref count on objects
+            PyObject* argslist = PyTuple_Pack(2, engine.self_python_wrapper_object, cb_data);
             if( argslist == NULL )
             {
                 throw runtime_exception("EventCallback::execute(): failed to create args tuple for python callback");

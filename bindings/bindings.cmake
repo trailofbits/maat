@@ -26,6 +26,7 @@ add_library(maat_python MODULE
   bindings/python/py_cpu.cpp
   bindings/python/py_engine.cpp
   bindings/python/py_env.cpp
+  bindings/python/py_env_EVM.cpp
   bindings/python/py_event.cpp
   bindings/python/py_filesystem.cpp
   bindings/python/py_info.cpp
@@ -60,6 +61,7 @@ target_include_directories(
   maat_python ${warning_guard}
   PRIVATE
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>"
+  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/keccak>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/third-party/murmur3>"
   "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
   "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/bindings/python>"

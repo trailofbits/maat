@@ -137,7 +137,27 @@ namespace test{
             nb += _assert(buf.read(0x21, 1) == 0x12, "MemConcreteBuffer <write then read> error");
             nb += _assert(buf.read(0x31, 2) == 0x3456, "MemConcreteBuffer <write then read> error");
             nb += _assert(buf.read(0x43, 4) == 0x34567812, "MemConcreteBuffer <write then read> error");
-         
+
+            // Big ENdian
+            MemConcreteBuffer buf2(0x10000, Endian::BIG);
+            // Write and read back
+            buf2.write(0x10, 0x12, 1);
+            buf2.write(0x20, 0x1234, 2); 
+            buf2.write(0x30, 0x12345678, 4); 
+            buf2.write(0x40, 0x1234567812345678, 8);
+            buf2.write(0x50, Value(256, "aaaaaaaa1235465843251324", 16).as_number(), 32);
+            nb += _assert(buf2.read(0x10, 1) == 0x12, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x20, 2) == 0x1234, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x30, 4) == 0x12345678, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x40, 8) == 0x1234567812345678, "MemConcreteBuffer big endian <write then read> error");
+            // ! Below tests assume big endian storage
+            nb += _assert(buf2.read(0x21, 1) == 0x34, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x31, 3) == 0x345678, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x43, 4) == 0x78123456, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x50+32-1, 1) == 0x24, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x50+32-8, 8) == 0x1235465843251324, "MemConcreteBuffer big endian <write then read> error");
+            nb += _assert(buf2.read(0x50+32-16, 8) == 0xaaaaaaaa, "MemConcreteBuffer big endian <write then read> error");
+
             return nb; 
         }
 
@@ -265,6 +285,49 @@ namespace test{
             mem.write(0x1110, c6, ctx);
             _assert_bignum_eq(mem.read(0x1100, 20), "0xfeedbeef12345678abcdabcd0000000022223333", "MemSegment failed to read then write big number");
 
+            
+            // Big endian
+            MemSegment mem2(0x0, 0x3000, "", false, Endian::BIG);
+            
+            /* Normal write */
+            mem2.write(0x1000, c1, ctx);
+            nb += _assert(mem2.read(0x1000, 1).as_expr()->eq(c1), "MemSegment failed to write a constant expression then read it back");
+            mem2.write(0x1001, c2, ctx);
+            nb += _assert(mem2.read(0x1001, 1).as_expr()->eq(c2), "MemSegment failed to write a constant expression then read it back");
+            mem2.write(0x1002, c3, ctx);
+            nb += _assert(mem2.read(0x1002, 2).as_expr()->eq(c3), "MemSegment failed to write a constant expression then read it back");
+            mem2.write(0x1003, c4, ctx);
+            nb += _assert(mem2.read(0x1003, 2).as_expr()->eq(c4), "MemSegment failed to write a constant expression then read it back");
+            mem2.write(0x1004, c5, ctx);
+            nb += _assert(mem2.read(0x1004, 4).as_expr()->eq(c5), "MemSegment failed to write a constant expression then read it back");
+            mem2.write(0x1005, c6, ctx);
+            nb += _assert(mem2.read(0x1005, 4).as_expr()->eq(c6), "MemSegment failed to write a constant expression then read it back");
+            mem2.write(0x1006, c7, ctx);
+            nb += _assert(mem2.read(0x1006, 8).as_expr()->eq(c7), "MemSegment failed to write a constant expression then read it back");
+            mem2.write(0x1007, c8, ctx);
+            nb += _assert(mem2.read(0x1007, 8).as_expr()->eq(c8), "MemSegment failed to write a constant expression then read it back");
+            
+            /* Overlapping write (assuming big endian) */
+            mem2.write(0x1100, c8, ctx);
+            mem2.write(0x1104, c5, ctx);
+            nb += _assert(mem2.read(0x1100, 8).as_expr()->eq(exprcst(64, 0xffffffff0f0f0f0f)), "MemSegment failed to manage overlapping memory writes");
+            mem2.write(0x1100, c8, ctx);
+            mem2.write(0x1100, c6, ctx);
+            nb += _assert(mem2.read(0x1100, 8).as_expr()->eq(exprcst(64, 0xfeedbeefffffffff)), "MemSegment failed to manage overlapping memory writes");
+            mem2.write(0x1100, c7, ctx);
+            mem2.write(0x1100, c2, ctx);
+            nb += _assert(mem2.read(0x1100, 8).as_expr()->eq(exprcst(64, 0xff00000000000001)), "MemSegment failed to manage overlapping memory writes");
+            mem2.write(0x1100, c5, ctx);
+            mem2.write(0x1104, c6, ctx);
+            nb += _assert(mem2.read(0x1100, 8).as_expr()->eq(exprcst(64, 0x0f0f0f0ffeedbeef)), "MemSegment failed to manage overlapping memory writes");
+            
+            /* Big numbers */
+            mem.write(0x1100, exprcst(256, "12345678abcdabcd0000000022223333", 16), ctx);
+            _assert_bignum_eq(mem.read(0x1100, 32), "0x12345678abcdabcd0000000022223333", "MemSegment failed to read then write big number"); 
+
+            mem.write(0x1100, exprcst(256, "-1", 10), ctx);
+            _assert_bignum_eq(mem.read(0x1107, 16), "0xffffffffffffffffffffffffffffffff", "MemSegment failed to read then write big number");
+
             return nb;
         }
         
@@ -277,7 +340,8 @@ namespace test{
                     e4 = exprvar(16, "var4", Taint::TAINTED),
                     e5 = exprvar(32, "var5", Taint::TAINTED),
                     e6 = exprvar(32, "var6", Taint::TAINTED),
-                    e7 = exprvar(64, "var7", Taint::TAINTED);
+                    e7 = exprvar(64, "var7", Taint::TAINTED),
+                    e8 = exprvar(256, "var8", Taint::TAINTED);
                     
             MemSegment mem = MemSegment(0x10000, 0x10200);
             VarContext ctx = VarContext(0);
@@ -318,9 +382,47 @@ namespace test{
             nb += _assert(mem.read(0x10110, 8).as_expr()->eq(concat(concat(concat(extract(e7, 63, 48), e4), e3), extract(e7, 15,0))), "MemSegment symbolic overwrite read failed");
             mem.write(0x1010f, e3, ctx); 
             nb += _assert(mem.read(0x10110, 8).as_expr()->eq(concat(concat(concat(concat(extract(e7, 63, 48), e4), e3), extract(e7, 15,8)), extract(e3, 15, 8))), "MemSegment symbolic overwrite read failed");
-            return nb; 
+            
+            // Big endian tests
+            MemSegment mem2(0x10000, 0x10200, "", false, Endian::BIG);
+            
+            /* Normal write */
+            mem2.write(0x10000, e1, ctx); 
+            nb += _assert(mem2.read(0x10000, 1).as_expr()->eq(e1), "MemSegment failed to write a symbolic epression then read it back" );
+            mem2.write(0x10001, e3, ctx);
+            nb += _assert(mem2.read(0x10001, 2).as_expr()->eq(e3), "MemSegment failed to write a symbolic epression then read it back" );
+            mem2.write(0x10003, e5, ctx); 
+            nb += _assert(mem2.read(0x10003, 4).as_expr()->eq(e5), "MemSegment failed to write a symbolic epression then read it back" );
+            mem2.write(0x10007, e7, ctx); 
+            nb += _assert(mem2.read(0x10007, 8).as_expr()->eq(e7), "MemSegment failed to write a symbolic epression then read it back" );
+            
+            /* Partial read */
+            nb += _assert(mem2.read(0x10001, 1).as_expr()->eq(extract(e3, 15, 8)), "MemSegment symbolic partial read failed");
+            nb += _assert(mem2.read(0x10002, 1).as_expr()->eq(extract(e3, 7, 0)), "MemSegment symbolic partial read failed");
+            nb += _assert(mem2.read(0x10003, 2).as_expr()->eq(extract(e5, 31, 16)), "MemSegment symbolic partial read failed");
+            nb += _assert(mem2.read(0x10004, 2).as_expr()->eq(extract(e5, 23, 8)), "MemSegment symbolic partial read failed");
+            nb += _assert(mem2.read(0x10009, 2).as_expr()->eq(extract(e7, 47, 32)), "MemSegment symbolic partial read failed");
+            nb += _assert(mem2.read(0x1000b, 4).as_expr()->eq(extract(e7, 31, 0)), "MemSegment symbolic partial read failed");
+
+            /* Overlapping read */
+            nb += _assert(mem2.read(0x10000, 2).as_expr()->eq(concat(e1, extract(e3, 15, 8))), "MemSegment symbolic simple overlapping read failed");
+            nb += _assert(mem2.read(0x10000, 4).as_expr()->eq(concat(e1, concat(e3, extract(e5, 31, 24)))), "MemSegment symbolic simple overlapping read failed");
+
+            /* Overwrite */ 
+            mem2.write(0x10100, e7, ctx);
+            mem2.write(0x10104, e6, ctx);
+            nb += _assert(mem2.read(0x10100, 8).as_expr()->eq(concat(extract(e7,63,32), e6)), "MemSegment symbolic overwrite read failed");
+            mem2.write(0x10106, e4, ctx); 
+            nb += _assert(mem2.read(0x10100, 8).as_expr()->eq(concat(extract(e7, 63,32), concat(extract(e6,31, 16), e4))), "MemSegment symbolic overwrite read failed");
+            
+            // Big number
+            mem2.write(0x10100, e8, ctx);
+            nb += _assert(mem2.read(0x10100, 32).as_expr()->eq(e8), "MemSegment symbolic big num read failed");
+            nb += _assert(mem2.read(0x10101, 16).as_expr()->eq(extract(e8, 247, 120)), "MemSegment symbolic big num read failed");
+
+            return nb;
         }
-        
+
         unsigned int mix_concrete_symbolic_rw(){
             unsigned int nb = 0; 
             Expr    e1 = exprvar(8, "var1", Taint::TAINTED),
@@ -362,6 +464,26 @@ namespace test{
             mem.write(0x1200, c2, ctx);
             nb += _assert( mem.read(0x1200, 8).as_expr()->eq(concat( exprcst(16, 0x1234), concat( e2, concat( exprcst(8, 0xde), concat(extract(e4, 63, 56) ,c2))))), 
                     "MemSegment: concrete/symbolic juxtaposition failed");
+            
+            // Big endian
+            MemSegment mem2(0x1000, 0x30ff, "", false, Endian::BIG);
+            
+            /* Juxtapose concrete and symbolic */
+            mem2.write(0x1000, c1, ctx);
+            mem2.write(0x1001, e1, ctx);
+            nb += _assert(mem2.read(0x1000, 2).as_expr()->eq(concat(c1, e1)), "MemSegment: concrete/symbolic juxtaposition failed");
+            
+            mem2.write(0x1001, e2, ctx);
+            nb += _assert(mem2.read(0x1000, 2).as_expr()->eq(concat(c1, extract(e2, 15, 8))), "MemSegment: concrete/symbolic juxtaposition failed");
+            mem2.write(0x1000, e1, ctx);
+            mem2.write(0x1001, c2, ctx);
+            nb += _assert(mem2.read(0x1000, 2).as_expr()->eq(concat(e1, exprcst(8, 0x12))), "MemSegment: concrete/symbolic juxtaposition failed");
+
+            /* Overwrite concrete with symbolic and vice versa */
+            mem2.write(0x1100, c3, ctx);
+            mem2.write(0x1102, e4, ctx);
+            nb += _assert(mem2.read(0x1100, 4).as_expr()->eq(concat(exprcst(16, 0x1234), extract(e4, 63,48))), "MemSegment: concrete/symbolic juxtaposition failed");
+
             return nb; 
         }
 
@@ -440,9 +562,7 @@ namespace test{
             mem.check_status(0x3205, 0x3205, is_symbolic, is_tainted);
             nb += _assert(is_symbolic == false, "MemEngine: failed to check memory status");
             nb += _assert(is_tainted == false, "MemEngine: failed to check memory status");
-            
-            
-            
+
             /* Test the make_symbolic, make_tainted interface */
             std::string name;
             std::stringstream ss;
@@ -547,6 +667,23 @@ namespace test{
             // With symbolic/concolic write
             mem.write(0x1ffe, e);
             e2 = mem.read(0x1ffe, 8).as_expr();
+            ctx->set("var1", 0x12345678abababab);
+            nb += _assert(e2->as_uint(*ctx) == 0x12345678abababab, "MemEngine: read/write accross segments failed");
+
+
+            // Big endian
+            MemEngine mem2(ctx, 64, nullptr, Endian::BIG);
+
+            mem2.map(0x1000, 0x1fff, maat::mem_flag_rwx);
+            mem2.map(0x2000, 0x2fff, maat::mem_flag_rwx);
+
+            // With concrete write
+            mem2.write(0x1ffe, 0x12345678deadbeef, 8);
+            nb += _assert(mem2.read(0x1ffe, 8).as_uint(*ctx) == 0x12345678deadbeef, "MemEngine: read/write accross segments failed");
+
+            // With symbolic/concolic write
+            mem2.write(0x1ffe, e);
+            e2 = mem2.read(0x1ffe, 8).as_expr();
             ctx->set("var1", 0x12345678abababab);
             nb += _assert(e2->as_uint(*ctx) == 0x12345678abababab, "MemEngine: read/write accross segments failed");
 

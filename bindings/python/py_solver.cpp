@@ -85,9 +85,15 @@ static int Solver_set_timeout(PyObject* self, PyObject* val, void* closure)
     return 0;
 }
 
+static PyObject* Solver_get_did_time_out(PyObject* self, void* closure)
+{
+    return PyBool_FromLong(as_solver_object(self).solver->did_time_out());
+}
+
 static PyGetSetDef Solver_getset[] = 
 {
     {"timeout", Solver_get_timeout, Solver_set_timeout, "Maximum time to spend to solve a constraint (in milliseconds)", NULL},
+    {"did_time_out", Solver_get_did_time_out, NULL, "True if the last call to check() timed out", NULL},
     {NULL}
 };
 

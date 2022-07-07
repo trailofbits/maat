@@ -19,6 +19,13 @@ typedef double fcst_t; ///< Float constant value (double precision / 64 bits)
 /** \addtogroup memory
  * \{ */
 typedef uint64_t addr_t; ///< Concrete memory address
+
+/// Endianness
+enum class Endian
+{
+    LITTLE,
+    BIG
+};
 /** \} */
 
 /** \addtogroup engine

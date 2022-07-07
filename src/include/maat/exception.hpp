@@ -149,6 +149,12 @@ public:
     explicit lifter_exception(std::string msg): generic_exception(msg){};
 };
 
+/** Solver exception */
+class solver_exception: public generic_exception {
+public:
+    explicit solver_exception(std::string msg): generic_exception(msg){};
+};
+
 /** Symbol exception */
 class symbol_exception: public generic_exception {
 public:

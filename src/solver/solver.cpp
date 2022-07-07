@@ -11,10 +11,16 @@ Solver::Solver()
 {
     model_id_cnt += 0x10000;
     timeout = 300000; // 300 sec 
+    _did_time_out = false;
 }
-    
+
 Solver::~Solver()
 {}
+
+bool Solver::did_time_out() const
+{
+    return _did_time_out;
+}
 
 std::unique_ptr<Solver> new_solver()
 {

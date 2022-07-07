@@ -182,7 +182,7 @@ namespace test
         {
             unsigned int res = 0;
             auto ctx = std::make_shared<VarContext>();
-            SymbolicMemEngine e1(64, ctx);
+            SymbolicMemEngine e1(64, ctx, Endian::LITTLE);
             std::unique_ptr<SymbolicMemEngine> e2;
 
             ctx->set("a", 123456);

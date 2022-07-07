@@ -17,6 +17,7 @@ void test_snapshots();
 void test_solver();
 void test_loader();
 void test_serialization();
+void test_archEVM();
 
 
 int main(int argc, char ** argv)
@@ -50,6 +51,7 @@ int main(int argc, char ** argv)
                 test_snapshots();
                 test_archX86();
                 test_archX64();
+                test_archEVM();
                 test_solver();
                 test_loader();
                 test_serialization();
@@ -78,6 +80,8 @@ int main(int argc, char ** argv)
                         test_archX86();
                     else if( !strcmp(argv[i], "X64"))
                         test_archX64();
+                    else if( !strcmp(argv[i], "EVM"))
+                        test_archEVM();
                     else if( !strcmp(argv[i], "event"))
                         test_events();
                     else if( !strcmp(argv[i], "snap"))
