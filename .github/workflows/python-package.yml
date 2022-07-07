@@ -6,6 +6,8 @@ on:
     types:
       - published
 
+  workflow_dispatch:
+
 jobs:
 
   build_wheels_linux:
