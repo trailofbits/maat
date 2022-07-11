@@ -147,7 +147,16 @@ void Memory::expand_if_needed(const Value& addr, size_t nb_bytes)
 {
     if (not addr.is_symbolic(*_varctx))
     {
-        addr_t required_size = addr.as_uint(*_varctx)+nb_bytes;
+        if (Number(addr.size(), 0xffffffffffffffff-nb_bytes+1).less_than(
+                addr.as_number(*_varctx)
+        )){
+            throw env_exception(
+                "EVM::Memory::expand_if_needed(): address to big to fit in "
+                "64-bit memory model"
+            );
+        }
+
+        addr_t required_size = addr.as_number(*_varctx).get_ucst()+nb_bytes;
         while (required_size > _limit)
         {
             // Expand memory and init with zeros
@@ -168,6 +177,10 @@ void Memory::expand_if_needed(const Value& addr, size_t nb_bytes)
     }
     // TODO: need to handle else{} case when computing gas to know how much
     // bytes have been allocated
+    else
+    {
+        throw env_exception("EVM::Memory::expand_if_needed(): symbolic addresses not supported yet");
+    }
 }
 
 serial::uid_t Memory::class_uid() const
