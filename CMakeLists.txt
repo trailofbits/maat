@@ -131,7 +131,7 @@ if(maat_USE_Z3)
 endif()
 
 if(maat_USE_LIEF)
-  find_package(LIEF REQUIRED)
+  find_package(LIEF 0.12 REQUIRED)
   target_link_libraries(maat_maat PUBLIC LIEF::LIEF)
   target_compile_definitions(maat_maat PUBLIC MAAT_LIEF_BACKEND=1 MAAT_HAS_LOADER_BACKEND=1)
 endif()
