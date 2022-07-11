@@ -342,6 +342,7 @@ info::Stop MaatEngine::run(int max_inst)
             event::Action tmp_action = event::Action::CONTINUE;
             info.addr = asm_inst->addr();
             ir::ProcessedInst& pinst = cpu.pre_process_inst(inst, tmp_action, *this);
+
             // Check event results on register read
             if (tmp_action == event::Action::ERROR)
             {
@@ -891,7 +892,8 @@ bool MaatEngine::process_store(
         )
         {
             do_abstract_store = false;
-            concrete_store_addr = addr.as_uint(*vars);
+            // WARNING: this truncates addresses on more than 64 bits...
+            concrete_store_addr = addr.as_number(*vars).get_ucst();
         }
         else if (addr.is_symbolic(*vars) and not settings.symptr_write)
         {
