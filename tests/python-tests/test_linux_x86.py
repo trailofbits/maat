@@ -16,7 +16,7 @@ def test_crackme_vm():
     m.load(f"{X86_ELF_DIR}/crackme_vm", BIN.ELF32, load_interp=False)
 
     snapshot_next = True
-    def path_cb(m: MaatEngine, data):
+    def path_cb(m: MaatEngine):
         nonlocal snapshot_next
         if snapshot_next:
             m.take_snapshot()
@@ -45,7 +45,7 @@ def test_crackme_vm():
     m.hooks.add(EVENT.EXEC, WHEN.BEFORE, name="fail", filter=0x8048411)
 
     # Scanf hook
-    def scanf(m: MaatEngine, data):
+    def scanf(m: MaatEngine):
         _input = b"aaaaaaaaaaaapcod3s_aaaaaaaa"
         m.mem.write(0x8049a98, _input)
         m.mem.make_concolic(0x8049a98, len(_input), 1, "input")
@@ -71,7 +71,7 @@ def test_crackme_vm_serialization():
     """
     state_manager = SimpleStateManager(".")
     snapshot_next = True
-    def path_cb(m: MaatEngine, data):
+    def path_cb(m: MaatEngine):
         nonlocal snapshot_next
         nonlocal state_manager
         if snapshot_next:
@@ -107,7 +107,7 @@ def test_crackme_vm_serialization():
             snapshot_next = False
 
     # Scanf hook
-    def scanf(m: MaatEngine, data):
+    def scanf(m: MaatEngine):
         _input = b"aaaaaaaaaaaapcod3s_aaaaaaaa"
         m.mem.write(0x8049a98, _input)
         m.mem.make_concolic(0x8049a98, len(_input), 1, "input")
