@@ -59,6 +59,7 @@ EventCallback::EventCallback():
 {
 #ifdef MAAT_PYTHON_BINDINGS
     python_cb = nullptr;
+    python_cb_data = nullptr;
 #endif
 }
 
@@ -159,17 +160,16 @@ Action EventCallback::execute(MaatEngine& engine) const
         Action res = Action::CONTINUE;
 #ifdef MAAT_PYTHON_BINDINGS
             // Build args list
-            PyObject* cb_data = nullptr;
-            if (python_cb_data == nullptr)
-                cb_data = Py_None;
-            else
-                cb_data = python_cb_data;
+            PyObject* argslist = nullptr;
             // Note: PyTuple_Pack does increment the ref count on objects
-            PyObject* argslist = PyTuple_Pack(2, engine.self_python_wrapper_object, cb_data);
+            if (python_cb_data == nullptr)
+                argslist = PyTuple_Pack(1, engine.self_python_wrapper_object);
+            else
+                argslist = PyTuple_Pack(2, engine.self_python_wrapper_object, python_cb_data);
+
             if( argslist == NULL )
-            {
                 throw runtime_exception("EventCallback::execute(): failed to create args tuple for python callback");
-            }
+
             Py_INCREF(argslist);
             PyObject* result = PyObject_CallObject(python_cb, argslist);
             Py_DECREF(argslist);
