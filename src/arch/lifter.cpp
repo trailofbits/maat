@@ -32,6 +32,12 @@ Lifter::Lifter(CPUMode m): mode(m)
             pspecfile = config.find_sleigh_file("x86-64.pspec");
             arch = Arch::Type::X64;
         }
+        else if (mode == CPUMode::EVM)
+        {
+            slafile = config.find_sleigh_file("EVM.sla");
+            pspecfile = config.find_sleigh_file("EVM.pspec");
+            arch = Arch::Type::EVM;
+        }
         else
         {
             throw lifter_exception("Lifter: this CPU mode is not supported");
@@ -68,6 +74,7 @@ Lifter::Lifter(CPUMode m): mode(m)
 }
 
 bool Lifter::lift_block(
+    maat::Logger& logger,
     ir::IRMap& ir_map,
     uintptr_t addr,
     code_t code,
@@ -76,8 +83,7 @@ bool Lifter::lift_block(
     bool* is_symbolic,
     bool* is_tainted,
     bool check_mappings
-)
-{
+){
     // TODO: check memory mappings
     try
     {
@@ -93,8 +99,10 @@ bool Lifter::lift_block(
     }
     catch(std::exception& e)
     {
-        // TODO: log error properly (need ref to Logger)
-        std::cout << "FATAL: Error in sleigh translate(): " << e.what() << std::endl;
+        logger.error(
+            "Sleigh failed to decode instructions in basic block starting at 0x",
+            std::hex, addr, ". Raised the following error: \"", e.what(), "\""
+        );
         return false;
     }
 
@@ -105,7 +113,6 @@ const std::string& Lifter::get_inst_asm(addr_t addr, code_t inst)
 {
     return sleigh_get_asm(sleigh_ctx, addr, inst);
 }
-
 
 serial::uid_t Lifter::class_uid() const
 {

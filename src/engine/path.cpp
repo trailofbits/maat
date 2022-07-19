@@ -34,24 +34,60 @@ PathManager::IteratorWrapper PathManager::_constraints_iterator()
             );
 }
 
-PathManager::IteratorWrapper PathManager::get_related_constraints(const Constraint& c)
-{
+PathManager::IteratorWrapper PathManager::get_constraints_containing(
+    const std::set<std::string>& vars
+){
     return PathManager::IteratorWrapper(
                 PathManager::iterator::Type::RELATED,
-                c->contained_vars(), // Converted to rvalue
+                vars,
                 &_constraints
             );
 }
 
-PathManager::IteratorWrapper PathManager::get_related_constraints(const Expr& e)
-{
+std::unordered_set<Constraint> PathManager::get_related_constraints(
+    const Constraint& constraint
+) const {
+    return _get_related_constraints(constraint->contained_vars());
+}
+
+std::unordered_set<Constraint> PathManager::get_related_constraints(
+    const Expr& expr
+) const {
     std::set<std::string> vars;
-    e->get_vars(vars);
-    return PathManager::IteratorWrapper(
-                PathManager::iterator::Type::RELATED,
-                vars, // Compiler should optimise that into move semantics
-                &_constraints
-            );
+    expr->get_vars(vars);
+    return _get_related_constraints(vars);
+}
+
+std::unordered_set<Constraint> PathManager::get_related_constraints(
+    const Value& val
+) const {
+    return get_related_constraints(val.as_expr());
+}
+
+std::unordered_set<Constraint> PathManager::_get_related_constraints(
+    std::set<std::string> vars
+) const {
+    std::unordered_set<Constraint> res;
+    bool changed = true;
+    while (changed)
+    {
+        changed = false;
+        for (const auto& constraint : _constraints)
+        {
+            if (not res.count(constraint)) // ignore constraints already added
+            {
+                if (constraint->contains_vars(vars))
+                {
+                    res.insert(constraint);
+                    // Add potential new variables to the variables closure
+                    for (const auto& v : constraint->contained_vars())
+                        vars.insert(v);
+                    changed = true;
+                }
+            }
+        }
+    }
+    return res;
 }
 
 uid_t PathManager::class_uid() const

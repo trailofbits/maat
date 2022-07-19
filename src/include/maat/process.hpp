@@ -20,6 +20,7 @@ public:
     std::string pwd; ///< Current working directory of the running process
     std::string binary_path; ///< Path to the executable in the virtual file system
     bool terminated; ///< 'True' if the process exited or was killed
+    std::optional<Value> exit_status; ///< Status with whom process exited
 public:
     ProcessInfo(): pid(0), ruid(0), euid(0), rgid(0), egid(0), pwd(""), binary_path(""), terminated(false){}
     ProcessInfo(const ProcessInfo& other) = default;
@@ -32,12 +33,14 @@ public:
 
     virtual void dump(serial::Serializer& s) const
     {
-        s << bits(pid) << bits(ruid) << bits(euid) << bits(rgid) << bits(egid) << pwd << binary_path << bits(terminated);
+        s << bits(pid) << bits(ruid) << bits(euid) << bits(rgid) << bits(egid) 
+          << pwd << binary_path << bits(terminated);
     }
 
     virtual void load(serial::Deserializer& d)
     {
-        d >> bits(pid) >> bits(ruid) >> bits(euid) >> bits(rgid) >> bits(egid) >> pwd >> binary_path >> bits(terminated);
+        d >> bits(pid) >> bits(ruid) >> bits(euid) >> bits(rgid) >> bits(egid)
+          >> pwd >> binary_path >> bits(terminated);
     }
 };
 

@@ -34,6 +34,8 @@ public:
     Number(size_t bits);
     /// Constructor
     Number(size_t bits, cst_t value);
+    /// Constructor
+    Number(size_t bits, const std::string& value, int base = 10);
     /// Destructor
     ~Number();
     /// Copy constructor
@@ -88,6 +90,8 @@ public:
     void set_sext(int ext_size, const Number& n);
     void set_rem(const Number& n1, const Number& n2);
     void set_srem(const Number& n1, const Number& n2);
+    // Exponentiation: (n1**n2)
+    void set_exp(const Number& n1, const Number& n2);
     void set_mask(int size);
 public:
     bool is_mpz() const;
@@ -102,6 +106,9 @@ public:
     bool slessequal_than(const Number& other) const;
     /// Return true if this number is equal to 'other'
     bool equal_to(const Number& other) const;
+public:
+    /// Return true if the number is null
+    bool is_null() const;
 public:
     /// Return the value (0 or 1) of the bit 'idx' in the number
     int get_bit(unsigned int idx) const;

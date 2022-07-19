@@ -473,6 +473,8 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "FPUControlWord") return maat::ir::Reg(maat::X86::FPUCW, 16);
     if (reg_name == "FPUStatusWord") return maat::ir::Reg(maat::X86::FPUSW, 16);
     if (reg_name == "FPUTagWord") return maat::ir::Reg(maat::X86::FPUTW, 16);
+    if (reg_name == "FPUPointerSelector") return maat::ir::Reg(maat::X86::FPUCS, 16);
+    if (reg_name == "FPUDataSelector") return maat::ir::Reg(maat::X86::FPUDS, 16);
     if (reg_name == "FPUInstructionPointer") return maat::ir::Reg(maat::X86::FPUIP, 32);
     if (reg_name == "FPUDataPointer") return maat::ir::Reg(maat::X86::FPUDP, 32);
     if (reg_name == "FPULastInstructionOpcode") return maat::ir::Reg(maat::X86::FPUOP, 11);
@@ -1279,6 +1281,8 @@ maat::ir::Param sleigh_reg_translate_X64(const std::string& reg_name)
     if (reg_name == "FPUInstructionPointer") return maat::ir::Reg(maat::X64::FPUIP, 64);
     if (reg_name == "FPUDataPointer") return maat::ir::Reg(maat::X64::FPUDP, 64);
     if (reg_name == "FPULastInstructionOpcode") return maat::ir::Reg(maat::X64::FPUOP, 11);
+    if (reg_name == "FPUPointerSelector") return maat::ir::Reg(maat::X64::FPUCS, 16);
+    if (reg_name == "FPUDataSelector") return maat::ir::Reg(maat::X64::FPUDS, 16);
     if (reg_name == "CR0") return maat::ir::Reg(maat::X64::CR0, 64);
     if (reg_name == "XCR0") return maat::ir::Reg(maat::X64::XCR0, 64);
     if (reg_name == "MXCSR") return maat::ir::Reg(maat::X64::MXCSR, 32);
@@ -1305,5 +1309,15 @@ maat::ir::Param sleigh_reg_translate_X64(const std::string& reg_name)
             );
 }
 
+maat::ir::Param sleigh_reg_translate_EVM(const std::string& reg_name)
+{
+    if (reg_name == "PC") return maat::ir::Reg(maat::EVM::PC, 31, 0);
+
+    throw maat::runtime_exception(maat::Fmt()
+            << "EVM: Register translation from SLEIGH to MAAT missing for register "
+            << reg_name
+            >> maat::Fmt::to_str
+            );
+}
 
 } // namespace maat

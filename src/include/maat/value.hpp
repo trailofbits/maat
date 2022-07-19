@@ -36,6 +36,7 @@ public:
     Value(const Expr& expr); ///< Build value from abstract expression
     Value(const Number& number); ///< Build value from concrete number
     Value(size_t size, cst_t val); ///< Build value from concrete value
+    Value(size_t size, const std::string& val, int base=16); ///< Build value from string and base
     Value& operator=(const Value& other) = default; ///< Copy assignment
     Value& operator=(Value&& other) = default; ///< Move assignment
     virtual ~Value() = default;
@@ -106,6 +107,13 @@ public:
     void set_bool_and(const Value& n1, const Value& n2, size_t size);
     void set_bool_or(const Value& n1, const Value& n2, size_t size);
     void set_bool_xor(const Value& n1, const Value& n2, size_t size);
+    void set_ITE(
+        const Value& c1, ITECond cond, const Value& c2,
+        const Value& if_true, const Value& if_false
+    );
+public:
+    /// Return true if value is the same as other
+    bool eq(const Value& other) const;
 public:
     friend std::ostream& operator<<(std::ostream& os, const Value& val);
 public:
@@ -173,6 +181,8 @@ Value operator-(const Value& arg); ///< Logical invert an expression
 Value extract(const Value& arg, unsigned long higher, unsigned long lower); ///< Extract bitfield from value
 Value concat(const Value& upper, const Value& lower); ///< Concatenate two values
 
+Value sext(int new_size, const Value& arg); ///< Sign-extend value to 'new_size' bits
+Value zext(int new_size, const Value& arg); ///< Zero-extend value to 'new_size' bits
 
 // Constraints
 Constraint operator==(const Value& left, const Value& right); ///< Equality constraint 

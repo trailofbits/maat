@@ -2,6 +2,7 @@
 
 #include "maat/solver.hpp"
 #include "maat/stats.hpp"
+#include "maat/exception.hpp"
 
 namespace maat
 {
@@ -62,7 +63,7 @@ z3::expr expr_to_z3(z3::context* c, Expr e, size_t extend_to_size)
                                 .extract(e->size*2 - 1, e->size);
                 case Op::DIV: return z3::udiv(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
                 case Op::SDIV: return expr_to_z3(c, e->args[0]) / expr_to_z3(c, e->args[1]);
-                case Op::MOD: return z3::mod(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
+                case Op::MOD: return z3::urem(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
                 case Op::SMOD: return z3::srem(expr_to_z3(c, e->args[0]), expr_to_z3(c, e->args[1]));
                 case Op::SHL: return z3::shl(
                     expr_to_z3(c, e->args[0]),
@@ -139,6 +140,7 @@ void SolverZ3::reset()
 {
     constraints.clear();
     has_model = false;
+    _did_time_out = false;
 }
 
 void SolverZ3::add(const Constraint& constr)
@@ -173,7 +175,24 @@ bool SolverZ3::check()
     z3::params p(*ctx);
     p.set(":timeout", static_cast<unsigned>(timeout));
     sol->set(p);
-    has_model =  (sol->check() == z3::check_result::sat);
+    switch (sol->check())
+    {
+        case z3::check_result::sat:
+            has_model = true;
+            break;
+        case z3::check_result::unknown:
+            if (sol->reason_unknown() == "timeout")
+                _did_time_out = true;
+            break;
+        case z3::check_result::unsat:
+            break;
+        default:
+            throw solver_exception(
+                Fmt() << "SolverZ3::check() failed with unknown reason: "
+                << sol->reason_unknown() >> Fmt::to_str
+            );
+            break;
+    }
 
     // Statistics
     MaatStats::instance().done_solving();
@@ -195,12 +214,16 @@ VarContext* SolverZ3::_get_model_raw()
     auto res = new VarContext(_model_id_cnt++);
     for (int i = 0; i < m.num_consts(); i++)
     {
+        size_t size = Z3_get_bv_sort_size(*ctx, m.get_const_interp(m[i]).get_sort());
+        Number val(size);
+        if (size <= 64)
+            val.set_cst(m.get_const_interp(m[i]).get_numeral_uint64());
+        else
+            val.set_mpz(m.get_const_interp(m[i]).get_decimal_string(1), 10);
+
         res->set(
             m[i].name().str(), 
-            cst_sign_extend( 
-                Z3_get_bv_sort_size(*ctx, m.get_const_interp(m[i]).get_sort()), 
-                m.get_const_interp(m[i]).get_numeral_uint64()
-            )
+            val
         );
     }
     return res;

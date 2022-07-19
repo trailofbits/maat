@@ -5,6 +5,7 @@
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 namespace maat
 {
@@ -263,6 +264,22 @@ std::ostream& operator<<(std::ostream& os, MemPageManager& mem)
 
 MemStatusBitmap::MemStatusBitmap():_bitmap(nullptr), _size(0){}
 
+MemStatusBitmap::MemStatusBitmap(const MemStatusBitmap& other)
+:_size(other._size)
+{
+    try
+    {
+        _bitmap = new uint8_t[_size]{0};
+        memcpy(_bitmap, other._bitmap, _size);
+    }
+    catch(std::bad_alloc)
+    {
+        throw mem_exception(Fmt()
+            << "Failed to copy MemStatusBitmap of size " << _size
+            >> Fmt::to_str );
+    }
+}
+
 MemStatusBitmap::MemStatusBitmap(offset_t nb_bytes)
 {
     // +1 to be sure to not loose bytes if nb_bytes is
@@ -513,15 +530,34 @@ void MemStatusBitmap::load(Deserializer& d)
     d >> serial::buffer((char*)_bitmap, _size);
 }
 
-MemConcreteBuffer::MemConcreteBuffer():_mem(nullptr){}
-MemConcreteBuffer::MemConcreteBuffer(offset_t nb_bytes)
+MemConcreteBuffer::MemConcreteBuffer(Endian endian)
+:_mem(nullptr), _endianness(endian){}
+
+MemConcreteBuffer::MemConcreteBuffer(const MemConcreteBuffer& other)
+:_endianness(other._endianness), _size(other._size)
+{
+    try
+    {
+        _mem = new uint8_t[_size]{0};
+        memcpy(_mem, other._mem, _size);
+    }
+    catch(const std::bad_alloc&)
+    {
+        throw mem_exception(Fmt()
+            << "Failed to copy MemConcreteBuffer of size " << _size
+            >> Fmt::to_str );
+    }
+}
+
+MemConcreteBuffer::MemConcreteBuffer(offset_t nb_bytes, Endian endian)
+:_endianness(endian)
 {
     try
     {
         _size = nb_bytes;
         _mem = new uint8_t[nb_bytes]{0};
     }
-    catch(std::bad_alloc)
+    catch(const std::bad_alloc&)
     {
         throw mem_exception(Fmt()
             << "Failed to allocate MemConcreteBuffer of size " << nb_bytes
@@ -598,8 +634,50 @@ offset_t MemConcreteBuffer::is_identical_until(offset_t start, offset_t end, uin
 uint64_t MemConcreteBuffer::read(offset_t off, int nb_bytes)
 {
     uint64_t res = 0;
-    for (int i = 0; i < nb_bytes; i++)
-        res += ((uint64_t)(*(_mem+off+i))) << i*8;
+    if (_endianness == Endian::LITTLE)
+    {
+        for (int i = 0; i < nb_bytes; i++)
+            res += ((uint64_t)(*(_mem+off+i))) << i*8;
+    }
+    else
+    {
+        for (int i = nb_bytes-1; i >= 0; i--)
+            res += ((uint64_t)(*(_mem+off+nb_bytes-1-i))) << i*8;
+    }
+    return res;
+}
+
+Value MemConcreteBuffer::read_as_value(offset_t off, int nb_bytes)
+{
+    uint64_t val = 0;
+    Value res;
+    while (nb_bytes >= 8)
+    {
+        // Read val byte per byte to play nice with sanitizers
+        val = read(off, 8);
+        if (res.is_none())
+            res = Value(64, val);
+        else
+        {
+            if (_endianness == Endian::LITTLE)
+                res.set_concat(Value(64,val), res);
+            else
+                res.set_concat(res, Value(64, val));
+        }
+        nb_bytes -= 8;
+        off += 8;
+    }
+    if (nb_bytes > 0)
+    {
+        val = read(off, nb_bytes);
+        if (res.is_none())
+            res = Value(nb_bytes*8, val);
+        else
+            if (_endianness == Endian::LITTLE)
+                res.set_concat(Value(nb_bytes*8,val), res);
+            else
+                res.set_concat(res, Value(nb_bytes*8,val));
+    }
     return res;
 }
 
@@ -613,12 +691,22 @@ void MemConcreteBuffer::write(offset_t off, int64_t val, int nb_bytes)
             >> Fmt::to_str);
     }
 
-    // Note: this assumes little endian
-    for( ; nb_bytes > 0; nb_bytes--)
+    if (_endianness == Endian::LITTLE)
     {
-        *(uint8_t*)((uint8_t*)_mem+off) = val & 0xff;
-        val = val >> 8;
-        off++;
+        for( ; nb_bytes > 0; nb_bytes--)
+        {
+            *(uint8_t*)((uint8_t*)_mem+off) = val & 0xff;
+            val = val >> 8;
+            off++;
+        }
+    }
+    else
+    {
+        for( ; nb_bytes > 0; nb_bytes--)
+        {
+            *(uint8_t*)((uint8_t*)_mem+off) = (val >> ((nb_bytes-1)*8)) & 0xff;
+            off++;
+        }
     }
 }
 
@@ -635,11 +723,19 @@ void MemConcreteBuffer::write(offset_t off, const Number& val, int nb_bytes)
         }
         else
         {
-            write(off, tmp.get_cst(), 8);
+            if (_endianness == Endian::LITTLE)
+            {
+                write(off, tmp.get_cst(), 8);
+                shft = Number(tmp.size, 64);
+                tmp.set_shr(tmp, shft); // Should be safe
+            }
+            else
+            {
+                Number tmp_val; tmp_val.set_extract(tmp, nb_bytes*8-1, (nb_bytes-8)*8);
+                write(off, tmp_val.get_ucst(), 8);
+            }
             nb_bytes -= 8;
             off += 8;
-            shft = Number(tmp.size, 64);
-            tmp.set_shr(tmp, shft); // Should be safe
         }
     }
 }
@@ -664,6 +760,7 @@ void MemConcreteBuffer::dump(Serializer& s) const
 {
     s << bits(_size);
     s << serial::buffer((char*)_mem, _size);
+    s << bits(_endianness);
 }
 
 void MemConcreteBuffer::load(Deserializer& d)
@@ -674,6 +771,7 @@ void MemConcreteBuffer::load(Deserializer& d)
     d >> bits(_size);
     _mem = new uint8_t[_size];
     d >> serial::buffer((char*)_mem, _size);
+    d >> bits(_endianness);
 }
 
 /* Memory abstract buffer 
@@ -695,17 +793,10 @@ expressions stored in memory, the class automatically concatenates/extracts
 the corresponding parts.
 */
 
-MemAbstractBuffer::MemAbstractBuffer(){}
+MemAbstractBuffer::MemAbstractBuffer(Endian endian):_endianness(endian){}
 
-/* 1°) !! Reading function assumes little endian !!
- *  
- * 2°) !! This code assumes that the MemAbstractBuffer has been used in a 
- * consistent way. In particular, if a read() operation is performed on 
- * an address range that has NOT been written, it will return wrong results
- * or more likely result in a crash. !! 
- * 
- * */
-Expr MemAbstractBuffer::read(offset_t off, unsigned int nb_bytes)
+
+Expr MemAbstractBuffer::_read_little_endian(offset_t off, unsigned int nb_bytes)
 {
     int i = nb_bytes-1;
     int off_byte, low_byte; 
@@ -725,7 +816,7 @@ Expr MemAbstractBuffer::read(offset_t off, unsigned int nb_bytes)
             if( it2->second.first->neq(tmp) )
             {
                 /* Found different expr */
-                if( res == nullptr )
+                if (res == nullptr)
                 {
                     res = extract(tmp, (off_byte*8)+7, low_byte*8);
                 }
@@ -777,10 +868,157 @@ Expr MemAbstractBuffer::read(offset_t off, unsigned int nb_bytes)
     return res;
 }
 
+Expr MemAbstractBuffer::_read_big_endian(offset_t off, unsigned int nb_bytes)
+{
+    int i = nb_bytes-1;
+    int off_byte, low_byte; 
+    Expr res = nullptr, tmp=nullptr;
+    abstract_mem_t::iterator it, it2;
+    while (nb_bytes > 0)
+    {
+        it = _mem.find(off); // Take next byte 
+        tmp = it->second.first; // Get associated expr
+        off_byte = it->second.second; // Get associated exproffset
+        low_byte = off_byte;
+        /* Find until where the same expression is in memory */
+        i = 0;
+        while (i < nb_bytes)
+        {
+            it2 = _mem.find(off+i); // Get expr
+            if (it2->second.first->neq(tmp))
+            {
+                /* Found different expr */
+                if (res == nullptr)
+                    res = extract(tmp, (off_byte*8)+7, low_byte*8);
+                else
+                    res = concat(res, extract(tmp, (off_byte*8)+7, low_byte*8));
+                i -= 1; // Don't consume this byte
+                break;
+            }
+            low_byte = it2->second.second; // Same expr, decrememnt exproffset counter
+            if (low_byte == 0)
+            {
+                /* Reached beginning of the memory write */
+                if (res == nullptr)
+                {
+                    // If the size corresponds to the offset_byte, then use the whole expr
+                    // Else extract lower bits 
+                    res = (tmp->size == (off_byte+1)*8 ? tmp : extract(tmp, (off_byte*8)+7, 0));
+                }
+                else
+                {
+                    res = concat(res,  (tmp->size == (off_byte+1)*8 ? tmp : extract(tmp, (off_byte*8)+7, 0))); 
+                }
+                break;
+            }
+            else
+            {
+                /* Not different expr, not beginning, continue to next */
+                i++; // Go to next offset 
+            }
+        }
+
+        // If nb_bytes wasn't reset to zero then we finished while in the middle of
+        // an expression
+        if (i == nb_bytes and nb_bytes != 0)
+        {
+            /* We reached the requested address, so extract and return */
+            if( res == nullptr )
+            {
+                res = extract(tmp, (off_byte*8)+7, low_byte*8);
+            }
+            else
+            {
+                res = concat(res, extract(tmp, (off_byte*8)+7, low_byte*8)); 
+            }
+            break;
+        }
+        /* Else just loop back and read next expression */
+        else
+        {
+            nb_bytes -= i+1; // Updates nb bytes to read
+            off += i+1; // Update offset from where to read
+        }
+    }
+    return res;
+}
+
+Expr MemAbstractBuffer::read(offset_t off, unsigned int nb_bytes)
+{
+    if (_endianness == Endian::LITTLE)
+        return _read_little_endian(off, nb_bytes);
+    else
+        return _read_big_endian(off, nb_bytes);
+}
+
+void MemAbstractBuffer::_read_optimised_buffer(std::vector<Value>& res, offset_t off, unsigned int nb_bytes)
+{
+    if (_endianness != Endian::BIG)
+        throw mem_exception("MemAbstractBuffer::_read_optimised_buffer(): only implemented for big endian");
+
+    int i = 0;
+    int off_byte, low_byte; 
+    Expr tmp=nullptr;
+    abstract_mem_t::iterator it, it2;
+    while (nb_bytes > 0)
+    {
+        it = _mem.find(off); // Take next byte 
+        tmp = it->second.first; // Get associated expr
+        off_byte = it->second.second; // Get associated exproffset
+        low_byte = off_byte;
+        /* Find until where the same expression is in memory */
+        i = 0;
+        while (i < nb_bytes)
+        {
+            it2 = _mem.find(off+i); // Get expr
+            if (it2->second.first->neq(tmp))
+            {
+                /* Found different expr */
+                res.push_back(Value(extract(tmp, (off_byte*8)+7, low_byte*8)));
+                break;
+            }
+            low_byte = it2->second.second; // Same expr, decrememnt exproffset counter
+            if (low_byte == 0)
+            {
+                // If the size corresponds to the offset_byte, then use the whole expr
+                // Else extract lower bits 
+                Expr val = (tmp->size == (off_byte+1)*8 ? tmp : extract(tmp, (off_byte*8)+7, 0));
+                res.push_back(Value(val));
+                break;
+            }
+            else
+            {
+                /* Not different expr, not beginning, continue to next */
+                i++; // Go to next offset 
+            }
+        }
+
+        // If nb_bytes wasn't reset to zero then we finished while in the middle of
+        // an expression
+        if (i == nb_bytes and nb_bytes != 0)
+        {
+            /* We reached the requested address, so extract and return */
+            res.push_back(Value(extract(tmp, (off_byte*8)+7, low_byte*8)));
+            break;
+        }
+        /* Else just loop back and read next expression */
+        else
+        {
+            nb_bytes -= i+1; // Updates nb bytes to read
+            off += i+1; // Update offset from where to read
+        }
+    }
+}
+
 void MemAbstractBuffer::write(offset_t off, Expr e)
 {
     for( offset_t i = 0; i < (e->size/8); i++ )
-        _mem[off+i] = std::make_pair(e, i);
+    {
+        if (_endianness == Endian::LITTLE)
+            _mem[off+i] = std::make_pair(e, i);
+        else
+            _mem[off+i] = std::make_pair(e, (e->size/8)-1-i);
+    }
 }
 
 uid_t MemAbstractBuffer::class_uid() const
@@ -790,6 +1028,7 @@ uid_t MemAbstractBuffer::class_uid() const
 
 void MemAbstractBuffer::dump(Serializer& s) const
 {
+    s << bits(_endianness);
     s << bits(_mem.size());
     for (auto const& [key, val]: _mem)
     {
@@ -805,6 +1044,7 @@ void MemAbstractBuffer::load(Deserializer& d)
     offset_t off;
     uint8_t byte;
     Expr expr;
+    d >> bits(_endianness);
     _mem.clear();
     d >> bits(nb_elems);
     for (int i = 0; i < nb_elems; i++)
@@ -816,13 +1056,14 @@ void MemAbstractBuffer::load(Deserializer& d)
 
 
 
-MemSegment::MemSegment(addr_t s, addr_t e, const std::string& n, bool special):
+MemSegment::MemSegment(addr_t s, addr_t e, const std::string& n, bool special, Endian endian):
     start(s), end(e),
     _bitmap(MemStatusBitmap(e-s+1)), 
-    _concrete(MemConcreteBuffer(e-s+1)),
-    _abstract(MemAbstractBuffer()), 
+    _concrete(MemConcreteBuffer(e-s+1, endian)),
+    _abstract(MemAbstractBuffer(endian)), 
     _is_engine_special_segment(special),
-    name(n)
+    name(n),
+    _endianness(endian)
 {
     if(start > end){
         throw mem_exception("Cannot create segment with start address bigger than end address");
@@ -939,12 +1180,28 @@ Value MemSegment::read(addr_t addr, unsigned int nb_bytes)
     return val;
 }
 
+// Concatenate two values according to endianness. 
+// 'first' is the value at the lower address and 'second'
+// the one at the higher address
+static inline void concat_endian(
+    Value& res,
+    const Value& first,
+    const Value& second,
+    Endian endian
+)
+{
+    if (endian == Endian::LITTLE)
+        res.set_concat(second, first);
+    else
+        res.set_concat(first, second);
+}
+
 void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
 {
     offset_t off = addr - start;
     offset_t from = off, to, bytes_to_read;
-    Value tmp2;
-    Value n1, n2;
+    Value tmp1, tmp2, tmp3;
+    Value n1, n2, n3, n4;
 
     res.set_none();
 
@@ -957,7 +1214,7 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
     {
         /* Try if concrete or symbolic */
         to = _bitmap.is_concrete_until(from, nb_bytes);
-        if( to != from )
+        if (to != from)
         {
             /* Concrete */
             bytes_to_read = to-from; // Bytes that can be read as concrete
@@ -965,65 +1222,20 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
             { 
                 bytes_to_read = nb_bytes; 
             }
+            // Max bytes we can read at a time is 32...
+            if (bytes_to_read > 32)
+                bytes_to_read = 32;
             nb_bytes -= bytes_to_read; // Update the number of bytes left to read
-            /* Read */
-            switch(bytes_to_read)
-            {
-                case 1: tmp2.set_cst(8, _concrete.read(from, 1)); break;
-                case 2: tmp2.set_cst(16, _concrete.read(from, 2)); break;
-                case 3: tmp2.set_cst(24, _concrete.read(from, 3)); break; // Assumes little endian
-                case 4: tmp2.set_cst(32, _concrete.read(from, 4)); break;
-                case 5: tmp2.set_cst(40, _concrete.read(from, 5)); break;
-                case 6: tmp2.set_cst(48, _concrete.read(from, 6)); break;
-                case 7: tmp2.set_cst(56, _concrete.read(from, 7)); break;
-                case 8: tmp2.set_cst(64, _concrete.read(from, 8)); break;
-                case 9:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(8, _concrete.read(from+8, 1));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 10: 
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(16, _concrete.read(from+8, 2));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 11:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(24, _concrete.read(from+8, 3));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 12:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(32, _concrete.read(from+8, 4));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 13:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(40, _concrete.read(from+8, 5));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 14:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(48, _concrete.read(from+8, 6));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 15:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(56, _concrete.read(from+8, 7));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                case 16:
-                    n1.set_cst(64, _concrete.read(from, 8));
-                    n2.set_cst(64, _concrete.read(from+8, 8));
-                    tmp2.set_concat(n2, n1);
-                    break;
-                default: throw mem_exception("MemSegment: should not be reading more than 16 bytes at a time!");
-            }
+            if (bytes_to_read <= 8)
+                tmp2.set_cst(bytes_to_read*8, _concrete.read(from, bytes_to_read));
+            else
+                tmp2 = _concrete.read_as_value(from, bytes_to_read);
+
             /* Update result */
             if (res.is_none())
                 res = tmp2;
             else
-                res.set_concat(tmp2, res); // Assumes little endian
+                concat_endian(res, res, tmp2, _endianness);
         }
         else
         {
@@ -1041,7 +1253,51 @@ void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
             if (res.is_none())
                 res = tmp2;
             else
-                res.set_concat(tmp2, res); // Assumes little endian
+                concat_endian(res, res, tmp2, _endianness);
+        }
+        from += bytes_to_read;
+    } while(nb_bytes > 0);
+}
+
+void MemSegment::_read_optimised_buffer(std::vector<Value>& res, addr_t addr, unsigned int nb_bytes)
+{
+    offset_t off = addr - start;
+    offset_t from = off, to, bytes_to_read;
+    Value tmp1, tmp2, tmp3;
+    Value n1, n2, n3, n4;
+
+    if( addr+nb_bytes-1 > end )
+    {
+        throw mem_exception("MemSegment::read(): try to read beyond segment's end");
+    }
+
+    do
+    {
+        /* Try if concrete or symbolic */
+        to = _bitmap.is_concrete_until(from, nb_bytes);
+        if (to != from)
+        {
+            /* Concrete */
+            bytes_to_read = to-from; // Bytes that can be read as concrete
+            if (bytes_to_read > nb_bytes) // We don't want more that what's left to read
+            { 
+                bytes_to_read = nb_bytes; 
+            }
+            nb_bytes -= bytes_to_read; // Update the number of bytes left to read
+            // Read 1-byte concrete values
+            for (int i = 0; i < bytes_to_read; i++)
+                res.push_back(Value(8, _concrete.read(from+i, 1)));
+        }
+        else
+        {
+            to = _bitmap.is_abstract_until(from, nb_bytes);
+            /* Symbolic */
+            bytes_to_read = to-from; // Bytes that can be read as concrete
+            if( bytes_to_read > nb_bytes ) // We don't want more that what's left to read
+                bytes_to_read = nb_bytes; 
+            nb_bytes -= bytes_to_read; // Update the number of bytes left to read
+            // Read optimised symbolic values
+            _abstract._read_optimised_buffer(res, from, bytes_to_read);
         }
         from += bytes_to_read;
     } while(nb_bytes > 0);
@@ -1242,14 +1498,16 @@ void MemSegment::dump(Serializer& s) const
 {
     s << _bitmap << _concrete << _abstract
       << bits(_is_engine_special_segment)
-      << bits(start) << bits(end) << name;
+      << bits(start) << bits(end) << name
+      << bits(_endianness);
 }
 
 void MemSegment::load(Deserializer& d)
 {
     d >> _bitmap >> _concrete >> _abstract
       >> bits(_is_engine_special_segment)
-      >> bits(start) >> bits(end) >> name;
+      >> bits(start) >> bits(end) >> name
+      >> bits(_endianness);
 }
 
 
@@ -1259,12 +1517,14 @@ int MemEngine::_uid_cnt = 0;
 MemEngine::MemEngine(
     std::shared_ptr<VarContext> varctx,
     size_t arch_bits,
-    std::shared_ptr<SnapshotManager<Snapshot>> snap
+    std::shared_ptr<SnapshotManager<Snapshot>> snap,
+    Endian endian
 ):
 _varctx(varctx),
-symbolic_mem_engine(arch_bits, varctx),
+symbolic_mem_engine(arch_bits, varctx, endian),
 _arch_bits(arch_bits),
-_snapshots(snap)
+_snapshots(snap),
+_endianness(endian)
 {
     if(_varctx == nullptr)
         _varctx = std::make_shared<VarContext>(0);
@@ -1284,7 +1544,13 @@ void MemEngine::new_segment(addr_t start, addr_t end, mem_flag_t flags, const st
         throw mem_exception("Trying to create a segment that overlaps with another segment");
 
     // Else create entire new segment
-    std::shared_ptr<MemSegment> seg = std::make_shared<MemSegment>(start, end, name, is_special);
+    std::shared_ptr<MemSegment> seg = std::make_shared<MemSegment>(
+        start,
+        end,
+        name,
+        is_special,
+        _endianness
+    );
     // Find where to insert new segment
     // TODO: std::lower_bound won't f**** compile and I can't figure out why
     for (it = _segments.begin(); it != _segments.end(); it++)
@@ -1549,6 +1815,7 @@ void MemEngine::read(Value& res, addr_t addr, unsigned int nb_bytes, mem_alert_t
 {
     Value tmp;
     unsigned int save_nb_bytes = nb_bytes;
+    addr_t save_addr = addr;
 
     res.set_none();
 
@@ -1598,12 +1865,64 @@ void MemEngine::read(Value& res, addr_t addr, unsigned int nb_bytes, mem_alert_t
             if (res.is_none())
                 res = tmp;
             else
-                res.set_concat(tmp, res); // Assumes little endian
+                concat_endian(res, res, tmp, _endianness);
 
             nb_bytes -= tmp.size()/8;
             addr += tmp.size()/8;
             if( nb_bytes == 0 )
                 return;
+        }
+    }
+
+    /* If addr isn't in any segment, throw exception */
+    throw mem_exception(Fmt()
+        << "Trying to read " << std::dec << save_nb_bytes
+        << " bytes at address 0x" 
+        << std::hex << save_addr << " causing access to non-mapped memory"
+        >> Fmt::to_str
+    );
+}
+
+std::vector<Value> MemEngine::_read_optimised_buffer(addr_t addr, size_t nb_bytes)
+{
+    std::vector<Value> res;
+    size_t save_nb_bytes = nb_bytes;
+    // Check if the read is within an area where symbolic writes occured
+    if(symbolic_mem_engine.contains_symbolic_write(addr, addr-1+nb_bytes))
+    {
+       // Not possible to optimise so call regular function
+       return read_buffer(addr, nb_bytes, 1);
+    }
+
+    // Else do a read in the "sure" memory
+    // Find the segment we read from
+    for (auto& segment : _segments)
+    {
+        if (segment->intersects_with_range(addr, addr+nb_bytes-1))
+        {
+            // Check flags
+            if( !page_manager.has_flags(addr, maat::mem_flag_r))
+            {
+                throw mem_exception(Fmt() << "Reading at address 0x" << std::hex << addr << " in segment that doesn't have R flag set" << std::dec >> Fmt::to_str);
+            }
+
+            // Check if read exceeds segment
+            if( addr + nb_bytes-1 > segment->end)
+            {
+                // Read overlaps two segments
+                size_t tmp_nb_bytes = segment->end - addr+1;
+                segment->_read_optimised_buffer(res, addr, tmp_nb_bytes);
+                addr += tmp_nb_bytes;
+                nb_bytes -= tmp_nb_bytes;
+            }
+            else
+            {
+                segment->_read_optimised_buffer(res, addr, nb_bytes);
+                nb_bytes = 0;
+            }
+
+            if (nb_bytes == 0)
+                return res;
         }
     }
 
@@ -1835,10 +2154,21 @@ void MemEngine::write(addr_t addr, const Value& val, mem_alert_t* alert, bool ca
                 // Record write for snapshots
                 record_mem_write(tmp_addr, bytes_to_write);
                 // Write
-                Value extracted = extract(tmp_val, (bytes_to_write*8)-1, 0);
-                (*it)->write(tmp_addr, extracted, *_varctx); // Just write lower bytes
+                Value extracted;
+                if (_endianness == Endian::LITTLE)
+                    extracted = extract(tmp_val, (bytes_to_write*8)-1, 0);
+                else
+                    extracted = extract(
+                        tmp_val,
+                        tmp_val.size()-1,
+                        tmp_val.size()-(bytes_to_write*8)
+                    );
+                (*it)->write(tmp_addr, extracted, *_varctx);
                 tmp_addr += bytes_to_write;
-                tmp_val.set_extract(tmp_val, tmp_val.size()-1, bytes_to_write*8);
+                if (_endianness == Endian::LITTLE)
+                    tmp_val.set_extract(tmp_val, tmp_val.size()-1, bytes_to_write*8);
+                else
+                    tmp_val.set_extract(tmp_val, tmp_val.size()-1-(bytes_to_write*8), 0);
             }
             else
             {
@@ -2141,7 +2471,10 @@ std::string MemEngine::make_concolic(addr_t addr, unsigned int nb_elems, unsigne
         {
             throw mem_exception("MemEngine::make_concolic(): can not be called on memory region that contains full symbolic expressions");
         }
-        _varctx->set(ss.str(), prev_expr.as_uint(*_varctx));
+        _varctx->set(
+            ss.str(), 
+            Number(prev_expr.size(), prev_expr.as_uint(*_varctx))
+        );
         write(addr_val + i*elem_size, exprvar(elem_size*8, ss.str()));
     }
     return new_name;
@@ -2233,8 +2566,10 @@ cst_t MemEngine::concrete_snapshot(addr_t addr, int nb_bytes)
         if( segment->contains(tmp_addr) )
         {
             ucst_t tmp = segment->concrete_snapshot(tmp_addr, nb_bytes); // updates addr and nb_bytes
-            // Assuming little endian
-            res += tmp << ((ucst_t)i*8);
+            if (_endianness == Endian::LITTLE)
+                res += tmp << ((ucst_t)i*8);
+            else
+                res |= tmp << ((nb_bytes-i)*8);
             i = tmp_addr - addr;
         }
         if (nb_bytes == 0)
@@ -2295,10 +2630,23 @@ void MemEngine::write_from_concrete_snapshot(addr_t addr, cst_t val, int nb_byte
             // Write
             if (page_manager.was_once_executable(addr))
                 alert |= maat::mem_alert_x_overwrite;
-            segment->write_from_concrete_snapshot(addr, val, bytes_to_write);
+            
 
-            // Update
-            val = val >> (bytes_to_write*8);
+            if (_endianness == Endian::LITTLE)
+            {
+                segment->write_from_concrete_snapshot(addr, val, bytes_to_write);
+                val = val >> (bytes_to_write*8);
+            }
+            else
+            {
+                segment->write_from_concrete_snapshot(
+                    addr,
+                    val >> (nb_bytes-bytes_to_write),
+                    bytes_to_write
+                );
+                // No need to update value for big endian
+            }
+
             nb_bytes -= bytes_to_write;
             if (nb_bytes == 0)
                 return;
@@ -2476,19 +2824,26 @@ uid_t MemEngine::class_uid() const
 
 void MemEngine::dump(serial::Serializer& s) const
 {
-    s << bits(_uid) << bits(_arch_bits) << _segments << _varctx << _snapshots
+    s << bits(_uid) << bits(_arch_bits) << bits(_endianness) 
+      << _segments << _varctx << _snapshots
       << symbolic_mem_engine << page_manager << mappings;
 }
 
 void MemEngine::load(serial::Deserializer& d)
 {
-    d >> bits(_uid) >> bits(_arch_bits) >> _segments >> _varctx >> _snapshots
+    d >> bits(_uid) >> bits(_arch_bits) >> bits(_endianness)
+      >> _segments >> _varctx >> _snapshots
       >> symbolic_mem_engine >> page_manager >> mappings; 
 }
 
 int MemEngine::uid() const
 {
     return _uid;
+}
+
+Endian MemEngine::endianness() const
+{
+    return _endianness;
 }
 
 addr_t reserved_memory(MemEngine& mem)

@@ -33,7 +33,9 @@ def test_crackme1():
     )
     stdin.write_buffer(buf)
 
-    def solve_chall(m: MaatEngine):
+    # NOTE: data argument is unnecessary but we use it to test
+    # callback data in python 
+    def solve_chall(m: MaatEngine, data):
         if m.info.addr != 0x040008b1:
             return
         s = Solver()
@@ -43,7 +45,7 @@ def test_crackme1():
             m.vars.update_from(model)
         return ACTION.HALT
 
-    m.hooks.add(EVENT.PATH, WHEN.BEFORE, callbacks=[solve_chall])
+    m.hooks.add(EVENT.PATH, WHEN.BEFORE, callbacks=[solve_chall], data=None)
     m.run()
 
-    assert m.vars.get_as_str("input") == "1bHt56z0"
+    assert m.vars.get_as_str("input") == b'1bHt56z0'

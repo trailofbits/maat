@@ -36,20 +36,22 @@ namespace code_coverage{
             bool snapshot_next = true;
             // Path constraint callback
             EventCallback path_cb = EventCallback(
-                [&snapshot_next](MaatEngine& engine)
+                [](MaatEngine& engine, void* data)
                 {
+                    bool& snapshot_next = *(bool*)data;
                     if (snapshot_next)
                     {
                         engine.take_snapshot();
                     }
                     snapshot_next = true;
                     return Action::CONTINUE;
-                }
+                },
+                &snapshot_next
             );
 
             // Set breakpoints and handlers
             engine.hooks.add(Event::EXEC, When::BEFORE, "end", AddrFilter(end));
-            engine.hooks.add(Event::PATH, When::BEFORE, EventCallback(path_cb), "path");
+            engine.hooks.add(Event::PATH, When::BEFORE, path_cb, "path");
 
             // Set EIP at starting point
             engine.cpu.ctx().set(X86::EIP, start);
@@ -63,7 +65,7 @@ namespace code_coverage{
             {
                 // First try to find a model for EAX == 1
                 sol.reset();
-                for (auto c : engine.path.constraints())
+                for (auto c : engine.path->constraints())
                     sol.add(c);
                 sol.add(engine.cpu.ctx().get(X86::EAX).as_expr() != 0);
                 if (sol.check())
@@ -82,7 +84,7 @@ namespace code_coverage{
                     {
                         engine.restore_last_snapshot(true);
                         sol.reset();
-                        for (auto c : engine.path.constraints())
+                        for (auto c : engine.path->get_related_constraints(engine.info.branch->cond))
                             sol.add(c);
                         // Add inverted path constraint
                         _assert(engine.info.branch->taken.has_value(), "do_code_coverage(): got invalid branch info on path constraint breakpoint");

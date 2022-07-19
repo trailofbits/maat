@@ -12,6 +12,7 @@ endif()
 # Unit tests
 add_executable(unit-tests
   unit-tests/test_all.cpp
+  unit-tests/test_archEVM.cpp
   unit-tests/test_archX64.cpp
   unit-tests/test_archX86.cpp
   unit-tests/test_event.cpp
@@ -44,6 +45,7 @@ add_test(NAME unit-tests
 add_executable(adv-tests
   adv-tests/test_all.cpp
   adv-tests/test_coverage.cpp
+  adv-tests/test_evm.cpp
   adv-tests/test_serialization.cpp
   adv-tests/test_hash.cpp
   adv-tests/test_hash_solving.cpp

@@ -9222,7 +9222,7 @@ void test_archX86(){
     total += disass_pcmpeqd(engine);
     total += disass_pcmpgtd(engine);
     // total += disass_pextrb(engine);
-    // total += disass_pminub(engine);
+    total += disass_pminub(engine);
     // total += disass_pmovmskb(engine);
     total += disass_pop(engine);
     total += disass_popad(engine);

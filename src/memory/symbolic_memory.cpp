@@ -10,7 +10,8 @@ namespace maat
 
 IntervalTree::IntervalTree(ucst_t min, ucst_t max):left(nullptr), right(nullptr)
 {
-    center = min + (max-min)/2;
+    // DEBUG center = min + (max-min)/2;
+    center = (min+max)/2;
 }
 
 void IntervalTree::add_interval(ucst_t min, ucst_t max, int write_count)
@@ -28,7 +29,7 @@ void IntervalTree::add_interval(ucst_t min, ucst_t max, int write_count)
         )
         {
             return; // Don't add it
-        } 
+        }
 
         // Add the interval
         auto index_min = std::lower_bound(
@@ -60,7 +61,20 @@ void IntervalTree::add_interval(ucst_t min, ucst_t max, int write_count)
         // Add right
         if( right == nullptr )
         {
-            right = std::make_unique<IntervalTree>(center, max);
+            // If max == center+1 we increment center by 1. This is to account
+            // for the case
+            // where we try to add an interval which is actually a singleton
+            // value that is *odd*. Since center is computed with min+max/2,
+            // if we have max == center+1 then the call below creates a new
+            // interval between
+            // center and max that has a new center = center+center+1/2 = center...
+            // So we will keep creating trees centered on 'center' forever. 
+            // This is why we manually update center to match the singleton interval
+            // containing 'max'
+            right = std::make_unique<IntervalTree>(
+                center== max-1? center+1 : center,
+                max
+            );
         }
         right->add_interval(min, max, write_count);
     }
@@ -127,12 +141,6 @@ bool IntervalTree::contains_interval(ucst_t min, ucst_t max, unsigned int max_co
     return false;
 }
 
-IntervalTree::~IntervalTree()
-{
-    // Now that left and right are unique_ptr they will be
-    // deleted automatically
-}
-
 uid_t IntervalTree::class_uid() const
 {
     return serial::ClassId::INTERVAL_TREE;
@@ -140,23 +148,25 @@ uid_t IntervalTree::class_uid() const
 
 void IntervalTree::dump(Serializer& s) const
 {
-    s << bits(center) << left.get() << right.get() << match_min << match_max;
+    s << bits(center) << left << right << match_min << match_max;
 }
 
 void IntervalTree::load(Deserializer& d)
 {
-    IntervalTree *t1, *t2;
-    d >> bits(center) >> t1 >> t2 >> match_min >> match_max;
-    left = std::unique_ptr<IntervalTree>(t1);
-    right = std::unique_ptr<IntervalTree>(t2);
+    d >> bits(center) >> left >> right >> match_min >> match_max;
 }
 
 
-SymbolicMemEngine::SymbolicMemEngine(size_t arch_bits, std::shared_ptr<VarContext> varctx):
+SymbolicMemEngine::SymbolicMemEngine(
+    size_t arch_bits,
+    std::shared_ptr<VarContext> varctx,
+    Endian endian
+):
     _varctx(varctx),
     write_intervals(0, maat::cst_mask(arch_bits)),
     write_count(0),
-    symptr_force_aligned(false)
+    symptr_force_aligned(false),
+    _endianness(endian)
 {}
 
 // min, max : the refined value set of 'addr'
@@ -210,9 +220,9 @@ bool SymbolicMemEngine::contains_symbolic_write(addr_t start, addr_t end)
 
 
 // Return the expression result of the fact that 'expr' is
-// written over 'prev' starting from byte 'index'
-// WARNING!!!! This function assumes little endian
-Expr _mem_expr_overwrite(Expr prev, Expr expr, int index)
+// written over 'prev' starting from byte 'index'. This function assumes
+// little endian
+static inline Expr _mem_expr_overwrite_little_endian(Expr prev, Expr expr, int index)
 {
     if( index < 0 ) // Overwrite before first byte
     {
@@ -229,7 +239,7 @@ Expr _mem_expr_overwrite(Expr prev, Expr expr, int index)
         }
         else
         {
-            // Write finishes before the end of prev (keep the LSB of both)
+            // Write finishes before the end of prev (keep the HSB of both)
             return concat(  extract(prev, prev->size-1, expr->size + (index*8)), 
                         extract(expr, expr->size-1, -1*(index*8)));
         }
@@ -262,6 +272,75 @@ Expr _mem_expr_overwrite(Expr prev, Expr expr, int index)
     }
 }
 
+// Return the expression result of the fact that 'expr' is
+// written over 'prev' starting from byte 'index'. This function assumes
+// big endian
+static inline Expr _mem_expr_overwrite_big_endian(Expr prev, Expr expr, int index)
+{
+    if (index < 0) // Overwrite before first byte
+    {
+        if( (index*8) + expr->size == prev->size)
+        {
+            // Write was bigger than prev and finishes exactly 
+            // at the end of prev. We get the LSB of expr
+            return extract(expr, prev->size-1, 0);
+        }
+        else if((index*8) + expr->size > prev->size)
+        {
+            // Write still finishes after prev
+            return extract(expr, expr->size+(index*8)- 1, expr->size+(index*8)-prev->size);
+        }
+        else
+        {
+            // Write finishes before the end of prev (keep LSB of both)
+            return concat(
+                extract(expr, (index*8)+expr->size-1, 0),
+                extract(prev, prev->size-(index*8)-expr->size-1, 0)
+            );
+        }
+    }
+    else if (index == 0) // Overwrite from first byte
+    {
+        if( prev->size == expr->size ){
+            return expr;
+        }
+        else if( prev->size < expr->size )
+        {
+            return extract(expr, expr->size-1, expr->size - prev->size);
+        }
+        else
+        {
+            return concat(expr, extract(prev, prev->size - expr->size -1,  0));
+        }
+    }
+    // Index > 0
+    else if( prev->size <= expr->size + (index*8)) // Overwrite to last byte
+    {
+        return concat(
+            extract(prev, prev->size-1, prev->size - (index*8)),
+            extract(expr, expr->size-1, expr->size - prev->size+(index*8))
+        );
+    }
+    else // Overwrite in the middle
+    {
+        return concat(
+            extract(prev, prev->size-1, prev->size - (index*8)),
+            concat(
+                expr,
+                extract(prev, prev->size - expr->size - (index*8)-1, 0)
+            )
+        );
+    }
+}
+
+static inline Expr _mem_expr_overwrite(Expr prev, Expr expr, int index, Endian endian)
+{
+    if (endian == Endian::LITTLE)
+        return _mem_expr_overwrite_little_endian(prev, expr, index);
+    else
+        return _mem_expr_overwrite_big_endian(prev, expr, index);
+}
+
 Expr SymbolicMemEngine::concrete_ptr_read(Expr addr, int nb_bytes, Expr base_expr)
 {
     int i = 0;
@@ -281,7 +360,12 @@ Expr SymbolicMemEngine::concrete_ptr_read(Expr addr, int nb_bytes, Expr base_exp
             )
             {
                 // Concrete ptr write recorded, we are sure
-                res = _mem_expr_overwrite(res, write.value.as_expr(), write.refined_value_set.min - addr_min);
+                res = _mem_expr_overwrite(
+                    res,
+                    write.value.as_expr(),
+                    write.refined_value_set.min - addr_min,
+                    _endianness
+                );
             }
         }
         else
@@ -309,7 +393,7 @@ Expr SymbolicMemEngine::concrete_ptr_read(Expr addr, int nb_bytes, Expr base_exp
                 // byte 'i'
                 else
                 {
-                    res = ITE(write.addr, ITECond::EQ, addr+i, _mem_expr_overwrite(tmp_res, write.value.as_expr(), i), res);
+                    res = ITE(write.addr, ITECond::EQ, addr+i, _mem_expr_overwrite(tmp_res, write.value.as_expr(), i, _endianness), res);
                 }
                 i++;
             }
@@ -357,7 +441,7 @@ Expr SymbolicMemEngine::symbolic_ptr_read(Expr& addr, ValueSet& addr_value_set, 
                 and write.refined_value_set.max >= addr_min+i
             )
             {
-                res = ITE(write.addr, ITECond::EQ, addr+i, _mem_expr_overwrite(tmp_res, write.value.as_expr(), i), res);
+                res = ITE(write.addr, ITECond::EQ, addr+i, _mem_expr_overwrite(tmp_res, write.value.as_expr(), i, _endianness), res);
             }
             i++;
         }
@@ -390,12 +474,16 @@ uid_t SymbolicMemEngine::class_uid() const
 
 void SymbolicMemEngine::dump(Serializer& s) const
 {
-    s << bits(write_count) << writes << write_intervals << _varctx << bits(symptr_force_aligned);
+    s   << bits(write_count) << writes << write_intervals 
+        << _varctx << bits(symptr_force_aligned)
+        << bits(_endianness);
 }
 
 void SymbolicMemEngine::load(Deserializer& d)
 {
-    d >> bits(write_count) >> writes >> write_intervals >> _varctx >> bits(symptr_force_aligned);
+    d   >> bits(write_count) >> writes >> write_intervals
+        >> _varctx >> bits(symptr_force_aligned)
+        >> bits(_endianness);
 }
 
 } // namespace maat

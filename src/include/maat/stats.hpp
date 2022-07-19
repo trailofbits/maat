@@ -196,7 +196,7 @@ public:
         os << "Lifted insts: " << stats.lifted_insts() << "\n"; 
         os << "Executed IR insts: " << stats.executed_ir_insts() << "\n\n";
 
-        os << "Created symbolic expresssions: " << stats.created_exprs() << "\n\n";
+        os << "Created symbolic expressions: " << stats.created_exprs() << "\n\n";
 
         os << "Solver total time: " << stats.solver_total_time() << " ms \n";
         os << "Solver average time: " << stats.solver_average_time() << " ms \n";

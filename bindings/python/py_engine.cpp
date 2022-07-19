@@ -12,6 +12,40 @@ static void MaatEngine_dealloc(PyObject* self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 };
 
+static PyObject* MaatEngine_duplicate(PyObject* self, PyObject* args, PyObject* keywords)
+{
+    static char *kwlist[] = {"duplicate", "share", NULL};
+    PySetObject     *py_duplicate = nullptr,
+                    *py_share = nullptr; 
+
+    std::set<std::string> duplicate, share;
+
+    // Process arguments
+    if( ! PyArg_ParseTupleAndKeywords(
+            args, keywords, "|O!O!", kwlist,
+            &PySet_Type, &py_duplicate, &PySet_Type, &py_share
+    )){
+        return NULL;
+    }
+
+    if (py_duplicate)
+        if (not py_to_c_string_set(py_duplicate, duplicate))
+            return PyErr_Format(PyExc_RuntimeError, "Failed to process 'duplicate' argument");
+
+    if (py_share)
+        if (not py_to_c_string_set(py_share, share))
+            return PyErr_Format(PyExc_RuntimeError, "Failed to process 'share' argument");
+
+    // Create new engine
+    MaatEngine *new_engine = new MaatEngine(
+        *as_engine_object(self).engine,
+        duplicate,
+        share
+    );
+    // The python object will own the 'new_engine' pointer
+    return PyMaatEngine_FromMaatEngine(new_engine);
+};
+
 static PyObject* MaatEngine_run(PyObject* self, PyObject* args){
     unsigned int max_instr = 0;
     info::Stop res;
@@ -82,7 +116,7 @@ static PyObject* MaatEngine_restore_snapshot(PyObject* self, PyObject* args, PyO
 
 static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywords){
     char * name;
-    int bin_type;
+    int bin_type = (int)loader::Format::NONE;
     unsigned long long base = 0;
     PyObject* py_cmdline_args = nullptr, *arg = nullptr;
     PyObject *py_envp = nullptr;
@@ -99,7 +133,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
     char* keywd[] = {"", "", "base", "args", "envp", "libdirs", "ignore_libs", "virtual_fs", "load_interp", NULL};
 
     if( !PyArg_ParseTupleAndKeywords(
-            args, keywords, "si|KOOOOOp", keywd,
+            args, keywords, "s|iKOOOOOp", keywd,
             &name, &bin_type, &base, 
             &py_cmdline_args, &py_envp,
             &py_libs, &py_ignore_libs,
@@ -141,17 +175,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
                             "Command line argument specified as a 'list' should only contain 'Value' elements"
                         );
                     }
-                    const Value& value = *as_value_object(val).value;
-                    if (value.size() != 8)
-                    {
-                        return PyErr_Format(
-                            PyExc_TypeError,
-                            "Abstract value in command line argument %d should have a size of 8 bits (got %d)",
-                            i,
-                            (int)value.size()
-                        );
-                    }
-                    arg_buffer.push_back(value);
+                    arg_buffer.push_back(*as_value_object(val).value);
                 }
                 cmdline_args.push_back(loader::CmdlineArg(arg_buffer));
             }
@@ -274,12 +298,60 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
 };
 
 
+
+static PyObject* MaatEngine_get_uid(PyObject* self, void* closure){
+    return PyLong_FromLong(as_engine_object(self).engine->uid());
+}
+
+
+static PyGetSetDef MaatEngine_getset[] = {
+    {"uid", MaatEngine_get_uid, NULL, "Unique ID for this MaatEngine instance", NULL},
+    {NULL}
+};
+
+static PyObject* MaatEngine_get_inst_asm(PyObject* self, PyObject* args){
+    unsigned long long addr;
+    
+    if( ! PyArg_ParseTuple(args, "K", &addr) ){
+        return NULL;
+    }
+    try
+    { 
+        const std::string& res = as_engine_object(self).engine->get_inst_asm(addr);
+        return PyUnicode_FromString(res.c_str());
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+};
+
+static PyObject* MaatEngine_get_inst_bytes(PyObject* self, PyObject* args){
+    unsigned long long addr;
+    
+    if( ! PyArg_ParseTuple(args, "K", &addr) ){
+        return NULL;
+    }
+    try
+    { 
+        std::vector<uint8_t> res = as_engine_object(self).engine->get_inst_bytes(addr);
+        return PyBytes_FromStringAndSize((char*)res.data(), res.size());
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+};
+
 static PyMethodDef MaatEngine_methods[] = {
     {"run", (PyCFunction)MaatEngine_run, METH_VARARGS, "Continue to run code from current location"},
     {"run_from", (PyCFunction)MaatEngine_run_from, METH_VARARGS, "Run code from a given address"},
     {"take_snapshot", (PyCFunction)MaatEngine_take_snapshot, METH_NOARGS, "Take a snapshot of the symbolic engine"},
     {"restore_snapshot", (PyCFunction)MaatEngine_restore_snapshot, METH_VARARGS | METH_KEYWORDS, "Restore a snapshot of the symbolic engine"},
     {"load", (PyCFunction)MaatEngine_load, METH_VARARGS | METH_KEYWORDS, "Load an executable"},
+    {"_duplicate", (PyCFunction)MaatEngine_duplicate, METH_VARARGS | METH_KEYWORDS, "Duplicate a symbolic engine"},
+    {"get_inst_asm", (PyCFunction)MaatEngine_get_inst_asm, METH_VARARGS, "Get assembly code of an instruction"},
+    {"get_inst_bytes", (PyCFunction)MaatEngine_get_inst_bytes, METH_VARARGS, "Get raw bytes of an instruction"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -327,7 +399,7 @@ PyTypeObject MaatEngine_Type = {
     0,                                        /* tp_iternext */
     MaatEngine_methods,                   /* tp_methods */
     MaatEngine_members,                   /* tp_members */
-    0,                                        /* tp_getset */
+    MaatEngine_getset,                         /* tp_getset */
     0,                                        /* tp_base */
     0,                                        /* tp_dict */
     0,                                        /* tp_descr_get */
@@ -375,7 +447,7 @@ void _init_MaatEngine_attributes(MaatEngine_Object* object)
     object->mem = PyMemEngine_FromMemEngine(object->engine->mem.get(), true);
     object->hooks = PyEventManager_FromEventManager(&(object->engine->hooks), true);
     object->info = PyInfo_FromInfoAndArch(&(object->engine->info), true, &(*object->engine->arch));
-    object->path = PyPath_FromPath(&(object->engine->path), true);
+    object->path = PyPath_FromPath(object->engine->path.get(), true);
     object->env = PyEnv_FromEnvEmulator(object->engine->env.get(), true);
     object->settings = PySettings_FromSettings(&(object->engine->settings), true);
     object->process = PyProcessInfo_FromProcessInfo(object->engine->process.get(), true);
@@ -394,13 +466,23 @@ PyObject* maat_MaatEngine(PyObject* self, PyObject* args){
     }
 
     // Create object
+    return PyMaatEngine_FromMaatEngine(
+        new MaatEngine((Arch::Type)arch, (env::OS)system)
+    );
+}
+
+
+PyObject* PyMaatEngine_FromMaatEngine(MaatEngine* engine)
+{
+    MaatEngine_Object* object;
+    // Create object
     try
     {
         PyType_Ready(&MaatEngine_Type);
         object = PyObject_New(MaatEngine_Object, &MaatEngine_Type);
         if (object != nullptr)
         {
-            object->engine = new MaatEngine((Arch::Type)arch, (env::OS)system);
+            object->engine = engine;
             _init_MaatEngine_attributes(object);
         }
     }
@@ -410,7 +492,6 @@ PyObject* maat_MaatEngine(PyObject* self, PyObject* args){
     }
     return (PyObject*)object;
 }
-
 
 /* ------------------------------------
  *          Init function
@@ -434,6 +515,8 @@ void init_engine(PyObject* module)
     PyDict_SetItemString(stop_enum, "NONE", PyLong_FromLong((int)info::Stop::NONE));
     PyObject* stop_class = create_class(PyUnicode_FromString("STOP"), PyTuple_New(0), stop_enum);
     PyModule_AddObject(module, "STOP", stop_class);
+
+    register_type(module, (PyTypeObject*)get_Info_Type());
 };
     
 } // namespace py

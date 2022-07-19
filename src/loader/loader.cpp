@@ -13,17 +13,19 @@ CmdlineArg::CmdlineArg(const std::string& value):
     _len(value.size())
 {}
 
+CmdlineArg::CmdlineArg(const Value& value):
+    _buffer{value},
+    _len(value.size()/8)
+{}
 
 CmdlineArg::CmdlineArg(const std::vector<Value>& buffer):
-    _buffer(buffer),
-    _len(buffer.size())
+    _buffer(buffer)
 {
+    size_t len = 0;
     // Ensure values are 1-byte values
     for (const auto& val : _buffer)
-        if (val.size() != 8)
-            throw loader_exception(
-                "CmdlineArg::CmdlineArg(): abstract buffer must contain only 8-bit values"
-            );
+        len += val.size()/8;
+    _len = len;
 }
 
 const std::string& CmdlineArg::string() const

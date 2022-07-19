@@ -22,6 +22,13 @@ Value::Value(size_t size, cst_t val)
     set_cst(size, val);
 }
 
+Value::Value(size_t size, const std::string& val, int base)
+{
+    Number n(size);
+    n.set_mpz(val, base);
+    *this = n;
+}
+
 Value& Value::operator=(const Expr& e)
 {
     _expr = e;
@@ -410,6 +417,17 @@ void Value::set_popcount(int dest_size, const Value& n)
 
 void Value::set_zext(int ext_size, const Value& n)
 {
+    if (ext_size < n.size())
+        throw expression_exception(Fmt()
+            << "Can not zero extend " << std::dec << (int)n.size()
+            << "-bits value to " << ext_size << "bits" >> Fmt::to_str
+        );
+    else if (ext_size == n.size())
+    {
+        *this = n;
+        return;
+    }
+
     if (n.is_abstract())
     {
         *this = maat::concat(
@@ -426,6 +444,17 @@ void Value::set_zext(int ext_size, const Value& n)
 
 void Value::set_sext(int ext_size, const Value& n)
 {
+    if (ext_size < n.size())
+        throw expression_exception(Fmt()
+            << "Can not sign extend " << std::dec << (int)n.size()
+            << "-bits value to " << ext_size << "bits" >> Fmt::to_str
+        );
+    else if (ext_size == n.size())
+    {
+        *this = n;
+        return;
+    }
+
     if (n.is_abstract())
     {
         // Create mask
@@ -809,9 +838,8 @@ void Value::set_bool_negate(const Value& n, size_t size)
     }
     else
     {
-        Number zero(n.size(), 0);
         _number.size = size;
-        if (n.number().equal_to(zero))
+        if (n.number().is_null())
             _number.set(1);
         else
             _number.set(0);
@@ -839,12 +867,10 @@ void Value::set_bool_and(const Value& n1, const Value& n2, size_t size)
     }
     else
     {
-        Number zero(n1.size(), 0);
-        Number zero1(n2.size(), 0);
         _number.size = size;
         if (
-            n1.as_number().equal_to(zero)
-            or n2.as_number().equal_to(zero1)
+            n1.as_number().is_null()
+            or n2.as_number().is_null()
         )
             _number.set(0);
         else
@@ -873,12 +899,10 @@ void Value::set_bool_or(const Value& n1, const Value& n2, size_t size)
     }
     else
     {
-        Number zero(n1.size(), 0);
-        Number zero1(n2.size(), 0);
         _number.size = size;
         if (
-            !n1.as_number().equal_to(zero)
-            or !n2.as_number().equal_to(zero1)
+            !n1.as_number().is_null()
+            or !n2.as_number().is_null()
         )
             _number.set(1);
         else
@@ -913,18 +937,58 @@ void Value::set_bool_xor(const Value& n1, const Value& n2, size_t size)
     }
     else
     {
-        Number zero(n1.size(), 0);
-        Number zero1(n2.size(), 0);
         _number.size = size;
         if (
-            (!n1.as_number().equal_to(zero) and n2.as_number().equal_to(zero1))
-            or (n1.as_number().equal_to(zero) and !n2.as_number().equal_to(zero1))
+            (!n1.as_number().is_null() and n2.as_number().is_null())
+            or (n1.as_number().is_null() and !n2.as_number().is_null())
         )
             _number.set(1);
         else
             _number.set(0);
         type = Value::Type::CONCRETE;
     }
+}
+
+void Value::set_ITE(
+    const Value& c1, ITECond cond, const Value& c2,
+    const Value& if_true, const Value& if_false
+)
+{
+    bool is_true = true;
+    if (c1.is_abstract() or c2.is_abstract()
+        or if_true.is_abstract() or if_false.is_abstract())
+    {
+        *this = ITE(c1.as_expr(), cond, c2.as_expr(), if_true.as_expr(), if_false.as_expr());
+    }
+    else
+    {
+        switch (cond)
+        {
+            case ITECond::EQ: is_true = c1.as_number().equal_to(c2.as_number()); break;
+            case ITECond::LE: is_true = c1.as_number().lessequal_than(c2.as_number()); break;
+            case ITECond::LT: is_true = c1.as_number().less_than(c2.as_number()); break;
+            case ITECond::SLT: is_true = c1.as_number().sless_than(c2.as_number()); break;
+            case ITECond::SLE: is_true = c1.as_number().slessequal_than(c2.as_number()); break;
+            default:
+                throw expression_exception("Value::set_ITE(): got unimplemented ITE condition");
+        }
+        // Assign result depending on condition
+        *this = is_true? if_true : if_false;
+    }
+}
+
+bool Value::eq(const Value& other) const
+{
+    if (is_abstract())
+        if (other.is_abstract())
+            return as_expr()->eq(other.as_expr());
+        else
+            return false;
+    else
+        if (other.is_abstract())
+            return false;
+        else
+            return as_number().equal_to(other.as_number());
 }
 
 std::ostream& operator<<(std::ostream& os, const Value& val)
@@ -1403,6 +1467,20 @@ Value concat(const Value& upper, const Value& lower)
         n.set_concat(upper.as_number(), lower.as_number());
         res = n;
     }
+    return res;
+}
+
+Value sext(int new_size, const Value& arg)
+{
+    Value res;
+    res.set_sext(new_size, arg);
+    return res;
+}
+
+Value zext(int new_size, const Value& arg)
+{
+    Value res;
+    res.set_zext(new_size, arg);
     return res;
 }
 

@@ -2,6 +2,7 @@
 #include "maat/engine.hpp"
 #include "maat/memory.hpp"
 #include "maat/env/library.hpp"
+#include "maat/env/env_EVM.hpp"
 
 namespace maat{
 namespace callother{
@@ -19,6 +20,10 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
             if (mnemonic == "PMINUB") return Id::X86_PMINUB;
             if (mnemonic == "INT") return Id::X86_INT;
             if (mnemonic == "LOCK") return Id::X86_LOCK;
+            break;
+        case Arch::Type::EVM:
+            if (mnemonic == "STACK_PUSH") return Id::EVM_STACK_PUSH;
+            if (mnemonic == "STACK_POP") return Id::EVM_STACK_POP;
             break;
         default:
             break;
@@ -85,7 +90,7 @@ void X86_PMINUB_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
             concat(extract(src2, i+7, i), res)
         );
     }
-    pinst.res = res;
+    pinst.res.set_overwrite(pinst.out.value(), res, inst.out.lb);
 }
 
 void X86_CPUID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
@@ -276,6 +281,640 @@ void X86_INT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
+// Helper function that ensures a contract transaction is set
+void _check_transaction_exists(env::EVM::contract_t contract)
+{
+    if (not contract->transaction.has_value())
+        throw callother_exception("Trying to access transaction but no transaction is set");
+}
+
+void EVM_STOP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+    engine.terminate_process(Value(32, (int)env::EVM::TransactionResult::Type::STOP));
+    contract->transaction->result = env::EVM::TransactionResult(
+        env::EVM::TransactionResult::Type::STOP,
+        {}
+    );
+}
+
+void EVM_STACK_POP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    pinst.res = contract->stack.get(0);
+    contract->stack.pop();
+}
+
+void EVM_STACK_PUSH_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    contract->stack.push(pinst.in1.value());
+}
+
+// A/B = 0 if (B==0) else A/B
+void EVM_DIV_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    if (in2.is_concrete(*engine.vars) and in2.as_number().equal_to(Number(in2.size(), 0)))
+        pinst.res.set_cst(inst.out.size(), 0);
+    else
+        pinst.res.set_ITE(
+            in2, ITECond::EQ, Value(in2.size(), 0),
+            Value(inst.out.size(), 0),
+            in1/in2
+        );
+}
+
+// A/B = 0 if (B==0) else A/B
+void EVM_SDIV_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    if (in2.is_concrete(*engine.vars) and in2.as_number().equal_to(Number(in2.size(), 0)))
+        pinst.res.set_cst(inst.out.size(), 0);
+    else
+        pinst.res.set_ITE(
+            in2, ITECond::EQ, Value(in2.size(), 0),
+            Value(inst.out.size(), 0),
+            sdiv(in1,in2)
+        );
+}
+
+// A%B = 0 if (B==0) else A%B
+void EVM_MOD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    if (in2.is_concrete(*engine.vars) and in2.as_number().equal_to(Number(in2.size(), 0)))
+        pinst.res.set_cst(inst.out.size(), 0);
+    else
+        pinst.res.set_ITE(
+            in2, ITECond::EQ, Value(in2.size(), 0),
+            Value(inst.out.size(), 0),
+            in1%in2
+        );
+}
+
+// A%B = 0 if (B==0) else A%B
+void EVM_SMOD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    if (in2.is_concrete(*engine.vars) and in2.as_number().equal_to(Number(in2.size(), 0)))
+        pinst.res.set_cst(inst.out.size(), 0);
+    else
+    {
+        pinst.res.set_ITE(
+            in2, ITECond::EQ, Value(in2.size(), 0),
+            Value(inst.out.size(), 0),
+            smod(in1,in2)
+        );
+    }
+}
+
+// exponentiation
+void EVM_EXP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    // X**0 is always 1
+    if (in2.is_concrete(*engine.vars) and in2.as_number().equal_to(Number(in2.size(), 0)))
+        pinst.res.set_cst(inst.out.size(), 1);
+    else if (in1.is_symbolic(*engine.vars) or in2.is_symbolic(*engine.vars))
+    {
+        throw callother_exception("EXP: exponentiation operation not supported with fully symbolic arguments");
+    }
+    // TODO(boyan): we could concretize the arguments if they are concolic,
+    // but then if we later change the concrete values we loose soundness...
+    else if (in1.is_concolic(*engine.vars) or in2.is_concolic(*engine.vars))
+    {
+        throw callother_exception("EXP: exponentiation operation not yet supported with fully symbolic arguments");
+    }
+    else
+    {
+        Number res(256);
+        res.set_exp(in1.as_number(), in2.as_number());
+        pinst.res = Value(res);
+    }
+}
+
+// sext(byte, val) = sext(val[byte*8-1 : 0])
+void EVM_SIGNEXTEND_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+    Value tmp;
+
+    if (not in1.is_concrete(*engine.vars))
+        throw callother_exception("SIGNEXTEND: not supported for symbolic bytes count");
+
+    if (in1.as_uint() >= 32)
+        pinst.res = in2;
+    else
+    {
+        tmp.set_extract(in2, 8*(in1.as_uint()+1)-1, 0);
+        pinst.res.set_sext(256, tmp);
+    }
+}
+
+// byte(n, val) = nth byte of val, starting from most significant byte
+void EVM_BYTE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    const Value& in1 = pinst.in1.value();
+    const Value& in2 = pinst.in2.value();
+
+    if (in1.is_concrete(*engine.vars))
+    {
+        ucst_t select = in1.as_uint();
+        if (select >= 32)
+            pinst.res = Value(256, 0);
+        else
+        {
+            pinst.res.set_extract(
+                in2,
+                in2.size()-1-(select*8),
+                in2.size()-8-(select*8)
+            );
+            pinst.res.set_zext(256, pinst.res);
+        }
+    }
+    else
+    {
+        // NOTE(boyan): we can simulate the symbolic index extract by either
+        // a mask+shift or with a big ITE expression. I am not sure what 
+        // the SMT solver prefers...
+        Value mask(256, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00", 16);
+        pinst.res.set_ITE(
+            Value(256, 32), ITECond::LE, in1,
+            Value(256, 0),
+            (in2 >> (in2.size()-8-(in1*8))) & mask
+        );
+    }
+
+}
+
+void EVM_MLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    contract->memory.expand_if_needed(pinst.in1.value(), inst.out.size()/8);
+    // Note: calling resolve_addr_param() should not be done from outside the MaatEngine
+    // but here it's a hacky way to trigger the whole memory processing with handling of
+    // symbolic pointers and triggering of event hooks
+    bool success = engine.resolve_addr_param(inst.in[1], pinst.in1, contract->memory.mem());
+    if (success)
+        pinst.res = pinst.in1.value();
+    else 
+        throw callother_exception("MLOAD: fatal error reading memory");
+}
+
+void EVM_MSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    contract->memory.expand_if_needed(pinst.in1.value(), inst.in[2].size()/8);
+    // Note: calling process_store() should not be done from outside the MaatEngine
+    // but here it's a hacky way to trigger the whole memory processing with handling of
+    // symbolic pointers and triggering of event hooks
+    bool success = engine.process_store(inst, pinst, contract->memory.mem(), true);
+    if (not success)
+        throw callother_exception("MSTORE: fatal error writing memory");
+}
+
+void EVM_MSIZE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    pinst.res = Value(256, contract->memory.size());
+}
+
+void EVM_DUP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    const Value& cnt = pinst.in1.value();
+    if (not cnt.is_concrete(*engine.vars))
+        throw callother_exception("DUP: got symbolic position");
+    // We do cnt-1 because DUP<n> gets element <n-1> in the stack
+    const Value& val = contract->stack.get(cnt.as_uint(*engine.vars)-1);
+    contract->stack.push(val);
+}
+
+void EVM_SWAP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    const Value& cnt = pinst.in1.value();
+    if (not cnt.is_concrete(*engine.vars))
+        throw callother_exception("SWAP: got symbolic position");
+    int pos = cnt.as_uint(*engine.vars);
+    Value tmp = contract->stack.get(pos);
+    contract->stack.set(contract->stack.get(0), pos);
+    contract->stack.set(tmp, 0);
+}
+
+void EVM_SLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    // Set result but don't push, push is done by next PCODE instruction
+    pinst.res = contract->storage->read(pinst.in1.value());
+}
+
+void EVM_SSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    contract->storage->write(
+        pinst.in1.value(),
+        pinst.in2.value(),
+        engine.settings
+    );
+}
+
+void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    unsigned int evm_inst = pinst.in1.value().as_uint();
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    switch(evm_inst)
+    {
+        // TODO(boyan): most of these instructions could push the value on
+        // the stack directly to avoid executing an additional stack_push
+        // IR instruction to push the result
+        case 0x30: // ADDRESS
+            pinst.res = contract->address;
+            break;
+        case 0x32: // ORIGIN
+            _check_transaction_exists(contract);
+            pinst.res = zext(256, contract->transaction->origin);
+            break;
+        case 0x33: // CALLER
+            _check_transaction_exists(contract);
+            pinst.res = zext(256, contract->transaction->sender);
+            break;
+        case 0x34: // CALLVALUE
+            _check_transaction_exists(contract);
+            pinst.res = contract->transaction->value;
+            break;
+        case 0x35: // CALLDATALOAD
+        {
+            _check_transaction_exists(contract);
+            const Value& offset = pinst.in2.value();
+            if (not offset.is_concrete(*engine.vars))
+                throw callother_exception("CALLDATALOAD: not supported with symbolic offset");
+            pinst.res = contract->transaction->data_load_word(offset.as_uint(*engine.vars));
+            break;
+        }
+        case 0x36: // CALLDATASIZE
+            _check_transaction_exists(contract);
+            pinst.res = Value(256, contract->transaction->data_size());
+            break;
+        case 0x37: // CALLDATACOPY
+        {
+            _check_transaction_exists(contract);
+            Value addr = contract->stack.get(0);
+            addr_t offset = contract->stack.get(1).as_uint(*engine.vars);
+            unsigned int size = contract->stack.get(2).as_uint(*engine.vars);
+            contract->stack.pop(3);
+            for (const auto& val : contract->transaction->data_load_bytes(offset, size))
+            {
+                contract->memory.write(addr, val);
+                addr = addr + val.size()/8;
+            }
+            break;
+        }
+        case 0x38: // CODESIZE
+            pinst.res = Value(256, contract->code_size);
+            break;
+        case 0x39: // CODECOPY
+        {
+            Value addr = contract->stack.get(0);
+            addr_t offset = contract->stack.get(1).as_uint(*engine.vars);
+            unsigned int size = contract->stack.get(2).as_uint(*engine.vars);
+            contract->stack.pop(3);
+            for (const auto& val : engine.mem->read_buffer(offset, size, 1))
+            {
+                contract->memory.write(addr, val);
+                addr = addr + val.size()/8;
+            }
+            break;
+        }
+        case 0x3b: // EXTCODESIZE
+        {
+            Value addr = contract->stack.get(0);
+            contract->stack.pop();
+            if (not addr.is_concrete(*engine.vars))
+                throw callother_exception("EXTCODESIZE: not supported for symbolic address");
+            env::EVM::contract_t ext_contract = env::EVM::get_ethereum(engine)->get_contract_by_address(
+                extract(addr, 159, 0).as_number() // Extract 160 bits for address
+            );
+            if (ext_contract == nullptr)
+                // If no contract at that address return 0
+                pinst.res = Value(256, 0);
+            else
+                pinst.res = Value(256, ext_contract->code_size);
+            break;
+        }
+        case 0x3d: // RETURNDATASIZE
+        {
+            if (not contract->result_from_last_call.has_value())
+                throw callother_exception("RETURNDATASIZE: contract runtime doesn't have any transaction result set");
+            pinst.res = Value(256, contract->result_from_last_call->return_data_size());
+            break;
+        }
+        case 0x3e: // RETURNDATACOPY
+        {
+            if (not contract->result_from_last_call.has_value())
+                throw callother_exception("RETURNDATACOPY: contract runtime doesn't have any transaction result set");
+            Value addr = contract->stack.get(0);
+            addr_t offset = contract->stack.get(1).as_uint(*engine.vars);
+            unsigned int size = contract->stack.get(2).as_uint(*engine.vars);
+            contract->stack.pop(3);
+            for (const auto& val : contract->result_from_last_call->return_data_load_bytes(offset, size))
+            {
+                contract->memory.write(addr, val);
+                addr = addr + val.size()/8;
+            }
+            break;
+        }
+        case 0x42: // TIMESTAMP
+        {
+            contract->stack.push(
+                env::EVM::get_ethereum(engine)->current_block_timestamp.current_value()
+            );
+            break;
+        }
+        case 0x43: // NUMBER
+        {
+            contract->stack.push(
+                env::EVM::get_ethereum(engine)->current_block_number.current_value()
+            );
+            break;
+        }
+        case 0x5a: // GAS
+        {
+            _check_transaction_exists(contract);
+            pinst.res =contract->transaction->gas_limit - contract->consumed_gas;
+            break;
+        }
+        default:
+            throw callother_exception(
+                Fmt() << "ENV_INFO: instruction not implemented for 0x"
+                    << std::hex << evm_inst >> Fmt::to_str
+            );
+    }
+}
+
+void EVM_KECCAK_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    auto eth = env::EVM::get_ethereum(engine);
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+
+    Value addr = pinst.in1.value();
+    Value len = pinst.in2.value();
+    uint8_t* raw_bytes = nullptr;
+
+    if (not len.is_concrete(*engine.vars))
+        throw callother_exception("KECCAK: not supported with symbolic length");
+
+    contract->memory.expand_if_needed(pinst.in1.value(), pinst.in2.value().as_uint());
+    ir::Param fake_param = ir::Param(
+        inst.in[1].type,
+        inst.in[1].tmp(),
+        len.as_uint(*engine.vars)*8-1,
+        0
+    ); // Ugly hack to craft fake param to read correct number of bytes from memory
+
+    if (not engine.resolve_addr_param(
+        fake_param,
+        pinst.in1,
+        contract->memory.mem())
+    )
+        throw callother_exception("KECCAK: fatal error reading memory");
+
+    Value to_hash = pinst.in1.value(); // Now contains the read value from memory
+
+    if (not addr.is_symbolic(*engine.vars))
+    {
+        addr_t a = addr.as_uint(*engine.vars);
+        raw_bytes = contract->memory.mem().raw_mem_at(a);
+    }
+
+    pinst.res = eth->keccak_helper.apply(*engine.vars, to_hash, raw_bytes);
+}
+
+void _set_return_data(MaatEngine& engine, const Value& addr, const Value& len, env::EVM::TransactionResult::Type type)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+
+    if (not len.is_concrete(*engine.vars))
+        throw callother_exception("Getting transaction return data: not supported with symbolic length");
+    if (not addr.is_concrete(*engine.vars))
+        throw callother_exception("Getting transaction return data: not supported with symbolic address");
+
+    std::vector<Value> return_data;
+    _check_transaction_exists(contract);
+    if (len.as_uint(*engine.vars) != 0)
+    {
+        return_data = contract->memory.mem()._read_optimised_buffer(
+            addr.as_uint(*engine.vars),
+            len.as_uint(*engine.vars)
+        );
+    }
+    contract->transaction->result = env::EVM::TransactionResult(type, return_data);
+}
+
+void EVM_RETURN_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    Value addr = pinst.in1.value();
+    Value len = pinst.in2.value();
+    auto type = env::EVM::TransactionResult::Type::RETURN;
+    _set_return_data(engine, addr, len, type);
+    engine.terminate_process(Value(32, (int)type));
+}
+
+void EVM_REVERT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    Value addr = pinst.in1.value();
+    Value len = pinst.in2.value();
+    auto type = env::EVM::TransactionResult::Type::REVERT;
+    _set_return_data(engine, addr, len, type);
+    engine.terminate_process(Value(32, (int)type));
+}
+
+void EVM_INVALID_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    // engine.log.warning("Executing the 'INVALID' EVM instruction");
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+    auto type = env::EVM::TransactionResult::Type::INVALID;
+    engine.terminate_process(Value(32, (int)type));
+    contract->transaction->result = env::EVM::TransactionResult(type,{});
+}
+
+// For CALL and CALLCODE
+void _evm_generic_call(
+    MaatEngine& engine,
+    const ir::Inst& inst,
+    ir::ProcessedInst& pinst,
+    bool is_callcode
+){
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+
+    // Get parameters on stack
+    Value gas = contract->stack.get(0);
+    Value addr = extract(contract->stack.get(1), 159, 0);
+    Value value = contract->stack.get(2);
+    Value argsOff = contract->stack.get(3);
+    Value argsLen = contract->stack.get(4);
+    Value retOff = contract->stack.get(5);
+    Value retLen = contract->stack.get(6);
+    contract->stack.pop(7);
+
+    // We don't support symbolic offsets to args data
+    if (not argsOff.is_concrete(*engine.vars))
+        throw callother_exception("CALL: argsOff parameter is symbolic. Not yet supported");
+    if (not argsLen.is_concrete(*engine.vars))
+        throw callother_exception("CALL: argsLen parameter is symbolic. Not yet supported");
+
+    // Read transaction data
+    std::vector<Value> tx_data = contract->memory.mem()._read_optimised_buffer(
+        argsOff.as_uint(*engine.vars),
+        argsLen.as_uint(*engine.vars)
+    );
+
+    env::EVM::Transaction::Type tx_type = 
+        is_callcode ?
+        env::EVM::Transaction::Type::CALLCODE :
+        env::EVM::Transaction::Type::CALL;
+
+    contract->outgoing_transaction = env::EVM::Transaction(
+        contract->transaction->origin,
+        contract->address,
+        addr.as_number(),
+        value,
+        tx_data,
+        contract->transaction->gas_price,
+        gas, // gas limit is remaining gas
+        tx_type,
+        retOff,
+        retLen
+    );
+    // Tell the engine to stop because execution must be transfered to
+    // another contract
+    engine._stop_after_inst(info::Stop::NONE);
+}
+
+void EVM_CALL_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    _evm_generic_call(engine, inst, pinst, false);
+}
+
+void EVM_CALLCODE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    _evm_generic_call(engine, inst, pinst, true);
+}
+
+
+
+void EVM_CREATE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    bool is_create2 = (bool)pinst.in1.value().as_uint();
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+
+    // Get parameters on stack
+    Value value = contract->stack.get(0);
+    Value offset = contract->stack.get(1);
+    Value len = contract->stack.get(2);
+    // TODO: for CREATE2, we leave the salt on the stack? Or maybe append it
+    // in the tx_data?
+    contract->stack.pop(3);
+
+    // We don't support symbolic offsets to code data
+    if (not offset.is_concrete(*engine.vars))
+        throw callother_exception("CREATE: data 'offset' parameter is symbolic. Not supported");
+    if (not len.is_concrete(*engine.vars))
+        throw callother_exception("CREATE: data 'length' parameter is symbolic. Not supported");
+
+    // Read transaction data
+    std::vector<Value> tx_data = contract->memory.mem()._read_optimised_buffer(
+        offset.as_uint(*engine.vars),
+        len.as_uint(*engine.vars)
+    );
+
+    env::EVM::Transaction::Type tx_type = 
+        is_create2 ?
+        env::EVM::Transaction::Type::CREATE2 :
+        env::EVM::Transaction::Type::CREATE;
+
+    contract->outgoing_transaction = env::EVM::Transaction(
+        contract->transaction->origin,
+        contract->address,
+        Number(160, 0), // no recipient for CREATE
+        value,
+        tx_data,
+        Value(256, 0), // no gas
+        Value(256, 0), // null gas limit
+        tx_type
+    );
+
+    // Tell the engine to stop because we need to deploy the new contract
+    engine._stop_after_inst(info::Stop::NONE);
+}
+
+void EVM_DELEGATECALL_handler(
+    MaatEngine& engine,
+    const ir::Inst& inst,
+    ir::ProcessedInst& pinst
+){
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+
+    // Get parameters on stack
+    Value gas = contract->stack.get(0);
+    Value addr = extract(contract->stack.get(1), 159, 0);
+    Value argsOff = contract->stack.get(2);
+    Value argsLen = contract->stack.get(3);
+    Value retOff = contract->stack.get(4);
+    Value retLen = contract->stack.get(5);
+    contract->stack.pop(6);
+
+    // We don't support symbolic offsets to args data
+    if (not argsOff.is_concrete(*engine.vars))
+        throw callother_exception("DELEGATECALL: argsOff parameter is symbolic. Not yet supported");
+    if (not argsLen.is_concrete(*engine.vars))
+        throw callother_exception("DELEGATECALL: argsLen parameter is symbolic. Not yet supported");
+
+    // Read transaction data
+    std::vector<Value> tx_data = contract->memory.mem()._read_optimised_buffer(
+        argsOff.as_uint(*engine.vars),
+        argsLen.as_uint(*engine.vars)
+    );
+
+    contract->outgoing_transaction = env::EVM::Transaction(
+        contract->transaction->origin,
+        contract->transaction->sender, // same sender
+        addr.as_number(),
+        contract->transaction->value, // same value
+        tx_data,
+        contract->transaction->gas_price,
+        gas,
+        env::EVM::Transaction::Type::DELEGATECALL,
+        retOff,
+        retLen
+    );
+    // Tell the engine to stop because execution must be transfered to
+    // another contract
+    engine._stop_after_inst(info::Stop::NONE);
+}
+
+void EVM_SELFDESTRUCT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    throw callother_exception("SELFDESTRUCT: not implemented");
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -286,6 +925,36 @@ HandlerMap default_handler_map()
     h.set_handler(Id::X86_PMINUB, X86_PMINUB_handler);
     h.set_handler(Id::X86_INT, X86_INT_handler);
     h.set_handler(Id::X86_LOCK, X86_LOCK_handler);
+
+    h.set_handler(Id::EVM_STOP, EVM_STOP_handler);
+    h.set_handler(Id::EVM_STACK_POP, EVM_STACK_POP_handler);
+    h.set_handler(Id::EVM_STACK_PUSH, EVM_STACK_PUSH_handler);
+    h.set_handler(Id::EVM_DIV, EVM_DIV_handler);
+    h.set_handler(Id::EVM_SDIV, EVM_SDIV_handler);
+    h.set_handler(Id::EVM_MOD, EVM_MOD_handler);
+    h.set_handler(Id::EVM_SMOD, EVM_SMOD_handler);
+    h.set_handler(Id::EVM_SIGNEXTEND, EVM_SIGNEXTEND_handler);
+    h.set_handler(Id::EVM_BYTE, EVM_BYTE_handler);
+    h.set_handler(Id::EVM_MLOAD, EVM_MLOAD_handler);
+    h.set_handler(Id::EVM_MSTORE, EVM_MSTORE_handler);
+    h.set_handler(Id::EVM_MSTORE8, EVM_MSTORE_handler); // Can use the same handler as MSTORE
+    h.set_handler(Id::EVM_MSIZE, EVM_MSIZE_handler);
+    h.set_handler(Id::EVM_DUP, EVM_DUP_handler);
+    h.set_handler(Id::EVM_SWAP, EVM_SWAP_handler);
+    h.set_handler(Id::EVM_SLOAD, EVM_SLOAD_handler);
+    h.set_handler(Id::EVM_SSTORE, EVM_SSTORE_handler);
+    h.set_handler(Id::EVM_ENV_INFO, EVM_ENV_INFO_handler);
+    h.set_handler(Id::EVM_KECCAK, EVM_KECCAK_handler);
+    h.set_handler(Id::EVM_RETURN, EVM_RETURN_handler);
+    h.set_handler(Id::EVM_INVALID, EVM_INVALID_handler);
+    h.set_handler(Id::EVM_REVERT, EVM_REVERT_handler);
+    h.set_handler(Id::EVM_EXP, EVM_EXP_handler);
+    h.set_handler(Id::EVM_CALL, EVM_CALL_handler);
+    h.set_handler(Id::EVM_CALLCODE, EVM_CALLCODE_handler);
+    h.set_handler(Id::EVM_DELEGATECALL, EVM_DELEGATECALL_handler);
+    h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
+    h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
+
     return h;
 }
 

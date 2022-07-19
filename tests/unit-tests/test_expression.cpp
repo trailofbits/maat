@@ -332,7 +332,7 @@ namespace test
             return nb;
         }
 
-        /* Concretization to floating-pointe */
+        /* Concretization to floating-point */
         unsigned int floating_point()
         {
             unsigned int nb = 0; 
@@ -429,6 +429,11 @@ namespace test
 
             nb += _assert_bignum_eq(ctx, exprcst(128, "12345678123456781234567812345678"), "0x12345678123456781234567812345678", "Error when creating big constant");
             nb += _assert_bignum_eq(ctx, exprcst(128, "AAEAEAA12345678123456781234567812345678"), "0x12345678123456781234567812345678", "Error when creating big constant");
+
+            n1 = Number(256, "123455135213", 10);
+            n2 = Number(256, "453", 10);
+            n3.set_exp(n1, n2);
+            nb += _assert_bignum_eq(ctx, exprcst(n3), "0xc0bf835cc215cb9c99df7b761d0a2af8cc7a2d125ec8306bcd3c3cc733cb0bd", "Error when creating big numbers");
 
             return nb;
         }

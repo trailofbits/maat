@@ -3,6 +3,8 @@
 
 #include "maat/constraint.hpp"
 #include "maat/serializer.hpp"
+#include "maat/value.hpp"
+#include <unordered_set>
 
 namespace maat
 {
@@ -95,7 +97,7 @@ public:
     /** Simple wrapper class used to use the PathManager iterator with syntactic sugar
      * like so:
      * 
-     * for (const auto& constraint : get_related_constraints(c)) {...}
+     * for (const auto& constraint : get_constraints_containing(c)) {...}
      * 
      * */
     class IteratorWrapper
@@ -124,16 +126,20 @@ public:
         PathManager::iterator end(){return iterator(type, constraints, constraints->size(), &vars);}
     };
 
-    /** Returns the constraints related to 'constraint'. Related constraints means that
-     * they contain common abstract variables. The function is meant to be used
-     * in range based loops: `for (auto c : get_related_constraints(...){...}` */
-    IteratorWrapper get_related_constraints(const Constraint& constraint);
-    /** Returns the constraints related to 'expr'. Related constraints means that
-     * they contain common abstract variables. The function is meant to be used
-     * in range based loops: `for (auto c : get_related_constraints(...){...}` */
-    IteratorWrapper get_related_constraints(const Expr& expr);
+    /** Returns the constraints that contain at least one of the variables listed
+    in 'vars' */
+    IteratorWrapper get_constraints_containing(const std::set<std::string>& vars);
     // Return an iterator for the normal constraint vector, used by python bindings
     IteratorWrapper _constraints_iterator();
+public:
+    /// Get the minimal set of path constraints that involve variables contained in 'constraint' 
+    std::unordered_set<Constraint> get_related_constraints(const Constraint& constraint) const;
+    /// Get the minimal set of path constraints that involve variables contained in 'expr'
+    std::unordered_set<Constraint> get_related_constraints(const Expr& expr) const;
+    /// Get the minimal set of path constraints that involve variables contained in 'val'
+    std::unordered_set<Constraint> get_related_constraints(const Value& val) const;
+    // Helper function for get_related_constraints overloads
+    std::unordered_set<Constraint> _get_related_constraints(std::set<std::string> vars) const;
 
 public:
     virtual serial::uid_t class_uid() const;

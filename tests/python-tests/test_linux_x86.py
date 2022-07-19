@@ -46,9 +46,10 @@ def test_crackme_vm():
 
     # Scanf hook
     def scanf(m: MaatEngine):
-        m.mem.write(0x8049a98, b'A'*30)
-        m.mem.make_concolic(0x8049a98, 30, 1, "input")
-        m.cpu.eax = 30
+        _input = b"aaaaaaaaaaaapcod3s_aaaaaaaa"
+        m.mem.write(0x8049a98, _input)
+        m.mem.make_concolic(0x8049a98, len(_input), 1, "input")
+        m.cpu.eax = len(_input)
         m.info.addr = m.mem.read(m.cpu.esp, 4).as_uint()
         m.cpu.esp += 4
 
@@ -57,7 +58,7 @@ def test_crackme_vm():
     # Explore
     explore(m)
 
-    assert m.vars.get_as_str("input") == "I_L0v3_Z80_Opcod3s_!"
+    assert m.vars.get_as_str("input") == b'I_L0v3_Z80_Opcod3s_!'
 
 
 def test_crackme_vm_serialization():
@@ -76,7 +77,7 @@ def test_crackme_vm_serialization():
         if snapshot_next:
             # Check if we can invert the branch condition
             s = Solver()
-            for c in m.path.constraints():
+            for c in m.path.get_related_constraints(m.info.branch.cond):
                 s.add(c)
             if m.info.branch.taken:
                 s.add(m.info.branch.cond.invert())
@@ -118,7 +119,8 @@ def test_crackme_vm_serialization():
     m = MaatEngine(ARCH.X86, OS.LINUX)
     m.load(f"{X86_ELF_DIR}/crackme_vm", BIN.ELF32, load_interp=False)
     m.hooks.add(EVENT.EXEC, WHEN.BEFORE, name="scanf", filter=0x8048a6c, callbacks=[scanf])
+    
     # Explore
     explore(m)
 
-    assert m.vars.get_as_str("input") == "I_L0v3_Z80_Opcod3s_!"
+    assert m.vars.get_as_str("input") == b'I_L0v3_Z80_Opcod3s_!'

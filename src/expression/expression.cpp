@@ -434,7 +434,7 @@ hash_t ExprCst::hash()
 
 cst_t ExprCst::cst()
 {
-    return _concrete.cst_;
+    return _concrete.get_cst();
 }
 
 void ExprCst::print(std::ostream& os)
@@ -2202,14 +2202,14 @@ bool ite_evaluate(Expr l, ITECond cond, Expr r, const VarContext* ctx)
     {
         switch (cond)
         {
-            case ITECond::EQ: return l->as_uint(*ctx) == r->as_uint(*ctx);
-            case ITECond::LT: return l->as_uint(*ctx) < r->as_uint(*ctx);
-            case ITECond::LE: return l->as_uint(*ctx) <= r->as_uint(*ctx);
+            case ITECond::EQ: return l->as_number(*ctx).equal_to(r->as_number(*ctx));
+            case ITECond::LT: return l->as_number(*ctx).less_than(r->as_number(*ctx));
+            case ITECond::LE: return l->as_number(*ctx).lessequal_than(r->as_number(*ctx));
             case ITECond::FEQ: return l->as_float(*ctx) == r->as_float(*ctx);
             case ITECond::FLE: return l->as_float(*ctx) <= r->as_float(*ctx);
             case ITECond::FLT: return l->as_float(*ctx) < r->as_float(*ctx);
-            case ITECond::SLT: return l->as_int(*ctx) < r->as_int(*ctx);
-            case ITECond::SLE: return l->as_int(*ctx) <= r->as_int(*ctx);
+            case ITECond::SLT: return l->as_number(*ctx).sless_than(r->as_number(*ctx));
+            case ITECond::SLE: return l->as_number(*ctx).slessequal_than(r->as_number(*ctx));
             default: break;
         }
     }
@@ -2217,14 +2217,14 @@ bool ite_evaluate(Expr l, ITECond cond, Expr r, const VarContext* ctx)
     {
         switch (cond)
         {
-            case ITECond::EQ: return l->as_uint() == r->as_uint();
-            case ITECond::LT: return l->as_uint() < r->as_uint();
-            case ITECond::LE: return l->as_uint() <= r->as_uint();
+            case ITECond::EQ: return l->as_number().equal_to(r->as_number());
+            case ITECond::LT: return l->as_number().less_than(r->as_number());
+            case ITECond::LE: return l->as_number().lessequal_than(r->as_number());
             case ITECond::FEQ: return l->as_float() == r->as_float();
             case ITECond::FLE: return l->as_float() <= r->as_float();
             case ITECond::FLT: return l->as_float() < r->as_float();
-            case ITECond::SLT: return l->as_int() < r->as_int();
-            case ITECond::SLE: return l->as_int() <= r->as_int();
+            case ITECond::SLT: return l->as_number().sless_than(r->as_number());
+            case ITECond::SLE: return l->as_number().slessequal_than(r->as_number());
             default: break;
         }
     }
