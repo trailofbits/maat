@@ -6,6 +6,8 @@ namespace maat{
 namespace env{
 namespace emulated{
 
+const cst_t ERR_ENOSYS = 38;
+
 // ================= Syscall functions ==================
 
 // ssize_t read(int fd, void *buf, size_t count);
@@ -235,6 +237,30 @@ FunctionCallback::return_t sys_linux_stat(
     return _stat(engine, file, statbuf);
 }
 
+// off_t lseek(int fd, off_t offset, int whence);
+FunctionCallback::return_t sys_linux_lseek(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    int fd = args[0].as_uint(*engine.vars);
+    offset_t offset = args[1].as_uint(*engine.vars);
+    int whence = args[2].as_uint(*engine.vars);
+    cst_t res = -1;
+
+    if (whence == SEEK_SET) {
+        // Get file accessor and set file offset
+        env::FileAccessor& fa = engine.env->fs.get_fa_by_handle(fd);
+        fa.seek(offset);
+        res = offset;
+    }
+    else {
+        // TODO: implement
+        engine.log.warning("Emulated lseek(): not implemented yet");
+    }
+    return res;
+}
+
 // int close(int fd);
 FunctionCallback::return_t sys_linux_close(
     MaatEngine& engine,
@@ -314,6 +340,17 @@ FunctionCallback::return_t sys_linux_fstatat(
         file = engine.env->fs.get_file(filepath);
     }
     return _stat(engine, file, statbuf);
+}
+
+// int statfs(const char *path, struct statfs *buf);
+FunctionCallback::return_t sys_linux_statfs(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, the filesystem doesn't support this call
+    engine.log.warning("Emulated statfs(): not implemented yet");
+    return -ERR_ENOSYS;
 }
 
 // void *mmap(void *addr, size_t length, int prot, int flags,
@@ -776,6 +813,177 @@ FunctionCallback::return_t sys_linux_exit(
     return std::monostate();
 }
 
+// ssize_t getrandom(void *buf, size_t buflen, unsigned int flags);
+FunctionCallback::return_t sys_linux_getrandom(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    addr_t buf = args[0].as_uint(*engine.vars);
+    size_t buflen = args[1].as_uint(*engine.vars);
+    cst_t res;
+
+    // TODO: generate proper random bytes, if needed. Since the symbolic execution process
+    // must be deterministic and reproducible, we must use a deterministic PRNG.
+    std::string rand(buflen, 'A'); 
+    engine.mem->write_buffer(buf, (uint8_t*)rand.c_str(), buflen);
+    res = buflen;
+    return res;
+}
+
+// pid_t getpid(void);
+FunctionCallback::return_t sys_linux_getpid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->pid;
+}
+
+// uid_t getuid(void);
+FunctionCallback::return_t sys_linux_getuid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->ruid;
+}
+
+// uid_t geteuid(void);
+FunctionCallback::return_t sys_linux_geteuid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->euid;
+}
+
+// gid_t getgid(void);
+FunctionCallback::return_t sys_linux_getgid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->rgid;
+}
+
+// gid_t getegid(void);
+FunctionCallback::return_t sys_linux_getegid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->egid;
+}
+
+// int getgroups(int size, gid_t list[]);
+FunctionCallback::return_t sys_linux_getgroups(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, no supplementary group IDs
+    engine.log.warning("Emulated getgroups(): not implemented yet");
+    return 0; // Success
+}
+
+// pid_t gettid(void);
+FunctionCallback::return_t sys_linux_gettid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // In a single-threaded process, the thread ID is equal to the process ID
+    return sys_linux_getpid(engine, args);
+}
+
+// long set_tid_address(int *tidptr);
+FunctionCallback::return_t sys_linux_set_tid_address(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, pretend everything went fine
+    engine.log.warning("Emulated set_tid_address(): faking success");
+    // Always return the caller's thread ID
+    return sys_linux_gettid(engine, args);
+}
+
+// long set_robust_list(struct robust_list_head *head, size_t len);
+FunctionCallback::return_t sys_linux_set_robust_list(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, pretend everything went fine
+    engine.log.warning("Emulated set_robust_list(): faking success");
+    return 0; // Success
+}
+
+// int rseq(struct rseq *rseq, uint32_t rseq_len, int flags, uint32_t sig);
+FunctionCallback::return_t sys_linux_rseq(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, pretend everything went fine
+    engine.log.warning("Emulated rseq(): faking success");
+    return 0; // Success
+}
+
+// int rt_sigaction(int signum, const struct sigaction *restrict act, struct sigaction *restrict oldact);
+FunctionCallback::return_t sys_linux_rt_sigaction(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, pretend everything went fine
+    engine.log.warning("Emulated rt_sigaction(): faking success");
+    return 0; // Success
+}
+
+// int syscall(SYS_rt_sigprocmask, int how, const kernel_sigset_t *set, kernel_sigset_t *oldset, size_t sigsetsize);
+FunctionCallback::return_t sys_linux_rt_sigprocmask(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: for now, pretend everything went fine
+    engine.log.warning("Emulated rt_sigprocmask(): faking success");
+    return 0; // Success
+}
+
+// int prlimit(pid_t pid, int resource, const struct rlimit *new_limit, struct rlimit *old_limit);
+FunctionCallback::return_t sys_linux_prlimit64(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    addr_t old_limit = args[3].as_uint(*engine.vars);
+
+    // TODO: for now, no limits for whatever resource
+    if (old_limit) {
+        const auto INFINITY_ = (1 << engine.arch->bits()) - 1;
+        const auto rlim_cur = INFINITY_;
+        const auto rlim_max = INFINITY_;
+        const auto rlim_t_size = engine.arch->octets();
+        engine.mem->write(old_limit, rlim_cur, rlim_t_size);
+        engine.mem->write(old_limit + rlim_t_size, rlim_max, rlim_t_size);
+    }
+    return 0; // Success
+}
+
+// int socket(int domain, int type, int protocol);
+FunctionCallback::return_t sys_linux_socket(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // TODO: implement
+    engine.log.warning("Emulated socket(): not implemented yet");
+    return -ERR_ENOSYS;
+}
+
 // ================= Build the syscall maps =================
 syscall_func_map_t linux_x86_syscall_map()
 {
@@ -786,21 +994,37 @@ syscall_func_map_t linux_x86_syscall_map()
         {5, Function("sys_open", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_open))},
         {6, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {18, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
+        {19, Function("sys_lseek", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_lseek))},
+        {20, Function("sys_getpid", FunctionCallback({}, sys_linux_getpid))},
+        {24, Function("sys_getuid", FunctionCallback({}, sys_linux_getuid))},
         {28, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
         {33, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
         {45, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {47, Function("sys_getgid", FunctionCallback({}, sys_linux_getgid))},
+        {49, Function("sys_geteuid", FunctionCallback({}, sys_linux_geteuid))},
+        {50, Function("sys_getegid", FunctionCallback({}, sys_linux_getegid))},
         {56, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
+        {80, Function("sys_getgroups", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getgroups))},
         {85, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {91, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
+        {99, Function("sys_statfs", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_statfs))},
         {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {125, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {146, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
+        {174, Function("sys_rt_sigaction", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_rt_sigaction))},
+        {175, Function("sys_rt_sigprocmask", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_rt_sigprocmask))},
         {180, Function("sys_pread", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
         {192, Function("sys_mmap2", FunctionCallback({env::abi::auto_argsize, 4, 4, 4, 4, 4}, sys_linux_mmap2))},
         {195, Function("sys_stat64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {197, Function("sys_fstat64", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))}, 
         {212, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
-        {295, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))}
+        {224, Function("sys_gettid", FunctionCallback({}, sys_linux_gettid))},
+        {258, Function("sys_set_tid_address", FunctionCallback({env::abi::auto_argsize}, sys_linux_set_tid_address))},
+        {295, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
+        {311, Function("sys_set_robust_list", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_set_robust_list))},
+        {340, Function("sys_prlimit64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_prlimit64))},
+        {355, Function("sys_getrandom", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getrandom))},
+        {359, Function("sys_socket", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_socket))},
     };
     return res;
 }
@@ -815,20 +1039,37 @@ syscall_func_map_t linux_x64_syscall_map()
         {3, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
         {4, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
         {5, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
+        {8, Function("sys_lseek", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_lseek))},
         {9, Function("sys_mmap", FunctionCallback({env::abi::auto_argsize, 4, 4, 4, 4, 4}, sys_linux_mmap))},
         {11, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
         {10, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
         {12, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {13, Function("sys_rt_sigaction", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_rt_sigaction))},
+        {14, Function("sys_rt_sigprocmask", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_rt_sigprocmask))},
         {17, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
         {20, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
         {21, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
+        {39, Function("sys_getpid", FunctionCallback({}, sys_linux_getpid))},
+        {41, Function("sys_socket", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_socket))},
         {60, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
         {63, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {89, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
+        {102, Function("sys_getuid", FunctionCallback({}, sys_linux_getuid))},
+        {104, Function("sys_getgid", FunctionCallback({}, sys_linux_getgid))},
+        {107, Function("sys_geteuid", FunctionCallback({}, sys_linux_geteuid))},
+        {108, Function("sys_getegid", FunctionCallback({}, sys_linux_getegid))},
+        {115, Function("sys_getgroups", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getgroups))},
+        {137, Function("sys_statfs", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_statfs))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
+        {186, Function("sys_gettid", FunctionCallback({}, sys_linux_gettid))},
+        {218, Function("sys_set_tid_address", FunctionCallback({env::abi::auto_argsize}, sys_linux_set_tid_address))},
         {231, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
         {257, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
-        {262, Function("sys_newfstatat", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize, 4}, sys_linux_fstatat))}
+        {262, Function("sys_newfstatat", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize, 4}, sys_linux_fstatat))},
+        {273, Function("sys_set_robust_list", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_set_robust_list))},
+        {302, Function("sys_prlimit64", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_prlimit64))},
+        {318, Function("sys_getrandom", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_getrandom))},
+        {334, Function("sys_rseq", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_rseq))},
     };
     return res;
 }

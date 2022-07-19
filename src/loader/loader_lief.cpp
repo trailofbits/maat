@@ -39,6 +39,10 @@ void LoaderLIEF::load(
     // Set process info
     std::string vpath = get_path_in_virtual_fs(engine, virtual_fs, binary_name);
     engine->process->pid = 1234;
+    engine->process->ruid = 1000;
+    engine->process->euid = 1000;
+    engine->process->rgid = 1000;
+    engine->process->egid = 1000;
     engine->process->binary_path = vpath;
     env::fspath_t pwd = engine->env->fs.fspath_from_path(vpath);
     pwd.pop_back();
