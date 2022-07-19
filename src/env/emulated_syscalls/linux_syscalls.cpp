@@ -963,9 +963,9 @@ FunctionCallback::return_t sys_linux_prlimit64(
 
     // TODO: for now, no limits for whatever resource
     if (old_limit) {
-        const auto RLIM_INFINITY = (1 << engine.arch->bits()) - 1;
-        const auto rlim_cur = RLIM_INFINITY;
-        const auto rlim_max = RLIM_INFINITY;
+        const auto INFINITY = (1 << engine.arch->bits()) - 1;
+        const auto rlim_cur = INFINITY;
+        const auto rlim_max = INFINITY;
         const auto rlim_t_size = engine.arch->octets();
         engine.mem->write(old_limit, rlim_cur, rlim_t_size);
         engine.mem->write(old_limit + rlim_t_size, rlim_max, rlim_t_size);
