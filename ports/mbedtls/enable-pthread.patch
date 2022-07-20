@@ -1,20 +1,20 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 6debe35..64e0674 100644
+index 0d65b57b8..d44783975 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -51,6 +51,7 @@ if(WIN32)
+@@ -61,6 +61,7 @@ if(CMAKE_HOST_WIN32)
  else()
-     option(GEN_FILES "Generate the auto-generated files as needed" ON)
+     option(GEN_FILES "Generate the auto-generated files as needed" OFF)
  endif()
 +option(ENABLE_PTHREAD "Build mbed TLS with pthread" OFF)
  
- string(REGEX MATCH "Clang" CMAKE_COMPILER_IS_CLANG "${CMAKE_C_COMPILER_ID}")
- string(REGEX MATCH "GNU" CMAKE_COMPILER_IS_GNU "${CMAKE_C_COMPILER_ID}")
-@@ -243,12 +244,26 @@ else()
-     set(LIB_INSTALL_DIR lib)
+ option(DISABLE_PACKAGE_CONFIG_AND_INSTALL "Disable package configuration, target export and installation" ${MBEDTLS_AS_SUBPROJECT})
+ 
+@@ -257,12 +258,25 @@ if(LIB_INSTALL_DIR)
+     set(CMAKE_INSTALL_LIBDIR "${LIB_INSTALL_DIR}")
  endif()
  
-+#include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/)
++include_directories(SYSTEM ${CMAKE_CURRENT_BINARY_DIR}/include)
 +
  add_subdirectory(include)
  
@@ -25,7 +25,7 @@ index 6debe35..64e0674 100644
 +if(ENABLE_PTHREAD)
 +    if(WIN32)
 +        find_package(pthreads_windows REQUIRED)
-+        include_directories(${PThreads4W_INCLUDE_DIR})
++        include_directories("${PThreads4W_INCLUDE_DIR}")
 +    else()
 +        set(CMAKE_THREAD_PREFER_PTHREAD ON)
 +        find_package(Threads REQUIRED)
@@ -33,59 +33,64 @@ index 6debe35..64e0674 100644
 +    set(LINK_WITH_PTHREAD ON)
 +endif()
 +
-+
  #
  # The C files in tests/src directory contain test code shared among test suites
  # and programs. This shared test code is compiled and linked to test suites and
 diff --git a/include/CMakeLists.txt b/include/CMakeLists.txt
-index e693bc1..7f5216a 100644
+index e693bc17c..b7b778505 100644
 --- a/include/CMakeLists.txt
 +++ b/include/CMakeLists.txt
-@@ -1,9 +1,13 @@
+@@ -1,10 +1,14 @@
  option(INSTALL_MBEDTLS_HEADERS "Install mbed TLS headers." ON)
  
-+#configure_file(mbedtls/config_threading.h.in mbedtls/config_threading.h)
++configure_file(mbedtls/config_threading.h.in mbedtls/config_threading.h)
 +
  if(INSTALL_MBEDTLS_HEADERS)
  
      file(GLOB headers "mbedtls/*.h")
      file(GLOB psa_headers "psa/*.h")
-+    
-+    #set(headers ${headers} ${CMAKE_CURRENT_BINARY_DIR}/mbedtls/config_threading.h)
  
++    set(headers ${headers} "${CMAKE_CURRENT_BINARY_DIR}/mbedtls/config_threading.h")
++
      install(FILES ${headers}
          DESTINATION include/mbedtls
-diff --git a/include/mbedtls/mbedtls_config.h b/include/mbedtls/mbedtls_config.h
-index 0558ee0..d2fd425 100644
---- a/include/mbedtls/mbedtls_config.h
-+++ b/include/mbedtls/mbedtls_config.h
-@@ -24,6 +24,15 @@
-  *  limitations under the License.
-  */
- 
-+
-+
-+
+         PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+diff --git a/include/mbedtls/config_threading.h.in b/include/mbedtls/config_threading.h.in
+new file mode 100644
+index 000000000..f6286ed9c
+--- /dev/null
++++ b/include/mbedtls/config_threading.h.in
+@@ -0,0 +1,6 @@
++#cmakedefine ENABLE_PTHREAD
 +
 +#ifdef ENABLE_PTHREAD
 +#define MBEDTLS_THREADING_C
 +#define MBEDTLS_THREADING_PTHREAD
 +#endif
+diff --git a/include/mbedtls/mbedtls_config.h b/include/mbedtls/mbedtls_config.h
+index 1c60ec8e4..d41715e3e 100644
+--- a/include/mbedtls/mbedtls_config.h
++++ b/include/mbedtls/mbedtls_config.h
+@@ -24,6 +24,8 @@
+  *  limitations under the License.
+  */
+ 
++#include <mbedtls/config_threading.h>
 +
  /**
-  * This is an optional version symbol that enables comatibility handling of
+  * This is an optional version symbol that enables compatibility handling of
   * config files.
 diff --git a/library/CMakeLists.txt b/library/CMakeLists.txt
-index 07599f5..27e426d 100644
+index 0884f57ae..360e9602e 100644
 --- a/library/CMakeLists.txt
 +++ b/library/CMakeLists.txt
-@@ -189,7 +189,11 @@ if(HAIKU)
+@@ -215,7 +215,11 @@ if(HAIKU)
  endif(HAIKU)
  
  if(LINK_WITH_PTHREAD)
 -    set(libs ${libs} pthread)
 +    if(WIN32)
-+        set(libs ${libs} ${PThreads4W_LIBRARY})
++        set(libs ${libs} "${PThreads4W_LIBRARY}")
 +    else()
 +        set(libs ${libs} pthread)
 +    endif()

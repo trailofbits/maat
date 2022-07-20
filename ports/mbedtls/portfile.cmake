@@ -1,8 +1,8 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO ARMmbed/mbedtls
-    REF d65aeb37349ad1a50e0f6c9b694d4b5290d60e49 #v3.1.0
-    SHA512 a3fde5e6e206d0ab43282502fec45da14f1ccb24974db7a9348a18870d3c07b10fe72419ebf5130cec1b9e819ef804608b0f7b48670f619e328f5b798a8d9eb1
+    REF v3.2.1
+    SHA512 11e433d64a2c0474bb44f288551c1fc2c143fe9abf8a6e9df26deb8c3e6b575e1eab508a7f46d651003f41ce0ebb234e423260a3e0556d025c345faeb631d178
     HEAD_REF master
     PATCHES
         enable-pthread.patch
