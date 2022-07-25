@@ -709,6 +709,18 @@ EthereumEmulator& EthereumEmulator::operator=(const EthereumEmulator& other)
     return *this;
 }
 
+EthereumEmulator& EthereumEmulator::operator=(EthereumEmulator&& other)
+{
+    // **Move** contracts
+    _contracts = std::move(other._contracts);
+    _uid_cnt = other._uid_cnt < _uid_cnt ? _uid_cnt : other._uid_cnt;
+    keccak_helper = other.keccak_helper;
+    current_block_number = other.current_block_number;
+    current_block_timestamp = other.current_block_timestamp;
+    // We don't copy snapshots !!!
+    return *this;
+}
+
 void EthereumEmulator::_init()
 {
     EnvEmulator::_init(Arch::Type::NONE, OS::NONE);
@@ -808,7 +820,7 @@ void EthereumEmulator::restore_snapshot(snapshot_t snapshot, bool remove)
     while (snapshot+1 < _snapshots.size())
         _snapshots.pop_back();
 
-    *this = *_snapshots.back();
+    *this = std::move(*_snapshots.back());
     if (remove)
         _snapshots.pop_back();
 }

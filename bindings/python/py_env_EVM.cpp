@@ -435,8 +435,9 @@ static int EVMContract_set_out_transaction(PyObject* self, PyObject* tx, void* c
         as_contract_object(self).contract->outgoing_transaction = std::nullopt;
     else if (PyObject_TypeCheck(tx, (PyTypeObject*)get_EVMTransaction_Type()))
         as_contract_object(self).contract->outgoing_transaction = *as_tx_object(tx).transaction;
-    else{
-        PyErr_SetString(PyExc_TypeError, "Expected EVM transaction");
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected EVM transaction or None");
         return 1;
     }
     return 0;
@@ -638,6 +639,17 @@ static int EVMTransaction_set_data(PyObject* self, PyObject* py_data, void* clos
     return 0;
 }
 
+static PyObject* EVMTransaction_deepcopy(PyObject* self)
+{
+    auto tx = new env::EVM::Transaction(*as_tx_object(self).transaction);
+    return PyEVMTx_FromTx(tx, false); // Not a ref
+}
+
+static PyMethodDef EVMTransaction_methods[] = {
+    {"deepcopy", (PyCFunction)EVMTransaction_deepcopy, METH_NOARGS, "Copy the transaction"},
+    {NULL, NULL, 0, NULL}
+};
+
 static PyGetSetDef EVMTransaction_getset[] = {
     {"sender", EVMTransaction_get_sender, NULL, "Sender of the transaction", NULL},
     {"result", EVMTransaction_get_result, NULL, "Result of the transaction", NULL},
@@ -677,7 +689,7 @@ PyTypeObject EVMTransaction_Type = {
     0,                                        /* tp_weaklistoffset */
     0,                                        /* tp_iter */
     0,                                        /* tp_iternext */
-    0,                                        /* tp_methods */
+    EVMTransaction_methods,                   /* tp_methods */
     0,                                        /* tp_members */
     EVMTransaction_getset,                              /* tp_getset */
     0,                                        /* tp_base */
