@@ -10,7 +10,6 @@ namespace maat
 
 IntervalTree::IntervalTree(ucst_t min, ucst_t max):left(nullptr), right(nullptr)
 {
-    // DEBUG center = min + (max-min)/2;
     center = (min+max)/2;
 }
 

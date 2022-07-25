@@ -321,6 +321,7 @@ public:
     EthereumEmulator();
     EthereumEmulator(const EthereumEmulator&);
     EthereumEmulator& operator=(const EthereumEmulator& other);
+    EthereumEmulator& operator=(EthereumEmulator&& other);
     virtual ~EthereumEmulator() = default;
 private:
     /// In-place initialization function used by constructor and deserializer
