@@ -23,6 +23,20 @@ std::optional<std::filesystem::path> get_maat_module_directory();
 // ================= Arch =======================
 void init_arch(PyObject* module);
 
+typedef struct {
+    PyObject_HEAD
+    Arch* arch;
+    /* Wrappers to members */
+    // TODO: populate this
+    Arch::Type type;
+    int nb_regs;
+    
+} Arch_Object;
+PyObject* get_Arch_Type();
+PyObject* maat_Arch(PyObject* self, PyObject* args);
+PyObject* PyArch_FromArch(Arch*);
+#define as_arch_object(x) (*((Arch_Object*)x))
+
 // ================= Expressions ====================
 void init_expression(PyObject* module);
 
@@ -93,6 +107,7 @@ typedef struct{
     PyObject_HEAD
     MaatEngine* engine;
     /* Wrappers to members */
+    PyObject* arch; // TODO: update this wrt py_arch.cpp
     PyObject* vars;
     PyObject* cpu; 
     PyObject* mem; 
