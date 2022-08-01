@@ -59,10 +59,24 @@ static PyObject* Arch_pc(PyObject* self, PyObject* args) {
     }
 }
 
+static PyObject* Arch_sp(PyObject* self, PyObject* args) {
+    reg_t reg_num;
+
+    try {
+        reg_num = as_arch_object(self).arch->sp();
+        const std::string& reg_name = as_arch_object(self).arch->reg_name(reg_num);
+
+        return PyUnicode_FromString(reg_name.c_str());
+    } catch (const std::exception &e) {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+}
+
 static PyMethodDef Arch_methods[] = {
     {"reg_size", (PyCFunction)Arch_reg_size, METH_VARARGS, "The size in bits of given register in this architecture" },
     {"pc", (PyCFunction)Arch_pc, METH_NOARGS, "Program counter for this architecture"},
     // sp() // return name of register, not the number, as that's how it's accessed in python
+    {"sp", (PyCFunction)Arch_sp, METH_NOARGS, "Stack pointer for this architecture"}, 
     // tsc()
     {NULL},
 };
