@@ -30,7 +30,6 @@ typedef struct {
     // TODO: populate this
     Arch::Type type;
     int nb_regs;
-    
 } Arch_Object;
 PyObject* get_Arch_Type();
 PyObject* maat_Arch(PyObject* self, PyObject* args);

@@ -23,13 +23,38 @@ void init_arch(PyObject* module)
     PyModule_AddObject(module, "ARCH", arch_class);
 };
 
-/*
-static pyMethodDef Arch_methods[] = {
+static PyObject* Arch_reg_size(PyObject* self, PyObject* args) {
+    
+    const char *reg_name;
+    reg_t reg_num;
+    size_t reg_size;
+    
+    // get reg name from params
+    if ( !PyArg_ParseTuple(args, "s", &reg_name)) {
+        return NULL;
+    }
+
+    // get reg number from reg_num
+    Arch* local_arch = as_arch_object(self).arch;
+    try {
+        reg_num = local_arch->reg_num(reg_name);
+        reg_size = local_arch->reg_size(reg_num);
+    } catch (const std::exception& e) {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+
+    // return it
+    return PyLong_FromSize_t(reg_size);
+    
+}
+
+static PyMethodDef Arch_methods[] = {
     // reg_size()
+    {"reg_size", (PyCFunction)Arch_reg_size, METH_VARARGS, "The size in bits of given register in this architecture" },
     // pc()
-    // sp()
+    // sp() // return name of register, not the number, as that's how it's accessed in python
     // tsc()
-    {None},
+    {NULL},
 };
 
 
@@ -46,14 +71,14 @@ static PyObject* Arch_get_type(PyObject* self, void* closure)
     // perhaps if we have logic here which assigns string value to 
     // the enum values and returns the pystring from that?
     // alternative: this returns long, have a second function which
-    return PyLong_FromLong(as_arch_object(self).arch->type);
+    return PyLong_FromLong((int) as_arch_object(self).arch->type);
 }
 
 static PyGetSetDef Arch_getset[] = {
     { "nb_regs", Arch_get_nbregs, NULL, "Number of registers in this architecture", NULL },
     { "type", Arch_get_type, NULL, "Type of this architecture", NULL },
     {NULL}
-};*/
+};
 
 PyTypeObject Arch_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -83,9 +108,9 @@ PyTypeObject Arch_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,//Arch_methods,                               /* tp_methods */
-    0,//Arch_members,                               /* tp_members */
-    0,//Arch_getset,                                /* tp_getset */
+    Arch_methods,                               /* tp_methods */
+    0,                                          /* tp_members */
+    Arch_getset,                                /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
