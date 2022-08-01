@@ -24,7 +24,6 @@ void init_arch(PyObject* module)
 };
 
 static PyObject* Arch_reg_size(PyObject* self, PyObject* args) {
-    
     const char *reg_name;
     reg_t reg_num;
     size_t reg_size;
@@ -45,13 +44,24 @@ static PyObject* Arch_reg_size(PyObject* self, PyObject* args) {
 
     // return it
     return PyLong_FromSize_t(reg_size);
+}
+
+static PyObject* Arch_pc(PyObject* self, PyObject* args) {
+    reg_t reg_num;
     
+    try {
+        reg_num = as_arch_object(self).arch->pc();
+        const std::string& reg_name = as_arch_object(self).arch->reg_name(reg_num);
+        
+        return PyUnicode_FromString(reg_name.c_str());
+    } catch (const std::exception& e) {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
 }
 
 static PyMethodDef Arch_methods[] = {
-    // reg_size()
     {"reg_size", (PyCFunction)Arch_reg_size, METH_VARARGS, "The size in bits of given register in this architecture" },
-    // pc()
+    {"pc", (PyCFunction)Arch_pc, METH_NOARGS, "Program counter for this architecture"},
     // sp() // return name of register, not the number, as that's how it's accessed in python
     // tsc()
     {NULL},
