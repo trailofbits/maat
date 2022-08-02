@@ -30,10 +30,11 @@ typedef struct {
     // TODO: populate this
     Arch::Type type;
     int nb_regs;
+    bool is_ref;
 } Arch_Object;
 PyObject* get_Arch_Type();
 PyObject* maat_Arch(PyObject* self, PyObject* args);
-PyObject* PyArch_FromArch(Arch*);
+PyObject* PyArch_FromArch(Arch*, bool);
 #define as_arch_object(x) (*((Arch_Object*)x))
 
 // ================= Expressions ====================
@@ -106,7 +107,7 @@ typedef struct{
     PyObject_HEAD
     MaatEngine* engine;
     /* Wrappers to members */
-    PyObject* arch; // TODO: update this wrt py_arch.cpp
+    PyObject* arch; 
     PyObject* vars;
     PyObject* cpu; 
     PyObject* mem; 
