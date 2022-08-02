@@ -5,7 +5,10 @@ namespace maat{
 namespace py{
 
 static void Arch_dealloc(PyObject* self) {
-    delete as_arch_object(self).arch;
+
+    if ( ! as_arch_object(self).is_ref) {
+        delete ((Arch_Object*)self)->arch;
+    }
     as_arch_object(self).arch = nullptr;
 
     Py_TYPE(self)->tp_free((PyObject*)self);
@@ -72,12 +75,24 @@ static PyObject* Arch_sp(PyObject* self, PyObject* args) {
     }
 }
 
+static PyObject* Arch_tsc(PyObject* self, PyObject* args) {
+    reg_t reg_num;
+
+    try {
+        reg_num = as_arch_object(self).arch->tsc();
+        const std::string& reg_name = as_arch_object(self).arch->reg_name(reg_num);
+
+        return PyUnicode_FromString(reg_name.c_str());
+    } catch (const std::exception &e) {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+}
+
 static PyMethodDef Arch_methods[] = {
     {"reg_size", (PyCFunction)Arch_reg_size, METH_VARARGS, "The size in bits of given register in this architecture" },
     {"pc", (PyCFunction)Arch_pc, METH_NOARGS, "Program counter for this architecture"},
-    // sp() // return name of register, not the number, as that's how it's accessed in python
     {"sp", (PyCFunction)Arch_sp, METH_NOARGS, "Stack pointer for this architecture"}, 
-    // tsc()
+    {"tsc", (PyCFunction)Arch_tsc, METH_NOARGS, "Clock counter for this architecture"},
     {NULL},
 };
 
@@ -178,23 +193,24 @@ PyObject* maat_Arch(PyObject* self, PyObject* args)
     };
 
     // Create object
-    return PyArch_FromArch(arch);
+    return PyArch_FromArch(arch, false);
 
 }
 
-PyObject* PyArch_FromArch(Arch* arch)
+PyObject* PyArch_FromArch(Arch* arch, bool is_ref)
 {
     Arch_Object* object;
 
     // Create object
     PyType_Ready(&Arch_Type);
     object = PyObject_New(Arch_Object, &Arch_Type);
-    PyObject_Init( (PyObject*)object, &Arch_Type );
+    //PyObject_Init( (PyObject*)object, &Arch_Type );
 
     if (object != nullptr) {
         object->arch = arch;
         object->type = arch->type; 
         object->nb_regs = arch->nb_regs;
+        object->is_ref = is_ref;
     }
 
     return (PyObject*) object;
