@@ -1,6 +1,6 @@
 {
   "name": "sleigh",
-  "version": "10.1.4",
+  "version": "10.1.5",
   "description": "Unofficial CMake build for Ghidra SLEIGH",
   "homepage": "https://github.com/lifting-bits/sleigh",
   "dependencies": [
@@ -11,13 +11,17 @@
     {
       "name": "vcpkg-cmake-config",
       "host": true
+    },
+    {
+      "name": "sleigh",
+      "host": true,
+      "default-features": false,
+      "features": [
+        "spec-compiler"
+      ]
     }
   ],
-  "default-features": [
-    "sleighspecs",
-    "support",
-    "tools"
-  ],
+  "default-features": [],
   "features": {
     "decompiler": {
       "description": "Build the decompiler tool"

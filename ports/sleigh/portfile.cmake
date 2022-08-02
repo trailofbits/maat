@@ -1,19 +1,19 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO lifting-bits/sleigh
-    REF 814b41c45dd4ce357bd1982a6c7e01c3dbcc1aa8 # cmake-presets branch, unmerged
-    SHA512 ff0273f092f3f546f4beed50d0dba8cdb885a4ef3d623acd62b3fb2cfe50c5a20993ca7d193dd8170847676e86177362f338e5d4ac20a8080b6f0bb253ea9ac8
+    REF 04db45f0b73372aa038e79b7e3fc44c3eb14732b # cmake-presets branch, unmerged
+    SHA512 f1ed643e25a021f42bcb201a184bb453d8a546df4c1e0157fad3d36ff883ddb1dc5076610f074e8ae184eb389d60dbd0f03e9000d1cc60b629578d95e7a99d0c
     HEAD_REF master
 )
 
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
 FEATURES
     "sleighspecs"   sleigh_BUILD_SLEIGHSPECS  # compiled sla files
-    "spec-compiler" sleigh_BUILD_SPECCOMPILER # Compiler
-    "decompiler"    sleigh_BUILD_DECOMPILER   # Decompiler
-    "ghidra"        sleigh_BUILD_GHIDRA       # Ghidra
-    "support"       sleigh_BUILD_SUPPORT      # Support libraries
-    "extra-tools"   sleigh_BUILD_EXTRATOOLS   # Extra tools
+    "spec-compiler" sleigh_BUILD_SPECCOMPILER # sla spec compiler
+    "decompiler"    sleigh_BUILD_DECOMPILER   # decompiler
+    "ghidra"        sleigh_BUILD_GHIDRA       # ghidra tool
+    "support"       sleigh_BUILD_SUPPORT      # support libraries
+    "extra-tools"   sleigh_BUILD_EXTRATOOLS   # extra tools
 )
 
 set(tools "")
@@ -84,4 +84,8 @@ if(VCPKG_LIBRARY_LINKAGE STREQUAL "static" OR NOT VCPKG_TARGET_IS_WINDOWS)
     file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/bin")
 endif()
 
-file(INSTALL "${SOURCE_PATH}/LICENSE" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)
+file(
+    INSTALL "${SOURCE_PATH}/LICENSE"
+    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"
+    RENAME copyright
+)

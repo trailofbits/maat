@@ -1,18 +1,8 @@
 {
-  "name": "maat",
-  "version-semver": "0.5.1",
-  "builtin-baseline": "cef0b3ec767df6e83806899fe9525f6cf8d7bc91",
   "dependencies": [
     "gmp",
     "lief",
-    {
-      "name": "sleigh",
-      "default-features": false,
-      "features": [
-        "spec-compiler"
-      ]
-    },
+    "sleigh",
     "z3"
-  ],
-  "default-features": []
+  ]
 }
