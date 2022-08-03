@@ -36,7 +36,7 @@ static PyObject* Arch_reg_size(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    // get reg number from reg_num
+    // get reg number from reg name
     Arch* local_arch = as_arch_object(self).arch;
     try {
         reg_num = local_arch->reg_num(reg_name);
@@ -45,7 +45,6 @@ static PyObject* Arch_reg_size(PyObject* self, PyObject* args) {
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
 
-    // return it
     return PyLong_FromSize_t(reg_size);
 }
 
@@ -106,10 +105,6 @@ static PyObject* Arch_get_nbregs(PyObject* self, void* closure)
 
 static PyObject* Arch_get_type(PyObject* self, void* closure)
 {
-    // TODO: is there a way to return string version? Is that better?
-    // perhaps if we have logic here which assigns string value to 
-    // the enum values and returns the pystring from that?
-    // alternative: this returns long, have a second function which
     return PyLong_FromLong((int) as_arch_object(self).arch->type);
 }
 
@@ -140,7 +135,7 @@ PyTypeObject Arch_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                         /* tp_flags */
-    "Dynamic Symbolic Execution Engine",        /* tp_doc */
+    "Architecture information and functionality",/* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -167,9 +162,8 @@ PyObject* get_Arch_Type() {
 PyObject* maat_Arch(PyObject* self, PyObject* args)
 {
     int type;
-    // Parse arguments
 
-    // Arch will be determined exclusively by type
+    // Architecture given by enum above, represented as integer
     if ( !PyArg_ParseTuple(args, "i", &type) ) {
         return NULL;
     }
@@ -188,8 +182,7 @@ PyObject* maat_Arch(PyObject* self, PyObject* args)
             arch = (Arch*) new X64::ArchX64();
             break;
         default:
-        // raise error?
-            break;
+            return PyErr_Format(PyExc_RuntimeError, "Unknown arhictecture type in initialisation");
     };
 
     // Create object
@@ -201,15 +194,11 @@ PyObject* PyArch_FromArch(Arch* arch, bool is_ref)
 {
     Arch_Object* object;
 
-    // Create object
     PyType_Ready(&Arch_Type);
     object = PyObject_New(Arch_Object, &Arch_Type);
-    //PyObject_Init( (PyObject*)object, &Arch_Type );
 
     if (object != nullptr) {
         object->arch = arch;
-        object->type = arch->type; 
-        object->nb_regs = arch->nb_regs;
         object->is_ref = is_ref;
     }
 

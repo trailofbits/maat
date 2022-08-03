@@ -26,10 +26,6 @@ void init_arch(PyObject* module);
 typedef struct {
     PyObject_HEAD
     Arch* arch;
-    /* Wrappers to members */
-    // TODO: populate this
-    Arch::Type type;
-    int nb_regs;
     bool is_ref;
 } Arch_Object;
 PyObject* get_Arch_Type();
