@@ -175,17 +175,16 @@ PyObject* maat_Arch(PyObject* self, PyObject* args)
 
     switch (arch_type) {
         case Arch::Type::EVM:
-            arch = (Arch*) new EVM::ArchEVM();
+            arch = new EVM::ArchEVM();
             break;
         case Arch::Type::X86:
-            arch = (Arch*) new X86::ArchX86();
+            arch = new X86::ArchX86();
             break;
         case Arch::Type::X64:
-            arch = (Arch*) new X64::ArchX64();
+            arch = new X64::ArchX64();
             break;
         default:
-        // raise error?
-            break;
+            return PyErr_Format(PyExc_RuntimeError, "Unknown architecture");
     };
 
     // Create object
