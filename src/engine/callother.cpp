@@ -761,6 +761,8 @@ void _evm_generic_call(
     // Get parameters on stack
     Value gas = contract->stack.get(0);
     Value addr = extract(contract->stack.get(1), 159, 0);
+    Number concrete_addr;
+    // TODO: check that we are attempting to send more than what we have?
     Value value = contract->stack.get(2);
     Value argsOff = contract->stack.get(3);
     Value argsLen = contract->stack.get(4);
@@ -773,6 +775,12 @@ void _evm_generic_call(
         throw callother_exception("CALL: argsOff parameter is symbolic. Not yet supported");
     if (not argsLen.is_concrete(*engine.vars))
         throw callother_exception("CALL: argsLen parameter is symbolic. Not yet supported");
+
+    // We allow concolic address
+    if (addr.is_symbolic(*engine.vars))
+        throw callother_exception("CALL: 'addr' parameter is symbolic");
+    else
+        concrete_addr = addr.as_number(*engine.vars);
 
     // Read transaction data
     std::vector<Value> tx_data = contract->memory.mem()._read_optimised_buffer(
@@ -788,7 +796,7 @@ void _evm_generic_call(
     contract->outgoing_transaction = env::EVM::Transaction(
         contract->transaction->origin,
         contract->address,
-        addr.as_number(),
+        concrete_addr,
         value,
         tx_data,
         contract->transaction->gas_price,
