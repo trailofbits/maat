@@ -49,50 +49,8 @@ static PyObject* Arch_reg_size(PyObject* self, PyObject* args) {
     return PyLong_FromSize_t(reg_size);
 }
 
-static PyObject* Arch_pc(PyObject* self, PyObject* args) {
-    reg_t reg_num;
-    
-    try {
-        reg_num = as_arch_object(self).arch->pc();
-        const std::string& reg_name = as_arch_object(self).arch->reg_name(reg_num);
-        
-        return PyUnicode_FromString(reg_name.c_str());
-    } catch (const std::exception& e) {
-        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
-    }
-}
-
-static PyObject* Arch_sp(PyObject* self, PyObject* args) {
-    reg_t reg_num;
-
-    try {
-        reg_num = as_arch_object(self).arch->sp();
-        const std::string& reg_name = as_arch_object(self).arch->reg_name(reg_num);
-
-        return PyUnicode_FromString(reg_name.c_str());
-    } catch (const std::exception &e) {
-        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
-    }
-}
-
-static PyObject* Arch_tsc(PyObject* self, PyObject* args) {
-    reg_t reg_num;
-
-    try {
-        reg_num = as_arch_object(self).arch->tsc();
-        const std::string& reg_name = as_arch_object(self).arch->reg_name(reg_num);
-
-        return PyUnicode_FromString(reg_name.c_str());
-    } catch (const std::exception &e) {
-        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
-    }
-}
-
 static PyMethodDef Arch_methods[] = {
     {"reg_size", (PyCFunction)Arch_reg_size, METH_VARARGS, "The size in bits of given register in this architecture" },
-    {"pc", (PyCFunction)Arch_pc, METH_NOARGS, "Program counter for this architecture"},
-    {"sp", (PyCFunction)Arch_sp, METH_NOARGS, "Stack pointer for this architecture"}, 
-    {"tsc", (PyCFunction)Arch_tsc, METH_NOARGS, "Clock counter for this architecture"},
     {NULL},
 };
 
@@ -106,16 +64,54 @@ static PyObject* Arch_get_nbregs(PyObject* self, void* closure)
 
 static PyObject* Arch_get_type(PyObject* self, void* closure)
 {
-    // TODO: is there a way to return string version? Is that better?
-    // perhaps if we have logic here which assigns string value to 
-    // the enum values and returns the pystring from that?
-    // alternative: this returns long, have a second function which
     return PyLong_FromLong((int) as_arch_object(self).arch->type);
 }
 
+static PyObject* Arch_get_pc(PyObject* self, void* closure){
+    reg_t reg_num;
+    
+    try {
+        reg_num = as_arch_object(self).arch->pc();
+        const std::string& reg_name = as_arch_object(self).arch->reg_name(reg_num);
+        
+        return PyUnicode_FromString(reg_name.c_str());
+    } catch (const std::exception& e) {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+}
+
+static PyObject* Arch_get_sp(PyObject* self, void* closure){
+    reg_t reg_num;
+
+    try {
+        reg_num = as_arch_object(self).arch->sp();
+        const std::string& reg_name = as_arch_object(self).arch->reg_name(reg_num);
+
+        return PyUnicode_FromString(reg_name.c_str());
+    } catch (const std::exception &e) {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+}
+
+static PyObject* Arch_get_tsc(PyObject* self, void* closure){
+    reg_t reg_num;
+
+    try {
+        reg_num = as_arch_object(self).arch->tsc();
+        const std::string& reg_name = as_arch_object(self).arch->reg_name(reg_num);
+
+        return PyUnicode_FromString(reg_name.c_str());
+    } catch (const std::exception &e) {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
+}
+
 static PyGetSetDef Arch_getset[] = {
-    { "nb_regs", Arch_get_nbregs, NULL, "Number of registers in this architecture", NULL },
-    { "type", Arch_get_type, NULL, "Type of this architecture", NULL },
+    {"nb_regs", Arch_get_nbregs, NULL, "Number of registers in this architecture", NULL},
+    {"type", Arch_get_type, NULL, "Type of this architecture", NULL},
+    {"pc", Arch_get_pc, NULL, "Name of the Program Counter register", NULL},
+    {"sp", Arch_get_sp, NULL, "Name of the Stack Pointer register", NULL},
+    {"tsc", Arch_get_tsc, NULL, "Name of the Timestamp Counter register", NULL},
     {NULL}
 };
 
@@ -140,7 +136,7 @@ PyTypeObject Arch_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                         /* tp_flags */
-    "Dynamic Symbolic Execution Engine",        /* tp_doc */
+    "Architecture descriptor",                  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
