@@ -350,6 +350,13 @@ Expr SymbolicMemEngine::concrete_ptr_read(Expr addr, int nb_bytes, Expr base_exp
     for( int count = 0; count < write_count; count++ )
     {
         SymbolicMemWrite& write = writes[count];
+        // If read address and write address sizes don't match, adjust read address
+        // This can happen when reading from a constant on archs that have addresses
+        // on more than 64 bits (e.g EVM). The MemEngine will create 64 bits
+        // addresses by default, so we need to adjust their size here manually
+        if (write.addr->size > addr->size and addr->is_type(ExprType::CST))
+            addr = exprcst(write.addr->size, addr->cst());
+
         if( write.refined_value_set.is_cst())
         {
             // Only update value if concrete write falls into the range of the read
@@ -398,6 +405,7 @@ Expr SymbolicMemEngine::concrete_ptr_read(Expr addr, int nb_bytes, Expr base_exp
             }
         }
     }
+
     return res;
 }
 
