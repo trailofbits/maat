@@ -2029,6 +2029,11 @@ bool operator<(Op op1, Op op2)
     return static_cast<int>(op1) < static_cast<int>(op2);
 }
 
+bool op_is_bitwise(Op op)
+{
+    return (op == Op::AND || op == Op::OR || op == Op::XOR || op == Op::NOT);
+}
+
 bool op_is_symetric(Op op)
 {
     return (op == Op::ADD || op == Op::AND || op == Op::MUL || op == Op::MULH ||
