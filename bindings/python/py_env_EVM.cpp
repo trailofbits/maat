@@ -617,6 +617,11 @@ static PyObject* EVMTransaction_get_ret_len(PyObject* self, void* closure)
     return PyValue_FromValue(*as_tx_object(self).transaction->ret_len);
 }
 
+static PyObject* EVMTransaction_get_value(PyObject* self, void* closure)
+{
+    return PyValue_FromValue(as_tx_object(self).transaction->value);
+}
+
 static PyObject* EVMTransaction_get_data(PyObject* self, void* closure)
 {
     // TODO(boyan): factorize this code with other places where we translate
@@ -676,6 +681,7 @@ static PyGetSetDef EVMTransaction_getset[] = {
     {"type", EVMTransaction_get_type, NULL, "Transaction type", NULL},
     {"ret_offset", EVMTransaction_get_ret_offset, NULL, "Return offset", NULL},
     {"ret_len", EVMTransaction_get_ret_len, NULL, "Return length", NULL},
+    {"value", EVMTransaction_get_value, NULL, "Value in WEI", NULL},
     {NULL}
 };
 
