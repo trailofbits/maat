@@ -243,6 +243,7 @@ public:
 class Contract: public serial::Serializable
 {
 public:
+    Value balance; ///< Balance of the contract in WEI
     Value address; ///< Address where the contract is deployed
     Stack stack; ///< Stack of the executing EVM
     Memory memory; ///< Volatile memory of the executing EVM
@@ -287,6 +288,9 @@ class KeccakHelper: public serial::Serializable
 private:
     std::string _symbolic_hash_prefix;
     std::unordered_map<Value, Value, ValueHash, ValueEqual> known_hashes;
+public:
+    /// Allow to return symbolic variables when hashing non-concrete values
+    bool allow_symbolic_hashes;
 public:
     KeccakHelper();
 public:

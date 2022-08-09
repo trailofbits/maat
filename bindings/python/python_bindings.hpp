@@ -359,6 +359,7 @@ PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args);
 PyObject* maat_increment_block_timestamp(PyObject* mod, PyObject* args);
 PyObject* maat_increment_block_number(PyObject* mod, PyObject* args);
 PyObject* maat_set_evm_bytecode(PyObject* mod, PyObject* args);
+PyObject* maat_allow_symbolic_keccak(PyObject* mod, PyObject* args);
 
 // ====== Utils =======
 // Transform a list of values into a list of python values,

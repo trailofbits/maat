@@ -471,12 +471,30 @@ static PyObject* EVMContract_get_address(PyObject* self, void* closure){
     return PyValue_FromValue(as_contract_object(self).contract->address);
 }
 
+static PyObject* EVMContract_get_balance(PyObject* self, void* closure){
+    return PyValue_FromValue(as_contract_object(self).contract->balance);
+}
+
+static int EVMContract_set_balance(PyObject* self, PyObject* balance, void* closure){
+    if (PyObject_TypeCheck(balance, (PyTypeObject*)get_Value_Type()))
+        as_contract_object(self).contract->balance = 
+            *as_value_object(balance).value;
+    else if (PyLong_Check(balance))
+        as_contract_object(self).contract->balance = bigint_to_number(256, balance);
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected Value or int");
+        return 1;
+    }
+    return 0;
+}
 
 static PyGetSetDef EVMContract_getset[] = {
     {"transaction", EVMContract_get_transaction, EVMContract_set_transaction, "Transaction being executed", NULL},
     {"outgoing_transaction", EVMContract_get_out_transaction, EVMContract_set_out_transaction, "Transaction being sent", NULL},
     {"result_from_last_call", EVMContract_get_result_from_last_call, EVMContract_set_result_from_last_call, "Result from last message call", NULL},
     {"address", EVMContract_get_address, NULL, "Address of the contract", NULL},
+    {"balance", EVMContract_get_balance, EVMContract_set_balance, "Balance of the contract/account in WEI", NULL},
     {NULL}
 };
 
@@ -599,6 +617,11 @@ static PyObject* EVMTransaction_get_ret_len(PyObject* self, void* closure)
     return PyValue_FromValue(*as_tx_object(self).transaction->ret_len);
 }
 
+static PyObject* EVMTransaction_get_value(PyObject* self, void* closure)
+{
+    return PyValue_FromValue(as_tx_object(self).transaction->value);
+}
+
 static PyObject* EVMTransaction_get_data(PyObject* self, void* closure)
 {
     // TODO(boyan): factorize this code with other places where we translate
@@ -658,6 +681,7 @@ static PyGetSetDef EVMTransaction_getset[] = {
     {"type", EVMTransaction_get_type, NULL, "Transaction type", NULL},
     {"ret_offset", EVMTransaction_get_ret_offset, NULL, "Return offset", NULL},
     {"ret_len", EVMTransaction_get_ret_len, NULL, "Return length", NULL},
+    {"value", EVMTransaction_get_value, NULL, "Value in WEI", NULL},
     {NULL}
 };
 
@@ -982,6 +1006,27 @@ PyObject* maat_increment_block_timestamp(PyObject* mod, PyObject* args)
         if (eth == nullptr)
             return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
         eth->current_block_timestamp.increment(*as_value_object(inc).value);
+        Py_RETURN_NONE;
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
+
+PyObject* maat_allow_symbolic_keccak(PyObject* mod, PyObject* args)
+{
+    PyObject* engine;
+    int allow = 0;
+    if( !PyArg_ParseTuple(args, "O!p", get_MaatEngine_Type(), &engine, &allow))
+        return NULL;
+
+    try
+    {
+        auto eth = env::EVM::get_ethereum(*as_engine_object(engine).engine);
+        if (eth == nullptr)
+            return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
+        eth->keccak_helper.allow_symbolic_hashes = allow;
         Py_RETURN_NONE;
     }
     catch(const std::exception& e)
