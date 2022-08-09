@@ -647,6 +647,11 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
             );
             break;
         }
+        case 0x47: // SELFBALANCE
+        {
+            contract->stack.push(contract->balance);
+            break;
+        }
         case 0x5a: // GAS
         {
             _check_transaction_exists(contract);
