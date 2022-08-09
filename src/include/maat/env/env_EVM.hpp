@@ -243,6 +243,7 @@ public:
 class Contract: public serial::Serializable
 {
 public:
+    Value balance; ///< Balance of the contract in WEI
     Value address; ///< Address where the contract is deployed
     Stack stack; ///< Stack of the executing EVM
     Memory memory; ///< Volatile memory of the executing EVM

@@ -471,12 +471,30 @@ static PyObject* EVMContract_get_address(PyObject* self, void* closure){
     return PyValue_FromValue(as_contract_object(self).contract->address);
 }
 
+static PyObject* EVMContract_get_balance(PyObject* self, void* closure){
+    return PyValue_FromValue(as_contract_object(self).contract->balance);
+}
+
+static int EVMContract_set_balance(PyObject* self, PyObject* balance, void* closure){
+    if (PyObject_TypeCheck(balance, (PyTypeObject*)get_Value_Type()))
+        as_contract_object(self).contract->balance = 
+            *as_value_object(balance).value;
+    else if (PyLong_Check(balance))
+        as_contract_object(self).contract->balance = bigint_to_number(256, balance);
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "Expected Value or int");
+        return 1;
+    }
+    return 0;
+}
 
 static PyGetSetDef EVMContract_getset[] = {
     {"transaction", EVMContract_get_transaction, EVMContract_set_transaction, "Transaction being executed", NULL},
     {"outgoing_transaction", EVMContract_get_out_transaction, EVMContract_set_out_transaction, "Transaction being sent", NULL},
     {"result_from_last_call", EVMContract_get_result_from_last_call, EVMContract_set_result_from_last_call, "Result from last message call", NULL},
     {"address", EVMContract_get_address, NULL, "Address of the contract", NULL},
+    {"balance", EVMContract_get_balance, EVMContract_set_balance, "Balance of the contract/account in WEI", NULL},
     {NULL}
 };
 

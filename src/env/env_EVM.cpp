@@ -540,7 +540,7 @@ void Transaction::load(serial::Deserializer& d)
 
 
 Contract::Contract()
-: memory(nullptr), storage(nullptr), consumed_gas(256, 0)
+: memory(nullptr), storage(nullptr), consumed_gas(256, 0), balance(256, 0)
 {}
 
 Contract::Contract(const MaatEngine& engine, Value addr)
@@ -562,6 +562,7 @@ void Contract::fork_from(const Contract& other)
     outgoing_transaction = std::nullopt;
     result_from_last_call = std::nullopt;
     consumed_gas = Value(256, 0);
+    balance = Value(256, 0);
 }
 
 serial::uid_t Contract::class_uid() const
@@ -571,14 +572,14 @@ serial::uid_t Contract::class_uid() const
 
 void Contract::dump(serial::Serializer& s) const
 {
-    s   << address << stack << memory << storage << transaction
+    s   << balance << address << stack << memory << storage << transaction
         << outgoing_transaction << result_from_last_call << consumed_gas;
     s << bits(code_size);
 }
 
 void Contract::load(serial::Deserializer& d)
 {
-    d   >> address >> stack >> memory >> storage >> transaction
+    d   >> balance >> address >> stack >> memory >> storage >> transaction
         >> outgoing_transaction >> result_from_last_call >> consumed_gas;
     d >> bits(code_size);
 }
