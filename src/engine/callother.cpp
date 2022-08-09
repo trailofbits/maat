@@ -614,22 +614,30 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
         case 0x3d: // RETURNDATASIZE
         {
             if (not contract->result_from_last_call.has_value())
-                throw callother_exception("RETURNDATASIZE: contract runtime doesn't have any transaction result set");
-            pinst.res = Value(256, contract->result_from_last_call->return_data_size());
+                pinst.res = Value(256, 0);
+            else
+                pinst.res = Value(256, contract->result_from_last_call->return_data_size());
             break;
         }
         case 0x3e: // RETURNDATACOPY
         {
-            if (not contract->result_from_last_call.has_value())
-                throw callother_exception("RETURNDATACOPY: contract runtime doesn't have any transaction result set");
             Value addr = contract->stack.get(0);
             addr_t offset = contract->stack.get(1).as_uint(*engine.vars);
             unsigned int size = contract->stack.get(2).as_uint(*engine.vars);
             contract->stack.pop(3);
-            for (const auto& val : contract->result_from_last_call->return_data_load_bytes(offset, size))
+            if (not contract->result_from_last_call.has_value())
             {
-                contract->memory.write(addr, val);
-                addr = addr + val.size()/8;
+                // Write zeroes
+                std::vector<Value> zeroes (size, Value(8,0));
+                contract->memory.write(addr, zeroes);
+            }
+            else
+            {
+                for (const auto& val : contract->result_from_last_call->return_data_load_bytes(offset, size))
+                {
+                    contract->memory.write(addr, val);
+                    addr = addr + val.size()/8;
+                }
             }
             break;
         }
@@ -708,18 +716,24 @@ void _set_return_data(MaatEngine& engine, const Value& addr, const Value& len, e
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
 
-    if (not len.is_concrete(*engine.vars))
-        throw callother_exception("Getting transaction return data: not supported with symbolic length");
-    if (not addr.is_concrete(*engine.vars))
-        throw callother_exception("Getting transaction return data: not supported with symbolic address");
+    if (len.is_symbolic(*engine.vars))
+        throw callother_exception("Setting transaction return data: not supported with symbolic length");
+    else if (len.is_concolic(*engine.vars))
+        engine.log.warning("Setting transaction return data: concretizing concolic length");
+
+    if (addr.is_symbolic(*engine.vars))
+        throw callother_exception("Setting transaction return data: not supported with symbolic address");
+    else if (addr.is_concolic(*engine.vars))
+        engine.log.warning("Setting transaction return data: concretizing concolic address");
 
     std::vector<Value> return_data;
     _check_transaction_exists(contract);
-    if (len.as_uint(*engine.vars) != 0)
+    ucst_t concrete_len = len.as_number(*engine.vars).get_ucst();
+    if (concrete_len != 0)
     {
         return_data = contract->memory.mem()._read_optimised_buffer(
-            addr.as_uint(*engine.vars),
-            len.as_uint(*engine.vars)
+            addr.as_number(*engine.vars).get_ucst(),
+            concrete_len
         );
     }
     contract->transaction->result = env::EVM::TransactionResult(type, return_data);

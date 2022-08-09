@@ -209,6 +209,10 @@ namespace test
 
             e1 = concat(e, e2) >> 64;
             nb += _assert_simplify(e1, concat(exprcst(64, 0), e), s);
+
+            e1 = 0xff & concat(v1, v2);
+            nb += _assert_simplify(e1, concat(exprcst(8, 0), 0xff & v2), s);
+
             return nb; 
         }
         
