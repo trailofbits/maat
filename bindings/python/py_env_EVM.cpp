@@ -1014,6 +1014,27 @@ PyObject* maat_increment_block_timestamp(PyObject* mod, PyObject* args)
     }
 }
 
+PyObject* maat_allow_symbolic_keccak(PyObject* mod, PyObject* args)
+{
+    PyObject* engine;
+    int allow = 0;
+    if( !PyArg_ParseTuple(args, "O!p", get_MaatEngine_Type(), &engine, &allow))
+        return NULL;
+
+    try
+    {
+        auto eth = env::EVM::get_ethereum(*as_engine_object(engine).engine);
+        if (eth == nullptr)
+            return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
+        eth->keccak_helper.allow_symbolic_hashes = allow;
+        Py_RETURN_NONE;
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
+
 void init_evm(PyObject* module)
 {
     /* TX_END enum */
