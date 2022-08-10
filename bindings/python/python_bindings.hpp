@@ -27,7 +27,6 @@ typedef struct {
     PyObject_HEAD
     Arch* arch;
     /* Wrappers to members */
-    // TODO: populate this
     Arch::Type type;
     int nb_regs;
     bool is_ref;

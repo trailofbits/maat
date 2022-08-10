@@ -31,7 +31,6 @@ static PyObject* Arch_reg_size(PyObject* self, PyObject* args) {
     reg_t reg_num;
     size_t reg_size;
     
-    // get reg name from params
     if ( !PyArg_ParseTuple(args, "s", &reg_name)) {
         return NULL;
     }
@@ -199,7 +198,6 @@ PyObject* PyArch_FromArch(Arch* arch, bool is_ref)
     // Create object
     PyType_Ready(&Arch_Type);
     object = PyObject_New(Arch_Object, &Arch_Type);
-    //PyObject_Init( (PyObject*)object, &Arch_Type );
 
     if (object != nullptr) {
         object->arch = arch;
