@@ -145,6 +145,9 @@ void Memory::write(const Value& addr, const std::vector<Value>& vals)
 
 void Memory::expand_if_needed(const Value& addr, size_t nb_bytes)
 {
+    if (nb_bytes == 0)
+        return;
+
     if (not addr.is_symbolic(*_varctx))
     {
         if (Number(addr.size(), 0xffffffffffffffff-nb_bytes+1).less_than(

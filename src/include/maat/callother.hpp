@@ -63,6 +63,7 @@ enum class Id
     EVM_DELEGATECALL,
     EVM_CREATE,
     EVM_SELFDESTRUCT,
+    EVM_LOG,
     UNSUPPORTED
 };
 

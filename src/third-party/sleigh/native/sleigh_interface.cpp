@@ -553,7 +553,8 @@ public:
             {"evm_callcode", callother::Id::EVM_CALLCODE},
             {"evm_delegatecall", callother::Id::EVM_DELEGATECALL},
             {"evm_create", callother::Id::EVM_CREATE},
-            {"evm_selfdestruct", callother::Id::EVM_SELFDESTRUCT}
+            {"evm_selfdestruct", callother::Id::EVM_SELFDESTRUCT},
+            {"evm_log", callother::Id::EVM_LOG}
         };
 
         for (const auto& [op_str, op_id] : operators)

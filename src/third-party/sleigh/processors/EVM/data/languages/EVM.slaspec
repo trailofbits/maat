@@ -41,6 +41,7 @@ define pcodeop evm_callcode; # CALLCODE
 define pcodeop evm_delegatecall; # DELEGATECALL
 define pcodeop evm_create; # CREATE
 define pcodeop evm_selfdestruct; # SELFDESTRUCT
+define pcodeop evm_log; # LOG0, LOG1, LOG2, LOG3, LOG4
 
 
 # Opcode token: EVM opcodes take 1 byte
@@ -609,6 +610,12 @@ swap_cnt: cnt is op [cnt = op - 143;] {export *[const]:4 cnt;}
 
 :SWAP swap_cnt is op_higher=9 & swap_cnt {
     evm_swap(swap_cnt);
+}
+
+log_cnt: cnt is op [cnt = op - 160;] {export *[const]:4 cnt;}
+
+:LOG log_cnt is op_higher=0xa & log_cnt {
+    evm_log(log_cnt);
 }
 
 :CREATE is op = 0xf0 {

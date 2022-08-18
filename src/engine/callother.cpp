@@ -938,6 +938,40 @@ void EVM_SELFDESTRUCT_handler(MaatEngine& engine, const ir::Inst& inst, ir::Proc
     throw callother_exception("SELFDESTRUCT: not implemented");
 }
 
+void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+
+    int lvl = pinst.in1.value().as_uint();
+    Value data_start = contract->stack.get(0);
+    Value data_len = contract->stack.get(1);
+    contract->stack.pop(2+lvl);
+
+    if (data_start.is_symbolic(*engine.vars))
+    {
+        engine.log.warning(
+            Fmt() << "LOG" << std::dec << lvl 
+            << ": data address is symbolic. Memory will not be expanded accordingly"
+            >> Fmt::to_str
+        );
+    }
+    else if (data_len.is_symbolic(*engine.vars))
+    {
+        engine.log.warning(
+            Fmt() << "LOG" << std::dec << lvl
+            << ": data length is symbolic. Memory will not be expanded accordingly"
+            >> Fmt::to_str
+        );
+    }
+    else
+    {
+        contract->memory.expand_if_needed(
+            data_start,
+            data_len.as_uint(*engine.vars)
+        );
+    }
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -977,6 +1011,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_DELEGATECALL, EVM_DELEGATECALL_handler);
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
+    h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
 
     return h;
 }
