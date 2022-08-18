@@ -1,36 +1,16 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO lifting-bits/sleigh
-    REF 04db45f0b73372aa038e79b7e3fc44c3eb14732b # cmake-presets branch, unmerged
-    SHA512 f1ed643e25a021f42bcb201a184bb453d8a546df4c1e0157fad3d36ff883ddb1dc5076610f074e8ae184eb389d60dbd0f03e9000d1cc60b629578d95e7a99d0c
+    REF cc4d7d209e5b7947f4c28ffb84db722bc750df8d # cmake-presets branch, unmerged
+    SHA512 5e407cbb8b013ebe230485cd3dd4f4cb0d9d816d7e2529fc57bb38ab505e4acf18685febbda84cf760193f50ecc29963f702d8a4fd35a78f41a656a35561e755
     HEAD_REF master
 )
 
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
 FEATURES
     "sleighspecs"   sleigh_BUILD_SLEIGHSPECS  # compiled sla files
-    "spec-compiler" sleigh_BUILD_SPECCOMPILER # sla spec compiler
-    "decompiler"    sleigh_BUILD_DECOMPILER   # decompiler
-    "ghidra"        sleigh_BUILD_GHIDRA       # ghidra tool
     "support"       sleigh_BUILD_SUPPORT      # support libraries
-    "extra-tools"   sleigh_BUILD_EXTRATOOLS   # extra tools
 )
-
-set(tools "")
-if("spec-compiler" IN_LIST FEATURES)
-    list(APPEND tools "sleigh")
-endif()
-if("decompiler" IN_LIST FEATURES)
-    list(APPEND tools "decomp")
-endif()
-if("ghidra" IN_LIST FEATURES)
-    list(APPEND tools "ghidra")
-endif()
-
-# The tools won't be built unless this option is enabled
-if("tools" IN_LIST FEATURES OR tools)
-    list(APPEND FEATURE_OPTIONS "-Dsleigh_BUILD_TOOLS=ON")
-endif()
 
 vcpkg_find_acquire_program(GIT)
 
@@ -39,43 +19,19 @@ vcpkg_cmake_configure(
     OPTIONS
         ${FEATURE_OPTIONS}
         "-DGIT_EXECUTABLE=${GIT}"
+        "-DSLEIGH_EXECUTABLE=${SLEIGH_SPECCOMPILER}"
+        -Dsleigh_BUILD_TOOLS=OFF
     OPTIONS_RELEASE
         "-Dsleigh_INSTALL_CMAKEDIR=${CURRENT_PACKAGES_DIR}/share/${PORT}"
     OPTIONS_DEBUG
         "-Dsleigh_INSTALL_CMAKEDIR=${CURRENT_PACKAGES_DIR}/debug/share/${PORT}"
     MAYBE_UNUSED_VARIABLES
-        sleigh_BUILD_DECOMPILER
-        sleigh_BUILD_GHIDRA
-        sleigh_BUILD_SPECCOMPILER
+        SLEIGH_EXECUTABLE
 )
 
 vcpkg_cmake_install()
 vcpkg_cmake_config_fixup()
 vcpkg_copy_pdbs()
-
-if(tools)
-    vcpkg_copy_tools(
-        TOOL_NAMES ${tools}
-        AUTO_CLEAN
-    )
-endif()
-
-if(EXISTS "${CURRENT_PACKAGES_DIR}/share/${PORT}/${PORT}Targets-debug.cmake")
-    foreach(tool ${tools})
-        vcpkg_replace_string(
-            "${CURRENT_PACKAGES_DIR}/share/${PORT}/${PORT}Targets-debug.cmake"
-            "tools/${PORT}/${tool}_dbg"
-            "tools/${PORT}/${tool}"
-        )
-    endforeach()
-endif()
-
-if("extra-tools" IN_LIST FEATURES)
-    vcpkg_copy_tools(
-        TOOL_NAMES sleighLift
-        AUTO_CLEAN
-    )
-endif()
 
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include")
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")

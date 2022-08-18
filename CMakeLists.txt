@@ -155,15 +155,13 @@ add_custom_command(
 
 # Allow user to override sleigh compiler to support cross-compilation. Default
 # location is the one imported when we found the sleigh package
-if(CMAKE_CROSSCOMPILING)
-  find_program(maat_SLEIGH_COMPILER "sleigh"
-    DOC "Sleigh compiler executable"
-  )
+if(TARGET sleigh::sleigh AND NOT CMAKE_CROSSCOMPILING)
+  set(maat_SLEIGH_COMPILER "$<TARGET_FILE:sleigh::sleigh>" CACHE PATH "Sleigh compiler executable")
+else()
+  find_program(maat_SLEIGH_COMPILER "sleigh" DOC "Sleigh compiler executable")
   if(NOT maat_SLEIGH_COMPILER)
     message(FATAL_ERROR "Maat needs a sleigh compiler. Specify path manually by setting 'maat_SLEIGH_COMPILER'")
   endif()
-else()
-  set(maat_SLEIGH_COMPILER "$<TARGET_FILE:sleigh::sleigh>" CACHE PATH "Sleigh compiler executable")
 endif()
 
 macro(maat_sleigh_compile ARCH_DIR ARCH)

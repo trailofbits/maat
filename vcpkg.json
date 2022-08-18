@@ -3,6 +3,10 @@
     "gmp",
     "lief",
     "sleigh",
-    "z3"
+    "z3",
+    {
+      "name": "vcpkg-tool-sleigh-speccompiler",
+      "host": true
+    }
   ]
 }
