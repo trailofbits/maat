@@ -686,6 +686,12 @@ void EVM_KECCAK_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
     if (not len.is_concrete(*engine.vars))
         throw callother_exception("KECCAK: not supported with symbolic length");
 
+    // Handle special case of keccak("")
+    if (len.as_uint() == 0){
+        pinst.res = Value(256, "C5D2460186F7233C927E7DB2DCC703C0E500B653CA82273B7BFAD8045D85A470", 16);
+        return;
+    }
+
     contract->memory.expand_if_needed(pinst.in1.value(), pinst.in2.value().as_uint());
     ir::Param fake_param = ir::Param(
         inst.in[1].type,
