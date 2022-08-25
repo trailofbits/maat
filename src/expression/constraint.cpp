@@ -259,7 +259,7 @@ Constraint operator>(cst_t left, Expr right)
 
 Constraint ULE(Expr left, Expr right)
 {
-    return std::make_shared<ConstraintObject>(ConstraintType::ULE, right, left);
+    return std::make_shared<ConstraintObject>(ConstraintType::ULE, left, right);
 }
 
 Constraint ULE(Expr left, ucst_t right)
@@ -274,7 +274,7 @@ Constraint ULE(ucst_t left, Expr right)
 
 Constraint ULT(Expr left, Expr right)
 {
-    return std::make_shared<ConstraintObject>(ConstraintType::ULT, right, left);
+    return std::make_shared<ConstraintObject>(ConstraintType::ULT, left, right);
 }
 
 Constraint ULT(Expr left, ucst_t right)

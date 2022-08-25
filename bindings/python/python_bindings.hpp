@@ -38,6 +38,8 @@ PyObject* maat_Concat(PyObject* self, PyObject* args);
 PyObject* maat_ITE(PyObject* self, PyObject* args);
 PyObject* maat_Extract(PyObject* self, PyObject* args);
 PyObject* maat_Sext(PyObject* self, PyObject* args);
+PyObject* maat_ULE(PyObject* self, PyObject* args);
+PyObject* maat_ULT(PyObject* self, PyObject* args);
 PyObject* maat_Zext(PyObject* self, PyObject* args);
 PyObject* PyValue_FromValue(const Value& val);
 PyObject* PyValue_FromValueAndVarContext(const Value& val, std::shared_ptr<VarContext> ctx);
