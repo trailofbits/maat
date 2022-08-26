@@ -145,6 +145,9 @@ void Memory::write(const Value& addr, const std::vector<Value>& vals)
 
 void Memory::expand_if_needed(const Value& addr, size_t nb_bytes)
 {
+    if (nb_bytes == 0)
+        return;
+
     if (not addr.is_symbolic(*_varctx))
     {
         if (Number(addr.size(), 0xffffffffffffffff-nb_bytes+1).less_than(
@@ -540,7 +543,7 @@ void Transaction::load(serial::Deserializer& d)
 
 
 Contract::Contract()
-: memory(nullptr), storage(nullptr), consumed_gas(256, 0)
+: memory(nullptr), storage(nullptr), consumed_gas(256, 0), balance(256, 0)
 {}
 
 Contract::Contract(const MaatEngine& engine, Value addr)
@@ -562,6 +565,7 @@ void Contract::fork_from(const Contract& other)
     outgoing_transaction = std::nullopt;
     result_from_last_call = std::nullopt;
     consumed_gas = Value(256, 0);
+    balance = Value(256, 0);
 }
 
 serial::uid_t Contract::class_uid() const
@@ -571,14 +575,14 @@ serial::uid_t Contract::class_uid() const
 
 void Contract::dump(serial::Serializer& s) const
 {
-    s   << address << stack << memory << storage << transaction
+    s   << balance << address << stack << memory << storage << transaction
         << outgoing_transaction << result_from_last_call << consumed_gas;
     s << bits(code_size);
 }
 
 void Contract::load(serial::Deserializer& d)
 {
-    d   >> address >> stack >> memory >> storage >> transaction
+    d   >> balance >> address >> stack >> memory >> storage >> transaction
         >> outgoing_transaction >> result_from_last_call >> consumed_gas;
     d >> bits(code_size);
 }
@@ -620,7 +624,7 @@ void _append_EVM_code(MaatEngine& engine, const std::vector<Value>& code)
 }
 
 KeccakHelper::KeccakHelper()
-: _symbolic_hash_prefix("keccak_hash")
+: _symbolic_hash_prefix("keccak_hash"), allow_symbolic_hashes(true)
 {}
 
 const std::string& KeccakHelper::symbolic_hash_prefix() const 
@@ -636,7 +640,7 @@ Value KeccakHelper::apply(VarContext& ctx, const Value& val, uint8_t* raw_bytes)
     if (it != known_hashes.end())
         return it->second;
     
-    if (val.is_concrete(ctx))
+    if (val.is_concrete(ctx) or (val.is_concolic(ctx) and not allow_symbolic_hashes))
     {
         res = _do_keccak256(raw_bytes, val.size()/8);
     }
@@ -652,6 +656,8 @@ Value KeccakHelper::apply(VarContext& ctx, const Value& val, uint8_t* raw_bytes)
     }
     else // purely symbolic value
     {
+        if (not allow_symbolic_hashes)
+            throw env_exception("KeccakHelper::apply(): got symbolic value but symbolic hashes are disabled");
         res = exprvar(256, ctx.new_name_from(_symbolic_hash_prefix));
     }
     known_hashes[val] = res;
@@ -665,12 +671,12 @@ serial::uid_t KeccakHelper::class_uid() const
 
 void KeccakHelper::dump(serial::Serializer& s) const
 {
-    s << _symbolic_hash_prefix << known_hashes;
+    s << bits(allow_symbolic_hashes) << _symbolic_hash_prefix << known_hashes;
 }
 
 void KeccakHelper::load(serial::Deserializer& d)
 {
-    d >> _symbolic_hash_prefix >> known_hashes;
+    d >> bits(allow_symbolic_hashes) >> _symbolic_hash_prefix >> known_hashes;
 }
 
 Value _do_keccak256(uint8_t* in, int size)
@@ -701,6 +707,18 @@ EthereumEmulator& EthereumEmulator::operator=(const EthereumEmulator& other)
     // Copy every contract
     for (const auto& [addr,contract] : other._contracts)
         _contracts[addr] = std::make_shared<Contract>(*contract);
+    _uid_cnt = other._uid_cnt < _uid_cnt ? _uid_cnt : other._uid_cnt;
+    keccak_helper = other.keccak_helper;
+    current_block_number = other.current_block_number;
+    current_block_timestamp = other.current_block_timestamp;
+    // We don't copy snapshots !!!
+    return *this;
+}
+
+EthereumEmulator& EthereumEmulator::operator=(EthereumEmulator&& other)
+{
+    // **Move** contracts
+    _contracts = std::move(other._contracts);
     _uid_cnt = other._uid_cnt < _uid_cnt ? _uid_cnt : other._uid_cnt;
     keccak_helper = other.keccak_helper;
     current_block_number = other.current_block_number;
@@ -808,7 +826,7 @@ void EthereumEmulator::restore_snapshot(snapshot_t snapshot, bool remove)
     while (snapshot+1 < _snapshots.size())
         _snapshots.pop_back();
 
-    *this = *_snapshots.back();
+    *this = std::move(*_snapshots.back());
     if (remove)
         _snapshots.pop_back();
 }

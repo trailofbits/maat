@@ -93,6 +93,7 @@ enum class Op : uint8_t
 
 std::string op_to_str(Op op);
 bool operator<(Op op1, Op op2);
+bool op_is_bitwise(Op op);
 bool op_is_symetric(Op op);
 bool op_is_associative(Op op);
 bool op_is_left_associative(Op op);
