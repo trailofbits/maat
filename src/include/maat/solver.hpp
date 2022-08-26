@@ -14,7 +14,7 @@ namespace maat
 
 namespace solver
 {
-    
+
 /** \defgroup solver Solver
  * \brief The Maat's constraint solver interface */
 
@@ -94,11 +94,25 @@ std::string constraints_to_smt2(const C<Constraint>& constraints) {
     delete ctx;
     return res;
 }
-
 #endif
 
-
-
+#ifdef MAAT_BOOLECTOR_BACKEND
+class SolverBtor : public Solver
+{
+private:
+    std::list<Constraint> constraints;
+    bool has_model; ///< Set to true if check() returned true
+public:
+    SolverBtor();
+    virtual ~SolverBtor();
+    void reset();
+    void add(const Constraint& constr);
+    void pop();
+    bool check();
+    virtual std::shared_ptr<VarContext> get_model();
+    virtual VarContext* _get_model_raw();
+};
+#endif
 
 /** \} */ // doxygen groupe Solver
 } // namespace solver

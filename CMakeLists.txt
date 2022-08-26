@@ -61,6 +61,7 @@ add_library(maat_maat
   src/serialization/serialization_helpers.cpp
   src/serialization/serializer.cpp
   src/solver/solver.cpp
+  src/solver/solver_btor.cpp
   src/solver/solver_z3.cpp
   src/third-party/murmur3/murmur3.c
   src/third-party/keccak/sha3.cpp
