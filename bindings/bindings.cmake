@@ -81,6 +81,12 @@ if(maat_USE_Z3)
   target_compile_definitions(maat_python PRIVATE MAAT_Z3_BACKEND=1 MAAT_HAS_SOLVER_BACKEND=1)
 endif()
 
+if(maat_USE_BOOLECTOR)
+  find_package(Boolector)
+  target_link_libraries(maat_python PRIVATE Boolector::boolector)
+  target_compile_definitions(maat_python PUBLIC MAAT_BOOLECTOR_BACKEND=1)
+endif()
+
 if(maat_USE_LIEF)
   target_link_libraries(maat_python PRIVATE LIEF::LIEF)
   target_compile_definitions(maat_python PRIVATE MAAT_LIEF_BACKEND=1 MAAT_HAS_LOADER_BACKEND=1)
