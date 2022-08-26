@@ -26,6 +26,8 @@ PyMethodDef module_methods[] = {
     // Solver
     {"Solver", (PyCFunction)maat_Solver, METH_NOARGS, "Create a constraint solver"},
     {"constraints_to_smt2", (PyCFunction)maat_constraints_to_smt2, METH_VARARGS, "Convert a list of constraints to an SMTlibv2 string"},
+    // Arch
+    {"Arch", (PyCFunction)maat_Arch, METH_VARARGS, "Create a new Architecture"},
     // SimpleStateManager
     {"SimpleStateManager", (PyCFunction)maat_SimpleStateManager, METH_VARARGS, "Create a new helper for serializing/deserializing engine states"},
     // EVM
