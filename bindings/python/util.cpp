@@ -48,6 +48,23 @@ PyObject* native_to_py(const std::unordered_set<Constraint>& constraints)
     return list;
 }
 
+PyObject* py_to_native(PyObject* list, std::vector<Constraint>& dest)
+{
+    if (!PyList_Check(list) )
+        return PyErr_Format(PyExc_TypeError, "Expected list of constraints");
+
+    for (int i = 0; i < PyList_Size(list); i++)
+    {
+        PyObject* val = PyList_GetItem(list, i);
+        if (!PyObject_TypeCheck(val, (PyTypeObject*)get_Constraint_Type()))
+        {
+            return PyErr_Format(PyExc_TypeError, "List contains object which is not a 'Constraint'");
+        }
+        dest.push_back(*as_constraint_object(val).constr);
+    }
+    return nullptr; // return null on success
+}
+
 Number bigint_to_number(size_t bits, PyObject* num)
 {
     if (bits <= 64)

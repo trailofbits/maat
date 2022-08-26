@@ -258,6 +258,7 @@ typedef struct{
 } Solver_Object;
 PyObject* get_Solver_Type();
 PyObject* maat_Solver(PyObject* module);
+PyObject* maat_constraints_to_smt2(PyObject* module, PyObject* args);
 #define as_solver_object(x)  (*((Solver_Object*)x))
 #endif
 
@@ -355,7 +356,7 @@ PyObject* get_EVMTransactionResult_Type();
 PyObject* PyEVMTxResult_FromTxResult(env::EVM::TransactionResult*);
 #define as_tx_result_object(x)  (*((EVMTransactionResult_Object*)x))
 
-// Return the contract associated with an engine
+// EVM helper functions
 PyObject* maat_contract(PyObject* mod, PyObject* args);
 PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args);
 PyObject* maat_increment_block_timestamp(PyObject* mod, PyObject* args);
@@ -368,6 +369,10 @@ PyObject* maat_allow_symbolic_keccak(PyObject* mod, PyObject* args);
 // returns a python error on error
 PyObject* native_to_py(const std::vector<Value>&);
 PyObject* native_to_py(const std::unordered_set<Constraint>& constraints);
+
+// Transform a list of python objects into native objects. Returns a
+// python error on error, and NULL on success
+PyObject* py_to_native(PyObject* list, std::vector<Constraint>& dest);
 
 // Python bigint into multiprecision number
 // num MUST be a PyLong object (no further type checks in the function)

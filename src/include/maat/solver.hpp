@@ -78,7 +78,27 @@ public:
     virtual std::shared_ptr<VarContext> get_model();
     virtual VarContext* _get_model_raw();
 };
+
+// Forward decl
+z3::expr constraint_to_z3(z3::context* c, const Constraint& constr);
+
+/// Convert a set of constraints into SMTlibv2 format
+template< template< typename ELEM, typename ALLOC = std::allocator<ELEM>> class C>
+std::string constraints_to_smt2(const C<Constraint>& constraints) {
+    auto ctx = new z3::context();
+    auto sol = new z3::solver(*ctx);
+    for (auto c : constraints)
+        sol->add(constraint_to_z3(ctx, c));
+    std::string res = sol->to_smt2(); 
+    delete sol;
+    delete ctx;
+    return res;
+}
+
 #endif
+
+
+
 
 /** \} */ // doxygen groupe Solver
 } // namespace solver
