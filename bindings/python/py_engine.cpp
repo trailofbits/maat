@@ -356,6 +356,7 @@ static PyMethodDef MaatEngine_methods[] = {
 };
 
 static PyMemberDef MaatEngine_members[] = {
+    {"arch", T_OBJECT_EX, offsetof(MaatEngine_Object, arch), READONLY, "Architecture this engine lifts from"},
     {"vars", T_OBJECT_EX, offsetof(MaatEngine_Object, vars), READONLY, "Symbolic Variables Context"},
     {"cpu", T_OBJECT_EX, offsetof(MaatEngine_Object, cpu), READONLY, "Emulated CPU"},
     {"mem", T_OBJECT_EX, offsetof(MaatEngine_Object, mem), READONLY, "Memory Engine"},
@@ -425,6 +426,7 @@ void _clear_MaatEngine_attributes(MaatEngine_Object* obj)
     MAAT_PY_CLEAR(as_engine_object(obj).info)
     MAAT_PY_CLEAR(as_engine_object(obj).cpu)
     MAAT_PY_CLEAR(as_engine_object(obj).vars)
+    MAAT_PY_CLEAR(as_engine_object(obj).arch)
     MAAT_PY_CLEAR(as_engine_object(obj).hooks) 
     MAAT_PY_CLEAR(as_engine_object(obj).path)
     MAAT_PY_CLEAR(as_engine_object(obj).env)
@@ -437,6 +439,7 @@ void _init_MaatEngine_attributes(MaatEngine_Object* object)
     // Then set attributes
     object->engine->self_python_wrapper_object = (PyObject*)object;
     // Create wrappers with references to members
+    object->arch = PyArch_FromArch(object->engine->arch.get(), true);
     object->vars = PyVarContext_FromVarContext(object->engine->vars.get(), true);
     object->cpu = PyCPU_FromCPUAndArchAndVarContext(
         &object->engine->cpu,
