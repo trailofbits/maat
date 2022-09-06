@@ -25,7 +25,8 @@ bool Solver::did_time_out() const
 std::unique_ptr<Solver> new_solver()
 {
 #ifdef MAAT_Z3_BACKEND
-    return std::make_unique<SolverZ3>();
+    // DEBUG return std::make_unique<SolverZ3>();
+    return std::make_unique<SolverBtor>();
 #else
     return nullptr;
 #endif

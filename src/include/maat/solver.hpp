@@ -9,6 +9,10 @@
 #include "z3++.h"
 #endif
 
+#ifdef MAAT_BOOLECTOR_BACKEND
+#include "boolector/boolector.h"
+#endif
+
 namespace maat
 {
 
@@ -99,6 +103,8 @@ std::string constraints_to_smt2(const C<Constraint>& constraints) {
 #ifdef MAAT_BOOLECTOR_BACKEND
 class SolverBtor : public Solver
 {
+private:
+    Btor* btor;
 private:
     std::list<Constraint> constraints;
     bool has_model; ///< Set to true if check() returned true
