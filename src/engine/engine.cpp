@@ -622,29 +622,22 @@ bool MaatEngine::process_branch(
 
             // Resolve the branch again to account for potential changes made by
             // user callbacks
-            if (in1.is_symbolic(*vars))
+            if (info.branch->taken.has_value())
             {
-                if (info.branch->taken.has_value())
-                {
-                    // User callback specified which branch to take
-                    taken = info.branch->taken.value();
-                }
-                else
-                {
-                    log.error("Purely symbolic branch condition");
-                    // TODO: have Stop::SYMBOLIC_BRANCH ?
-                    info.stop = info::Stop::ERROR;
-                    info.addr = asm_inst.addr();
-                    return false;
-                }
+                taken = info.branch->taken.value();
             }
-            else if (in1.as_uint(*vars) != 0) // branch condition is true, branch to target
+            else if (in1.is_symbolic(*vars))
             {
-                taken = true;
+                log.error("Purely symbolic branch condition");
+                // TODO: have Stop::SYMBOLIC_BRANCH ?
+                info.stop = info::Stop::ERROR;
+                info.addr = asm_inst.addr();
+                return false;
             }
             else
             {
-                taken = false;
+                // Branch if condition expression is not null
+                taken = (in1.as_uint(*vars) != 0);
             }
 
             // Perform the branch
