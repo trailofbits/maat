@@ -10,11 +10,13 @@ namespace maat
 namespace solver
 {
 
-SolverBtor::SolverBtor(): Solver(), has_model(false)
+SolverBtor::SolverBtor(): 
+    Solver(), 
+    has_model(false),
+    btor(nullptr),
+    model_file(nullptr)
 {
-    btor = boolector_new();
-    boolector_set_opt (btor, BTOR_OPT_MODEL_GEN, 1);
-    boolector_set_opt (btor, BTOR_OPT_INCREMENTAL, 1);
+    reset_btor();
 }
 
 SolverBtor::~SolverBtor()
@@ -23,12 +25,27 @@ SolverBtor::~SolverBtor()
     btor = nullptr;
 }
 
+void SolverBtor::reset_btor()
+{
+    if (btor != nullptr)
+    {
+        // TODO(boyan)
+        // DEBUG: are these calls useful ?
+        boolector_reset_assumptions(btor);
+        boolector_release_all(btor);
+        boolector_delete(btor);
+    }
+    btor = boolector_new();
+    boolector_set_opt (btor, BTOR_OPT_MODEL_GEN, 1);
+    boolector_set_opt (btor, BTOR_OPT_INCREMENTAL, 1);
+}
+
 void SolverBtor::reset()
 {
     constraints.clear();
     has_model = false;
     _did_time_out = false;
-    boolector_reset_assumptions(btor);
+    reset_btor();
 }
 
 void SolverBtor::add(const Constraint& constr)
@@ -48,10 +65,10 @@ bool SolverBtor::check()
     if (has_model)
         return true;
 
+    reset_btor();
+
     // Statistics
     MaatStats::instance().start_solving();
-
-    boolector_reset_assumptions(btor);
 
     // Dump constraints to temporary file
     // TODO(boyan): use mkstemp instead of tmpnam
@@ -65,25 +82,40 @@ bool SolverBtor::check()
     f << smt_string;
     f.close();
 
+    std::cout << "DEBUG SMT QUERY iN " << smt_file << "\n";
+
     // Load SMT in boolector
+    // TODO(boyan): don't reopen smt_file
+    // TODO(boyan): don't hardcode dev/null but make it dependent on
+    // the platform, and find a solution for Windows
+    FILE* infile = fopen(smt_file, "r");
+    FILE* outfile = fopen("/dev/null", "w");
+    char* error_msg;
+    int _status;
     int status = boolector_parse_smt2(
         btor,
-        nullptr, // infile
+        infile, // infile
         smt_file, // infile_name
-        nullptr, // outfile
-        nullptr, // error_msg
-        nullptr // status
+        outfile, // outfile
+        &error_msg, // error_msg
+        &_status // status
     );
-    if (status != BOOLECTOR_PARSE_UNKNOWN)
+    fclose(outfile);
+    fclose(infile);
+
+    // DEBUG
+    // if (status == BOOLECTOR_PARSE_UNKNOWN)
+    //     status = boolector_sat(btor);
+    if (status == BOOLECTOR_PARSE_UNKNOWN)
         throw solver_exception(
-            Fmt() << "SolverBtor::check(): error parsing SMT file: "
+            Fmt() << "SolverBtor::check(): error solving SMT file: "
             << smt_file >> Fmt::to_str
         );
-    status = boolector_sat(btor);
+
     has_model = (status == BOOLECTOR_SAT);
 
     // Remove temporary file
-    remove(smt_file);
+    // DEBUG remove(smt_file);
 
     // Statistics
     MaatStats::instance().done_solving();
@@ -101,7 +133,38 @@ VarContext* SolverBtor::_get_model_raw()
     if (not has_model)
         return nullptr;
 
-    // TODO
+    // TODO(boyan): don't hardcode
+    if (model_file == nullptr)
+    {
+        model_file = tmpnam(NULL);  // Get temp name
+        if (model_file == nullptr)
+            throw solver_exception("SolverBtor::_get_model_raw(): couldn't create temporary filename");
+    }
+    FILE* f = fopen(model_file, "w");
+    boolector_print_model(btor, "smt2", f);
+    fclose(f);
+
+    std::ifstream in(model_file, std::ios::binary);
+    std::vector<char> data(
+        (std::istreambuf_iterator<char>(in)),
+        (std::istreambuf_iterator<char>())
+    );
+    std::vector<char> clean_data{'(', 'm', 'o', 'd', 'e', 'l', '\n'};
+    for (int i = 2; i < data.size(); i++)
+    {
+        // DEBUG remove false??
+        if (
+            false && i+2 < data.size() && data[i] == '\n' 
+            && data[i+1] == ' ' && data[i+2] == ' '
+        ){
+            clean_data.push_back('\n');
+            i += 2;
+        }
+        else
+            clean_data.push_back(data[i]);
+    }
+    remove(model_file);
+    ctx_from_smt2(clean_data.data());
 }
 
 } // namespace solver
