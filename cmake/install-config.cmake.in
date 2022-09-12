@@ -16,6 +16,11 @@ if("${maat_USE_Z3}")
   find_dependency(Z3)
 endif()
 
+set(maat_USE_BOOLECTOR @maat_USE_BOOLECTOR@)
+if("${maat_USE_BOOLECTOR}")
+  find_dependency(Boolector)
+endif()
+
 set(maat_USE_LIEF @maat_USE_LIEF@)
 if("${maat_USE_LIEF}")
   find_dependency(LIEF)

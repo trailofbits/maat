@@ -164,6 +164,21 @@ PyObject* maat_Solver(PyObject* module)
     return PySolver_FromSolver(res);
 }
 
+PyObject* maat_constraints_to_smt2(PyObject* self, PyObject* args)
+{
+    PyObject* py_constraints;
+    std::vector<Constraint> constraints;
+    if (not PyArg_ParseTuple(args, "O", &py_constraints))
+        return NULL;
+
+    PyObject* fail = py_to_native(py_constraints, constraints);
+    if (fail != nullptr)
+        return fail;
+
+    std::string res = solver::constraints_to_smt2(constraints);
+    return PyUnicode_FromString(res.c_str());
+}
+
 } // namespace py
 } // namespace maat
 

@@ -205,16 +205,12 @@ std::shared_ptr<VarContext> SolverZ3::get_model()
     return std::shared_ptr<VarContext>(_get_model_raw());
 }
 
-VarContext* SolverZ3::_get_model_raw()
+VarContext* z3_model_to_varcontext(z3::model& m, z3::context& ctx)
 {
-    if (not has_model)
-        return nullptr;
-
-    z3::model m = sol->get_model();
-    auto res = new VarContext(_model_id_cnt++);
+    auto res = new VarContext();
     for (int i = 0; i < m.num_consts(); i++)
     {
-        size_t size = Z3_get_bv_sort_size(*ctx, m.get_const_interp(m[i]).get_sort());
+        size_t size = Z3_get_bv_sort_size(ctx, m.get_const_interp(m[i]).get_sort());
         Number val(size);
         if (size <= 64)
             val.set_cst(m.get_const_interp(m[i]).get_numeral_uint64());
@@ -226,6 +222,37 @@ VarContext* SolverZ3::_get_model_raw()
             val
         );
     }
+    return res;
+}
+
+VarContext* SolverZ3::_get_model_raw()
+{
+    if (not has_model)
+        return nullptr;
+
+    z3::model m = sol->get_model();
+    return z3_model_to_varcontext(m, *ctx);
+}
+
+VarContext* ctx_from_smt2(const char* string)
+{
+    auto ctx = new z3::context();
+    auto sol = new z3::solver(*ctx);
+    std::cout << "DEBUG smt2 string: \n" << string << "\n";
+    sol->from_string(string);
+    switch (sol->check())
+    {
+        case z3::check_result::sat:
+            break;
+        default:
+            throw solver_exception("ctx_from_smt2: z3 failed to compute model");
+    }
+    z3::model m = sol->get_model();
+    std::cout << "DEBUG z3 model " << m << "\n";
+    VarContext* res = z3_model_to_varcontext(m, *ctx);
+    std::cout << "DEBUG ctx " << *res << "\n";
+    delete sol;
+    delete ctx;
     return res;
 }
 

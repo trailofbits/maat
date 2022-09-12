@@ -61,6 +61,7 @@ add_library(maat_maat
   src/serialization/serialization_helpers.cpp
   src/serialization/serializer.cpp
   src/solver/solver.cpp
+  src/solver/solver_btor.cpp
   src/solver/solver_z3.cpp
   src/third-party/murmur3/murmur3.c
   src/third-party/keccak/sha3.cpp
@@ -128,6 +129,12 @@ if(maat_USE_Z3)
   find_package(Z3 REQUIRED)
   target_link_libraries(maat_maat PUBLIC z3::libz3)
   target_compile_definitions(maat_maat PUBLIC MAAT_Z3_BACKEND=1 MAAT_HAS_SOLVER_BACKEND=1)
+endif()
+
+if(maat_USE_BOOLECTOR)
+  find_package(Boolector)
+  target_link_libraries(maat_maat PUBLIC Boolector::boolector)
+  target_compile_definitions(maat_maat PUBLIC MAAT_BOOLECTOR_BACKEND=1)
 endif()
 
 if(maat_USE_LIEF)

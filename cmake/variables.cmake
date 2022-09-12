@@ -18,6 +18,7 @@ endif()
 # technically require but are almost always desirable to find. We include
 # these options to let an advanced user implement their own backends
 option(maat_USE_Z3 "Build with Z3 solver backend" ON)
+option(maat_USE_BOOLECTOR "Build with Boolector solver backend" OFF)
 option(maat_USE_LIEF "Build with LIEF loader backend" ON)
 
 # Optionally use vendored dependencies

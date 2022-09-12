@@ -9,12 +9,16 @@
 #include "z3++.h"
 #endif
 
+#ifdef MAAT_BOOLECTOR_BACKEND
+#include "boolector/boolector.h"
+#endif
+
 namespace maat
 {
 
 namespace solver
 {
-    
+
 /** \defgroup solver Solver
  * \brief The Maat's constraint solver interface */
 
@@ -77,6 +81,49 @@ public:
     bool check();
     virtual std::shared_ptr<VarContext> get_model();
     virtual VarContext* _get_model_raw();
+};
+
+// Forward decl
+z3::expr constraint_to_z3(z3::context* c, const Constraint& constr);
+
+/// Convert a set of constraints into SMTlibv2 format
+template< template< typename ELEM, typename ALLOC = std::allocator<ELEM>> class C>
+std::string constraints_to_smt2(const C<Constraint>& constraints) {
+    auto ctx = new z3::context();
+    auto sol = new z3::solver(*ctx);
+    for (auto c : constraints)
+        sol->add(constraint_to_z3(ctx, c));
+    std::string res = sol->to_smt2();
+    delete sol;
+    delete ctx;
+    return res;
+}
+
+/// Create a VarContext from an smtlib2 model
+VarContext* ctx_from_smt2(const char* string);
+#endif
+
+#ifdef MAAT_BOOLECTOR_BACKEND
+class SolverBtor : public Solver
+{
+private:
+    Btor* btor;
+    // Set to file that holds the current computed model, or to NULL
+    const char * model_file;
+private:
+    std::list<Constraint> constraints;
+    bool has_model; ///< Set to true if check() returned true
+public:
+    SolverBtor();
+    virtual ~SolverBtor();
+    void reset();
+    void add(const Constraint& constr);
+    void pop();
+    bool check();
+    virtual std::shared_ptr<VarContext> get_model();
+    virtual VarContext* _get_model_raw();
+private:
+    void reset_btor();
 };
 #endif
 
