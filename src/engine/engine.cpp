@@ -32,6 +32,11 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
             env = std::make_shared<env::EVM::EthereumEmulator>();
             endianness = Endian::BIG;
             break;
+        case Arch::Type::RISCV:
+            arch = std::make_shared<RISCV::ArchRISCV>();
+            lifters[CPUMode::RISCV] = std::make_shared<Lifter>(CPUMode::RISCV);
+            _current_cpu_mode = CPUMode::RISCV;
+            break;
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
             _current_cpu_mode = CPUMode::NONE;

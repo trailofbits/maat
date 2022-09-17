@@ -12,6 +12,11 @@ project(
   LANGUAGES C CXX
 )
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(CMAKE_CXX_FLAGS "-g")
+endif()
+
+
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
 
@@ -20,6 +25,7 @@ include(cmake/variables.cmake)
 add_library(maat_maat
   src/arch/arch_EVM.cpp
   src/arch/arch_X86.cpp
+  src/arch/arch_RISCV.cpp
   src/arch/lifter.cpp
   src/arch/register_aliases.cpp
   src/engine/callother.cpp
@@ -180,15 +186,31 @@ macro(maat_sleigh_compile ARCH_DIR ARCH)
   configure_file("${spec_dir}/${ARCH_DIR}/data/languages/${ARCH}.pspec" "${spec_out_dir}/${ARCH}.pspec")
 endmacro()
 
+macro(maat_sleigh_compile_files ARCH_DIR ARCH SLASPEC PSPEC)
+  # ARCH_DIR is the directory that appears in Ghidra's source code hierarchy
+  # ARCH appears in the name of the '.slaspec' and '.pspec' file (they should be the same)
+  # Creates a target maat_sleigh_spec_${ARCH}
+  sleigh_compile(
+    TARGET maat_sleigh_spec_${ARCH}
+    COMPILER "${maat_SLEIGH_COMPILER}"
+    SLASPEC "${spec_dir}/${ARCH_DIR}/data/languages/${SLASPEC}.slaspec"
+    LOG_FILE "${PROJECT_BINARY_DIR}/sleigh-log/${ARCH}.log"
+    OUT_FILE "${spec_out_dir}/${SLASPEC}.sla"
+  )
+  configure_file("${spec_dir}/${ARCH_DIR}/data/languages/${PSPEC}.pspec" "${spec_out_dir}/${PSPEC}.pspec")
+endmacro()
+
 maat_sleigh_compile(x86 x86-64)
 maat_sleigh_compile(x86 x86)
 maat_sleigh_compile(EVM EVM)
+maat_sleigh_compile_files(RISCV RISCV riscv.lp64d RV64G)
 
 # All of the sla spec targets are combined into this one
 add_custom_target(maat_all_sla_specs DEPENDS
   maat_sleigh_spec_x86-64
   maat_sleigh_spec_x86
   maat_sleigh_spec_EVM
+  maat_sleigh_spec_RISCV
 )
 
 # Add sla specs as dependencies to our targets

@@ -25,6 +25,8 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
             if (mnemonic == "STACK_PUSH") return Id::EVM_STACK_PUSH;
             if (mnemonic == "STACK_POP") return Id::EVM_STACK_POP;
             break;
+        case Arch::Type::RISCV:
+            if (mnemonic == "ecall") return Id::RISCV_ECALL;
         default:
             break;
     }
@@ -273,6 +275,50 @@ void X86_INT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     {
         throw callother_exception(
             Fmt() << "INT 0x80: " << e.what() >> Fmt::to_str
+        );
+    }
+}
+
+void RISCV_ECALL_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    // Get syscall number
+    const Value& num = engine.cpu.ctx().get(RISCV::A7);
+    if (num.is_symbolic(*engine.vars))
+    {
+        throw callother_exception("SYSCALL: syscall number is symbolic!");
+    }
+
+    // Get function to emulate syscall
+    try
+    {
+        const env::Function& func = engine.env->get_syscall_func_by_num(
+            num.as_uint(*engine.vars)
+        );
+
+        // Set a function name for logging the syscall
+        std::optional<std::string> func_name;
+        if (engine.settings.log_calls)
+            func_name = func.name();
+
+        // Execute function callback
+        switch (func.callback().execute(engine, *engine.env->syscall_abi, func_name))
+        {
+            case env::Action::CONTINUE:
+                break;
+            case env::Action::ERROR:
+                throw callother_exception(
+                    "SYSCALL: Emulation callback signaled an error"
+                );
+            default:
+                throw callother_exception(
+                    "SYSCALL: Unsupported env::Action value returned by emulation callback"
+                );
+        }
+    }
+    catch(const env_exception& e)
+    {
+        throw callother_exception(
+            Fmt() << "SYSCALL: " << e.what() >> Fmt::to_str
         );
     }
 }
@@ -1018,6 +1064,8 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
+
+    h.set_handler(Id::RISCV_ECALL, RISCV_ECALL_handler);
 
     return h;
 }

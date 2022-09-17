@@ -30,12 +30,13 @@ typedef uint16_t reg_t;
 /// CPU modes
 enum class CPUMode
 {
-    X86, ///< Intel X86
-    X64, ///< Intel X86_64
-    A32, ///< ARM 32-bits
-    T32, ///< ARM Thumb
-    A64, ///< ARM 64-bits
-    EVM, ///< Ethereum byte-code
+    X86,   ///< Intel X86
+    X64,   ///< Intel X86_64
+    A32,   ///< ARM 32-bits
+    T32,   ///< ARM Thumb
+    A64,   ///< ARM 64-bits
+    EVM,   ///< Ethereum byte-code
+    RISCV, ///< RISCV
     NONE
 };
 
@@ -52,11 +53,12 @@ public:
     /// Architectures supported by Maat's engine 
     enum class Type
     {
-        X86, ///< Intel X86
-        X64, ///< Intel X86_64
+        X86,   ///< Intel X86
+        X64,   ///< Intel X86_64
         ARM32, // TODO ///< armv7 (32 bits)
         ARM64, // TODO ///< armv8 (64 bits)
-        EVM, ///< Ethereum byte-code
+        EVM,   ///< Ethereum byte-code
+        RISCV, ///< RISCV
         NONE
     };
 
@@ -421,6 +423,96 @@ namespace ARM64
     /** \} */ // Arch doxygen group
 
 } // namespace ARM64
+
+namespace RISCV {
+    static constexpr reg_t ZERO = 0;
+    static constexpr reg_t RA = 1;
+    static constexpr reg_t SP = 2;
+    static constexpr reg_t GP = 3;
+    static constexpr reg_t TP = 4;
+    static constexpr reg_t T0 = 5;
+    static constexpr reg_t T1 = 6;
+    static constexpr reg_t T2 = 7;
+    static constexpr reg_t S0 = 8;
+    static constexpr reg_t FP = 8; // Same as S0
+    static constexpr reg_t S1 = 9;
+    static constexpr reg_t A0 = 10;
+    static constexpr reg_t A1 = 11;
+    static constexpr reg_t A2 = 12;
+    static constexpr reg_t A3 = 13;
+    static constexpr reg_t A4 = 14;
+    static constexpr reg_t A5 = 15;
+    static constexpr reg_t A6 = 16;
+    static constexpr reg_t A7 = 17;
+    static constexpr reg_t S2 = 18;
+    static constexpr reg_t S3 = 19;
+    static constexpr reg_t S4 = 20;
+    static constexpr reg_t S5 = 21;
+    static constexpr reg_t S6 = 22;
+    static constexpr reg_t S7 = 23;
+    static constexpr reg_t S8 = 24;
+    static constexpr reg_t S9 = 25;
+    static constexpr reg_t S10 = 26;
+    static constexpr reg_t S11 = 27;
+    static constexpr reg_t T3 = 28;
+    static constexpr reg_t T4 = 29;
+    static constexpr reg_t T5 = 30;
+    static constexpr reg_t T6 = 31;
+
+    static constexpr reg_t FT0 = 32;
+    static constexpr reg_t FT1 = 33;
+    static constexpr reg_t FT2 = 34;
+    static constexpr reg_t FT3 = 35;
+    static constexpr reg_t FT4 = 36;
+    static constexpr reg_t FT5 = 37;
+    static constexpr reg_t FT6 = 38;
+    static constexpr reg_t FT7 = 39;
+    static constexpr reg_t FS0 = 40;
+    static constexpr reg_t FS1 = 41;
+    static constexpr reg_t FA0 = 42;
+    static constexpr reg_t FA1 = 43;
+    static constexpr reg_t FA2 = 44;
+    static constexpr reg_t FA3 = 45;
+    static constexpr reg_t FA4 = 46;
+    static constexpr reg_t FA5 = 47;
+    static constexpr reg_t FA6 = 48;
+    static constexpr reg_t FA7 = 49;
+    static constexpr reg_t FS2 = 50;
+    static constexpr reg_t FS3 = 51;
+    static constexpr reg_t FS4 = 52;
+    static constexpr reg_t FS5 = 53;
+    static constexpr reg_t FS6 = 54;
+    static constexpr reg_t FS7 = 55;
+    static constexpr reg_t FS8 = 56;
+    static constexpr reg_t FS9 = 57;
+    static constexpr reg_t FS10 = 58;
+    static constexpr reg_t FS11 = 59;
+    static constexpr reg_t FT8 = 60;
+    static constexpr reg_t FT9 = 61;
+    static constexpr reg_t FT10 = 62;
+    static constexpr reg_t FT11 = 63;
+
+    static constexpr reg_t PC = 64;
+
+    static constexpr reg_t NB_REGS = 65;
+
+    /** \addtogroup arch
+    * \{ */
+   class ArchRISCV: public Arch
+   {
+   public:
+       ArchRISCV();
+       virtual ~ArchRISCV() = default;
+       const std::string& reg_name(reg_t num) const;
+       reg_t reg_num(const std::string& name) const;
+       size_t reg_size(reg_t reg_num) const;
+       reg_t sp() const;
+       reg_t pc() const;
+       reg_t tsc() const;
+   };
+   /** \} */ // Arch doxygen group
+
+} // namespace RISCV
 
 /** \} */ // Arch doxygen group
 

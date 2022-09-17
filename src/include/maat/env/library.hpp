@@ -103,6 +103,8 @@ enum class Type
     X64_LINUX_SYSCALL,
     /* ARM64 */
     ARM64,
+    /* RISCV */
+    RISCV_LINUX_SYSCALL,
     /* Custom */
     X86_LINUX_CUSTOM_SYSCALL, ///< Used internally
     X64_LINUX_CUSTOM_SYSCALL, ///< Used internally
@@ -308,9 +310,34 @@ public:
     virtual void ret(MaatEngine& engine) const;
 };
 
-/** \} */ // doxygen group env 
-} // namespace ABI
+/// X64 Linux SYSCALL ABI
+class RISCV_LINUX_SYSCALL : public ABI
+{
+protected:
+    RISCV_LINUX_SYSCALL();
+public:
+    /// ABI instance (singleton pattern)
+    static ABI& instance();
+public:
+    /// Get function arguments
+    virtual void get_args(
+        MaatEngine& engine,
+        const args_spec_t& args_spec,
+        std::vector<Value>& args
+    ) const;
+    /// Get function argument number 'n' (starting at 0)
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    /// Set a function's return value before it returns
+    virtual void set_ret_value(
+        MaatEngine& engine,
+        const FunctionCallback::return_t& ret_val
+    ) const;
+    /// Return from the syscall
+    virtual void ret(MaatEngine& engine) const;
+};
 
+/** \} */ // doxygen group env
+} // namespace ABI
 
 /// Emulated function
 class Function

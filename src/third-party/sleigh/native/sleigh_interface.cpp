@@ -629,6 +629,8 @@ maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& r
         return sleigh_reg_translate_X64(reg_name);
     else if (arch == Arch::Type::EVM)
         return sleigh_reg_translate_EVM(reg_name);
+    else if (arch == Arch::Type::RISCV)
+        return sleigh_reg_translate_RISCV(reg_name);
     else
         throw maat::runtime_exception("Register translation from SLEIGH to MAAT not implemented for this architecture!");
 }
