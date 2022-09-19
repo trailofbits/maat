@@ -1112,6 +1112,9 @@ void init_evm(PyObject* module)
     PyDict_SetItemString(tx_enum, "DELEGATECALL", PyLong_FromLong(
         (int)env::EVM::Transaction::Type::DELEGATECALL)
     );
+    PyDict_SetItemString(tx_enum, "STATICCALL", PyLong_FromLong(
+        (int)env::EVM::Transaction::Type::STATICCALL)
+    );
     PyDict_SetItemString(tx_enum, "EOA", PyLong_FromLong(
         (int)env::EVM::Transaction::Type::EOA)
     );
