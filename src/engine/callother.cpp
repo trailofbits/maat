@@ -284,6 +284,15 @@ void _check_transaction_exists(env::EVM::contract_t contract)
         throw callother_exception("Trying to access transaction but no transaction is set");
 }
 
+// Helper that ensures that EVM static flag is not set
+void _check_static_flag(const std::string& inst, MaatEngine& engine)
+{
+    if (env::EVM::get_ethereum(engine)->static_flag)
+        throw callother_exception(
+            Fmt() << "Can not execute " << inst << " with static flag set in EVM" >> Fmt::to_str
+        );
+}
+
 void EVM_STOP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
@@ -520,6 +529,7 @@ void EVM_SLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
 
 void EVM_SSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
+    _check_static_flag("SSTORE", engine);
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
     contract->storage->write(
         pinst.in1.value(),
@@ -852,6 +862,7 @@ void EVM_CREATE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
     bool is_create2 = (bool)pinst.in1.value().as_uint();
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
     _check_transaction_exists(contract);
+    _check_static_flag("CREATE", engine);
 
     // Get parameters on stack
     Value value = contract->stack.get(0);
@@ -947,6 +958,7 @@ void EVM_SELFDESTRUCT_handler(MaatEngine& engine, const ir::Inst& inst, ir::Proc
 void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_static_flag("LOG", engine);
 
     int lvl = pinst.in1.value().as_uint();
     Value data_start = contract->stack.get(0);

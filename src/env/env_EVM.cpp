@@ -723,6 +723,7 @@ EthereumEmulator& EthereumEmulator::operator=(EthereumEmulator&& other)
     keccak_helper = other.keccak_helper;
     current_block_number = other.current_block_number;
     current_block_timestamp = other.current_block_timestamp;
+    static_flag = other.static_flag;
     // We don't copy snapshots !!!
     return *this;
 }
@@ -737,6 +738,7 @@ void EthereumEmulator::_init()
     current_block_timestamp = AbstractCounter(
         Value(256, 1524785992) // Thu Apr 26 23:39:52 UTC 2018
     );
+    static_flag = false;
 }
 
 int EthereumEmulator::add_contract(contract_t contract)

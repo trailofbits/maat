@@ -321,6 +321,7 @@ public:
     KeccakHelper keccak_helper;
     AbstractCounter current_block_number;
     AbstractCounter current_block_timestamp;
+    bool static_flag;
 public:
     EthereumEmulator();
     EthereumEmulator(const EthereumEmulator&);

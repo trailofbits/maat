@@ -1035,6 +1035,46 @@ PyObject* maat_allow_symbolic_keccak(PyObject* mod, PyObject* args)
     }
 }
 
+PyObject* maat_evm_get_static_flag(PyObject* mod, PyObject* args)
+{
+    PyObject* engine;
+    if( !PyArg_ParseTuple(args, "O!", get_MaatEngine_Type(), &engine))
+        return NULL;
+
+    try
+    {
+        auto eth = env::EVM::get_ethereum(*as_engine_object(engine).engine);
+        if (eth == nullptr)
+            return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
+        return PyBool_FromLong(eth->static_flag);
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
+
+PyObject* maat_evm_set_static_flag(PyObject* mod, PyObject* args)
+{
+    PyObject* engine;
+    int flag = 0;
+    if( !PyArg_ParseTuple(args, "O!p", get_MaatEngine_Type(), &engine, &flag))
+        return NULL;
+
+    try
+    {
+        auto eth = env::EVM::get_ethereum(*as_engine_object(engine).engine);
+        if (eth == nullptr)
+            return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
+        eth->static_flag = flag;
+        Py_RETURN_NONE;
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
+
 void init_evm(PyObject* module)
 {
     /* TX_END enum */
