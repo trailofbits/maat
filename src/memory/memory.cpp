@@ -2385,6 +2385,9 @@ void MemEngine::write_buffer(addr_t addr, const std::vector<Value>& buf, bool ig
     std::vector<Value> next_buf;
     std::vector<Value> tmp_buf2;
 
+    if (buf.empty())
+        return;
+
     for (const Value& val : buf)
         nb_bytes += val.size()/8;
 
