@@ -39,6 +39,7 @@ define pcodeop evm_revert; # REVERT
 define pcodeop evm_call; # CALL
 define pcodeop evm_callcode; # CALLCODE
 define pcodeop evm_delegatecall; # DELEGATECALL
+define pcodeop evm_staticcall; # DELEGATECALL
 define pcodeop evm_create; # CREATE
 define pcodeop evm_selfdestruct; # SELFDESTRUCT
 define pcodeop evm_log; # LOG0, LOG1, LOG2, LOG3, LOG4
@@ -646,6 +647,11 @@ log_cnt: cnt is op [cnt = op - 160;] {export *[const]:4 cnt;}
 :CREATE2 is op = 0xf5 {
     # Pass zero to tell that *is* not CREATE2
     evm_create(1:32);
+}
+
+:STATICCALL is op = 0xfa {
+    # Pass zero to tell that *is* not CREATE2
+    evm_staticcall();
 }
 
 :REVERT is op = 0xfd {

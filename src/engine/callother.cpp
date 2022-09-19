@@ -950,6 +950,52 @@ void EVM_DELEGATECALL_handler(
     engine._stop_after_inst(info::Stop::NONE);
 }
 
+void EVM_STATICCALL_handler(
+    MaatEngine& engine,
+    const ir::Inst& inst,
+    ir::ProcessedInst& pinst
+){
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+
+    // Get parameters on stack
+    Value gas = contract->stack.get(0);
+    Value addr = extract(contract->stack.get(1), 159, 0);
+    Value argsOff = contract->stack.get(2);
+    Value argsLen = contract->stack.get(3);
+    Value retOff = contract->stack.get(4);
+    Value retLen = contract->stack.get(5);
+    contract->stack.pop(6);
+
+    // We don't support symbolic offsets to args data
+    if (not argsOff.is_concrete(*engine.vars))
+        throw callother_exception("STATICCALL: argsOff parameter is symbolic. Not yet supported");
+    if (not argsLen.is_concrete(*engine.vars))
+        throw callother_exception("STATICCALL: argsLen parameter is symbolic. Not yet supported");
+
+    // Read transaction data
+    std::vector<Value> tx_data = contract->memory.mem()._read_optimised_buffer(
+        argsOff.as_uint(*engine.vars),
+        argsLen.as_uint(*engine.vars)
+    );
+
+    contract->outgoing_transaction = env::EVM::Transaction(
+        contract->transaction->origin,
+        contract->address,
+        addr.as_number(),
+        Value(256, 0), // null value
+        tx_data,
+        contract->transaction->gas_price,
+        gas,
+        env::EVM::Transaction::Type::STATICCALL,
+        retOff,
+        retLen
+    );
+    // Tell the engine to stop because execution must be transfered to
+    // another contract
+    engine._stop_after_inst(info::Stop::NONE);
+}
+
 void EVM_SELFDESTRUCT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     throw callother_exception("SELFDESTRUCT: not implemented");
@@ -1026,7 +1072,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_EXP, EVM_EXP_handler);
     h.set_handler(Id::EVM_CALL, EVM_CALL_handler);
     h.set_handler(Id::EVM_CALLCODE, EVM_CALLCODE_handler);
-    h.set_handler(Id::EVM_DELEGATECALL, EVM_DELEGATECALL_handler);
+    h.set_handler(Id::EVM_STATICCALL, EVM_STATICCALL_handler);
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);

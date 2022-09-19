@@ -196,6 +196,7 @@ public:
         CALL, ///< Internal message with CALL
         CALLCODE, ///< Internal message with CALLCODE
         DELEGATECALL, ///< Internal message with DELEGATECALL
+        STATICCALL, ///< Internal message with STATICCALL
         CREATE, ///< Create contract from another contract
         CREATE2, ///< Create contract from another contract, with a deterministic address
         NONE
