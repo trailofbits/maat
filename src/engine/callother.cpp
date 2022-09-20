@@ -1073,6 +1073,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_CALL, EVM_CALL_handler);
     h.set_handler(Id::EVM_CALLCODE, EVM_CALLCODE_handler);
     h.set_handler(Id::EVM_STATICCALL, EVM_STATICCALL_handler);
+    h.set_handler(Id::EVM_DELEGATECALL, EVM_DELEGATECALL_handler);
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
