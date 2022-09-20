@@ -917,15 +917,25 @@ PyObject* maat_contract(PyObject* mod, PyObject* args)
 PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args)
 {
     PyObject *new_engine, *old_engine;
-    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &new_engine, get_MaatEngine_Type(), &old_engine))
+    PyObject* py_share_storage_uid = nullptr;
+    std::optional<int> share_storage_uid;
+    if( !PyArg_ParseTuple(args, "O!O!|O", get_MaatEngine_Type(), &new_engine, get_MaatEngine_Type(), &old_engine, &share_storage_uid))
     {
         return NULL;
     }
     try
     {
+        if (py_share_storage_uid == nullptr or py_share_storage_uid == Py_None)
+            share_storage_uid = std::nullopt;
+        else if (PyLong_Check(py_share_storage_uid))
+            share_storage_uid = PyLong_AsLongLong(py_share_storage_uid);
+        else
+            return PyErr_Format(PyExc_TypeError, "share_storage_uid should be None or int");
+
         env::EVM::new_evm_runtime(
             *as_engine_object(new_engine).engine,
-            *as_engine_object(old_engine).engine
+            *as_engine_object(old_engine).engine,
+            share_storage_uid
         );
     }
     catch(maat::env_exception& e)

@@ -367,8 +367,14 @@ std::vector<uint8_t> hex_string_to_bytes(const std::vector<char>& in);
 
 /** Helper function that creates a new EVM contract runtime from an existing MaatEngine
 and binds it to a new MaatEngine. Calling this function requires that `new_engine` shares
-its memory (which contains the contract code) with `old_engine` */
-void new_evm_runtime(MaatEngine& new_engine, const MaatEngine& old_engine);
+its memory (which contains the contract code) with `old_engine`. If 'share_storage_uid' is
+specified, the new runtime will not share storage with `old_engine`, but with the runtime that
+has this uid instead (used solely for DELEGATECALL) */
+void new_evm_runtime(
+    MaatEngine& new_engine,
+    const MaatEngine& old_engine,
+    std::optional<int> share_storage_uid
+);
 
 /** \} */ // doxygen group env
 
