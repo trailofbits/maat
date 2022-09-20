@@ -605,6 +605,11 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
             }
             break;
         }
+        case 0x3a: // GASPRICE
+        {
+            pinst.res = env::EVM::get_ethereum(engine)->gas_price;
+            break;
+        }
         case 0x3b: // EXTCODESIZE
         {
             Value addr = contract->stack.get(0);

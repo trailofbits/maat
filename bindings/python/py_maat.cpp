@@ -37,6 +37,7 @@ PyMethodDef module_methods[] = {
     {"allow_symbolic_keccak", (PyCFunction)maat_allow_symbolic_keccak, METH_VARARGS, "Enable/disable symbolic KECCAK hashes"},
     {"evm_get_static_flag", (PyCFunction)maat_evm_get_static_flag, METH_VARARGS, "Get EVM static flag"},
     {"evm_set_static_flag", (PyCFunction)maat_evm_set_static_flag, METH_VARARGS, "Set EVM static flag"},
+    {"evm_set_gas_price", (PyCFunction)maat_evm_set_gas_price, METH_VARARGS, "Set EVM gas price"},
     {NULL}
 };
 

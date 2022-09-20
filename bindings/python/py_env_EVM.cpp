@@ -622,6 +622,11 @@ static PyObject* EVMTransaction_get_value(PyObject* self, void* closure)
     return PyValue_FromValue(as_tx_object(self).transaction->value);
 }
 
+static PyObject* EVMTransaction_get_gas_price(PyObject* self, void* closure)
+{
+    return PyValue_FromValue(as_tx_object(self).transaction->gas_price);
+}
+
 static PyObject* EVMTransaction_get_data(PyObject* self, void* closure)
 {
     // TODO(boyan): factorize this code with other places where we translate
@@ -682,6 +687,7 @@ static PyGetSetDef EVMTransaction_getset[] = {
     {"ret_offset", EVMTransaction_get_ret_offset, NULL, "Return offset", NULL},
     {"ret_len", EVMTransaction_get_ret_len, NULL, "Return length", NULL},
     {"value", EVMTransaction_get_value, NULL, "Value in WEI", NULL},
+    {"gas_price", EVMTransaction_get_gas_price, NULL, "Gas price", NULL},
     {NULL}
 };
 
@@ -1077,6 +1083,27 @@ PyObject* maat_evm_set_static_flag(PyObject* mod, PyObject* args)
         if (eth == nullptr)
             return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
         eth->static_flag = flag;
+        Py_RETURN_NONE;
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
+
+PyObject* maat_evm_set_gas_price(PyObject* mod, PyObject* args)
+{
+    PyObject* engine;
+    PyObject* price;
+    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &engine, get_Value_Type(), &price))
+        return NULL;
+
+    try
+    {
+        auto eth = env::EVM::get_ethereum(*as_engine_object(engine).engine);
+        if (eth == nullptr)
+            return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
+        eth->gas_price = *as_value_object(price).value;
         Py_RETURN_NONE;
     }
     catch(const std::exception& e)

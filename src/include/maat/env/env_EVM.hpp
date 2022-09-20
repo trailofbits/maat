@@ -323,6 +323,7 @@ public:
     AbstractCounter current_block_number;
     AbstractCounter current_block_timestamp;
     bool static_flag;
+    Value gas_price;
 public:
     EthereumEmulator();
     EthereumEmulator(const EthereumEmulator&);

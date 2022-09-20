@@ -286,6 +286,11 @@ op_byte: b is op [b = op+0;] {export *[const]:1 b;}
     evm_env_info(op_byte);
 }
 
+:GASPRICE is op = 0x3a & op_byte {
+    local a:32 = evm_env_info(op_byte);
+    stack_push(a);
+}
+
 :EXTCODESIZE is op = 0x3b & op_byte {
     local s:32 = evm_env_info(op_byte);
     stack_push(s);
