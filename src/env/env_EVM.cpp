@@ -711,6 +711,8 @@ EthereumEmulator& EthereumEmulator::operator=(const EthereumEmulator& other)
     keccak_helper = other.keccak_helper;
     current_block_number = other.current_block_number;
     current_block_timestamp = other.current_block_timestamp;
+    static_flag = other.static_flag;
+    gas_price = other.gas_price;
     // We don't copy snapshots !!!
     return *this;
 }
@@ -723,6 +725,8 @@ EthereumEmulator& EthereumEmulator::operator=(EthereumEmulator&& other)
     keccak_helper = other.keccak_helper;
     current_block_number = other.current_block_number;
     current_block_timestamp = other.current_block_timestamp;
+    static_flag = other.static_flag;
+    gas_price = other.gas_price;
     // We don't copy snapshots !!!
     return *this;
 }
@@ -737,6 +741,8 @@ void EthereumEmulator::_init()
     current_block_timestamp = AbstractCounter(
         Value(256, 1524785992) // Thu Apr 26 23:39:52 UTC 2018
     );
+    static_flag = false;
+    gas_price = Value(256, 20); // Arbitrary gas price of 20, can be changed later
 }
 
 int EthereumEmulator::add_contract(contract_t contract)
@@ -851,16 +857,22 @@ contract_t get_contract_for_engine(MaatEngine& engine)
     return get_ethereum(engine)->get_contract_by_uid(engine.process->pid);
 }
 
-void new_evm_runtime(MaatEngine& new_engine, const MaatEngine& old_engine)
-{
+void new_evm_runtime(
+    MaatEngine& new_engine,
+    const MaatEngine& old_engine,
+    std::optional<int> share_storage_uid
+){
     if (
         old_engine.arch->type != Arch::Type::EVM 
         or new_engine.arch->type != Arch::Type::EVM
     )
         throw env_exception("new_evm_runtime(): can't be called with an architecture other than EVM");
 
-    int new_contract_uid = get_ethereum(old_engine)->new_runtime_for_contract(old_engine.process->pid);
+    auto eth = get_ethereum(old_engine);
+    int new_contract_uid = eth->new_runtime_for_contract(old_engine.process->pid);
     new_engine.process->pid = new_contract_uid;
+    if (share_storage_uid.has_value())
+        eth->get_contract_by_uid(new_contract_uid)->storage = eth->get_contract_by_uid(*share_storage_uid)->storage;
 }
 
 std::vector<uint8_t> hex_string_to_bytes(const std::vector<char>& in)
