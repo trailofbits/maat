@@ -147,6 +147,14 @@ const MemMap& MemMapManager::get_map_by_name(const std::string& name) const
     );
 }
 
+bool MemMapManager::is_free(addr_t start, addr_t end) const
+{
+    for (const MemMap& map : _maps)
+        if (map.intersects_with_range(start, end))
+            return false;
+    return true;
+}
+
 std::ostream& operator<<(std::ostream& os, const MemMapManager& mem)
 {
     static unsigned int addr_w = 20;
