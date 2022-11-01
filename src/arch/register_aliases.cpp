@@ -136,6 +136,38 @@ Value x64_alias_getter(CPUContext& ctx, ir::reg_t reg)
 
 std::set x64_aliases{X64::RFLAGS};
 
+void arm32_alias_setter(CPUContext& ctx, ir::reg_t reg, const Value& val)
+{
+    if (reg == ARM32::CPSR)
+    {
+        _set_flag_from_bit(ctx, ARM32::QF, val, 27);
+        _set_flag_from_bit(ctx, ARM32::VF, val, 28);
+        _set_flag_from_bit(ctx, ARM32::CF, val, 29);
+        _set_flag_from_bit(ctx, ARM32::ZF, val, 30);
+        _set_flag_from_bit(ctx, ARM32::NF, val, 31);
+    }
+    else
+        throw runtime_exception("arm32_alias_setter: got unsupported register");
+}
+
+Value arm32_alias_getter(CPUContext& ctx, ir::reg_t reg)
+{
+    Value res;
+    if (reg == ARM32::CPSR)
+    {
+        res = extract(ctx.get(ARM32::QF),0,0) << 27;
+        res.set_concat(extract(ctx.get(ARM32::VF),0,0), res);
+        res.set_concat(extract(ctx.get(ARM32::CF),0,0), res);
+        res.set_concat(extract(ctx.get(ARM32::ZF),0,0), res);
+        res.set_concat(extract(ctx.get(ARM32::NF),0,0), res);
+    }
+    else
+        throw runtime_exception("arm32_alias_getter: got unsupported register");
+    return res;
+}
+
+std::set arm32_aliases{ARM32::CPSR};
+
 void CPUContext::init_alias_getset(Arch::Type arch)
 {
     if (arch == Arch::Type::X86)
@@ -149,6 +181,12 @@ void CPUContext::init_alias_getset(Arch::Type arch)
         alias_setter = x64_alias_setter;
         alias_getter = x64_alias_getter;
         aliased_regs = x64_aliases;
+    }
+    else if (arch == Arch::Type::ARM32)
+    {
+        alias_setter = arm32_alias_setter;
+        alias_getter = arm32_alias_getter;
+        aliased_regs = arm32_aliases;
     }
 }
 

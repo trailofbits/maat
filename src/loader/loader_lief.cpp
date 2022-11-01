@@ -85,7 +85,7 @@ void LoaderLIEF::parse_binary(const std::string& binary, Format type)
 }
 
 void LoaderLIEF::get_arch_special_registers(
-    const Arch& arch, reg_t& pc, reg_t& sp, reg_t& bp, reg_t& gs, reg_t& fs
+    const Arch& arch, std::optional<reg_t>& pc, std::optional<reg_t>& sp, std::optional<reg_t>& bp, std::optional<reg_t>& gs, std::optional<reg_t>& fs
 )
 {
     pc = arch.pc();
@@ -101,6 +101,9 @@ void LoaderLIEF::get_arch_special_registers(
             bp = X64::RBP;
             gs = X64::GS;
             fs = X64::FS;
+            break;
+        case Arch::Type::RISCV:
+        case Arch::Type::ARM32:
             break;
         default:
             throw loader_exception(

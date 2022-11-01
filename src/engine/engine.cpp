@@ -37,6 +37,11 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
             lifters[CPUMode::RISCV] = std::make_shared<Lifter>(CPUMode::RISCV);
             _current_cpu_mode = CPUMode::RISCV;
             break;
+        case Arch::Type::ARM32:
+            arch = std::make_shared<ARM32::ArchARM32>();
+            lifters[CPUMode::A32] = std::make_shared<Lifter>(CPUMode::A32);
+            _current_cpu_mode = CPUMode::A32;
+            break;
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
             _current_cpu_mode = CPUMode::NONE;

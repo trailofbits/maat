@@ -26,6 +26,7 @@ add_library(maat_maat
   src/arch/arch_EVM.cpp
   src/arch/arch_X86.cpp
   src/arch/arch_RISCV.cpp
+  src/arch/arch_ARM32.cpp
   src/arch/lifter.cpp
   src/arch/register_aliases.cpp
   src/engine/callother.cpp
@@ -204,6 +205,7 @@ maat_sleigh_compile(x86 x86-64)
 maat_sleigh_compile(x86 x86)
 maat_sleigh_compile(EVM EVM)
 maat_sleigh_compile_files(RISCV RISCV riscv.lp64d RV64G)
+maat_sleigh_compile_files(ARM ARM32 ARM8_le ARMCortex)
 
 # All of the sla spec targets are combined into this one
 add_custom_target(maat_all_sla_specs DEPENDS
@@ -211,6 +213,7 @@ add_custom_target(maat_all_sla_specs DEPENDS
   maat_sleigh_spec_x86
   maat_sleigh_spec_EVM
   maat_sleigh_spec_RISCV
+  maat_sleigh_spec_ARM32
 )
 
 # Add sla specs as dependencies to our targets

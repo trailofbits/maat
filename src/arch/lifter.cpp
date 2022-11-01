@@ -44,6 +44,12 @@ Lifter::Lifter(CPUMode m): mode(m)
             pspecfile = config.find_sleigh_file("RV64G.pspec");
             arch = Arch::Type::RISCV;
         }
+        else if (mode == CPUMode::A32)
+        {
+            slafile = config.find_sleigh_file("ARM8_le.sla");
+            pspecfile = config.find_sleigh_file("ARMCortex.pspec");
+            arch = Arch::Type::ARM32;
+        }
         else
         {
             throw lifter_exception("Lifter: this CPU mode is not supported");

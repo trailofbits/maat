@@ -1406,4 +1406,32 @@ maat::ir::Param sleigh_reg_translate_RISCV(const std::string& reg_name)
             );
 }
 
+maat::ir::Param sleigh_reg_translate_ARM32(const std::string& reg_name) {
+    if (reg_name == "r0") return maat::ir::Reg(maat::ARM32::R0, 32);
+    if (reg_name == "r1") return maat::ir::Reg(maat::ARM32::R1, 32);
+    if (reg_name == "r2") return maat::ir::Reg(maat::ARM32::R2, 32);
+    if (reg_name == "r3") return maat::ir::Reg(maat::ARM32::R3, 32);
+    if (reg_name == "r4") return maat::ir::Reg(maat::ARM32::R4, 32);
+    if (reg_name == "r5") return maat::ir::Reg(maat::ARM32::R5, 32);
+    if (reg_name == "r6") return maat::ir::Reg(maat::ARM32::R6, 32);
+    if (reg_name == "r7") return maat::ir::Reg(maat::ARM32::R7, 32);
+    if (reg_name == "r8") return maat::ir::Reg(maat::ARM32::R8, 32);
+    if (reg_name == "r9") return maat::ir::Reg(maat::ARM32::R9, 32);
+    if (reg_name == "r10") return maat::ir::Reg(maat::ARM32::R10, 32);
+    if (reg_name == "r11") return maat::ir::Reg(maat::ARM32::R11, 32);
+    if (reg_name == "r12") return maat::ir::Reg(maat::ARM32::R12, 32);
+
+    if (reg_name == "sp") return maat::ir::Reg(maat::ARM32::SP, 32);
+    if (reg_name == "lr") return maat::ir::Reg(maat::ARM32::LR, 32);
+    if (reg_name == "pc") return maat::ir::Reg(maat::ARM32::PC, 32);
+
+    if (reg_name == "cpsr") return maat::ir::Reg(maat::ARM32::CPSR, 32);
+
+    throw maat::runtime_exception(maat::Fmt()
+            << "ARM32: Register translation from SLEIGH to MAAT missing for register "
+            << reg_name
+            >> maat::Fmt::to_str
+            );
+}
+
 } // namespace maat
