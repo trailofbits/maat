@@ -119,8 +119,7 @@ addr_t LoaderLIEF::alloc_segment(
     addr_t size,
     mem_flag_t flags,
     const std::string& name
-)
-{
+){
     try
     {
         return engine->mem->allocate(prefered_base, size, 0x1000, flags, name);

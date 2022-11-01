@@ -1672,7 +1672,7 @@ addr_t MemEngine::allocate(
 
     while (base <= max_addr-size+1)
     {
-        if (page_manager.is_unmapped(base, base+size-1))
+        if (mappings.is_free(base, base+size-1))
         {
             map(base, base+size-1, flags, name);
             return base;
@@ -1710,7 +1710,7 @@ std::shared_ptr<MemSegment> MemEngine::get_segment_containing(addr_t addr)
 
 bool MemEngine::is_free(addr_t start, addr_t end)
 {
-    return page_manager.is_unmapped(start, end);
+    return mappings.is_free(start, end);
 }
 
 addr_t MemEngine::allocate_segment(
@@ -2384,6 +2384,9 @@ void MemEngine::write_buffer(addr_t addr, const std::vector<Value>& buf, bool ig
     std::vector<Value> tmp_buf;
     std::vector<Value> next_buf;
     std::vector<Value> tmp_buf2;
+
+    if (buf.empty())
+        return;
 
     for (const Value& val : buf)
         nb_bytes += val.size()/8;

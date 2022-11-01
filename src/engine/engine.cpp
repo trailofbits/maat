@@ -648,13 +648,10 @@ bool MaatEngine::process_branch(
                     return false;
                 }
             }
-            else if (in1.as_uint(*vars) != 0) // branch condition is true, branch to target
+            else  
             {
-                taken = true;
-            }
-            else
-            {
-                taken = false;
+                // branch if condition expression is non-null
+                taken = (in1.as_uint(*vars) != 0);
             }
 
             // Perform the branch

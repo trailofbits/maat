@@ -330,6 +330,15 @@ void _check_transaction_exists(env::EVM::contract_t contract)
         throw callother_exception("Trying to access transaction but no transaction is set");
 }
 
+// Helper that ensures that EVM static flag is not set
+void _check_static_flag(const std::string& inst, MaatEngine& engine)
+{
+    if (env::EVM::get_ethereum(engine)->static_flag)
+        throw callother_exception(
+            Fmt() << "Can not execute " << inst << " with static flag set in EVM" >> Fmt::to_str
+        );
+}
+
 void EVM_STOP_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
@@ -566,6 +575,7 @@ void EVM_SLOAD_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIn
 
 void EVM_SSTORE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
+    _check_static_flag("SSTORE", engine);
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
     contract->storage->write(
         pinst.in1.value(),
@@ -639,6 +649,11 @@ void EVM_ENV_INFO_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
                 contract->memory.write(addr, val);
                 addr = addr + val.size()/8;
             }
+            break;
+        }
+        case 0x3a: // GASPRICE
+        {
+            pinst.res = env::EVM::get_ethereum(engine)->gas_price;
             break;
         }
         case 0x3b: // EXTCODESIZE
@@ -898,6 +913,7 @@ void EVM_CREATE_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
     bool is_create2 = (bool)pinst.in1.value().as_uint();
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
     _check_transaction_exists(contract);
+    _check_static_flag("CREATE", engine);
 
     // Get parameters on stack
     Value value = contract->stack.get(0);
@@ -985,6 +1001,52 @@ void EVM_DELEGATECALL_handler(
     engine._stop_after_inst(info::Stop::NONE);
 }
 
+void EVM_STATICCALL_handler(
+    MaatEngine& engine,
+    const ir::Inst& inst,
+    ir::ProcessedInst& pinst
+){
+    env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_transaction_exists(contract);
+
+    // Get parameters on stack
+    Value gas = contract->stack.get(0);
+    Value addr = extract(contract->stack.get(1), 159, 0);
+    Value argsOff = contract->stack.get(2);
+    Value argsLen = contract->stack.get(3);
+    Value retOff = contract->stack.get(4);
+    Value retLen = contract->stack.get(5);
+    contract->stack.pop(6);
+
+    // We don't support symbolic offsets to args data
+    if (not argsOff.is_concrete(*engine.vars))
+        throw callother_exception("STATICCALL: argsOff parameter is symbolic. Not yet supported");
+    if (not argsLen.is_concrete(*engine.vars))
+        throw callother_exception("STATICCALL: argsLen parameter is symbolic. Not yet supported");
+
+    // Read transaction data
+    std::vector<Value> tx_data = contract->memory.mem()._read_optimised_buffer(
+        argsOff.as_uint(*engine.vars),
+        argsLen.as_uint(*engine.vars)
+    );
+
+    contract->outgoing_transaction = env::EVM::Transaction(
+        contract->transaction->origin,
+        contract->address,
+        addr.as_number(),
+        Value(256, 0), // null value
+        tx_data,
+        contract->transaction->gas_price,
+        gas,
+        env::EVM::Transaction::Type::STATICCALL,
+        retOff,
+        retLen
+    );
+    // Tell the engine to stop because execution must be transfered to
+    // another contract
+    engine._stop_after_inst(info::Stop::NONE);
+}
+
 void EVM_SELFDESTRUCT_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     throw callother_exception("SELFDESTRUCT: not implemented");
@@ -993,6 +1055,7 @@ void EVM_SELFDESTRUCT_handler(MaatEngine& engine, const ir::Inst& inst, ir::Proc
 void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     env::EVM::contract_t contract = env::EVM::get_contract_for_engine(engine);
+    _check_static_flag("LOG", engine);
 
     int lvl = pinst.in1.value().as_uint();
     Value data_start = contract->stack.get(0);
@@ -1060,6 +1123,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_EXP, EVM_EXP_handler);
     h.set_handler(Id::EVM_CALL, EVM_CALL_handler);
     h.set_handler(Id::EVM_CALLCODE, EVM_CALLCODE_handler);
+    h.set_handler(Id::EVM_STATICCALL, EVM_STATICCALL_handler);
     h.set_handler(Id::EVM_DELEGATECALL, EVM_DELEGATECALL_handler);
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
