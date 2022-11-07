@@ -7,3 +7,7 @@ cmake-build-*/
 prefix/
 CMakeLists.txt.user
 CMakeUserPresets.json
+src/LIEF
+install/
+maat_state_*
+__pycache__
