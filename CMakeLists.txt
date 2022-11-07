@@ -205,7 +205,7 @@ maat_sleigh_compile(x86 x86-64)
 maat_sleigh_compile(x86 x86)
 maat_sleigh_compile(EVM EVM)
 maat_sleigh_compile_files(RISCV RISCV riscv.lp64d RV64G)
-maat_sleigh_compile_files(ARM ARM32 ARM8_le ARMCortex)
+maat_sleigh_compile_files(ARM ARM32 ARM7_le ARMt)
 
 # All of the sla spec targets are combined into this one
 add_custom_target(maat_all_sla_specs DEPENDS

@@ -46,8 +46,8 @@ Lifter::Lifter(CPUMode m): mode(m)
         }
         else if (mode == CPUMode::A32)
         {
-            slafile = config.find_sleigh_file("ARM8_le.sla");
-            pspecfile = config.find_sleigh_file("ARMCortex.pspec");
+            slafile = config.find_sleigh_file("ARM7_le.sla");
+            pspecfile = config.find_sleigh_file("ARMt.pspec");
             arch = Arch::Type::ARM32;
         }
         else
