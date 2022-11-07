@@ -12,6 +12,7 @@ void init_arch(PyObject* module)
     PyDict_SetItemString(arch_enum, "X64", PyLong_FromLong((int)Arch::Type::X64));
     PyDict_SetItemString(arch_enum, "EVM", PyLong_FromLong((int)Arch::Type::EVM));
     PyDict_SetItemString(arch_enum, "RISCV", PyLong_FromLong((int)Arch::Type::RISCV));
+    PyDict_SetItemString(arch_enum, "ARM32", PyLong_FromLong((int)Arch::Type::ARM32));
 
     PyObject* arch_class = create_class(PyUnicode_FromString("ARCH"), PyTuple_New(0), arch_enum);
     PyModule_AddObject(module, "ARCH", arch_class);
