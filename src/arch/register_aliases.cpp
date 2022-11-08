@@ -140,6 +140,12 @@ void arm32_alias_setter(CPUContext& ctx, ir::reg_t reg, const Value& val)
 {
     if (reg == ARM32::CPSR)
     {
+        _set_flag_from_bit(ctx, ARM32::TF, val, 5);
+        _set_flag_from_bit(ctx, ARM32::GE1, val, 16);
+        _set_flag_from_bit(ctx, ARM32::GE2, val, 17);
+        _set_flag_from_bit(ctx, ARM32::GE3, val, 18);
+        _set_flag_from_bit(ctx, ARM32::GE4, val, 19);
+        _set_flag_from_bit(ctx, ARM32::JF, val, 24);
         _set_flag_from_bit(ctx, ARM32::QF, val, 27);
         _set_flag_from_bit(ctx, ARM32::VF, val, 28);
         _set_flag_from_bit(ctx, ARM32::CF, val, 29);
@@ -155,7 +161,13 @@ Value arm32_alias_getter(CPUContext& ctx, ir::reg_t reg)
     Value res;
     if (reg == ARM32::CPSR)
     {
-        res = extract(ctx.get(ARM32::QF),0,0) << 27;
+        //res = extract(ctx.get(ARM32::QF),0,0) << 27;
+        res.set_concat(extract(ctx.get(ARM32::TF),0,0), res);
+        res.set_concat(extract(ctx.get(ARM32::GE1),0,0), res);
+        res.set_concat(extract(ctx.get(ARM32::GE2),0,0), res);
+        res.set_concat(extract(ctx.get(ARM32::GE3),0,0), res);
+        res.set_concat(extract(ctx.get(ARM32::GE4),0,0), res);
+        res.set_concat(extract(ctx.get(ARM32::JF),0,0), res);
         res.set_concat(extract(ctx.get(ARM32::VF),0,0), res);
         res.set_concat(extract(ctx.get(ARM32::CF),0,0), res);
         res.set_concat(extract(ctx.get(ARM32::ZF),0,0), res);
