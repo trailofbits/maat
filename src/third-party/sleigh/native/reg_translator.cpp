@@ -1424,8 +1424,25 @@ maat::ir::Param sleigh_reg_translate_ARM32(const std::string& reg_name) {
     if (reg_name == "sp") return maat::ir::Reg(maat::ARM32::SP, 32);
     if (reg_name == "lr") return maat::ir::Reg(maat::ARM32::LR, 32);
     if (reg_name == "pc") return maat::ir::Reg(maat::ARM32::PC, 32);
-
+    
     if (reg_name == "cpsr") return maat::ir::Reg(maat::ARM32::CPSR, 32);
+
+    if (reg_name == "NG") return maat::ir::Reg(maat::ARM32::NF, 8);
+    if (reg_name == "ZR") return maat::ir::Reg(maat::ARM32::ZF, 8);
+    if (reg_name == "CY") return maat::ir::Reg(maat::ARM32::CF, 8);
+    if (reg_name == "OV") return maat::ir::Reg(maat::ARM32::VF, 8);
+    if (reg_name == "Q") return maat::ir::Reg(maat::ARM32::QF, 8);
+    // if (reg_name == "J?") return maat::ir::Reg(maat::ARM32::JF, 8);
+    if (reg_name == "GE1") return maat::ir::Reg(maat::ARM32::GE1, 8);
+    if (reg_name == "GE2") return maat::ir::Reg(maat::ARM32::GE2, 8);
+    if (reg_name == "GE3") return maat::ir::Reg(maat::ARM32::GE3, 8);
+    if (reg_name == "GE4") return maat::ir::Reg(maat::ARM32::GE4, 8);
+    if (reg_name == "TB") return maat::ir::Reg(maat::ARM32::TF, 8);
+    if (reg_name == "tmpNG") return maat::ir::Reg(maat::ARM32::tmpNG, 8);
+    if (reg_name == "tmpZR") return maat::ir::Reg(maat::ARM32::tmpZR, 8);
+    if (reg_name == "tmpCY") return maat::ir::Reg(maat::ARM32::tmpCY, 8);
+    if (reg_name == "tmpOV") return maat::ir::Reg(maat::ARM32::tmpOV, 8);
+    if (reg_name == "shift_carry") return maat::ir::Reg(maat::ARM32::SC, 8);
 
     throw maat::runtime_exception(maat::Fmt()
             << "ARM32: Register translation from SLEIGH to MAAT missing for register "

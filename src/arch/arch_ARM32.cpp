@@ -40,7 +40,20 @@ namespace ARM32
             {"ZF", ZF},
             {"CF", CF},
             {"VF", VF},
-            {"QF", QF}
+            {"QF", QF},
+
+            {"JF", JF},
+            {"GE1", GE1},
+            {"GE2", GE2},
+            {"GE3", GE3},
+            {"GE4", GE4},
+            {"TF", TF},
+
+            {"tmpNG", tmpNG},
+            {"tmpZR", tmpZR},
+            {"tmpCY", tmpCY},
+            {"tmpOV", tmpOV},
+            {"SC", SC}  //shift_carry
         };
     }
 
@@ -71,6 +84,17 @@ namespace ARM32
             case CF:
             case VF:
             case QF:
+            case JF:
+            case GE1:
+            case GE2:
+            case GE3:
+            case GE4:
+            case TF:
+            case tmpNG:
+            case tmpZR:
+            case tmpCY:
+            case tmpOV:
+            case SC:
                 return 8;
             default:
                 throw runtime_exception("ArchARM32::reg_size(): got unsupported reg num");

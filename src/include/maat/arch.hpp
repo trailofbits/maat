@@ -457,7 +457,20 @@ namespace ARM32
     static constexpr reg_t VF = 20;
     static constexpr reg_t QF = 21;
 
-    static constexpr reg_t NB_REGS = 22;
+    static constexpr reg_t JF = 22;
+    static constexpr reg_t GE1 = 23;
+    static constexpr reg_t GE2 = 24;
+    static constexpr reg_t GE3 = 25;
+    static constexpr reg_t GE4 = 26;
+    static constexpr reg_t TF = 27;  //thumb-bit (TB)
+
+    static constexpr reg_t tmpNG = 28;
+    static constexpr reg_t tmpZR = 29;
+    static constexpr reg_t tmpCY = 30;
+    static constexpr reg_t tmpOV = 31;
+    static constexpr reg_t SC = 32;  //shift_carry
+
+    static constexpr reg_t NB_REGS = 33;
 
      /** \addtogroup arch
      * \{ */
