@@ -9,7 +9,7 @@ RUN yum install -y wget findutils git gmp-devel python3-devel curl
 
 # Build and install LIEF. We need to rebuild it so that it doesn't use the C++11 mangling ABI
 # which is incompatible with manylinux wheels
-RUN wget -O lief.tar.gz https://github.com/lief-project/LIEF/archive/refs/tags/0.12.1.zip && \
+RUN wget -O lief.tar.gz https://github.com/lief-project/LIEF/archive/refs/tags/0.12.3.zip && \
     mkdir -p lief/build && tar xzvf lief.tar.gz -C lief --strip-components 1  && cd lief/build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && make -j4 && make install && \
     cd ../.. && rm -rf lief.tar.gz lief
