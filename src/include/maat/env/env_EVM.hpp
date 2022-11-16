@@ -196,6 +196,7 @@ public:
         CALL, ///< Internal message with CALL
         CALLCODE, ///< Internal message with CALLCODE
         DELEGATECALL, ///< Internal message with DELEGATECALL
+        STATICCALL, ///< Internal message with STATICCALL
         CREATE, ///< Create contract from another contract
         CREATE2, ///< Create contract from another contract, with a deterministic address
         NONE
@@ -243,6 +244,7 @@ public:
 class Contract: public serial::Serializable
 {
 public:
+    Value balance; ///< Balance of the contract in WEI
     Value address; ///< Address where the contract is deployed
     Stack stack; ///< Stack of the executing EVM
     Memory memory; ///< Volatile memory of the executing EVM
@@ -288,6 +290,9 @@ private:
     std::string _symbolic_hash_prefix;
     std::unordered_map<Value, Value, ValueHash, ValueEqual> known_hashes;
 public:
+    /// Allow to return symbolic variables when hashing non-concrete values
+    bool allow_symbolic_hashes;
+public:
     KeccakHelper();
 public:
     /// Return the result of applying the KECCAK hash function to 'val'
@@ -317,10 +322,13 @@ public:
     KeccakHelper keccak_helper;
     AbstractCounter current_block_number;
     AbstractCounter current_block_timestamp;
+    bool static_flag;
+    Value gas_price;
 public:
     EthereumEmulator();
     EthereumEmulator(const EthereumEmulator&);
     EthereumEmulator& operator=(const EthereumEmulator& other);
+    EthereumEmulator& operator=(EthereumEmulator&& other);
     virtual ~EthereumEmulator() = default;
 private:
     /// In-place initialization function used by constructor and deserializer
@@ -360,8 +368,14 @@ std::vector<uint8_t> hex_string_to_bytes(const std::vector<char>& in);
 
 /** Helper function that creates a new EVM contract runtime from an existing MaatEngine
 and binds it to a new MaatEngine. Calling this function requires that `new_engine` shares
-its memory (which contains the contract code) with `old_engine` */
-void new_evm_runtime(MaatEngine& new_engine, const MaatEngine& old_engine);
+its memory (which contains the contract code) with `old_engine`. If 'share_storage_uid' is
+specified, the new runtime will not share storage with `old_engine`, but with the runtime that
+has this uid instead (used solely for DELEGATECALL) */
+void new_evm_runtime(
+    MaatEngine& new_engine,
+    const MaatEngine& old_engine,
+    std::optional<int> share_storage_uid
+);
 
 /** \} */ // doxygen group env
 

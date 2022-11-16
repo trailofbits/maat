@@ -324,9 +324,28 @@ Expr es_extract_patterns(Expr e)
             // extract(concat(X,Y), a, b) --> extract(Y, a', b')
             else if( e->args[1]->cst() < e->args[0]->args[1]->size )
             {
-                return extract( e->args[0]->args[1], 
-                                e->args[1]->cst(),
-                                e->args[2]->cst());
+                return extract( 
+                    e->args[0]->args[1], 
+                    e->args[1]->cst(),
+                    e->args[2]->cst()
+                );
+            }
+            // extract overlaps X and Y components:
+            // extract(concat(X,Y), a, b) --> concat(extract(X, a', 0), extract(Y, sizeof(Y)-1, b'))
+            else
+            {
+                return concat(
+                    extract(
+                        e->args[0]->args[0],
+                        e->args[1]->cst() - e->args[0]->args[1]->size, // a-sizeof(Y)
+                        0
+                    ),
+                    extract(
+                        e->args[0]->args[1],
+                        e->args[0]->args[1]->size-1,
+                        e->args[2]->cst() // b
+                    )
+                );
             }
         }
         // extract(extract(X,a,b),c,d) --> extract(X, c+b,d+b)
@@ -538,6 +557,35 @@ Expr es_concat_patterns(Expr e)
         return concat(
             exprcst(e->args[0]->args[1]->size, 0),
             e->args[0]->args[0] >> (e->args[1]->as_number().get_ucst()-e->args[0]->args[1]->size)
+        );
+    }
+
+    // X &|^ concat(A,B) = concat(X' &|^ A, X'' &|^ B)
+    if (
+        e->is_type(ExprType::BINOP) &&
+        op_is_bitwise(e->op()) &&
+        e->args[0]->is_type(ExprType::CST) &&
+        e->args[1]->is_type(ExprType::CONCAT)
+    ){
+        return concat(
+            exprbinop(
+                e->op(),
+                extract(
+                    e->args[0], 
+                    e->args[0]->size-1, 
+                    e->args[1]->args[1]->size // sizeof(B)
+                ),
+                e->args[1]->args[0] // A
+            ),
+            exprbinop(
+                e->op(),
+                extract(
+                    e->args[0], 
+                    e->args[1]->args[1]->size-1, // sizeof(B) 
+                    0
+                ),
+                e->args[1]->args[1] // B
+            )
         );
     }
 

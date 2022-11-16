@@ -145,9 +145,21 @@ void Memory::write(const Value& addr, const std::vector<Value>& vals)
 
 void Memory::expand_if_needed(const Value& addr, size_t nb_bytes)
 {
+    if (nb_bytes == 0)
+        return;
+
     if (not addr.is_symbolic(*_varctx))
     {
-        addr_t required_size = addr.as_uint(*_varctx)+nb_bytes;
+        if (Number(addr.size(), 0xffffffffffffffff-nb_bytes+1).less_than(
+                addr.as_number(*_varctx)
+        )){
+            throw env_exception(
+                "EVM::Memory::expand_if_needed(): address to big to fit in "
+                "64-bit memory model"
+            );
+        }
+
+        addr_t required_size = addr.as_number(*_varctx).get_ucst()+nb_bytes;
         while (required_size > _limit)
         {
             // Expand memory and init with zeros
@@ -168,6 +180,10 @@ void Memory::expand_if_needed(const Value& addr, size_t nb_bytes)
     }
     // TODO: need to handle else{} case when computing gas to know how much
     // bytes have been allocated
+    else
+    {
+        throw env_exception("EVM::Memory::expand_if_needed(): symbolic addresses not supported yet");
+    }
 }
 
 serial::uid_t Memory::class_uid() const
@@ -527,7 +543,7 @@ void Transaction::load(serial::Deserializer& d)
 
 
 Contract::Contract()
-: memory(nullptr), storage(nullptr), consumed_gas(256, 0)
+: memory(nullptr), storage(nullptr), consumed_gas(256, 0), balance(256, 0)
 {}
 
 Contract::Contract(const MaatEngine& engine, Value addr)
@@ -549,6 +565,7 @@ void Contract::fork_from(const Contract& other)
     outgoing_transaction = std::nullopt;
     result_from_last_call = std::nullopt;
     consumed_gas = Value(256, 0);
+    balance = Value(256, 0);
 }
 
 serial::uid_t Contract::class_uid() const
@@ -558,14 +575,14 @@ serial::uid_t Contract::class_uid() const
 
 void Contract::dump(serial::Serializer& s) const
 {
-    s   << address << stack << memory << storage << transaction
+    s   << balance << address << stack << memory << storage << transaction
         << outgoing_transaction << result_from_last_call << consumed_gas;
     s << bits(code_size);
 }
 
 void Contract::load(serial::Deserializer& d)
 {
-    d   >> address >> stack >> memory >> storage >> transaction
+    d   >> balance >> address >> stack >> memory >> storage >> transaction
         >> outgoing_transaction >> result_from_last_call >> consumed_gas;
     d >> bits(code_size);
 }
@@ -607,7 +624,7 @@ void _append_EVM_code(MaatEngine& engine, const std::vector<Value>& code)
 }
 
 KeccakHelper::KeccakHelper()
-: _symbolic_hash_prefix("keccak_hash")
+: _symbolic_hash_prefix("keccak_hash"), allow_symbolic_hashes(true)
 {}
 
 const std::string& KeccakHelper::symbolic_hash_prefix() const 
@@ -623,7 +640,7 @@ Value KeccakHelper::apply(VarContext& ctx, const Value& val, uint8_t* raw_bytes)
     if (it != known_hashes.end())
         return it->second;
     
-    if (val.is_concrete(ctx))
+    if (val.is_concrete(ctx) or (val.is_concolic(ctx) and not allow_symbolic_hashes))
     {
         res = _do_keccak256(raw_bytes, val.size()/8);
     }
@@ -639,6 +656,8 @@ Value KeccakHelper::apply(VarContext& ctx, const Value& val, uint8_t* raw_bytes)
     }
     else // purely symbolic value
     {
+        if (not allow_symbolic_hashes)
+            throw env_exception("KeccakHelper::apply(): got symbolic value but symbolic hashes are disabled");
         res = exprvar(256, ctx.new_name_from(_symbolic_hash_prefix));
     }
     known_hashes[val] = res;
@@ -652,12 +671,12 @@ serial::uid_t KeccakHelper::class_uid() const
 
 void KeccakHelper::dump(serial::Serializer& s) const
 {
-    s << _symbolic_hash_prefix << known_hashes;
+    s << bits(allow_symbolic_hashes) << _symbolic_hash_prefix << known_hashes;
 }
 
 void KeccakHelper::load(serial::Deserializer& d)
 {
-    d >> _symbolic_hash_prefix >> known_hashes;
+    d >> bits(allow_symbolic_hashes) >> _symbolic_hash_prefix >> known_hashes;
 }
 
 Value _do_keccak256(uint8_t* in, int size)
@@ -692,6 +711,22 @@ EthereumEmulator& EthereumEmulator::operator=(const EthereumEmulator& other)
     keccak_helper = other.keccak_helper;
     current_block_number = other.current_block_number;
     current_block_timestamp = other.current_block_timestamp;
+    static_flag = other.static_flag;
+    gas_price = other.gas_price;
+    // We don't copy snapshots !!!
+    return *this;
+}
+
+EthereumEmulator& EthereumEmulator::operator=(EthereumEmulator&& other)
+{
+    // **Move** contracts
+    _contracts = std::move(other._contracts);
+    _uid_cnt = other._uid_cnt < _uid_cnt ? _uid_cnt : other._uid_cnt;
+    keccak_helper = other.keccak_helper;
+    current_block_number = other.current_block_number;
+    current_block_timestamp = other.current_block_timestamp;
+    static_flag = other.static_flag;
+    gas_price = other.gas_price;
     // We don't copy snapshots !!!
     return *this;
 }
@@ -706,6 +741,8 @@ void EthereumEmulator::_init()
     current_block_timestamp = AbstractCounter(
         Value(256, 1524785992) // Thu Apr 26 23:39:52 UTC 2018
     );
+    static_flag = false;
+    gas_price = Value(256, 20); // Arbitrary gas price of 20, can be changed later
 }
 
 int EthereumEmulator::add_contract(contract_t contract)
@@ -795,7 +832,7 @@ void EthereumEmulator::restore_snapshot(snapshot_t snapshot, bool remove)
     while (snapshot+1 < _snapshots.size())
         _snapshots.pop_back();
 
-    *this = *_snapshots.back();
+    *this = std::move(*_snapshots.back());
     if (remove)
         _snapshots.pop_back();
 }
@@ -820,16 +857,22 @@ contract_t get_contract_for_engine(MaatEngine& engine)
     return get_ethereum(engine)->get_contract_by_uid(engine.process->pid);
 }
 
-void new_evm_runtime(MaatEngine& new_engine, const MaatEngine& old_engine)
-{
+void new_evm_runtime(
+    MaatEngine& new_engine,
+    const MaatEngine& old_engine,
+    std::optional<int> share_storage_uid
+){
     if (
         old_engine.arch->type != Arch::Type::EVM 
         or new_engine.arch->type != Arch::Type::EVM
     )
         throw env_exception("new_evm_runtime(): can't be called with an architecture other than EVM");
 
-    int new_contract_uid = get_ethereum(old_engine)->new_runtime_for_contract(old_engine.process->pid);
+    auto eth = get_ethereum(old_engine);
+    int new_contract_uid = eth->new_runtime_for_contract(old_engine.process->pid);
     new_engine.process->pid = new_contract_uid;
+    if (share_storage_uid.has_value())
+        eth->get_contract_by_uid(new_contract_uid)->storage = eth->get_contract_by_uid(*share_storage_uid)->storage;
 }
 
 std::vector<uint8_t> hex_string_to_bytes(const std::vector<char>& in)

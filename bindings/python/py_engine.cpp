@@ -160,7 +160,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
                 char * arg_bytes = nullptr;
                 Py_ssize_t arg_bytes_len = 0;
                 PyBytes_AsStringAndSize(arg, &arg_bytes, &arg_bytes_len);
-                cmdline_args.push_back(loader::CmdlineArg(std::string(arg_bytes)));
+                cmdline_args.push_back(loader::CmdlineArg(std::string(arg_bytes, arg_bytes_len)));
             }
             else if (PyList_Check(arg))
             {

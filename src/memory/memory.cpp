@@ -1196,6 +1196,26 @@ static inline void concat_endian(
         res.set_concat(first, second);
 }
 
+// Extract bytes to be written according to endianness
+// For big endian extract left-most bytes, for little endian
+// extract right-most bytes
+static inline Value extract_endian(
+    const Value& val,
+    int high_byte,
+    int low_byte,
+    Endian endian
+)
+{
+    if (endian == Endian::LITTLE)
+        return extract(val, high_byte*8-1, low_byte*8);
+    else
+        return extract(
+            val, 
+            val.size()-1-(low_byte*8), 
+            val.size()-(high_byte+1)*8
+        );
+}
+
 void MemSegment::read(Value& res, addr_t addr, unsigned int nb_bytes)
 {
     offset_t off = addr - start;
@@ -1402,7 +1422,7 @@ void MemSegment::write(addr_t addr, const std::vector<Value>& buf, VarContext& c
     for (const Value& val : buf)
     {
         if (addr + val.size()/8 -1 > end)
-            throw mem_exception("MemSegment: buffer copy: nb_bytes exceeds segment");
+            throw mem_exception("MemSegment: buffer write: nb_bytes exceeds segment");
         write(addr, val, ctx);
         addr += val.size()/8;
         off += val.size()/8;
@@ -1414,7 +1434,7 @@ void MemSegment::write(addr_t addr, uint8_t* src, int nb_bytes)
     offset_t off = addr-start;
     if( addr + nb_bytes -1 > end)
     {
-        throw mem_exception("MemSegment: buffer copy: nb_bytes exceeds segment");
+        throw mem_exception("MemSegment:: buffer write: nb_bytes exceeds segment");
     }
     _concrete.write_buffer(off, src, nb_bytes);
     _bitmap.mark_as_concrete(off, off+nb_bytes-1);
@@ -1652,7 +1672,7 @@ addr_t MemEngine::allocate(
 
     while (base <= max_addr-size+1)
     {
-        if (page_manager.is_unmapped(base, base+size-1))
+        if (mappings.is_free(base, base+size-1))
         {
             map(base, base+size-1, flags, name);
             return base;
@@ -1690,7 +1710,7 @@ std::shared_ptr<MemSegment> MemEngine::get_segment_containing(addr_t addr)
 
 bool MemEngine::is_free(addr_t start, addr_t end)
 {
-    return page_manager.is_unmapped(start, end);
+    return mappings.is_free(start, end);
 }
 
 addr_t MemEngine::allocate_segment(
@@ -1957,7 +1977,7 @@ ValueSet MemEngine::limit_symptr_range(Expr addr, const ValueSet& range, const S
     ValueSet res(range.size);
 
     // Adjust the value set min
-    tmp_addr_min = addr->as_uint(*_varctx) - settings.symptr_max_range/2;
+    tmp_addr_min = addr->as_number(*_varctx).get_ucst() - settings.symptr_max_range/2;
     tmp_addr_min -= tmp_addr_min % range.stride; // Adjust lower bound on stride
     if (tmp_addr_min < range.min)
     {
@@ -2361,6 +2381,12 @@ void MemEngine::write_buffer(addr_t addr, uint8_t* src, int nb_bytes, bool ignor
 void MemEngine::write_buffer(addr_t addr, const std::vector<Value>& buf, bool ignore_flags)
 {
     int nb_bytes = 0;
+    std::vector<Value> tmp_buf;
+    std::vector<Value> next_buf;
+    std::vector<Value> tmp_buf2;
+
+    if (buf.empty())
+        return;
 
     for (const Value& val : buf)
         nb_bytes += val.size()/8;
@@ -2389,8 +2415,55 @@ void MemEngine::write_buffer(addr_t addr, const std::vector<Value>& buf, bool ig
                 );
             }
 
-            segment->write(addr, buf, *_varctx);
-            return;
+            // If buffer exceeds segment size, adjust the number of bytes to write
+            int tmp_nb_bytes = nb_bytes;
+            tmp_buf.clear();
+            next_buf.clear();
+            if (tmp_buf2.empty())
+                tmp_buf2 = buf; // copy buf
+            if (addr + nb_bytes > segment->end)
+            {
+                tmp_nb_bytes = segment->end - addr+1;
+                int tmp_size = 0;
+                // Truncate the buffer to write
+                for (const auto& val : tmp_buf2)
+                {
+                    if (tmp_size + val.size()/8 <= tmp_nb_bytes)
+                    {
+                        tmp_buf.push_back(val);
+                        tmp_size += val.size()/8;
+                    }
+                    else if (tmp_size < tmp_nb_bytes)
+                    {
+                        tmp_buf.push_back(
+                            extract_endian(val, tmp_nb_bytes-tmp_size-1, 0, _endianness)
+                        );
+                        next_buf.push_back(
+                            extract_endian(
+                                val, val.size()/8 -1, tmp_nb_bytes-tmp_size, _endianness
+                            )
+                        );
+                        tmp_size = tmp_nb_bytes;
+                    }
+                    else
+                    {
+                        next_buf.push_back(val);
+                        tmp_size += val.size()/8;
+                    }
+                }
+                // Write partial buffer
+                segment->write(addr, tmp_buf, *_varctx);
+                // Update data to write
+                nb_bytes -= tmp_nb_bytes;
+                addr += tmp_nb_bytes;
+                tmp_buf2 = std::move(next_buf); // OK to move because we clear() we using it
+            }
+            // Else if buffer fits in the segment, just write everyting
+            else
+            {
+                segment->write(addr, tmp_buf2.empty()? buf : tmp_buf2, *_varctx);
+                return;
+            }
         }
     }
 

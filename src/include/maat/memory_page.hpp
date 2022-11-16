@@ -120,6 +120,7 @@ public:
 public:
     void map(MemMap map);
     void unmap(addr_t start, addr_t end);
+    bool is_free(addr_t start, addr_t end) const;
 public:
     const std::list<MemMap>& get_maps() const;
     void set_maps(std::list<MemMap>&&);

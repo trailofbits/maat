@@ -17,6 +17,8 @@ PyMethodDef module_methods[] = {
     {"Concat", (PyCFunction)maat_Concat, METH_VARARGS, "Concatenate two abstract expressions"},
     {"Extract", (PyCFunction)maat_Extract, METH_VARARGS, "Bitfield extract from an abstract expression"},
     {"Sext", (PyCFunction)maat_Sext, METH_VARARGS, "Sign-extend an abstract value"},
+    {"ULE", (PyCFunction)maat_ULE, METH_VARARGS, "Unsigned less-equal constraint on abstract values"},
+    {"ULT", (PyCFunction)maat_ULT, METH_VARARGS, "Unsigned less-than constraint on abstract values"},
     {"Zext", (PyCFunction)maat_Zext, METH_VARARGS, "Zero-extend an abstract value"},
     {"ITE", (PyCFunction)maat_ITE, METH_VARARGS, "Create an If-Then-Else expression from a Constraint and two abstract expressions"},
     // Engine
@@ -32,6 +34,10 @@ PyMethodDef module_methods[] = {
     {"increment_block_number", (PyCFunction)maat_increment_block_number, METH_VARARGS, "Increment the current block number by an abstract value"},
     {"increment_block_timestamp", (PyCFunction)maat_increment_block_timestamp, METH_VARARGS, "Increment the current block timestamp by an abstract value"},
     {"set_evm_bytecode", (PyCFunction)maat_set_evm_bytecode, METH_VARARGS, "Set runtime bytecode for the contract associated to an engine"},
+    {"allow_symbolic_keccak", (PyCFunction)maat_allow_symbolic_keccak, METH_VARARGS, "Enable/disable symbolic KECCAK hashes"},
+    {"evm_get_static_flag", (PyCFunction)maat_evm_get_static_flag, METH_VARARGS, "Get EVM static flag"},
+    {"evm_set_static_flag", (PyCFunction)maat_evm_set_static_flag, METH_VARARGS, "Set EVM static flag"},
+    {"evm_set_gas_price", (PyCFunction)maat_evm_set_gas_price, METH_VARARGS, "Set EVM gas price"},
     {NULL}
 };
 

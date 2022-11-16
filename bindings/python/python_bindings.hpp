@@ -38,6 +38,8 @@ PyObject* maat_Concat(PyObject* self, PyObject* args);
 PyObject* maat_ITE(PyObject* self, PyObject* args);
 PyObject* maat_Extract(PyObject* self, PyObject* args);
 PyObject* maat_Sext(PyObject* self, PyObject* args);
+PyObject* maat_ULE(PyObject* self, PyObject* args);
+PyObject* maat_ULT(PyObject* self, PyObject* args);
 PyObject* maat_Zext(PyObject* self, PyObject* args);
 PyObject* PyValue_FromValue(const Value& val);
 PyObject* PyValue_FromValueAndVarContext(const Value& val, std::shared_ptr<VarContext> ctx);
@@ -359,6 +361,10 @@ PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args);
 PyObject* maat_increment_block_timestamp(PyObject* mod, PyObject* args);
 PyObject* maat_increment_block_number(PyObject* mod, PyObject* args);
 PyObject* maat_set_evm_bytecode(PyObject* mod, PyObject* args);
+PyObject* maat_allow_symbolic_keccak(PyObject* mod, PyObject* args);
+PyObject* maat_evm_get_static_flag(PyObject* mod, PyObject* args);
+PyObject* maat_evm_set_static_flag(PyObject* mod, PyObject* args);
+PyObject* maat_evm_set_gas_price(PyObject* mod, PyObject* args);
 
 // ====== Utils =======
 // Transform a list of values into a list of python values,

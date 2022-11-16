@@ -62,16 +62,15 @@ PyObject* maat_ITE(PyObject* self, PyObject* args)
     Constraint_Object* cond;
     PyObject* if_true;
     PyObject* if_false;
-    if( ! PyArg_ParseTuple(args, "O!OO", get_Constraint_Type(), &cond, &if_true, &if_false)){
-        return NULL;
-    }
-
     Value res;
     Value if_true_val;
     Value if_false_val;
+
+    if( ! PyArg_ParseTuple(args, "O!OO", get_Constraint_Type(), &cond, &if_true, &if_false)){
+        return NULL;
+    }
     
-    // We cannot accept ITE with both if_true and if_false as constants without a size parameter
-    
+    // We cannot accept ITE with both if_true and if_false as constants without a size parameter    
     if( PyLong_Check(if_true) && PyLong_Check(if_false)) {
         return PyErr_Format(PyExc_ValueError, "ITE requires at least one argument be a value inorder to deduce resulting size");
     }else if( PyLong_Check(if_true) && PyObject_IsInstance(if_false, get_Value_Type())) {
@@ -88,12 +87,80 @@ PyObject* maat_ITE(PyObject* self, PyObject* args)
         return PyErr_Format(PyExc_TypeError, "Mismatching type for ITE arguments");
     }
 
-    try{
+    try
+    {
         res = ITE(*(as_constraint_object(cond).constr), if_true_val.as_expr(), if_false_val.as_expr());
 	    return PyValue_FromValue(res);
-        } catch(expression_exception e) {
-            return PyErr_Format(PyExc_ValueError, "%s", e.what());
-        }
+    }
+    catch(const expression_exception& e)
+    {
+        return PyErr_Format(PyExc_ValueError, "%s", e.what());
+    }
+}
+
+PyObject* _generic_value_comparison(PyObject* self, PyObject* args, bool is_ule)
+{
+    PyObject* left;
+    PyObject* right;
+    Constraint res;
+    Value left_val;
+    Value right_val;
+    
+    if( ! PyArg_ParseTuple(args, "OO", &left, &right)){
+        return NULL;
+    }
+    
+    if (PyLong_Check(left) && PyLong_Check(right))
+    {
+        return PyErr_Format(PyExc_ValueError, "ULE requires at least one argument to be a Value instance");
+    }
+    else if (PyLong_Check(left) && PyObject_IsInstance(right, get_Value_Type()))
+    {
+        right_val = *(as_value_object(right).value);
+        left_val.set_cst(right_val.size(), PyLong_AsLongLong(left));
+    }
+    else if( PyLong_Check(right) && PyObject_IsInstance(left, get_Value_Type())) 
+    {
+        left_val = *(as_value_object(left).value);
+        right_val.set_cst(left_val.size(), PyLong_AsLongLong(right));
+    }
+    else if( PyObject_IsInstance(left, get_Value_Type()) && PyObject_IsInstance(right, get_Value_Type()))
+    {
+        left_val = *(as_value_object(left).value);
+        right_val = *(as_value_object(right).value);
+    }
+    else
+    {
+        return PyErr_Format(PyExc_TypeError, "Incorrect types for ULE arguments");
+    }
+
+    try
+    {
+        // Note: this pattern needs to change if we add support for more
+        // function-like comparison between values (like UGE, UGT)
+        res = is_ule? 
+            ULE(left_val.as_expr(), right_val.as_expr()) 
+            : ULT(left_val.as_expr(), right_val.as_expr());
+	    return PyConstraint_FromConstraint(res);
+    }
+    catch(const constraint_exception& e)
+    {
+        return PyErr_Format(PyExc_ValueError, "%s", e.what());
+    }
+    catch(const expression_exception& e)
+    {
+        return PyErr_Format(PyExc_ValueError, "%s", e.what());
+    }
+}
+
+PyObject* maat_ULE(PyObject* self, PyObject* args)
+{
+    return _generic_value_comparison(self, args, true);
+}
+
+PyObject* maat_ULT(PyObject* self, PyObject* args)
+{
+    return _generic_value_comparison(self, args, false);
 }
 
 static PyMethodDef Constraint_methods[] = {

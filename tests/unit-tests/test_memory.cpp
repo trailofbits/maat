@@ -369,7 +369,7 @@ namespace test{
             nb += _assert(mem.read(0x10000, 4).as_expr()->eq(concat(concat(extract(e5, 7, 0), e3), e1)), "MemSegment symbolic simple overlapping read failed");
             nb += _assert(mem.read(0x10001, 4).as_expr()->eq(concat(extract(e5, 15, 0), e3)), "MemSegment symbolic simple overlapping read failed");
             nb += _assert(mem.read(0x10006, 8).as_expr()->eq(concat(extract(e7, 55, 0), extract(e5, 31, 24))), "MemSegment symbolic simple overlapping read failed");
-            
+
             /* Overwrite */ 
             mem.write(0x10100, e7, ctx);
             mem.write(0x10104, e6, ctx);
@@ -686,6 +686,12 @@ namespace test{
             e2 = mem2.read(0x1ffe, 8).as_expr();
             ctx->set("var1", 0x12345678abababab);
             nb += _assert(e2->as_uint(*ctx) == 0x12345678abababab, "MemEngine: read/write accross segments failed");
+
+            // With abstract buffer
+            ctx->set("var1", 0x12345678abababff);
+            std::vector<Value> buf{648, e};
+            mem2.write_buffer(0x1001, buf);
+            nb += _assert(mem2.read(0x2000, 1).as_uint(*ctx) == 0xff, "MemEngine: failed to correctly write buffer accross segments");
 
             return nb; 
         }

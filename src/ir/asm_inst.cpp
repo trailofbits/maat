@@ -168,7 +168,7 @@ void IRMap::remove_insts_containing(uint64_t start, uint64_t end)
     // it's O(1) *on average* with unordered_map. Since we can lookup 
     // millions of asm insts in a run and since self-modifying code
     // is very rare we prefer using unordered_map.
- 
+
     for (uint64_t addr = start; addr <= end; addr++)
     {
         asm_insts.erase(addr);
