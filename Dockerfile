@@ -5,7 +5,7 @@ FROM ubuntu:20.04 as base
 
 RUN apt-get update && apt-get -y upgrade && \
   apt-get install -y wget findutils build-essential git libgmp-dev python3-dev curl libz3-dev && \
-  wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.12.1/LIEF-0.12.1-Linux-x86_64.tar.gz | tar xz -C /usr/local --strip-components=1
+  wget -O - -c https://github.com/lief-project/LIEF/releases/download/0.12.3/LIEF-0.12.3-Linux-x86_64.tar.gz | tar xz -C /usr/local --strip-components=1
 
 WORKDIR /tmp
 # Install CMake. Need new version for compiling sleigh
