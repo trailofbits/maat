@@ -296,6 +296,9 @@ public:
 
     TranslationContext(maat::Arch::Type a, const std::string& slafile, const std::string& pspecfile): arch(a)
     {
+        AttributeId::initialize();
+        ElementId::initialize();
+
         if (not loadSlaFile(slafile.c_str()))
         {
             throw runtime_exception(Fmt() << "Sleigh: failed to load slafile: " << slafile >> Fmt::to_str);
