@@ -32,6 +32,16 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
             env = std::make_shared<env::EVM::EthereumEmulator>();
             endianness = Endian::BIG;
             break;
+        case Arch::Type::RISCV:
+            arch = std::make_shared<RISCV::ArchRISCV>();
+            lifters[CPUMode::RISCV] = std::make_shared<Lifter>(CPUMode::RISCV);
+            _current_cpu_mode = CPUMode::RISCV;
+            break;
+        case Arch::Type::ARM32:
+            arch = std::make_shared<ARM32::ArchARM32>();
+            lifters[CPUMode::A32] = std::make_shared<Lifter>(CPUMode::A32);
+            _current_cpu_mode = CPUMode::A32;
+            break;
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
             _current_cpu_mode = CPUMode::NONE;
@@ -638,13 +648,10 @@ bool MaatEngine::process_branch(
                     return false;
                 }
             }
-            else if (in1.as_uint(*vars) != 0) // branch condition is true, branch to target
+            else  
             {
-                taken = true;
-            }
-            else
-            {
-                taken = false;
+                // branch if condition expression is non-null
+                taken = (in1.as_uint(*vars) != 0);
             }
 
             // Perform the branch

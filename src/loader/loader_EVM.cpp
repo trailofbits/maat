@@ -74,7 +74,7 @@ void LoaderEVM::load(
         if (arg.is_concrete())
             env::EVM::_append_EVM_code(
                 *engine,
-                (uint8_t*)arg.string().c_str(),
+                (uint8_t*)arg.string().data(),
                 arg.len()
             );
         else

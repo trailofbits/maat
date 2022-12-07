@@ -1320,4 +1320,135 @@ maat::ir::Param sleigh_reg_translate_EVM(const std::string& reg_name)
             );
 }
 
+maat::ir::Param sleigh_reg_translate_RISCV(const std::string& reg_name)
+{
+    if (reg_name == "zero") return maat::ir::Reg(maat::RISCV::ZERO, 64);
+    if (reg_name == "ra") return maat::ir::Reg(maat::RISCV::RA, 64);
+    if (reg_name == "sp") return maat::ir::Reg(maat::RISCV::SP, 64);
+    if (reg_name == "gp") return maat::ir::Reg(maat::RISCV::GP, 64);
+    if (reg_name == "tp") return maat::ir::Reg(maat::RISCV::TP, 64);
+
+    if (reg_name == "t0") return maat::ir::Reg(maat::RISCV::T0, 64);
+    if (reg_name == "t1") return maat::ir::Reg(maat::RISCV::T1, 64);
+    if (reg_name == "t2") return maat::ir::Reg(maat::RISCV::T2, 64);
+
+    if (reg_name == "s0") return maat::ir::Reg(maat::RISCV::S0, 64);
+    if (reg_name == "s1") return maat::ir::Reg(maat::RISCV::S1, 64);
+
+    if (reg_name == "a0") return maat::ir::Reg(maat::RISCV::A0, 64);
+    if (reg_name == "a1") return maat::ir::Reg(maat::RISCV::A1, 64);
+    if (reg_name == "a2") return maat::ir::Reg(maat::RISCV::A2, 64);
+    if (reg_name == "a3") return maat::ir::Reg(maat::RISCV::A3, 64);
+    if (reg_name == "a4") return maat::ir::Reg(maat::RISCV::A4, 64);
+    if (reg_name == "a5") return maat::ir::Reg(maat::RISCV::A5, 64);
+    if (reg_name == "a6") return maat::ir::Reg(maat::RISCV::A6, 64);
+    if (reg_name == "a7") return maat::ir::Reg(maat::RISCV::A7, 64);
+
+    if (reg_name == "s2") return maat::ir::Reg(maat::RISCV::S2, 64);
+    if (reg_name == "s3") return maat::ir::Reg(maat::RISCV::S3, 64);
+    if (reg_name == "s4") return maat::ir::Reg(maat::RISCV::S4, 64);
+    if (reg_name == "s5") return maat::ir::Reg(maat::RISCV::S5, 64);
+    if (reg_name == "s6") return maat::ir::Reg(maat::RISCV::S6, 64);
+    if (reg_name == "s7") return maat::ir::Reg(maat::RISCV::S7, 64);
+    if (reg_name == "s8") return maat::ir::Reg(maat::RISCV::S8, 64);
+    if (reg_name == "s9") return maat::ir::Reg(maat::RISCV::S9, 64);
+    if (reg_name == "s10") return maat::ir::Reg(maat::RISCV::S10, 64);
+    if (reg_name == "s11") return maat::ir::Reg(maat::RISCV::S11, 64);
+
+    if (reg_name == "t3") return maat::ir::Reg(maat::RISCV::T3, 64);
+    if (reg_name == "t4") return maat::ir::Reg(maat::RISCV::T4, 64);
+    if (reg_name == "t5") return maat::ir::Reg(maat::RISCV::T5, 64);
+    if (reg_name == "t6") return maat::ir::Reg(maat::RISCV::T6, 64);
+
+    if (reg_name == "ft0") return maat::ir::Reg(maat::RISCV::FT0, 64);
+    if (reg_name == "ft1") return maat::ir::Reg(maat::RISCV::FT1, 64);
+    if (reg_name == "ft2") return maat::ir::Reg(maat::RISCV::FT2, 64);
+    if (reg_name == "ft3") return maat::ir::Reg(maat::RISCV::FT3, 64);
+    if (reg_name == "ft4") return maat::ir::Reg(maat::RISCV::FT4, 64);
+    if (reg_name == "ft5") return maat::ir::Reg(maat::RISCV::FT5, 64);
+    if (reg_name == "ft6") return maat::ir::Reg(maat::RISCV::FT6, 64);
+    if (reg_name == "ft7") return maat::ir::Reg(maat::RISCV::FT7, 64);
+
+    if (reg_name == "fs0") return maat::ir::Reg(maat::RISCV::FS0, 64);
+    if (reg_name == "fs1") return maat::ir::Reg(maat::RISCV::FS1, 64);
+
+    if (reg_name == "fa0") return maat::ir::Reg(maat::RISCV::FA0, 64);
+    if (reg_name == "fa1") return maat::ir::Reg(maat::RISCV::FA1, 64);
+    if (reg_name == "fa2") return maat::ir::Reg(maat::RISCV::FA2, 64);
+    if (reg_name == "fa3") return maat::ir::Reg(maat::RISCV::FA3, 64);
+    if (reg_name == "fa4") return maat::ir::Reg(maat::RISCV::FA4, 64);
+    if (reg_name == "fa5") return maat::ir::Reg(maat::RISCV::FA5, 64);
+    if (reg_name == "fa6") return maat::ir::Reg(maat::RISCV::FA6, 64);
+    if (reg_name == "fa7") return maat::ir::Reg(maat::RISCV::FA7, 64);
+
+    if (reg_name == "fs2") return maat::ir::Reg(maat::RISCV::FS2, 64);
+    if (reg_name == "fs3") return maat::ir::Reg(maat::RISCV::FS3, 64);
+    if (reg_name == "fs4") return maat::ir::Reg(maat::RISCV::FS4, 64);
+    if (reg_name == "fs5") return maat::ir::Reg(maat::RISCV::FS5, 64);
+    if (reg_name == "fs6") return maat::ir::Reg(maat::RISCV::FS6, 64);
+    if (reg_name == "fs7") return maat::ir::Reg(maat::RISCV::FS7, 64);
+    if (reg_name == "fs8") return maat::ir::Reg(maat::RISCV::FS8, 64);
+    if (reg_name == "fs9") return maat::ir::Reg(maat::RISCV::FS9, 64);
+    if (reg_name == "fs10") return maat::ir::Reg(maat::RISCV::FS10, 64);
+    if (reg_name == "fs11") return maat::ir::Reg(maat::RISCV::FS11, 64);
+
+    if (reg_name == "ft8") return maat::ir::Reg(maat::RISCV::FT8, 64);
+    if (reg_name == "ft9") return maat::ir::Reg(maat::RISCV::FT9, 64);
+    if (reg_name == "ft10") return maat::ir::Reg(maat::RISCV::FT10, 64);
+    if (reg_name == "ft11") return maat::ir::Reg(maat::RISCV::FT11, 64);
+
+    if (reg_name == "pc") return maat::ir::Reg(maat::RISCV::PC, 64);
+
+    throw maat::runtime_exception(maat::Fmt()
+            << "EVM: Register translation from SLEIGH to MAAT missing for register "
+            << reg_name
+            >> maat::Fmt::to_str
+            );
+}
+
+maat::ir::Param sleigh_reg_translate_ARM32(const std::string& reg_name) {
+    if (reg_name == "r0") return maat::ir::Reg(maat::ARM32::R0, 32);
+    if (reg_name == "r1") return maat::ir::Reg(maat::ARM32::R1, 32);
+    if (reg_name == "r2") return maat::ir::Reg(maat::ARM32::R2, 32);
+    if (reg_name == "r3") return maat::ir::Reg(maat::ARM32::R3, 32);
+    if (reg_name == "r4") return maat::ir::Reg(maat::ARM32::R4, 32);
+    if (reg_name == "r5") return maat::ir::Reg(maat::ARM32::R5, 32);
+    if (reg_name == "r6") return maat::ir::Reg(maat::ARM32::R6, 32);
+    if (reg_name == "r7") return maat::ir::Reg(maat::ARM32::R7, 32);
+    if (reg_name == "r8") return maat::ir::Reg(maat::ARM32::R8, 32);
+    if (reg_name == "r9") return maat::ir::Reg(maat::ARM32::R9, 32);
+    if (reg_name == "r10") return maat::ir::Reg(maat::ARM32::R10, 32);
+    if (reg_name == "r11") return maat::ir::Reg(maat::ARM32::R11, 32);
+    if (reg_name == "r12") return maat::ir::Reg(maat::ARM32::R12, 32);
+
+    if (reg_name == "sp") return maat::ir::Reg(maat::ARM32::SP, 32);
+    if (reg_name == "lr") return maat::ir::Reg(maat::ARM32::LR, 32);
+    if (reg_name == "pc") return maat::ir::Reg(maat::ARM32::PC, 32);
+    
+    if (reg_name == "cpsr") return maat::ir::Reg(maat::ARM32::CPSR, 32);
+
+    if (reg_name == "NG") return maat::ir::Reg(maat::ARM32::NF, 8);
+    if (reg_name == "ZR") return maat::ir::Reg(maat::ARM32::ZF, 8);
+    if (reg_name == "CY") return maat::ir::Reg(maat::ARM32::CF, 8);
+    if (reg_name == "OV") return maat::ir::Reg(maat::ARM32::VF, 8);
+    if (reg_name == "Q") return maat::ir::Reg(maat::ARM32::QF, 8);
+    // if (reg_name == "J?") return maat::ir::Reg(maat::ARM32::JF, 8);
+    if (reg_name == "GE1") return maat::ir::Reg(maat::ARM32::GE1, 8);
+    if (reg_name == "GE2") return maat::ir::Reg(maat::ARM32::GE2, 8);
+    if (reg_name == "GE3") return maat::ir::Reg(maat::ARM32::GE3, 8);
+    if (reg_name == "GE4") return maat::ir::Reg(maat::ARM32::GE4, 8);
+    if (reg_name == "TB") return maat::ir::Reg(maat::ARM32::TF, 8);
+    if (reg_name == "tmpNG") return maat::ir::Reg(maat::ARM32::tmpNG, 8);
+    if (reg_name == "tmpZR") return maat::ir::Reg(maat::ARM32::tmpZR, 8);
+    if (reg_name == "tmpCY") return maat::ir::Reg(maat::ARM32::tmpCY, 8);
+    if (reg_name == "tmpOV") return maat::ir::Reg(maat::ARM32::tmpOV, 8);
+    if (reg_name == "shift_carry") return maat::ir::Reg(maat::ARM32::SC, 8);
+
+    throw maat::runtime_exception(maat::Fmt()
+            << "ARM32: Register translation from SLEIGH to MAAT missing for register "
+            << reg_name
+            >> maat::Fmt::to_str
+            );
+}
+
 } // namespace maat

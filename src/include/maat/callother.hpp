@@ -61,9 +61,12 @@ enum class Id
     EVM_CALL,
     EVM_CALLCODE,
     EVM_DELEGATECALL,
+    EVM_STATICCALL,
     EVM_CREATE,
     EVM_SELFDESTRUCT,
     EVM_LOG,
+    // RISCV
+    RISCV_ECALL,
     UNSUPPORTED
 };
 

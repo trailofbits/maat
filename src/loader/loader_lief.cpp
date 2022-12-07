@@ -89,7 +89,7 @@ void LoaderLIEF::parse_binary(const std::string& binary, Format type)
 }
 
 void LoaderLIEF::get_arch_special_registers(
-    const Arch& arch, reg_t& pc, reg_t& sp, reg_t& bp, reg_t& gs, reg_t& fs
+    const Arch& arch, std::optional<reg_t>& pc, std::optional<reg_t>& sp, std::optional<reg_t>& bp, std::optional<reg_t>& gs, std::optional<reg_t>& fs
 )
 {
     pc = arch.pc();
@@ -106,6 +106,9 @@ void LoaderLIEF::get_arch_special_registers(
             gs = X64::GS;
             fs = X64::FS;
             break;
+        case Arch::Type::RISCV:
+        case Arch::Type::ARM32:
+            break;
         default:
             throw loader_exception(
                 Fmt() << "LoaderLIEF::get_arch_special_registers(): Unsupported architecture!"
@@ -120,8 +123,7 @@ addr_t LoaderLIEF::alloc_segment(
     addr_t size,
     mem_flag_t flags,
     const std::string& name
-)
-{
+){
     try
     {
         return engine->mem->allocate(prefered_base, size, 0x1000, flags, name);

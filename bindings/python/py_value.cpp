@@ -201,6 +201,17 @@ static PyObject* Value_as_float(PyObject* self, PyObject* args)
     }
 }
 
+static PyObject* Value_eq(PyObject* self, PyObject* args)
+{
+    PyObject* other = nullptr;
+    if( !PyArg_ParseTuple(args, "O!", get_Value_Type(), &other)){
+        return NULL;
+    }
+    return PyBool_FromLong(
+        as_value_object(self).value->eq(*as_value_object(other).value)
+    );
+}
+
 static PyObject* Value_get_size(PyObject* self, void* closure)
 {
     return PyLong_FromLong((*as_value_object(self).value).size());
@@ -230,6 +241,7 @@ static PyMethodDef Value_methods[] =
     {"as_int", (PyCFunction)Value_as_int, METH_VARARGS, "Concretize the value interpreted as a signed value"},
     {"as_uint", (PyCFunction)Value_as_uint, METH_VARARGS, "Concretize the value interpreted as an unsigned value"},
     {"as_float", (PyCFunction)Value_as_float, METH_VARARGS, "Concretize the value interpreted as a floating point value"},
+    {"eq", (PyCFunction)Value_eq, METH_VARARGS, "Return True if two values are identical (same abstract syntax tree)"},
     {NULL, NULL, 0, NULL}
 };
 

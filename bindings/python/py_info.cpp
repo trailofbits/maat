@@ -298,6 +298,16 @@ static PyObject* Branch_get_taken(PyObject* self, void* closure){
     return PyBool_FromLong(as_branch_object(self).branch->taken.value());
 }
 
+static int Branch_set_taken(PyObject* self, PyObject* val, void* closure){
+    std::optional<bool> taken;
+    if (val == Py_None)
+        taken = std::nullopt;
+    else
+        taken = (bool)PyObject_IsTrue(val);
+    as_branch_object(self).branch->taken = taken;
+    return 0;
+}
+
 static PyObject* Branch_get_target(PyObject* self, void* closure){
     if( as_branch_object(self).branch->target.is_none() ){
         return PyErr_Format(PyExc_AttributeError, "'target' property is not set currently");
@@ -316,7 +326,7 @@ static PyGetSetDef Branch_getset[] = {
     {"cond", Branch_get_cond, NULL, "Branch condition (if applicable)", NULL},
     {"target", Branch_get_target, NULL, "Target instruction if branch is taken", NULL},
     {"next", Branch_get_next, NULL, "Next instruction if branch is not taken", NULL},
-    {"taken", Branch_get_taken, NULL, "Is the branch taken or not", NULL},
+    {"taken", Branch_get_taken, Branch_set_taken, "Is the branch taken or not", NULL},
     {NULL}
 };
 

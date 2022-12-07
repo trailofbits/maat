@@ -552,6 +552,7 @@ public:
             {"evm_call", callother::Id::EVM_CALL},
             {"evm_callcode", callother::Id::EVM_CALLCODE},
             {"evm_delegatecall", callother::Id::EVM_DELEGATECALL},
+            {"evm_staticcall", callother::Id::EVM_STATICCALL},
             {"evm_create", callother::Id::EVM_CREATE},
             {"evm_selfdestruct", callother::Id::EVM_SELFDESTRUCT},
             {"evm_log", callother::Id::EVM_LOG}
@@ -629,6 +630,10 @@ maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& r
         return sleigh_reg_translate_X64(reg_name);
     else if (arch == Arch::Type::EVM)
         return sleigh_reg_translate_EVM(reg_name);
+    else if (arch == Arch::Type::RISCV)
+        return sleigh_reg_translate_RISCV(reg_name);
+    else if (arch == Arch::Type::ARM32)
+        return sleigh_reg_translate_ARM32(reg_name);
     else
         throw maat::runtime_exception("Register translation from SLEIGH to MAAT not implemented for this architecture!");
 }

@@ -622,6 +622,11 @@ static PyObject* EVMTransaction_get_value(PyObject* self, void* closure)
     return PyValue_FromValue(as_tx_object(self).transaction->value);
 }
 
+static PyObject* EVMTransaction_get_gas_price(PyObject* self, void* closure)
+{
+    return PyValue_FromValue(as_tx_object(self).transaction->gas_price);
+}
+
 static PyObject* EVMTransaction_get_data(PyObject* self, void* closure)
 {
     // TODO(boyan): factorize this code with other places where we translate
@@ -682,6 +687,7 @@ static PyGetSetDef EVMTransaction_getset[] = {
     {"ret_offset", EVMTransaction_get_ret_offset, NULL, "Return offset", NULL},
     {"ret_len", EVMTransaction_get_ret_len, NULL, "Return length", NULL},
     {"value", EVMTransaction_get_value, NULL, "Value in WEI", NULL},
+    {"gas_price", EVMTransaction_get_gas_price, NULL, "Gas price", NULL},
     {NULL}
 };
 
@@ -917,15 +923,25 @@ PyObject* maat_contract(PyObject* mod, PyObject* args)
 PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args)
 {
     PyObject *new_engine, *old_engine;
-    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &new_engine, get_MaatEngine_Type(), &old_engine))
+    PyObject* py_share_storage_uid = nullptr;
+    std::optional<int> share_storage_uid;
+    if( !PyArg_ParseTuple(args, "O!O!|O", get_MaatEngine_Type(), &new_engine, get_MaatEngine_Type(), &old_engine, &share_storage_uid))
     {
         return NULL;
     }
     try
     {
+        if (py_share_storage_uid == nullptr or py_share_storage_uid == Py_None)
+            share_storage_uid = std::nullopt;
+        else if (PyLong_Check(py_share_storage_uid))
+            share_storage_uid = PyLong_AsLongLong(py_share_storage_uid);
+        else
+            return PyErr_Format(PyExc_TypeError, "share_storage_uid should be None or int");
+
         env::EVM::new_evm_runtime(
             *as_engine_object(new_engine).engine,
-            *as_engine_object(old_engine).engine
+            *as_engine_object(old_engine).engine,
+            share_storage_uid
         );
     }
     catch(maat::env_exception& e)
@@ -1035,6 +1051,67 @@ PyObject* maat_allow_symbolic_keccak(PyObject* mod, PyObject* args)
     }
 }
 
+PyObject* maat_evm_get_static_flag(PyObject* mod, PyObject* args)
+{
+    PyObject* engine;
+    if( !PyArg_ParseTuple(args, "O!", get_MaatEngine_Type(), &engine))
+        return NULL;
+
+    try
+    {
+        auto eth = env::EVM::get_ethereum(*as_engine_object(engine).engine);
+        if (eth == nullptr)
+            return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
+        return PyBool_FromLong(eth->static_flag);
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
+
+PyObject* maat_evm_set_static_flag(PyObject* mod, PyObject* args)
+{
+    PyObject* engine;
+    int flag = 0;
+    if( !PyArg_ParseTuple(args, "O!p", get_MaatEngine_Type(), &engine, &flag))
+        return NULL;
+
+    try
+    {
+        auto eth = env::EVM::get_ethereum(*as_engine_object(engine).engine);
+        if (eth == nullptr)
+            return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
+        eth->static_flag = flag;
+        Py_RETURN_NONE;
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
+
+PyObject* maat_evm_set_gas_price(PyObject* mod, PyObject* args)
+{
+    PyObject* engine;
+    PyObject* price;
+    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &engine, get_Value_Type(), &price))
+        return NULL;
+
+    try
+    {
+        auto eth = env::EVM::get_ethereum(*as_engine_object(engine).engine);
+        if (eth == nullptr)
+            return PyErr_Format(PyExc_RuntimeError, "No environment for this engine");
+        eth->gas_price = *as_value_object(price).value;
+        Py_RETURN_NONE;
+    }
+    catch(const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, e.what());
+    }
+}
+
 void init_evm(PyObject* module)
 {
     /* TX_END enum */
@@ -1071,6 +1148,9 @@ void init_evm(PyObject* module)
     );
     PyDict_SetItemString(tx_enum, "DELEGATECALL", PyLong_FromLong(
         (int)env::EVM::Transaction::Type::DELEGATECALL)
+    );
+    PyDict_SetItemString(tx_enum, "STATICCALL", PyLong_FromLong(
+        (int)env::EVM::Transaction::Type::STATICCALL)
     );
     PyDict_SetItemString(tx_enum, "EOA", PyLong_FromLong(
         (int)env::EVM::Transaction::Type::EOA)

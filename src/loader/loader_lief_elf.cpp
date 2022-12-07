@@ -212,11 +212,11 @@ void LoaderLIEF::load_elf_using_interpreter(
     const std::string& interp_path
 )
 {
-    reg_t reg_sp = -1;
-    reg_t reg_bp = -1;
-    reg_t reg_gs = -1;
-    reg_t reg_fs = -1;
-    reg_t reg_pc = -1;
+    std::optional<reg_t> reg_sp = std::nullopt;
+    std::optional<reg_t> reg_bp = std::nullopt;
+    std::optional<reg_t> reg_gs = std::nullopt;
+    std::optional<reg_t> reg_fs = std::nullopt;
+    std::optional<reg_t> reg_pc = std::nullopt;
     addr_t stack_base, stack_size, stack_top;
 
     // Get particular registers
@@ -242,8 +242,10 @@ void LoaderLIEF::load_elf_using_interpreter(
     stack_size = 0x00200000;
     stack_top = engine->arch->bits() == 32 ? 0x0c000000 : 0x80000000000;
     stack_base = alloc_segment(engine, stack_top-stack_size, stack_size, maat::mem_flag_rw, "Stack");
-    engine->cpu.ctx().set(reg_sp, stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
-    engine->cpu.ctx().set(reg_bp, stack_base+stack_size-0x400);
+    engine->cpu.ctx().set(reg_sp.value(), stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
+    if (reg_bp) {
+        engine->cpu.ctx().set(*reg_bp, stack_base+stack_size-0x400);
+    }
 
     // Load interpreter
     load_elf_interpreter(engine, interp_path, *this);
@@ -255,7 +257,7 @@ void LoaderLIEF::load_elf_using_interpreter(
     add_elf_dependencies_to_emulated_fs(engine, libdirs, ignore_libs, virtual_fs);
 
     // Point PC to interpreter entrypoint
-    engine->cpu.ctx().set(reg_pc, interpreter_entry.value());
+    engine->cpu.ctx().set(reg_pc.value(), interpreter_entry.value());
 }
 
 void LoaderLIEF::load_elf_binary(
@@ -272,11 +274,11 @@ void LoaderLIEF::load_elf_binary(
     addr_t stack_base, stack_top, stack_size, heap_base, heap_size;
     addr_t gs, fs;
     std::list<std::string> loaded_libs;
-    reg_t reg_sp = -1;
-    reg_t reg_bp = -1;
-    reg_t reg_gs = -1;
-    reg_t reg_fs = -1;
-    reg_t reg_pc = -1;
+    std::optional<reg_t> reg_sp = std::nullopt;
+    std::optional<reg_t> reg_bp = std::nullopt;
+    std::optional<reg_t> reg_gs = std::nullopt;
+    std::optional<reg_t> reg_fs = std::nullopt;
+    std::optional<reg_t> reg_pc = std::nullopt;
     int arch_bytes = engine->arch->octets();
 
     // Get particular registers
@@ -292,8 +294,10 @@ void LoaderLIEF::load_elf_binary(
     stack_size = 0x00200000;
     stack_top = engine->arch->bits() == 32 ? 0x0c000000 : 0x80000000000;
     stack_base = alloc_segment(engine, stack_top-stack_size, stack_size, maat::mem_flag_rw, "Stack");
-    engine->cpu.ctx().set(reg_sp, stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
-    engine->cpu.ctx().set(reg_bp, stack_base+stack_size-0x400);
+    engine->cpu.ctx().set(reg_sp.value(), stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
+    if (reg_bp) {
+        engine->cpu.ctx().set(*reg_bp, stack_base+stack_size-0x400);
+    }
 
     // Setup heap
     heap_base = end_of_segment(*engine->mem, binary_name);
@@ -306,12 +310,12 @@ void LoaderLIEF::load_elf_binary(
     );
 
     // Allocate some segments for GS and FS segment selectors (stack canary stuff)
-    if (reg_gs != -1)
+    if (reg_gs && reg_fs)
     {
         gs = alloc_segment(engine, 0x00aa0000, 0x1000, maat::mem_flag_rw, "Fake GS: segment");
         fs = alloc_segment(engine, 0x00aa0000, 0x1000, maat::mem_flag_rw, "Fake FS: segment");
-        engine->cpu.ctx().set(reg_gs, gs);
-        engine->cpu.ctx().set(reg_fs, fs);
+        engine->cpu.ctx().set(*reg_gs, gs);
+        engine->cpu.ctx().set(*reg_fs, fs);
     }
 
     // Preload emulated libraries. We do it before loading dependencies
@@ -333,7 +337,7 @@ void LoaderLIEF::load_elf_binary(
     elf_setup_stack(engine, base, args, envp);
     
     // Point PC to program entrypoint
-    engine->cpu.ctx().set(reg_pc, _elf->entrypoint() + base);
+    engine->cpu.ctx().set(reg_pc.value(), _elf->entrypoint() + base);
 }
 
 void LoaderLIEF::force_relocation(MaatEngine* engine, addr_t base, const std::string& rel_name, addr_t value)
@@ -728,6 +732,10 @@ std::vector<std::pair<uint64_t, uint64_t>> LoaderLIEF::generate_aux_vector(
         platform = "x86_64";
     else if (engine->arch->type == Arch::Type::ARM64)
         platform = "arm64";
+    else if (engine->arch->type == Arch::Type::RISCV)
+        platform = "riscv";
+    else if (engine->arch->type == Arch::Type::ARM32)
+        platform = "v7";
     else
         throw loader_exception("LIEFLoader::_generate_aux_vector(): got unsupported architecture");
 
