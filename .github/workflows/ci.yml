@@ -79,7 +79,7 @@ jobs:
             f=("${dest}"/*) && sudo mv "${dest}"/*/* "$dest" && sudo rmdir "${f[@]}"
 
     - name: Configure
-      env: { CC: clang-11, CXX: clang++-11 }
+      env: { CC: clang-14, CXX: clang++-14 }
       run: cmake --preset=ci-sanitize -DZ3_ROOT=/opt/z3
 
     - name: Build
