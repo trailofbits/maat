@@ -9223,7 +9223,7 @@ void test_archX86(){
     total += disass_pcmpgtd(engine);
     // total += disass_pextrb(engine);
     total += disass_pminub(engine);
-    // total += disass_pmovmskb(engine);
+    total += disass_pmovmskb(engine);
     total += disass_pop(engine);
     total += disass_popad(engine);
     total += disass_por(engine);
@@ -9233,7 +9233,7 @@ void test_archX86(){
     // TODO - ghidra bug: total += disass_psllq(engine);
     total += disass_psubb(engine);
     total += disass_punpckhdq(engine);
-    // TODO - ghidra bug: total += disass_punpckhqdq(engine);
+    total += disass_punpckhqdq(engine);
     total += disass_punpcklbw(engine);
     total += disass_punpckldq(engine);
     total += disass_punpcklqdq(engine);
