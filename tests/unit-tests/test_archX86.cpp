@@ -6388,7 +6388,7 @@ namespace test
             sym.cpu.ctx().set(X86::EAX, exprcst(32, 0x1900));
             sym.mem->write(0x1900, 0xab001200abababab, 8);
             sym.run_from(0x1050, 1);
-            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xababababdeadbeef, "ArchX86: failed to disassembly and/or execute PUNPCKHDQ");
+            nb += _assert(  sym.cpu.ctx().get(X86::MM0).as_uint() == 0xab001200deadbeef, "ArchX86: failed to disassembly and/or execute PUNPCKHDQ");
 
             return nb;
         }
