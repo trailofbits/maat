@@ -79,7 +79,7 @@ jobs:
             f=("${dest}"/*) && sudo mv "${dest}"/*/* "$dest" && sudo rmdir "${f[@]}"
 
     - name: Configure
-      env: { CC: clang-11, CXX: clang++-11 }
+      env: { CC: clang-14, CXX: clang++-14 }
       run: cmake --preset=ci-sanitize -DZ3_ROOT=/opt/z3
 
     - name: Build
@@ -136,8 +136,8 @@ jobs:
     - name: Install Dependencies
       if: matrix.os == 'macos'
       run: |
-        brew install gmp python3 z3
-        python3 -m pip install pytest
+        brew install gmp z3
+        python3 -m pip install --user pytest
         wget -O - -c https://github.com/lief-project/LIEF/releases/download/$LIEF_VERSION/LIEF-$LIEF_VERSION-Darwin-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
         wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/macOS-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
 
