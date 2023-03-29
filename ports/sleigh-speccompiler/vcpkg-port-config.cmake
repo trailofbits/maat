@@ -1,0 +1,1 @@
+set(SLEIGH_SPECCOMPILER "${CMAKE_CURRENT_LIST_DIR}/../../tools/sleigh-speccompiler/sleigh${VCPKG_HOST_EXECUTABLE_SUFFIX}")

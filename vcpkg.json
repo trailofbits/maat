@@ -5,7 +5,7 @@
     "sleigh",
     "z3",
     {
-      "name": "vcpkg-tool-sleigh-speccompiler",
+      "name": "sleigh-speccompiler",
       "host": true
     }
   ]
