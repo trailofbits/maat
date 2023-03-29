@@ -27,6 +27,9 @@ jobs:
 
     - name: Install Dependencies
       run: |
+        git clone https://github.com/microsoft/vcpkg
+        git -C vcpkg checkout 23f0707b1a46bbf7fff9fb95cde2aa0c7213c31d
+        echo "VCPKG_ROOT=$(pwd)/vcpkg" >> "$GITHUB_ENV"
         sudo apt-get install libgmp-dev python3-dev libz3-dev
         wget -O - -c https://github.com/lief-project/LIEF/releases/download/$LIEF_VERSION/LIEF-$LIEF_VERSION-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
         wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v$SLEIGH_VERSION/Linux-sleigh-$SLEIGH_VERSION-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
@@ -66,6 +69,9 @@ jobs:
 
     - name: Install Dependencies
       run: |
+        git clone https://github.com/microsoft/vcpkg
+        git -C vcpkg checkout 23f0707b1a46bbf7fff9fb95cde2aa0c7213c31d
+        echo "VCPKG_ROOT=$(pwd)/vcpkg" >> "$GITHUB_ENV"
         sudo apt-get install libgmp-dev python3-dev
         # LIEF
         wget -O- https://github.com/lief-project/LIEF/releases/download/$LIEF_VERSION/LIEF-$LIEF_VERSION-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
@@ -125,6 +131,12 @@ jobs:
       run: |
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
+
+    - name: Common Dependencies
+      run: |
+        git clone https://github.com/microsoft/vcpkg
+        git -C vcpkg checkout 23f0707b1a46bbf7fff9fb95cde2aa0c7213c31d
+        echo "VCPKG_ROOT=$(pwd)/vcpkg" >> "$GITHUB_ENV"
 
     - name: Install Dependencies
       if: matrix.os == 'ubuntu'
