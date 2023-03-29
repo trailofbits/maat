@@ -282,22 +282,23 @@ public:
 class TranslationContext
 {
 public:
-    SimpleLoadImage     m_loader;
-    ContextInternal     m_context_internal;
-    DocumentStorage     m_document_storage;
-    Document           *m_document;
-    Element            *m_tags;
+    SimpleLoadImage          m_loader;
+    ContextInternal          m_context_internal;
+    DocumentStorage          m_document_storage;
+    Document                *m_document;
+    Element                 *m_tags;
     std::unique_ptr<Sleigh>  m_sleigh;
-    std::string         m_register_name_cache;
-    TmpCache            tmp_cache;
-    maat::Arch::Type    arch;
-    AssemblyEmitCacher  asm_cache;
+    std::string              m_register_name_cache;
+    TmpCache                 tmp_cache;
+    maat::Arch::Type         arch;
+    AssemblyEmitCacher       asm_cache;
     std::unordered_map<uintm, maat::callother::Id> callother_mapping;
 
     TranslationContext(maat::Arch::Type a, const std::string& slafile, const std::string& pspecfile): arch(a)
     {
         AttributeId::initialize();
         ElementId::initialize();
+
         if (not loadSlaFile(slafile.c_str()))
         {
             throw runtime_exception(Fmt() << "Sleigh: failed to load slafile: " << slafile >> Fmt::to_str);

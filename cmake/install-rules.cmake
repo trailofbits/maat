@@ -25,7 +25,7 @@ set(other_maat_targets)
 # Needed only if using vendored library and not building as shared library
 # because sleigh is always a static library
 if(NOT maat_USE_EXTERNAL_SLEIGH AND NOT BUILD_SHARED_LIBS)
-  list(APPEND other_maat_targets sla sleigh_settings)
+  list(APPEND other_maat_targets sleigh_sla)
 endif()
 
 install(

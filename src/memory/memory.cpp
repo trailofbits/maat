@@ -2708,7 +2708,7 @@ void MemEngine::write_from_concrete_snapshot(addr_t addr, cst_t val, int nb_byte
             if (_endianness == Endian::LITTLE)
             {
                 segment->write_from_concrete_snapshot(addr, val, bytes_to_write);
-                val = val >> (bytes_to_write*8);
+                val = val >> (bytes_to_write*8 - 1);
             }
             else
             {

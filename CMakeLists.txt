@@ -115,7 +115,9 @@ if(maat_USE_EXTERNAL_SLEIGH)
   find_package(sleigh REQUIRED)
 else()
   set(sleigh_ENABLE_TESTS OFF CACHE BOOL "")
+  set(sleigh_BUILD_TOOLS ON CACHE BOOL "")
   add_subdirectory(src/third-party/sleigh/sleigh-cmake sleigh EXCLUDE_FROM_ALL)
+  include("${sleigh_SOURCE_DIR}/cmake/modules/sleighCompile.cmake")
 endif()
 
 target_link_libraries(
