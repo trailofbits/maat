@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  LIEF_VERSION: 0.12.1
+  LIEF_VERSION: 0.12.3
 
 jobs:
 
