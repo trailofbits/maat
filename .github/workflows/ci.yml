@@ -161,6 +161,7 @@ jobs:
         -D BUILD_SHARED_LIBS=${{ matrix.shared }}
         -D VCPKG_HOST_TRIPLET=${{ matrix.triplet }}
         -D VCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+        -D "VCPKG_INSTALLED_DIR=${{ github.workspace }}/vcpkg_installed"
 
     - name: Build
       run: cmake --build build --config Release -j 2
@@ -176,7 +177,8 @@ jobs:
           -Dmaat_DIR=${{ github.workspace }}/prefix/share/maat \
           "-DCMAKE_TOOLCHAIN_FILE=${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
           -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }} \
-          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} \
+          "-DVCPKG_INSTALLED_DIR=${{ github.workspace }}/vcpkg_installed"
         cmake --build build
         ./build/maat_find_package_test
 
