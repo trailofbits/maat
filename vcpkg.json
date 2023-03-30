@@ -1,0 +1,15 @@
+{
+  "dependencies": [
+    "gmp",
+    "lief",
+    "sleigh",
+    "z3",
+    {
+      "name": "sleigh-speccompiler",
+      "host": true
+    }
+  ],
+  "vcpkg-configuration": {
+    "overlay-ports": [ "./ports" ]
+  }
+}
