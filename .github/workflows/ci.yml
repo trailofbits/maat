@@ -7,7 +7,7 @@ on:
 
   pull_request:
     branches:
-    - '**'
+    - "**"
 
 env:
   LIEF_VERSION: 0.12.3
@@ -27,10 +27,18 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        git clone https://github.com/microsoft/vcpkg
-        git -C vcpkg checkout 23f0707b1a46bbf7fff9fb95cde2aa0c7213c31d
-        echo "VCPKG_ROOT=$(pwd)/vcpkg" >> "$GITHUB_ENV"
-        sudo apt-get install python3-dev
+        sudo apt-get install libgmp-dev python3-dev
+        # LIEF
+        wget -O- https://github.com/lief-project/LIEF/releases/download/$LIEF_VERSION/LIEF-$LIEF_VERSION-Linux-x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        # Sleigh
+        wget -O- https://github.com/lifting-bits/sleigh/releases/download/v$SLEIGH_VERSION/Linux-sleigh-$SLEIGH_VERSION-1.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+        # Z3 Ubuntu 20.04 package doesn't play nice with sanitizers
+        # (also remove top-level directory from zip)
+        wget -O z3.zip https://github.com/Z3Prover/z3/releases/download/z3-4.8.14/z3-4.8.14-x64-glibc-2.31.zip
+        dest=/opt/z3; zip=./z3.zip; \
+          sudo mkdir -p "${dest}" && \
+          sudo unzip -d "${dest}" "${zip}" && \
+            f=("${dest}"/*) && sudo mv "${dest}"/*/* "$dest" && sudo rmdir "${f[@]}"
 
     - name: Install LCov
       run: sudo apt-get update -q
@@ -114,6 +122,8 @@ jobs:
         include:
         - { type: shared, shared: YES }
         - { type: static, shared: NO }
+        - { os: macos, triplet: x64-osx-release }
+        - { os: ubuntu, triplet: x64-linux-release }
 
     runs-on: ${{ matrix.os }}-latest
 
@@ -149,6 +159,8 @@ jobs:
     - name: Configure
       run: cmake --preset=ci-${{ matrix.os }}
         -D BUILD_SHARED_LIBS=${{ matrix.shared }}
+        -D VCPKG_HOST_TRIPLET=${{ matrix.triplet }}
+        -D VCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
 
     - name: Build
       run: cmake --build build --config Release -j 2
