@@ -17,7 +17,6 @@
         "systemVars": false
       },
       "errors": {
-        "dev": true,
         "deprecated": true
       }
     },
