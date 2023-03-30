@@ -8,5 +8,8 @@
       "name": "sleigh-speccompiler",
       "host": true
     }
-  ]
+  ],
+  "vcpkg-configuration": {
+    "overlay-ports": [ "./ports" ]
+  }
 }
