@@ -11,7 +11,7 @@ on:
 
 env:
   LIEF_VERSION: 0.12.3
-  SLEIGH_VERSION: 10.2.2
+  SLEIGH_VERSION: 10.2.3
 
 jobs:
   coverage:
