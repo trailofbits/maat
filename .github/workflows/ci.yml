@@ -171,7 +171,12 @@ jobs:
     - name: Test install directory
       working-directory: tests/find-package
       run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -Dmaat_DIR=${{ github.workspace }}/prefix/share/maat
+        cmake -B build -S . \
+          -DCMAKE_BUILD_TYPE=Release \
+          -Dmaat_DIR=${{ github.workspace }}/prefix/share/maat \
+          "-DCMAKE_TOOLCHAIN_FILE=${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
+          -DVCPKG_HOST_TRIPLET=${{ matrix.triplet }} \
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
         cmake --build build
         ./build/maat_find_package_test
 
