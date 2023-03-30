@@ -100,6 +100,7 @@ jobs:
 
   test:
     strategy:
+      fail-fast: false
       matrix:
         os: [
           # TODO: windows,
