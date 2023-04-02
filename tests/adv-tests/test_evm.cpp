@@ -49,8 +49,9 @@ int solve_symbolic_storage()
     sol->add(v == 2);
     nb += _assert(sol->check(), "Couldn't find model to solve symbolic storage read");
     auto model = sol->get_model();
-    nb += _assert(model->get_as_number("b").equal_to(model->get_as_number("d")), "Got wrong model when solving symbolic storage");
-    nb += _assert(not model->get_as_number("c").equal_to(model->get_as_number("d")), "Got wrong model when solving symbolic storage");
+    nb += _assert(not model->contains("a") or not model->get_as_number("a").equal_to(model->get_as_number("d")), "Got wrong model when solving symbolic storage a == d");
+    nb += _assert(model->get_as_number("b").equal_to(model->get_as_number("d")), "Got wrong model when solving symbolic storage b != d");
+    nb += _assert(not model->contains("c") or not model->get_as_number("c").equal_to(model->get_as_number("d")), "Got wrong model when solving symbolic storage c == d");
 
     // Write concrete, read symbolic
     contract.storage->write(Value(256, 0xaaaa), Value(256, 5), s);
@@ -70,8 +71,8 @@ int solve_symbolic_storage()
     nb += _assert(sol->check(), "Couldn't find model to solve symbolic storage read");
     model = sol->get_model();
     nb += _assert(model->get_as_number("a").equal_to(Number(256, 0xdedede)), "Got wrong model when solving symbolic storage");
-    nb += _assert(not model->get_as_number("b").equal_to(Number(256, 0xdedede)), "Got wrong model when solving symbolic storage");
-    nb += _assert(not model->get_as_number("c").equal_to(Number(256, 0xdedede)), "Got wrong model when solving symbolic storage");
+    nb += _assert(not model->contains("b") or not model->get_as_number("b").equal_to(Number(256, 0xdedede)), "Got wrong model when solving symbolic storage");
+    nb += _assert(not model->contains("c") or not model->get_as_number("c").equal_to(Number(256, 0xdedede)), "Got wrong model when solving symbolic storage");
 
     // Overwrite symbolic address
     contract.storage->write(Value(exprvar(256, "a")), Value(256, 15), s);
