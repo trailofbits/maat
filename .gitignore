@@ -7,3 +7,4 @@ cmake-build-*/
 prefix/
 CMakeLists.txt.user
 CMakeUserPresets.json
+maat_state_*
