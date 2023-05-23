@@ -15,7 +15,7 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
         case Arch::Type::X64:
             if (mnemonic == "RDTSC") return Id::X86_RDTSC;
             if (mnemonic == "SYSCALL")
-                if (arch == Arch::Type::X64) return Id::X64_SYSCALL;
+            if (arch == Arch::Type::X64) return Id::X64_SYSCALL;
             if (mnemonic == "CPUID") return Id::X86_CPUID;
             if (mnemonic == "PMINUB") return Id::X86_PMINUB;
             if (mnemonic == "INT") return Id::X86_INT;
@@ -25,6 +25,14 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
             if (mnemonic == "STACK_PUSH") return Id::EVM_STACK_PUSH;
             if (mnemonic == "STACK_POP") return Id::EVM_STACK_POP;
             break;
+        case Arch::Type::PPC32:
+            if (mnemonic == "cntlzw") return Id::PPC32_CNTLZW;
+            if (mnemonic == "cntlzw.") return Id::PPC32_CNTLZW;
+            if (mnemonic == "dcbt") return Id::PPC32_DCBT;
+            if (mnemonic == "sc") return Id::PPC32_SC; ///< not implemented yet TODO: implement syscalls for powerpc
+            if (mnemonic == "isync") return Id::PPC32_SYNC;
+            if (mnemonic == "sync") return Id::PPC32_SYNC;
+
         default:
             break;
     }
@@ -1041,6 +1049,75 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
+// Function handle the countleadingzero instruction in powerpc 32 bit
+// TODO: might not work if the register it is executing is symbolic 
+void PPC32_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+
+    Value program_counter = engine.cpu.ctx().get(engine.arch->pc());
+    const Value& cnt = pinst.in1.value();
+    if (not cnt.is_concrete(*engine.vars))
+        throw callother_exception("CNTLW: got symbolic position");
+    Value src1 = pinst.in1.value();
+    ucst_t temp = pinst.in1.value().as_uint();
+    int count = 0;
+    while (temp!=0){
+        temp = temp >> 1;
+        count++;
+    }
+    count = inst.out.size() - count;
+    pinst.res = Number(inst.out.size(),count);
+    return;
+}
+
+// TODO: Data cache Block doesn't need to be emulated yet however in the future you might want to. Improves performance? 
+void PPC32_DCB_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst) //data cache block instruction assume it works
+{
+    return;
+}
+
+void PPC32_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    // Get interrupt number
+    cst_t num = pinst.in1.value().as_uint(*engine.vars);
+
+    // Get syscall number
+    const Value& sys_num = engine.cpu.ctx().get(PPC32::R0);
+    if (sys_num.is_symbolic(*engine.vars))
+    {
+        throw callother_exception("SC 0x0: syscall number is symbolic!");
+    }
+    // Get function to emulate syscall`
+    try
+    {
+        const env::Function& func = engine.env->get_syscall_func_by_num(
+            sys_num.as_uint(*engine.vars)
+        );
+
+        // Execute function callback
+        switch (func.callback().execute(engine, env::abi::PPC_SC::instance()))
+        {
+            case env::Action::CONTINUE:
+                break;
+            case env::Action::ERROR:
+                throw callother_exception(
+                    "SC 0x0: Emulation callback signaled an error"
+                );
+        }
+    }
+    catch(const env_exception& e)
+    {
+        throw callother_exception(
+            Fmt() << "SC 0x0: " << e.what() >> Fmt::to_str
+        );
+    }
+}
+
+void PPC32_SYNC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst) //data cache block instruction assume it works
+{
+    return;
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -1082,6 +1159,11 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
+    
+    h.set_handler(Id::PPC32_CNTLZW, PPC32_CNTLZW_handler);
+    h.set_handler(Id::PPC32_DCBT, PPC32_DCB_handler);
+    h.set_handler(Id::PPC32_SC, PPC32_SC_handler);
+    h.set_handler(Id::PPC32_SYNC, PPC32_SYNC_handler);
 
     return h;
 }

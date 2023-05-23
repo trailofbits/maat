@@ -734,6 +734,36 @@ FunctionCallback::return_t sys_linux_openat(
     return linux_generic_open(engine, filepath, flags);
 }
 
+//--------------------------------------------------------------------
+FunctionCallback::return_t sys_linux_getpid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    return engine.process->pid;
+}
+
+FunctionCallback::return_t sys_linux_gettid(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    // In a single-threaded process, the thread ID is equal to the process ID
+    return sys_linux_getpid(engine, args);
+}
+
+FunctionCallback::return_t sys_linux_set_tid_address(
+    MaatEngine& engine,
+    const std::vector<Value>& args
+)
+{
+    //pretend everything went fine
+    engine.log.warning("Emulated set_tid_address(): faking success");
+    // Always return the caller's thread ID
+    return sys_linux_gettid(engine, args);
+}
+
+//--------------------------------------------------------------------
 // ssize_t readlink(const char *path, char *buf, size_t bufsiz);
 FunctionCallback::return_t sys_linux_readlink(
     MaatEngine& engine,
@@ -808,7 +838,7 @@ syscall_func_map_t linux_x86_syscall_map()
 syscall_func_map_t linux_x64_syscall_map()
 {
     syscall_func_map_t res
-    {
+    {        
         {0, Function("sys_read", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_read))},
         {1, Function("sys_write", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_write))},
         {2, Function("sys_open", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_open))},
@@ -822,10 +852,12 @@ syscall_func_map_t linux_x64_syscall_map()
         {17, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
         {20, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
         {21, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
+        {39, Function("sys_linux_getpid", FunctionCallback({},sys_linux_getpid))},   // nathan edit
         {60, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
         {63, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {89, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
+        {218, Function("sys_set_tid_address", FunctionCallback({},sys_linux_gettid))},  //nathan edit plz
         {231, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
         {257, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
         {262, Function("sys_newfstatat", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize, 4}, sys_linux_fstatat))}
@@ -833,6 +865,33 @@ syscall_func_map_t linux_x64_syscall_map()
     return res;
 }
 
+syscall_func_map_t linux_ppc32_syscall_map()
+{
+    syscall_func_map_t res
+    {        
+        {1, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
+        {3, Function("sys_read", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_read))},
+        {4, Function("sys_write", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_write))},
+        {5, Function("sys_open", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_open))},
+        {6, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
+        {18, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
+        {28, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
+        {33, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
+        {45, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {85, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
+        {90, Function("sys_mmap", FunctionCallback({env::abi::auto_argsize, 4, 4, 4, 4, 4}, sys_linux_mmap))},
+        {91, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
+        {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
+        {125, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
+        {146, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
+        {171, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
+        {179, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
+        {197, Function("sys_fstat64", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))}, 
+        {234, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
+        {286, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
+    };
+    return res;
+}
 } // namespace emulated
 } // namespace env
 } // namespace maat

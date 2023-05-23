@@ -2,6 +2,8 @@
 #include "maat/solver.hpp"
 #include "maat/stats.hpp"
 #include "maat/env/env_EVM.hpp"
+#include <iostream>
+#include <string>
 
 namespace maat
 {
@@ -32,10 +34,18 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
             env = std::make_shared<env::EVM::EthereumEmulator>();
             endianness = Endian::BIG;
             break;
+        case Arch::Type::PPC32:
+            arch = std::make_shared<PPC32::ArchPPC32>();
+            lifters[CPUMode::PPC32] = std::make_shared<Lifter>(CPUMode::PPC32);
+            _current_cpu_mode = CPUMode::PPC32;
+            endianness = Endian::BIG;
+            break;
+
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
             _current_cpu_mode = CPUMode::NONE;
             break;
+
         default:
             throw runtime_exception("MaatEngine(): unsupported architecture");
     }

@@ -25,6 +25,7 @@ add_executable(unit-tests
   unit-tests/test_snapshot.cpp
   unit-tests/test_solver.cpp
   unit-tests/test_symbolic_memory.cpp
+  unit-tests/test_archPPC32.cpp
 )
 target_link_libraries(unit-tests maat::maat)
 target_compile_features(unit-tests PRIVATE cxx_std_17)

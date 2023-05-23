@@ -45,7 +45,7 @@ Value x86_alias_getter(CPUContext& ctx, ir::reg_t reg)
     Value res;
     if (reg == X86::EFLAGS)
     {
-        res = extract(ctx.get(X86::CF),0,0);
+        res = extract(ctx.get(X86::CF),0,0); 
         res.set_concat(Value(1,1), res);
         res.set_concat(extract(ctx.get(X86::PF),0,0), res);
         res.set_concat(Value(1,0), res);
@@ -136,6 +136,59 @@ Value x64_alias_getter(CPUContext& ctx, ir::reg_t reg)
 
 std::set x64_aliases{X64::RFLAGS};
 
+void PPC32_alias_setter(CPUContext& ctx, ir::reg_t reg, const Value& val)
+{
+    if (reg == PPC32::CR)
+    {
+        _set_flag_from_bit(ctx, PPC32::CR7, val, 0,4);
+        _set_flag_from_bit(ctx, PPC32::CR6, val, 4,4);
+        _set_flag_from_bit(ctx, PPC32::CR5, val, 8,4);
+        _set_flag_from_bit(ctx, PPC32::CR4, val, 12,4);
+        _set_flag_from_bit(ctx, PPC32::CR3, val, 16,4);
+        _set_flag_from_bit(ctx, PPC32::CR2, val, 20,4);
+        _set_flag_from_bit(ctx, PPC32::CR1, val, 24,4);
+        _set_flag_from_bit(ctx, PPC32::CR0, val, 28,4);
+    }
+    else if (reg == PPC32::XER)
+    {
+        _set_flag_from_bit(ctx, PPC32::XER_SO, val, 31);
+        _set_flag_from_bit(ctx, PPC32::XER_OV, val, 30);
+        _set_flag_from_bit(ctx, PPC32::XER_CA, val, 29);
+    }
+    else {
+        throw runtime_exception("PPC32_alias_setter: got unsupported register");
+    }    
+}
+//check if works
+Value PPC32_alias_getter(CPUContext& ctx, ir::reg_t reg)
+{
+    Value res;
+    if (reg == PPC32::CR)
+    {
+        
+        res = extract(ctx.get(PPC32::CR7),3,0);
+        res.set_concat(extract(ctx.get(PPC32::CR6),3,0), res);
+        res.set_concat(extract(ctx.get(PPC32::CR5),3,0), res);
+        res.set_concat(extract(ctx.get(PPC32::CR4),3,0), res);
+        res.set_concat(extract(ctx.get(PPC32::CR3),3,0), res);
+        res.set_concat(extract(ctx.get(PPC32::CR2),3,0), res);
+        res.set_concat(extract(ctx.get(PPC32::CR1),3,0), res);
+        res.set_concat(extract(ctx.get(PPC32::CR0),3,0), res);        
+    }
+    else if (reg == PPC32::XER)
+    {
+        res = extract(Value(28, 0), 28, 0);
+        res.set_concat(extract(ctx.get(PPC32::XER_CA),0,0), res);
+        res.set_concat(extract(ctx.get(PPC32::XER_OV),0,0), res);
+        res.set_concat(extract(ctx.get(PPC32::XER_SO),0,0), res);
+    }
+    else
+        throw runtime_exception("PPC32_alias_getter: got unsupported register");
+    return res;
+}
+
+std::set PPC32_aliases{PPC32::CR,PPC32::XER};
+
 void CPUContext::init_alias_getset(Arch::Type arch)
 {
     if (arch == Arch::Type::X86)
@@ -149,6 +202,14 @@ void CPUContext::init_alias_getset(Arch::Type arch)
         alias_setter = x64_alias_setter;
         alias_getter = x64_alias_getter;
         aliased_regs = x64_aliases;
+    }
+
+
+    else if (arch == Arch::Type::PPC32)
+    {
+        alias_setter = PPC32_alias_setter;
+        alias_getter = PPC32_alias_getter;
+        aliased_regs = PPC32_aliases;
     }
 }
 

@@ -659,6 +659,19 @@ Library linux_x64_libc()
     return lib;
 }
 
+
+// For Linux ppc
+Library linux_ppc32_libc()
+{
+    Library lib("libc", libc_common_functions, libc_common_data);
+    // Arch specific functions...
+    /// TODO: Find Function to use
+    lib.add_function(Function("__libc_start_main",
+        FunctionCallback({4,4,4,4,4,4,4}, linux_x86_libc_start_main_callback)
+    ));
+    return lib;
+}
+
 } // namespace emulated
 } // namespace env
 } // namespace maat

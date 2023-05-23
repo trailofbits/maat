@@ -18,6 +18,7 @@ void test_solver();
 void test_loader();
 void test_serialization();
 void test_archEVM();
+void test_archPPC32();
 
 
 int main(int argc, char ** argv)
@@ -55,7 +56,7 @@ int main(int argc, char ** argv)
                 test_solver();
                 test_loader();
                 test_serialization();
-                
+                test_archPPC32();
                 /* TODO
                 test_archARM64();
                 test_env();
@@ -98,6 +99,8 @@ int main(int argc, char ** argv)
                     else if( !strcmp(argv[i], "env"))
                         test_env();
                     */
+                    else if( !strcmp(argv[i], "PPC32"))
+                        test_archPPC32();
                     else
                         std::cout   << "[" << red << "!" << def 
                                     << "] Skipping unknown test: "

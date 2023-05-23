@@ -36,6 +36,7 @@ enum class CPUMode
     T32, ///< ARM Thumb
     A64, ///< ARM 64-bits
     EVM, ///< Ethereum byte-code
+    PPC32, ///< powerpc 32-bits
     NONE
 };
 
@@ -57,6 +58,7 @@ public:
         ARM32, // TODO ///< armv7 (32 bits)
         ARM64, // TODO ///< armv8 (64 bits)
         EVM, ///< Ethereum byte-code
+        PPC32, // TODO ///< PowerPC (64 bits)
         NONE
     };
 
@@ -421,6 +423,176 @@ namespace ARM64
     /** \} */ // Arch doxygen group
 
 } // namespace ARM64
+
+/* ==================================================
+ *                      PowerPC
+ * ================================================= */
+//namespace for ppc - 32 bits specific definitions and classes
+namespace PPC32
+{
+    static constexpr reg_t R0 = 0; // fixed value of zero
+    static constexpr reg_t R1 = 1; // Stack Pointer (SP)
+    // General purpose registers r2 - r12
+    static constexpr reg_t R2 = 2;
+    static constexpr reg_t R3 = 3;
+    static constexpr reg_t R4 = 4;
+    static constexpr reg_t R5 = 5;
+    static constexpr reg_t R6 = 6;
+    static constexpr reg_t R7 = 7;
+    static constexpr reg_t R8 = 8;
+    static constexpr reg_t R9 = 9;
+    static constexpr reg_t R10 = 10;
+    static constexpr reg_t R11 = 11;
+    static constexpr reg_t R12 = 12;
+    static constexpr reg_t R13 = 13; // small data area pointer
+    static constexpr reg_t R14 = 14; // TOC pointer
+    static constexpr reg_t R15 = 15; // Linkage register (LR)
+    static constexpr reg_t R16 = 16; // Conditional Register (CR)
+    static constexpr reg_t R17 = 17; // Count Register (CTR)
+    // General Purpose Register r18 - r31
+    static constexpr reg_t R18 = 18; 
+    static constexpr reg_t R19 = 19;
+    static constexpr reg_t R20 = 20;
+    static constexpr reg_t R21 = 21;
+    static constexpr reg_t R22 = 22;
+    static constexpr reg_t R23 = 23;
+    static constexpr reg_t R24 = 24;
+    static constexpr reg_t R25 = 25;
+    static constexpr reg_t R26 = 26;
+    static constexpr reg_t R27 = 27;
+    static constexpr reg_t R28 = 28;
+    static constexpr reg_t R29 = 29;
+    static constexpr reg_t R30 = 30;
+    static constexpr reg_t R31 = 31;
+
+    //floating point register
+    static constexpr reg_t F0 = 32; 
+    static constexpr reg_t F1 = 33; 
+    static constexpr reg_t F2 = 34;
+    static constexpr reg_t F3 = 35;
+    static constexpr reg_t F4 = 36;
+    static constexpr reg_t F5 = 37;
+    static constexpr reg_t F6 = 38;
+    static constexpr reg_t F7 = 39;
+    static constexpr reg_t F8 = 40;
+    static constexpr reg_t F9 = 41;
+    static constexpr reg_t F10 = 42;
+    static constexpr reg_t F11 = 43;
+    static constexpr reg_t F12 = 44;
+    static constexpr reg_t F13 = 45; 
+    static constexpr reg_t F14 = 46; 
+    static constexpr reg_t F15 = 47; 
+    static constexpr reg_t F16 = 48; 
+    static constexpr reg_t F17 = 49; 
+    static constexpr reg_t F18 = 50; 
+    static constexpr reg_t F19 = 51;
+    static constexpr reg_t F20 = 52;
+    static constexpr reg_t F21 = 53;
+    static constexpr reg_t F22 = 54;
+    static constexpr reg_t F23 = 55;
+    static constexpr reg_t F24 = 56;
+    static constexpr reg_t F25 = 57;
+    static constexpr reg_t F26 = 58;
+    static constexpr reg_t F27 = 59;
+    static constexpr reg_t F28 = 60;
+    static constexpr reg_t F29 = 61;
+    static constexpr reg_t F30 = 62;
+    static constexpr reg_t F31 = 63;
+
+    // special register
+    static constexpr reg_t PC = 64;
+    static constexpr reg_t SP = 1; // same as r1
+    static constexpr reg_t CR = 65;
+    static constexpr reg_t LR = 66;
+    static constexpr reg_t CTR = 67;
+    static constexpr reg_t XER = 68;
+    // TODO: FPSCR register
+
+    // CR Flags
+    static constexpr reg_t CR0 = 69;
+    static constexpr reg_t CR1 = 70;
+    static constexpr reg_t CR2 = 71;
+    static constexpr reg_t CR3 = 72;
+    static constexpr reg_t CR4 = 73;
+    static constexpr reg_t CR5 = 74;
+    static constexpr reg_t CR6 = 75;
+    static constexpr reg_t CR7 = 76;
+
+    // XER Flags
+    static constexpr reg_t XER_SO = 77;
+    static constexpr reg_t XER_OV = 78;
+    static constexpr reg_t XER_CA = 79;
+
+    static constexpr reg_t TBL = 80;
+    static constexpr reg_t TBU = 81;
+
+    // Floating oint status and control registers
+    static constexpr reg_t FPSCR = 82;
+    static constexpr reg_t FX = 83;
+    static constexpr reg_t FEX = 84;
+    static constexpr reg_t VX = 85;
+    static constexpr reg_t OX = 86;
+    static constexpr reg_t UX = 87;
+    static constexpr reg_t ZX = 88;
+    static constexpr reg_t XX = 89;
+    static constexpr reg_t VXSNAN = 90;
+    static constexpr reg_t VXISI = 91;
+    static constexpr reg_t VXIDI = 92;
+    static constexpr reg_t VXZDZ = 93;
+    static constexpr reg_t VXIMZ = 94;
+    static constexpr reg_t VXVC = 95;
+    static constexpr reg_t FR = 96;
+    static constexpr reg_t FI = 97;
+    static constexpr reg_t FPRF = 98;
+    static constexpr reg_t VXSOFT = 99;
+    static constexpr reg_t VXSQRT = 100;
+    static constexpr reg_t VXCVI = 101;
+    static constexpr reg_t VE = 102;
+    static constexpr reg_t OE = 103;
+    static constexpr reg_t UE = 104;
+    static constexpr reg_t ZE = 105;
+    static constexpr reg_t XE = 106;
+    static constexpr reg_t NI = 107;
+    static constexpr reg_t RN = 108;
+
+    //machine state register
+    static constexpr reg_t MSR = 109;
+    // adding more register PVR special purpose register 287
+    static constexpr reg_t PVR = 110;
+    // fake storage to preserve r2 between functions
+    static constexpr reg_t R2SAVE = 111;
+    static constexpr reg_t RESERVE =112;
+
+
+    // static constexpr reg_t POW = 110;
+    // static constexpr reg_t ILE= 111;
+    // static constexpr reg_t EE = 112;
+    // static constexpr reg_t PR = 113;
+    // static constexpr reg_t FP = 114;
+    // static constexpr reg_t ME = 115;
+    // static constexpr reg_t FE0 = 116;
+    // static constexpr reg_t SE = 117;
+    // static constexpr reg_t BE = 118;
+    // static constexpr reg_t FE1 = 119;
+    // static constexpr reg_t IP = 118;
+    // static constexpr reg_t IR = 119;
+    // static constexpr reg_t DR = 120;
+
+
+    static constexpr reg_t NB_REGS = 113;
+    class ArchPPC32: public Arch
+    {
+    public:
+        ArchPPC32();
+        virtual ~ArchPPC32() = default;
+        const std::string& reg_name(reg_t num) const;
+        reg_t reg_num(const std::string& name) const;
+        size_t reg_size(reg_t reg_num) const;
+        reg_t sp() const;
+        reg_t pc() const;
+        reg_t tsc() const;
+    };
+} //namespace ppc32
 
 /** \} */ // Arch doxygen group
 

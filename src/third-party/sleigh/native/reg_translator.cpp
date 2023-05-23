@@ -169,12 +169,12 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "MM6_Ba") return maat::ir::Reg(maat::X86::MM6, 7, 0);
     if (reg_name == "MM6_Bb") return maat::ir::Reg(maat::X86::MM6, 15, 8);
     if (reg_name == "MM6_Bc") return maat::ir::Reg(maat::X86::MM6, 23, 16);
-    if (reg_name == "MM6_Bd") return maat::ir::Reg(maat::X86::MM6, 31, 24);
     if (reg_name == "MM6_Be") return maat::ir::Reg(maat::X86::MM6, 39, 32);
     if (reg_name == "MM6_Bf") return maat::ir::Reg(maat::X86::MM6, 47, 40);
     if (reg_name == "MM6_Bg") return maat::ir::Reg(maat::X86::MM6, 55, 48);
     if (reg_name == "MM6_Bh") return maat::ir::Reg(maat::X86::MM6, 63, 56);
     
+    if (reg_name == "MM6_Bd") return maat::ir::Reg(maat::X86::MM6, 31, 24);
     if (reg_name == "MM7") return maat::ir::Reg(maat::X86::MM7, 64);
     if (reg_name == "MM7_Da") return maat::ir::Reg(maat::X86::MM7, 31, 0);
     if (reg_name == "MM7_Db") return maat::ir::Reg(maat::X86::MM7, 63, 32);
@@ -1318,6 +1318,137 @@ maat::ir::Param sleigh_reg_translate_EVM(const std::string& reg_name)
             << reg_name
             >> maat::Fmt::to_str
             );
+}
+
+maat::ir::Param sleigh_reg_translate_PPC32(const std::string& reg_name)
+{
+    if (reg_name == "r0") return maat::ir::Reg(maat::PPC32::R0,32);
+    if (reg_name == "r1") return maat::ir::Reg(maat::PPC32::R1,32);
+    if (reg_name == "r2") return maat::ir::Reg(maat::PPC32::R2,32);
+    if (reg_name == "r3") return maat::ir::Reg(maat::PPC32::R3,32);
+    if (reg_name == "r4") return maat::ir::Reg(maat::PPC32::R4,32);
+    if (reg_name == "r5") return maat::ir::Reg(maat::PPC32::R5,32);
+    if (reg_name == "r6") return maat::ir::Reg(maat::PPC32::R6,32);
+    if (reg_name == "r7") return maat::ir::Reg(maat::PPC32::R7,32);
+    if (reg_name == "r8") return maat::ir::Reg(maat::PPC32::R8,32);
+    if (reg_name == "r9") return maat::ir::Reg(maat::PPC32::R9,32);
+    if (reg_name == "r10") return maat::ir::Reg(maat::PPC32::R10,32);
+    if (reg_name == "r11") return maat::ir::Reg(maat::PPC32::R11,32);
+    if (reg_name == "r12") return maat::ir::Reg(maat::PPC32::R12,32);
+    if (reg_name == "r13") return maat::ir::Reg(maat::PPC32::R13,32);
+    if (reg_name == "r14") return maat::ir::Reg(maat::PPC32::R14,32);
+    if (reg_name == "r15") return maat::ir::Reg(maat::PPC32::R15,32);
+    if (reg_name == "r16") return maat::ir::Reg(maat::PPC32::R16,32);
+    if (reg_name == "r17") return maat::ir::Reg(maat::PPC32::R17,32);
+    if (reg_name == "r18") return maat::ir::Reg(maat::PPC32::R18,32);
+    if (reg_name == "r19") return maat::ir::Reg(maat::PPC32::R19,32);
+    if (reg_name == "r20") return maat::ir::Reg(maat::PPC32::R20,32);
+    if (reg_name == "r21") return maat::ir::Reg(maat::PPC32::R21,32);
+    if (reg_name == "r22") return maat::ir::Reg(maat::PPC32::R22,32);
+    if (reg_name == "r23") return maat::ir::Reg(maat::PPC32::R23,32);
+    if (reg_name == "r24") return maat::ir::Reg(maat::PPC32::R24,32);
+    if (reg_name == "r25") return maat::ir::Reg(maat::PPC32::R25,32);
+    if (reg_name == "r26") return maat::ir::Reg(maat::PPC32::R26,32);
+    if (reg_name == "r27") return maat::ir::Reg(maat::PPC32::R27,32);
+    if (reg_name == "r28") return maat::ir::Reg(maat::PPC32::R28,32);
+    if (reg_name == "r29") return maat::ir::Reg(maat::PPC32::R29,32);
+    if (reg_name == "r30") return maat::ir::Reg(maat::PPC32::R30,32);
+    if (reg_name == "r31") return maat::ir::Reg(maat::PPC32::R31,32);
+
+    if (reg_name == "f0") return maat::ir::Reg(maat::PPC32::F0,64);
+    if (reg_name == "f1") return maat::ir::Reg(maat::PPC32::F1,64);
+    if (reg_name == "f2") return maat::ir::Reg(maat::PPC32::F2,64);
+    if (reg_name == "f3") return maat::ir::Reg(maat::PPC32::F3,64);
+    if (reg_name == "f4") return maat::ir::Reg(maat::PPC32::F4,64);
+    if (reg_name == "f5") return maat::ir::Reg(maat::PPC32::F5,64);
+    if (reg_name == "f6") return maat::ir::Reg(maat::PPC32::F6,64);
+    if (reg_name == "f7") return maat::ir::Reg(maat::PPC32::F7,64);
+    if (reg_name == "f8") return maat::ir::Reg(maat::PPC32::F8,64);
+    if (reg_name == "f9") return maat::ir::Reg(maat::PPC32::F9,64);
+    if (reg_name == "f10") return maat::ir::Reg(maat::PPC32::F10,64);
+    if (reg_name == "f11") return maat::ir::Reg(maat::PPC32::F11,64);
+    if (reg_name == "f12") return maat::ir::Reg(maat::PPC32::F12,64);
+    if (reg_name == "f13") return maat::ir::Reg(maat::PPC32::F13,64);
+    if (reg_name == "f14") return maat::ir::Reg(maat::PPC32::F14,64);
+    if (reg_name == "f15") return maat::ir::Reg(maat::PPC32::F15,64);
+    if (reg_name == "f16") return maat::ir::Reg(maat::PPC32::F16,64);
+    if (reg_name == "f17") return maat::ir::Reg(maat::PPC32::F17,64);
+    if (reg_name == "f18") return maat::ir::Reg(maat::PPC32::F18,64);
+    if (reg_name == "f19") return maat::ir::Reg(maat::PPC32::F19,64);
+    if (reg_name == "f20") return maat::ir::Reg(maat::PPC32::F20,64);
+    if (reg_name == "f21") return maat::ir::Reg(maat::PPC32::F21,64);
+    if (reg_name == "f22") return maat::ir::Reg(maat::PPC32::F22,64);
+    if (reg_name == "f23") return maat::ir::Reg(maat::PPC32::F23,64);
+    if (reg_name == "f24") return maat::ir::Reg(maat::PPC32::F24,64);
+    if (reg_name == "f25") return maat::ir::Reg(maat::PPC32::F25,64);
+    if (reg_name == "f26") return maat::ir::Reg(maat::PPC32::F26,64);
+    if (reg_name == "f27") return maat::ir::Reg(maat::PPC32::F27,64);
+    if (reg_name == "f28") return maat::ir::Reg(maat::PPC32::F28,64);
+    if (reg_name == "f29") return maat::ir::Reg(maat::PPC32::F29,64);
+    if (reg_name == "f30") return maat::ir::Reg(maat::PPC32::F30,64);
+    if (reg_name == "f31") return maat::ir::Reg(maat::PPC32::F31,64);
+
+    if (reg_name == "pc") return maat::ir::Reg(maat::PPC32::PC,32);
+    if (reg_name == "LR") return maat::ir::Reg(maat::PPC32::LR,32);
+    if (reg_name == "CTR") return maat::ir::Reg(maat::PPC32::CTR,32);
+    if (reg_name == "xer") return maat::ir::Reg(maat::PPC32::XER,32);
+
+    if (reg_name == "xer_so") return maat::ir::Reg(maat::PPC32::XER_SO,8);
+    if (reg_name == "xer_ov") return maat::ir::Reg(maat::PPC32::XER_OV,8);
+    if (reg_name == "xer_ca") return maat::ir::Reg(maat::PPC32::XER_CA,8);
+
+    if (reg_name == "cr0") return maat::ir::Reg(maat::PPC32::CR0,8);
+    if (reg_name == "cr1") return maat::ir::Reg(maat::PPC32::CR1,8);
+    if (reg_name == "cr2") return maat::ir::Reg(maat::PPC32::CR2,8);
+    if (reg_name == "cr3") return maat::ir::Reg(maat::PPC32::CR3,8);
+    if (reg_name == "cr4") return maat::ir::Reg(maat::PPC32::CR4,8);
+    if (reg_name == "cr5") return maat::ir::Reg(maat::PPC32::CR5,8);
+    if (reg_name == "cr6") return maat::ir::Reg(maat::PPC32::CR6,8);
+    if (reg_name == "cr7") return maat::ir::Reg(maat::PPC32::CR7,8);
+
+    if (reg_name == "tblw") return maat::ir::Reg(maat::PPC32::TBL,32);
+    if (reg_name == "tbuw") return maat::ir::Reg(maat::PPC32::TBU,32);
+    if (reg_name == "tblr") return maat::ir::Reg(maat::PPC32::TBL,32);
+    if (reg_name == "tbur") return maat::ir::Reg(maat::PPC32::TBU,32);
+
+    if (reg_name == "fpscr") return maat::ir::Reg(maat::PPC32::FPSCR,32);
+    if (reg_name == "fp_fx") return maat::ir::Reg(maat::PPC32::FPSCR,0,0);
+    if (reg_name == "fp_fex") return maat::ir::Reg(maat::PPC32::FPSCR,1,1);
+    if (reg_name == "fp_vx") return maat::ir::Reg(maat::PPC32::FPSCR,2,2);
+    if (reg_name == "fp_ox") return maat::ir::Reg(maat::PPC32::FPSCR,3,3);
+    if (reg_name == "fp_ux") return maat::ir::Reg(maat::PPC32::FPSCR,4,4);
+    if (reg_name == "fp_zx") return maat::ir::Reg(maat::PPC32::FPSCR,5,5);
+    if (reg_name == "fp_xx") return maat::ir::Reg(maat::PPC32::FPSCR,6,6);
+    if (reg_name == "fp_vxsnan") return maat::ir::Reg(maat::PPC32::FPSCR,7,7);
+    if (reg_name == "fp_vxisi") return maat::ir::Reg(maat::PPC32::FPSCR,8,8);
+    if (reg_name == "fp_vxidi") return maat::ir::Reg(maat::PPC32::FPSCR,9,9);
+    if (reg_name == "fp_vxzdz") return maat::ir::Reg(maat::PPC32::FPSCR,10,10);
+    if (reg_name == "fp_vximz") return maat::ir::Reg(maat::PPC32::FPSCR,11,11);
+    if (reg_name == "fp_vxvc") return maat::ir::Reg(maat::PPC32::FPSCR,12,12);
+    if (reg_name == "fp_fr") return maat::ir::Reg(maat::PPC32::FPSCR,13,13);
+    if (reg_name == "fp_fi") return maat::ir::Reg(maat::PPC32::FPSCR,14,14);
+    if (reg_name == "fp_fprf") return maat::ir::Reg(maat::PPC32::FPSCR,19,15);
+    if (reg_name == "fp_vxsoft") return maat::ir::Reg(maat::PPC32::FPSCR,21,21);
+    if (reg_name == "fp_vxsqrt") return maat::ir::Reg(maat::PPC32::FPSCR,22,22);
+    if (reg_name == "fp_vxcvi") return maat::ir::Reg(maat::PPC32::FPSCR,23,23);
+    if (reg_name == "fp_ve") return maat::ir::Reg(maat::PPC32::FPSCR,24,24);
+    if (reg_name == "fp_oe") return maat::ir::Reg(maat::PPC32::FPSCR,25,25);
+    if (reg_name == "fp_ue") return maat::ir::Reg(maat::PPC32::FPSCR,26,26);
+    if (reg_name == "fp_ze") return maat::ir::Reg(maat::PPC32::FPSCR,27,27);
+    if (reg_name == "fp_xe") return maat::ir::Reg(maat::PPC32::FPSCR,28,28);
+    if (reg_name == "fp_ni") return maat::ir::Reg(maat::PPC32::FPSCR,29,29);
+    if (reg_name == "fp_rn") return maat::ir::Reg(maat::PPC32::FPSCR,31,30);
+
+    if (reg_name == "MSR") return maat::ir::Reg(maat::PPC32::MSR,32);
+    if (reg_name == "spr11f") return maat::ir::Reg(maat::PPC32::PVR,32);
+    if (reg_name == "r2Save") return maat::ir::Reg(maat::PPC32::R2SAVE,32);
+    if (reg_name == "RESERVE") return maat::ir::Reg(maat::PPC32::RESERVE,32);
+
+    throw maat::runtime_exception(maat::Fmt()
+        << "PPC32: Register translation from SLEIGH to MAAT missing for register "
+        << reg_name
+        >> maat::Fmt::to_str
+        );
 }
 
 } // namespace maat
