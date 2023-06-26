@@ -36,7 +36,7 @@ enum class CPUMode
     T32, ///< ARM Thumb
     A64, ///< ARM 64-bits
     EVM, ///< Ethereum byte-code
-    PPC32, ///< powerpc 32-bits
+    PPC32, ///< PowerPC 32-bits
     NONE
 };
 
@@ -58,7 +58,7 @@ public:
         ARM32, // TODO ///< armv7 (32 bits)
         ARM64, // TODO ///< armv8 (64 bits)
         EVM, ///< Ethereum byte-code
-        PPC32, // TODO ///< PowerPC (64 bits)
+        PPC32, ///< PowerPC 32-bits
         NONE
     };
 
@@ -427,12 +427,13 @@ namespace ARM64
 /* ==================================================
  *                      PowerPC
  * ================================================= */
-//namespace for ppc - 32 bits specific definitions and classes
+
+/// Namespace for PPC32 specific definitions and classes
 namespace PPC32
 {
-    static constexpr reg_t R0 = 0; // fixed value of zero
+    // General Purpose Registers
+    static constexpr reg_t R0 = 0; // Fixed Value of Zero
     static constexpr reg_t R1 = 1; // Stack Pointer (SP)
-    // General purpose registers r2 - r12
     static constexpr reg_t R2 = 2;
     static constexpr reg_t R3 = 3;
     static constexpr reg_t R4 = 4;
@@ -444,12 +445,11 @@ namespace PPC32
     static constexpr reg_t R10 = 10;
     static constexpr reg_t R11 = 11;
     static constexpr reg_t R12 = 12;
-    static constexpr reg_t R13 = 13; // small data area pointer
-    static constexpr reg_t R14 = 14; // TOC pointer
-    static constexpr reg_t R15 = 15; // Linkage register (LR)
-    static constexpr reg_t R16 = 16; // Conditional Register (CR)
-    static constexpr reg_t R17 = 17; // Count Register (CTR)
-    // General Purpose Register r18 - r31
+    static constexpr reg_t R13 = 13; 
+    static constexpr reg_t R14 = 14; 
+    static constexpr reg_t R15 = 15; 
+    static constexpr reg_t R16 = 16; 
+    static constexpr reg_t R17 = 17; 
     static constexpr reg_t R18 = 18; 
     static constexpr reg_t R19 = 19;
     static constexpr reg_t R20 = 20;
@@ -464,8 +464,7 @@ namespace PPC32
     static constexpr reg_t R29 = 29;
     static constexpr reg_t R30 = 30;
     static constexpr reg_t R31 = 31;
-
-    //floating point register
+    // Floating Point Register
     static constexpr reg_t F0 = 32; 
     static constexpr reg_t F1 = 33; 
     static constexpr reg_t F2 = 34;
@@ -498,16 +497,13 @@ namespace PPC32
     static constexpr reg_t F29 = 61;
     static constexpr reg_t F30 = 62;
     static constexpr reg_t F31 = 63;
-
-    // special register
+    // Special Registers
     static constexpr reg_t PC = 64;
     static constexpr reg_t SP = 1; // same as r1
     static constexpr reg_t CR = 65;
     static constexpr reg_t LR = 66;
     static constexpr reg_t CTR = 67;
     static constexpr reg_t XER = 68;
-    // TODO: FPSCR register
-
     // CR Flags
     static constexpr reg_t CR0 = 69;
     static constexpr reg_t CR1 = 70;
@@ -517,16 +513,14 @@ namespace PPC32
     static constexpr reg_t CR5 = 74;
     static constexpr reg_t CR6 = 75;
     static constexpr reg_t CR7 = 76;
-
     // XER Flags
     static constexpr reg_t XER_SO = 77;
     static constexpr reg_t XER_OV = 78;
     static constexpr reg_t XER_CA = 79;
-
+    // Time Base Register
     static constexpr reg_t TBL = 80;
     static constexpr reg_t TBU = 81;
-
-    // Floating oint status and control registers
+    // Floating Point Status and Control Registers
     static constexpr reg_t FPSCR = 82;
     static constexpr reg_t FX = 83;
     static constexpr reg_t FEX = 84;
@@ -554,32 +548,17 @@ namespace PPC32
     static constexpr reg_t XE = 106;
     static constexpr reg_t NI = 107;
     static constexpr reg_t RN = 108;
-
-    //machine state register
+    // Machine State Register
     static constexpr reg_t MSR = 109;
-    // adding more register PVR special purpose register 287
+    // PVR Special Surpose Register
     static constexpr reg_t PVR = 110;
-    // fake storage to preserve r2 between functions
+    // Reserved Registers
     static constexpr reg_t R2SAVE = 111;
     static constexpr reg_t RESERVE =112;
-
-
-    // static constexpr reg_t POW = 110;
-    // static constexpr reg_t ILE= 111;
-    // static constexpr reg_t EE = 112;
-    // static constexpr reg_t PR = 113;
-    // static constexpr reg_t FP = 114;
-    // static constexpr reg_t ME = 115;
-    // static constexpr reg_t FE0 = 116;
-    // static constexpr reg_t SE = 117;
-    // static constexpr reg_t BE = 118;
-    // static constexpr reg_t FE1 = 119;
-    // static constexpr reg_t IP = 118;
-    // static constexpr reg_t IR = 119;
-    // static constexpr reg_t DR = 120;
-
-
+    // Total Number of Registers
     static constexpr reg_t NB_REGS = 113;
+
+    /// PowerPC 32-bits Architecture
     class ArchPPC32: public Arch
     {
     public:
@@ -592,6 +571,7 @@ namespace PPC32
         reg_t pc() const;
         reg_t tsc() const;
     };
+    
 } //namespace ppc32
 
 /** \} */ // Arch doxygen group

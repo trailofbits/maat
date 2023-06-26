@@ -169,12 +169,12 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "MM6_Ba") return maat::ir::Reg(maat::X86::MM6, 7, 0);
     if (reg_name == "MM6_Bb") return maat::ir::Reg(maat::X86::MM6, 15, 8);
     if (reg_name == "MM6_Bc") return maat::ir::Reg(maat::X86::MM6, 23, 16);
+    if (reg_name == "MM6_Bd") return maat::ir::Reg(maat::X86::MM6, 31, 24);
     if (reg_name == "MM6_Be") return maat::ir::Reg(maat::X86::MM6, 39, 32);
     if (reg_name == "MM6_Bf") return maat::ir::Reg(maat::X86::MM6, 47, 40);
     if (reg_name == "MM6_Bg") return maat::ir::Reg(maat::X86::MM6, 55, 48);
     if (reg_name == "MM6_Bh") return maat::ir::Reg(maat::X86::MM6, 63, 56);
     
-    if (reg_name == "MM6_Bd") return maat::ir::Reg(maat::X86::MM6, 31, 24);
     if (reg_name == "MM7") return maat::ir::Reg(maat::X86::MM7, 64);
     if (reg_name == "MM7_Da") return maat::ir::Reg(maat::X86::MM7, 31, 0);
     if (reg_name == "MM7_Db") return maat::ir::Reg(maat::X86::MM7, 63, 32);

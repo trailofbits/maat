@@ -13,6 +13,7 @@ endif()
 add_executable(unit-tests
   unit-tests/test_all.cpp
   unit-tests/test_archEVM.cpp
+  unit-tests/test_archPPC32.cpp
   unit-tests/test_archX64.cpp
   unit-tests/test_archX86.cpp
   unit-tests/test_event.cpp
@@ -25,7 +26,6 @@ add_executable(unit-tests
   unit-tests/test_snapshot.cpp
   unit-tests/test_solver.cpp
   unit-tests/test_symbolic_memory.cpp
-  unit-tests/test_archPPC32.cpp
 )
 target_link_libraries(unit-tests maat::maat)
 target_compile_features(unit-tests PRIVATE cxx_std_17)

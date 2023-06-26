@@ -403,9 +403,9 @@ public:
         // If arch is powerpc 32 bit then don't allow contextSet() (fixes low level error in ghidra)
         if (arch == Arch::Type::PPC32)
         {
-            // disable context setting for PowerPC 32-bit architecture
             m_sleigh->allowContextSet(false);
         }
+        
         m_sleigh->initialize(m_document_storage);
         // setData doesn't affect performance for a big num_bytes :)
         m_loader.setData(address, bytes, num_bytes);

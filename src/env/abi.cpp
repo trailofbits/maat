@@ -397,7 +397,6 @@ void X86_LINUX_INT80::set_ret_value(
     }, ret_val);
 }
 
-
 void X86_LINUX_INT80::ret(MaatEngine& engine) const
 {
     // Do nothing

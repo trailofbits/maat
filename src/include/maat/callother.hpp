@@ -67,7 +67,7 @@ enum class Id
     EVM_LOG,
     //PPC 32
     PPC32_CNTLZW, ///< CNTLZW instruction
-    PPC32_DCBT, ///< Data block cache touch similar to prefetch in x86
+    PPC32_DCBT, ///< Data block cache touch (similar to prefetch in x86)
     PPC32_SC, ///< System Call
     PPC32_SYNC, ///< sync instruction
     UNSUPPORTED

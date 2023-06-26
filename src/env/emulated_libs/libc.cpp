@@ -659,8 +659,7 @@ Library linux_x64_libc()
     return lib;
 }
 
-
-// For Linux ppc
+// For Linux PPC
 Library linux_ppc32_libc()
 {
     Library lib("libc", libc_common_functions, libc_common_data);

@@ -29,10 +29,9 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
             if (mnemonic == "cntlzw") return Id::PPC32_CNTLZW;
             if (mnemonic == "cntlzw.") return Id::PPC32_CNTLZW;
             if (mnemonic == "dcbt") return Id::PPC32_DCBT;
-            if (mnemonic == "sc") return Id::PPC32_SC; ///< not implemented yet TODO: implement syscalls for powerpc
+            if (mnemonic == "sc") return Id::PPC32_SC;
             if (mnemonic == "isync") return Id::PPC32_SYNC;
             if (mnemonic == "sync") return Id::PPC32_SYNC;
-
         default:
             break;
     }
@@ -1049,25 +1048,27 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
-// Function handle the countleadingzero instruction in powerpc 32 bit
-// TODO: might not work if the register it is executing is symbolic 
+// Function handles the countleadingzero instruction in powerpc 32 bit
 void PPC32_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-
     Value program_counter = engine.cpu.ctx().get(engine.arch->pc());
     const Value& cnt = pinst.in1.value();
+
     if (not cnt.is_concrete(*engine.vars))
         throw callother_exception("CNTLW: got symbolic position");
+
     Value src1 = pinst.in1.value();
     ucst_t temp = pinst.in1.value().as_uint();
+
     int count = 0;
-    while (temp!=0){
+    while (temp != 0)
+    {
         temp = temp >> 1;
         count++;
     }
+
     count = inst.out.size() - count;
     pinst.res = Number(inst.out.size(),count);
-    return;
 }
 
 // TODO: Data cache Block doesn't need to be emulated yet however in the future you might want to. Improves performance? 

@@ -53,10 +53,10 @@ int main(int argc, char ** argv)
                 test_archX86();
                 test_archX64();
                 test_archEVM();
+                test_archPPC32();
                 test_solver();
                 test_loader();
                 test_serialization();
-                test_archPPC32();
                 /* TODO
                 test_archARM64();
                 test_env();

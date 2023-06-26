@@ -112,7 +112,6 @@ bool Lifter::lift_block(
         return false;
     }
 
-
     return true;
 }
 

@@ -18,8 +18,8 @@ include(cmake/variables.cmake)
 # ---- Declare library ----
 
 add_library(maat_maat
-  src/arch/arch_PPC32.cpp
   src/arch/arch_EVM.cpp
+  src/arch/arch_PPC32.cpp
   src/arch/arch_X86.cpp
   src/arch/lifter.cpp
   src/arch/register_aliases.cpp
@@ -194,8 +194,6 @@ macro(maat_sleigh_compile_files ARCH_DIR ARCH SLASPEC PSPEC)
   )
   configure_file("${spec_dir}/${ARCH_DIR}/data/languages/${PSPEC}.pspec" "${spec_out_dir}/${PSPEC}.pspec")
 endmacro()
-
-
 
 maat_sleigh_compile(x86 x86-64)
 maat_sleigh_compile(x86 x86)

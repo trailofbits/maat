@@ -734,7 +734,6 @@ FunctionCallback::return_t sys_linux_openat(
     return linux_generic_open(engine, filepath, flags);
 }
 
-//--------------------------------------------------------------------
 FunctionCallback::return_t sys_linux_getpid(
     MaatEngine& engine,
     const std::vector<Value>& args
@@ -763,7 +762,6 @@ FunctionCallback::return_t sys_linux_set_tid_address(
     return sys_linux_gettid(engine, args);
 }
 
-//--------------------------------------------------------------------
 // ssize_t readlink(const char *path, char *buf, size_t bufsiz);
 FunctionCallback::return_t sys_linux_readlink(
     MaatEngine& engine,
@@ -838,7 +836,7 @@ syscall_func_map_t linux_x86_syscall_map()
 syscall_func_map_t linux_x64_syscall_map()
 {
     syscall_func_map_t res
-    {        
+    {
         {0, Function("sys_read", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_read))},
         {1, Function("sys_write", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_write))},
         {2, Function("sys_open", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_open))},
@@ -852,12 +850,12 @@ syscall_func_map_t linux_x64_syscall_map()
         {17, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
         {20, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
         {21, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
-        {39, Function("sys_linux_getpid", FunctionCallback({},sys_linux_getpid))},   // nathan edit
+        {39, Function("sys_linux_getpid", FunctionCallback({},sys_linux_getpid))},
         {60, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
         {63, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
         {89, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
         {158, Function("sys_arch_prctl", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_arch_prctl))},
-        {218, Function("sys_set_tid_address", FunctionCallback({},sys_linux_gettid))},  //nathan edit plz
+        {218, Function("sys_set_tid_address", FunctionCallback({},sys_linux_gettid))},
         {231, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
         {257, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))},
         {262, Function("sys_newfstatat", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize, 4}, sys_linux_fstatat))}

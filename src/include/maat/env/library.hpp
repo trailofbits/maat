@@ -311,7 +311,7 @@ public:
     virtual void ret(MaatEngine& engine) const;
 };
 
-/// PowerPC defualt ABI
+/// PowerPC Default ABI
 class PPC32ABI : public ABI
 {
 protected:

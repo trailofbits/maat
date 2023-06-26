@@ -1,6 +1,6 @@
 #include "maat/arch.hpp"
 #include "maat/exception.hpp"
-#include "maat/cpu.hpp" //file directory 
+#include "maat/cpu.hpp"
 
 namespace maat
 {
@@ -9,7 +9,7 @@ namespace PPC32
 {
     ArchPPC32::ArchPPC32(): Arch(Arch::Type::PPC32,32,PPC32::NB_REGS)
     {
-        available_modes = {CPUMode::X86};
+        available_modes = {CPUMode::PPC32};
         reg_map =
         {
             {"r0", R0},
@@ -122,26 +122,10 @@ namespace PPC32
             {"xe",XE},
             {"ni",NI},
             {"rn",RN},
-            // msr
             {"msr",MSR},
             {"pvr",PVR},
             {"r2save",R2SAVE},
             {"reserve",RESERVE}
-
-            // I don't see MSR sub registers in the sleigh p-code so i commented it out here
-            // {"pow",POW},
-            // {"ile",ILE},
-            // {"ee",EE},
-            // {"pr",PR},
-            // {"fp",FP},
-            // {"me",ME},
-            // {"fe0",FE0},
-            // {"se",SE},
-            // {"be",BE},
-            // {"fe1",FE1},
-            // {"ip",IP},
-            // {"ir",IR},
-            // {"dr",DR}
         };
     }
     size_t ArchPPC32::reg_size(reg_t reg_num) const 
@@ -220,7 +204,6 @@ namespace PPC32
             case CTR:
             case XER:
                 return 32;
-            // CR Flags
             case CR0:
             case CR1:
             case CR2:
@@ -229,12 +212,10 @@ namespace PPC32
             case CR5:
             case CR6:
             case CR7:
-            // XER Flags
             case XER_SO:
             case XER_OV:
             case XER_CA:
                 return 8;
-            //TBL and TBU and Floating oint status and control registers
             case TBL:
             case TBU:
             case FPSCR:
@@ -269,32 +250,17 @@ namespace PPC32
             case XE:
             case NI:
             case RN:
-            // msr
-            // case POW:
-            // case ILE:
-            // case EE:
-            // case PR:
-            // case FP:
-            // case ME:
-            // case FE0:
-            // case SE:
-            // case BE:
-            // case FE1:
-            // case IP:
-            // case IR:
-            // case DR:
                 return 8;
-
             default:
                 throw runtime_exception("ArchPPC32::reg_size(): got unsupported reg num");
         }
     }
+
     reg_t ArchPPC32::sp() const
     {
         return PPC32::R1;
     }
     
-    // ppc doesn't have an instruction pointer register ArchPPC32::pc() const
     reg_t ArchPPC32::pc() const
     {
         return PPC32::PC;
@@ -306,5 +272,6 @@ namespace PPC32
     }
 
 } // namespace PPC32
+
 } // namespace maat
 
