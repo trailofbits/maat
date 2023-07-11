@@ -403,7 +403,6 @@ void X86_LINUX_INT80::ret(MaatEngine& engine) const
 }
 
 // ========== ABI standard AArch64 EABI ============ 
-// Nathan check the stack manipulation of AArch64
 AARCH64_ABI::AARCH64_ABI(): ABI(Type::AARCH64_ABI)
 {}
 
@@ -438,7 +437,7 @@ Value AARCH64_ABI::get_arg(MaatEngine& engine, int n, size_t arg_size) const
         addr_t stack = engine.cpu.ctx().get(ARM64::SP).as_uint() + 16;
         res = engine.mem->read(stack+(16*(n-arg_regs.size())), arg_size);
     }
-    // TODO(boyan): this assumes little endian if we read arguments
+    // this assumes little endian if we read arguments
     // from the stack
     return _adjust_value_to_size(res, arg_size, engine);
 }

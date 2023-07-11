@@ -1386,13 +1386,8 @@ maat::ir::Param sleigh_reg_translate_ARM64(const std::string& reg_name)
     if (reg_name == "w28") return maat::ir::Reg(maat::ARM64::R28, 31, 0);
     if (reg_name == "w29") return maat::ir::Reg(maat::ARM64::R29, 31, 0);
     if (reg_name == "w30") return maat::ir::Reg(maat::ARM64::R30, 31, 0);
+
     // /* Floating Point Registers */
-    // /*  #	128-bit registers named Q0-Q31
-    //     #	64-bit registers named D0-D31
-    //     #	32-bit registers named S0-S31
-    //     #	16-bit registers named H0-H31
-    //     #	8-bit registers named B0-B31    
-    //   maat doesn't have IR:: instruction for FLOAT_ADD*/
     if (reg_name == "q0") return maat::ir::Reg(maat::ARM64::V0, 127, 0);
     if (reg_name == "q1") return maat::ir::Reg(maat::ARM64::V1, 127, 0);
     if (reg_name == "q2") return maat::ir::Reg(maat::ARM64::V2, 127, 0);
@@ -1425,6 +1420,7 @@ maat::ir::Param sleigh_reg_translate_ARM64(const std::string& reg_name)
     if (reg_name == "q29") return maat::ir::Reg(maat::ARM64::V29, 127, 0);
     if (reg_name == "q30") return maat::ir::Reg(maat::ARM64::V30, 127, 0);
     if (reg_name == "q31") return maat::ir::Reg(maat::ARM64::V31, 127, 0);
+
     // /* D0-D31 */
     if (reg_name == "d0") return maat::ir::Reg(maat::ARM64::V0, 63, 0);
     if (reg_name == "d1") return maat::ir::Reg(maat::ARM64::V1, 63, 0);
@@ -1458,7 +1454,8 @@ maat::ir::Param sleigh_reg_translate_ARM64(const std::string& reg_name)
     if (reg_name == "d29") return maat::ir::Reg(maat::ARM64::V29, 63, 0);
     if (reg_name == "d30") return maat::ir::Reg(maat::ARM64::V30, 63, 0);
     if (reg_name == "d31") return maat::ir::Reg(maat::ARM64::V31, 63, 0);
-    // // scalable vector extension
+
+    /*  Scalable Vector Extension */
     if (reg_name == "z0") return maat::ir::Reg(maat::ARM64::V0, 127, 0);
     if (reg_name == "z1") return maat::ir::Reg(maat::ARM64::V1, 127, 0);
     if (reg_name == "z2") return maat::ir::Reg(maat::ARM64::V2, 127, 0);
@@ -1496,12 +1493,13 @@ maat::ir::Param sleigh_reg_translate_ARM64(const std::string& reg_name)
     if (reg_name == "sp") return maat::ir::Reg(maat::ARM64::SP, 63, 0);
     if (reg_name == "wsp") return maat::ir::Reg(maat::ARM64::SP, 31, 0);
 
-    // conditional flags
+    /* Conditional Flags */ 
     if (reg_name == "NG") return maat::ir::Reg(maat::ARM64::NF, 8);
     if (reg_name == "ZR") return maat::ir::Reg(maat::ARM64::ZF, 8);
     if (reg_name == "CY") return maat::ir::Reg(maat::ARM64::CF, 8);
     if (reg_name == "OV") return maat::ir::Reg(maat::ARM64::VF, 8);
-    // temp conditional flags ?? why do I need them lOLL IDK :)
+
+    /* Temp Conditional Flags */
     if (reg_name == "tmpNG") return maat::ir::Reg(maat::ARM64::NF, 8);
     if (reg_name == "tmpZR") return maat::ir::Reg(maat::ARM64::ZF, 8);
     if (reg_name == "tmpCY") return maat::ir::Reg(maat::ARM64::CF, 8);

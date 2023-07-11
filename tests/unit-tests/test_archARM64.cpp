@@ -25,8 +25,6 @@ namespace archARM64
         return 1; 
     }
 
-    // register check test
-
     unsigned int disass_addition(MaatEngine& sym)
     {
         unsigned int ret_value = 0;
@@ -34,16 +32,14 @@ namespace archARM64
         sym.cpu.ctx().set(ARM64::R2, exprcst(64,15));
         sym.cpu.ctx().set(ARM64::R1, exprcst(64,25));
 
-
         code = string("\x20\x00\x02\x8b", 4); // add x0, x1, x2
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
 
         sym.run_from(0x1000,1);
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 40, "ArchARM64: failed to disassembly and/or execute add");
-
+        
         /* lets test the carry bit 
            load a 64-bit constant in x0*/ 
-        
         code = string("\x80\x46\x82\xd2", 4); // movz    x0, #0x1234
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
 
@@ -71,7 +67,6 @@ namespace archARM64
         code = string("\x22\x00\x00\xab", 4); // adds x2, x0, x1
         sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size());
 
-
         sym.run_from(0x1000,9);
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0xffffffffabcd1234, "1: ArchARM64: failed to disassembly and/or execute add");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R1).as_uint() == 0x7fffffffabcd1234, "2: ArchARM64: failed to disassembly and/or execute add");
@@ -81,7 +76,6 @@ namespace archARM64
         ret_value += _assert( sym.cpu.ctx().get(ARM64::NF).as_uint() == 0x0, "5: ArchARM64: failed to disassembly and/or execute add");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::ZF).as_uint() == 0x0, "6: ArchARM64: failed to disassembly and/or execute add");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::VF).as_uint() == 0x0, "7: ArchARM64: failed to disassembly and/or execute add");
-
 
         /* Check overflow bit now */
         code = string("\xe0\xff\xef\xf2", 4); // movk    x0, #0x7FFF, LSL #48
@@ -108,7 +102,6 @@ namespace archARM64
         sym.mem->write_buffer(0x1008, (uint8_t*)code.c_str(), code.size());
 
         sym.run_from(0x1000,3);
-
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0xffffffffffffffff, "8: ArchARM64: failed to disassembly and/or execute add");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R1).as_uint() == 0x1, "9: ArchARM64: failed to disassembly and/or execute add");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R2).as_uint() == 0x0, "10: ArchARM64: failed to disassembly and/or execute add");
@@ -118,19 +111,6 @@ namespace archARM64
         ret_value += _assert( sym.cpu.ctx().get(ARM64::VF).as_uint() == 0x0, "13:ArchARM64: failed to disassembly and/or execute add");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::CF).as_uint() == 0x1, "14:ArchARM64: failed to disassembly and/or execute add");
 
-        // cout << "R1: " << sym.cpu.ctx().get(ARM64::R1) << endl;
-        // cout << "R0: " << sym.cpu.ctx().get(ARM64::R0) << endl;
-        // cout << "Result: " << sym.cpu.ctx().get(ARM64::R2) << endl;
-        // cout << "CF: " << sym.cpu.ctx().get(ARM64::CF) << endl;
-        // cout << "NF: " << sym.cpu.ctx().get(ARM64::NF) << endl;
-        // cout << "ZF: " << sym.cpu.ctx().get(ARM64::ZF) << endl;
-        // cout << "VF: " << sym.cpu.ctx().get(ARM64::VF) << endl;
-
-        // code = string("\x3f\x00\x00\x31", 4); // cmn w1, #0
-
-        // sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
-        // sym.run_from(0x1000,1);
-        // ret_value += _assert( sym.cpu.ctx().get(ARM64::R1).as_uint() == 0xffffabcd1234, "9: ArchARM64: failed to disassembly and/or execute add");
         return ret_value;
     }
 
@@ -156,6 +136,7 @@ namespace archARM64
         ret_value += _assert( sym.cpu.ctx().get(ARM64::NF).as_uint() == 0x0, "4 ArchARM64: failed to disassembly and/or execute sub");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::ZF).as_uint() == 0x0, "4 ArchARM64: failed to disassembly and/or execute sub");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::VF).as_uint() == 0x0, "4 ArchARM64: failed to disassembly and/or execute sub");
+        
         code = string("\x40\x00\x80\xd2", 4); //mov x0 #2
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
 
@@ -220,9 +201,9 @@ namespace archARM64
         sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
 
         sym.run_from(0x1000,4);
-
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0xf,    "1: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R5).as_uint() == -0x1,   "2: ArchARM64: failed to disassembly and/or execute Branch Conditional");
+        
         ret_value += _assert( sym.cpu.ctx().get(ARM64::CF).as_uint() == 0x1,    "3: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::NF).as_uint() == 0x0,    "4: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::VF).as_uint() == 0x0,    "5: ArchARM64: failed to disassembly and/or execute Branch Conditional");
@@ -244,9 +225,9 @@ namespace archARM64
         sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
 
         sym.run_from(0x1000,4);
-
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0xf, "7: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R5).as_uint() == 0x1, "8: ArchARM64: failed to disassembly and/or execute Branch Conditional");
+        
         ret_value += _assert( sym.cpu.ctx().get(ARM64::CF).as_uint() == 0x1, "9: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::NF).as_uint() == 0x0, "10: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::VF).as_uint() == 0x0, "11: ArchARM64: failed to disassembly and/or execute Branch Conditional");
@@ -268,9 +249,9 @@ namespace archARM64
         sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size());
 
         sym.run_from(0x1000,4);
-
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0xf, "13: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R5).as_uint() == 0x1, "14: ArchARM64: failed to disassembly and/or execute Branch Conditional");
+        
         ret_value += _assert( sym.cpu.ctx().get(ARM64::CF).as_uint() == 0x1, "15: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::NF).as_uint() == 0x0, "16: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::VF).as_uint() == 0x0, "17: ArchARM64: failed to disassembly and/or execute Branch Conditional");
@@ -296,6 +277,7 @@ namespace archARM64
 
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0xf, "19: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R5).as_uint() == 0x1, "21: ArchARM64: failed to disassembly and/or execute Branch Conditional");
+        
         ret_value += _assert( sym.cpu.ctx().get(ARM64::CF).as_uint() == 0x1, "22: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::NF).as_uint() == 0x0, "23: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::VF).as_uint() == 0x0, "24: ArchARM64: failed to disassembly and/or execute Branch Conditional");
@@ -318,7 +300,6 @@ namespace archARM64
         sym.cpu.ctx().set(ARM64::R4, exprcst(64,0));
         sym.cpu.ctx().set(ARM64::R5, exprcst(64,0));
         
-
         code = string("\x20\x00\x00\xb9", 4); // str w0 [x1]
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());  
 
@@ -339,7 +320,6 @@ namespace archARM64
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
         
         sym.run_from(0x1000,1);
-
         ret_value += _assert((uint32_t)sym.mem->read(0x110000, 4).as_uint() == 0xe0ddf00d, "3: ArchARM64: failed to disassemble store and load instructions.");
         ret_value += _assert((uint32_t)sym.mem->read(0x110004, 4).as_uint() == 0xbadc0ffe, "4: ArchARM64: failed to disassemble store and load instructions.");
 
@@ -368,14 +348,13 @@ namespace archARM64
         code = string("\x01\xf4\x7e\xd3",4); // lsl x1, x0, #2
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
 
-        code = string("\x02\xfc\x42\xd3",4); // lsr x1, x0, #2
+        code = string("\x02\xfc\x42\xd3",4); // lsr x2, x0, #2
         sym.mem->write_buffer(0x1004, (uint8_t*)code.c_str(), code.size());
 
-        code = string("\x03\xfc\x42\xd3",4); // asr x1, x0, #2
+        code = string("\x03\xfc\x42\xd3",4); // asr x3, x0, #2
         sym.mem->write_buffer(0x1008, (uint8_t*)code.c_str(), code.size());
 
         sym.run_from(0x1000,3);
-
         ret_value +=  _assert( sym.cpu.ctx().get(ARM64::R1).as_uint() == 0x37ab4, "1: ArchARM64: failed to disassemble Logical Shifts instructions.");
         ret_value +=  _assert( sym.cpu.ctx().get(ARM64::R2).as_uint() == 0x37ab, "2: ArchARM64: failed to disassemble Logical Shifts instructions.");
         ret_value +=  _assert( sym.cpu.ctx().get(ARM64::R3).as_uint() == 0x37ab, "3: ArchARM64: failed to disassemble Logical Shifts instructions.");
@@ -389,43 +368,46 @@ namespace archARM64
         string code;
         // Set Registers
         sym.cpu.ctx().set(ARM64::R0, exprcst(64,0));
-        sym.cpu.ctx().set(ARM64::R1, exprcst(64,0));
-        sym.cpu.ctx().set(ARM64::R2, exprcst(64,0));
+        sym.cpu.ctx().set(ARM64::R1, exprcst(64,0x6));
+        sym.cpu.ctx().set(ARM64::R2, exprcst(64,0xf));
         sym.cpu.ctx().set(ARM64::R3, exprcst(64,0));
         sym.cpu.ctx().set(ARM64::R4, exprcst(64,0));
         sym.cpu.ctx().set(ARM64::R5, exprcst(64,0));
-
-        sym.cpu.ctx().set(ARM64::R1, exprcst(64,0x6));
-        sym.cpu.ctx().set(ARM64::R2, exprcst(64,0xf));
         
         code = string("\x20\x00\x02\x8a",4); // and x0, x1, x2
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+
         sym.run_from(0x1000,1);
         ret_value +=  _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0x6, "1: ArchARM64: failed to disassemble bitwise operations");
 
         code = string("\x20\x00\x02\xaa",4); // or x0, x1, x2
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+
         sym.run_from(0x1000,1);
         ret_value +=  _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0xf, "2: ArchARM64: failed to disassemble bitwise operations");
         
         code = string("\x20\x00\x22\x8a",4); // bic x0, x1, x2
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+
         sym.run_from(0x1000,1);
         ret_value +=  _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0x0, "3: ArchARM64: failed to disassemble bitwise operations");
 
         code = string("\x20\x00\x22\xaa",4); // orn x0, x1, x2
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+
         sym.run_from(0x1000,1);
         ret_value +=  _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0xfffffffffffffff6, "4: ArchARM64: failed to disassemble bitwise operations");
 
         code = string("\x20\x00\x02\xca",4); // eor x0, x1, x2
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+
         sym.run_from(0x1000,1);
         ret_value +=  _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 9, "5: ArchARM64: failed to disassemble bitwise operations");
 
         sym.cpu.ctx().set(ARM64::R2, exprcst(64,0x9));
         code = string("\x20\x00\x22\xca",4); // eon x0, x1, x2
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+        
         sym.run_from(0x1000,1);
         ret_value +=  _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0xfffffffffffffff0, "6: ArchARM64: failed to disassemble bitwise operations");
 

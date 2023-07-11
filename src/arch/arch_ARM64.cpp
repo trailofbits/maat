@@ -8,7 +8,7 @@ namespace ARM64
 {
     ArchARM64::ArchARM64(): Arch(Arch::Type::ARM64, 64, ARM64::NB_REGS)
     {
-        available_modes = {CPUMode::A64, CPUMode::T32}; // TODO available modes = ARM 64 and thumb 32
+        available_modes = {CPUMode::A64};
         reg_map =
         {
             {"r0", R0},

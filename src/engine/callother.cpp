@@ -1047,8 +1047,14 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
 void AARCH64_UDF_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     // UDF Does nothing
-    engine.cpu.ctx().set(ARM64::PC,engine.cpu.ctx().get(ARM64::LR));
-    return;
+    engine.log.warning(
+        Fmt() << "LOG" 
+        << ": UDF instruction called, not implemented yet. UDF does nothing"
+        >> Fmt::to_str
+    );
+    throw callother_exception(
+        "UDF instruction: Emulation callback signaled an error"
+    );
 }
 
 
