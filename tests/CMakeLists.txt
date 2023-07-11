@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.14)
-
 project(maatTests LANGUAGES CXX)
 include(../cmake/project-is-top-level.cmake)
 include(../cmake/folders.cmake)
@@ -9,9 +8,11 @@ if(PROJECT_IS_TOP_LEVEL)
   enable_testing()
 endif()
 
+set(CMAKE_BUILD_TYPE Debug)
 # Unit tests
 add_executable(unit-tests
   unit-tests/test_all.cpp
+  unit-tests/test_archARM64.cpp
   unit-tests/test_archEVM.cpp
   unit-tests/test_archX64.cpp
   unit-tests/test_archX86.cpp

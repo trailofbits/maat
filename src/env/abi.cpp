@@ -402,6 +402,71 @@ void X86_LINUX_INT80::ret(MaatEngine& engine) const
     // Do nothing
 }
 
+// ========== ABI standard AArch64 EABI ============ 
+AARCH64_ABI::AARCH64_ABI(): ABI(Type::AARCH64_ABI)
+{}
+
+ABI& AARCH64_ABI::instance()
+{
+    static AARCH64_ABI abi;
+    return abi;
+}
+
+void AARCH64_ABI::get_args(
+    MaatEngine& engine,
+    const args_spec_t& args_spec,
+    std::vector<Value>& args
+) const
+{
+    int i = 0;
+    for (auto arg : args_spec)
+        args.push_back(get_arg(engine, i++, arg));
+}
+
+Value AARCH64_ABI::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+{
+    std::vector<reg_t> arg_regs{ARM64::R0, ARM64::R1, ARM64::R2, ARM64::R3, ARM64::R4, ARM64::R5,ARM64::R6, ARM64::R7, ARM64::R8};
+    Value res;
+    arg_size = ABI::real_arg_size(engine, arg_size);
+    if (n < 9)
+    {
+        res = engine.cpu.ctx().get(arg_regs[n]);
+    }
+    else
+    {
+        addr_t stack = engine.cpu.ctx().get(ARM64::SP).as_uint() + 16;
+        res = engine.mem->read(stack+(16*(n-arg_regs.size())), arg_size);
+    }
+    // this assumes little endian if we read arguments
+    // from the stack
+    return _adjust_value_to_size(res, arg_size, engine);
+}
+
+void AARCH64_ABI::prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const
+{
+    // Push the return address, simply
+    engine.cpu.ctx().set(ARM64::SP, engine.cpu.ctx().get(ARM64::SP).as_uint() - 16);
+    engine.mem->write(engine.cpu.ctx().get(ARM64::SP).as_uint(), ret_addr, 16);
+}
+
+void AARCH64_ABI::set_ret_value(
+    MaatEngine& engine,
+    const FunctionCallback::return_t& ret_val
+) const
+{
+    // Return value in R0
+    std::visit(maat::util::overloaded{
+        [](std::monostate arg){return;}, // no return value
+        [&engine](auto arg){engine.cpu.ctx().set(ARM64::R0, arg);}
+    }, ret_val);
+}
+
+void AARCH64_ABI::ret(MaatEngine& engine) const
+{
+    // Caller clean-up, we just simulate a 'ret' instruction
+    engine.cpu.ctx().set(ARM64::PC, engine.mem->read(engine.cpu.ctx().get(ARM64::SP).as_uint(), 16));
+    engine.cpu.ctx().set(ARM64::SP, engine.cpu.ctx().get(ARM64::SP).as_uint() + 16);
+}
 } // namespace abi
 } // namespace env
 } // namespace maat

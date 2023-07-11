@@ -32,6 +32,11 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
             env = std::make_shared<env::EVM::EthereumEmulator>();
             endianness = Endian::BIG;
             break;
+        case Arch::Type::ARM64:
+            arch = std::make_shared<ARM64::ArchARM64>();
+            lifters[CPUMode::A64] = std::make_shared<Lifter>(CPUMode::A64);
+            _current_cpu_mode = CPUMode::A64;
+            break;
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
             _current_cpu_mode = CPUMode::NONE;
