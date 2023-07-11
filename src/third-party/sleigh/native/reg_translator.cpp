@@ -1320,4 +1320,199 @@ maat::ir::Param sleigh_reg_translate_EVM(const std::string& reg_name)
             );
 }
 
+maat::ir::Param sleigh_reg_translate_ARM64(const std::string& reg_name)
+{
+    /* General Purpose Registers */
+    if (reg_name == "x0") return maat::ir::Reg(maat::ARM64::R0, 63, 0);
+    if (reg_name == "x1") return maat::ir::Reg(maat::ARM64::R1, 63, 0);
+    if (reg_name == "x2") return maat::ir::Reg(maat::ARM64::R2, 63, 0);
+    if (reg_name == "x3") return maat::ir::Reg(maat::ARM64::R3, 63, 0);
+    if (reg_name == "x4") return maat::ir::Reg(maat::ARM64::R4, 63, 0);
+    if (reg_name == "x5") return maat::ir::Reg(maat::ARM64::R5, 63, 0);
+    if (reg_name == "x6") return maat::ir::Reg(maat::ARM64::R6, 63, 0);
+    if (reg_name == "x7") return maat::ir::Reg(maat::ARM64::R7, 63, 0);
+    if (reg_name == "x8") return maat::ir::Reg(maat::ARM64::R8, 63, 0);
+    if (reg_name == "x9") return maat::ir::Reg(maat::ARM64::R9, 63, 0);
+    if (reg_name == "x10") return maat::ir::Reg(maat::ARM64::R10, 63, 0);
+    if (reg_name == "x11") return maat::ir::Reg(maat::ARM64::R11, 63, 0);
+    if (reg_name == "x12") return maat::ir::Reg(maat::ARM64::R12, 63, 0);
+    if (reg_name == "x13") return maat::ir::Reg(maat::ARM64::R13, 63, 0);
+    if (reg_name == "x14") return maat::ir::Reg(maat::ARM64::R14, 63, 0);
+    if (reg_name == "x15") return maat::ir::Reg(maat::ARM64::R15, 63, 0);
+    if (reg_name == "x16") return maat::ir::Reg(maat::ARM64::R16, 63, 0);
+    if (reg_name == "x17") return maat::ir::Reg(maat::ARM64::R17, 63, 0);
+    if (reg_name == "x18") return maat::ir::Reg(maat::ARM64::R18, 63, 0);
+    if (reg_name == "x19") return maat::ir::Reg(maat::ARM64::R19, 63, 0);
+    if (reg_name == "x20") return maat::ir::Reg(maat::ARM64::R20, 63, 0);
+    if (reg_name == "x21") return maat::ir::Reg(maat::ARM64::R21, 63, 0);
+    if (reg_name == "x22") return maat::ir::Reg(maat::ARM64::R22, 63, 0);
+    if (reg_name == "x23") return maat::ir::Reg(maat::ARM64::R23, 63, 0);
+    if (reg_name == "x24") return maat::ir::Reg(maat::ARM64::R24, 63, 0);
+    if (reg_name == "x25") return maat::ir::Reg(maat::ARM64::R25, 63, 0);
+    if (reg_name == "x26") return maat::ir::Reg(maat::ARM64::R26, 63, 0);
+    if (reg_name == "x27") return maat::ir::Reg(maat::ARM64::R27, 63, 0);
+    if (reg_name == "x28") return maat::ir::Reg(maat::ARM64::R28, 63, 0);
+    if (reg_name == "x29") return maat::ir::Reg(maat::ARM64::R29, 63, 0);
+    if (reg_name == "x30") return maat::ir::Reg(maat::ARM64::R30, 63, 0);
+
+    if (reg_name == "w0") return maat::ir::Reg(maat::ARM64::R0, 31, 0);
+    if (reg_name == "w1") return maat::ir::Reg(maat::ARM64::R1, 31, 0);
+    if (reg_name == "w2") return maat::ir::Reg(maat::ARM64::R2, 31, 0);
+    if (reg_name == "w3") return maat::ir::Reg(maat::ARM64::R3, 31, 0);
+    if (reg_name == "w4") return maat::ir::Reg(maat::ARM64::R4, 31, 0);
+    if (reg_name == "w5") return maat::ir::Reg(maat::ARM64::R5, 31, 0);
+    if (reg_name == "w6") return maat::ir::Reg(maat::ARM64::R6, 31, 0);
+    if (reg_name == "w7") return maat::ir::Reg(maat::ARM64::R7, 31, 0);
+    if (reg_name == "w8") return maat::ir::Reg(maat::ARM64::R8, 31, 0);
+    if (reg_name == "w9") return maat::ir::Reg(maat::ARM64::R9, 31, 0);
+    if (reg_name == "w10") return maat::ir::Reg(maat::ARM64::R10, 31, 0);
+    if (reg_name == "w11") return maat::ir::Reg(maat::ARM64::R11, 31, 0);
+    if (reg_name == "w12") return maat::ir::Reg(maat::ARM64::R12, 31, 0);
+    if (reg_name == "w13") return maat::ir::Reg(maat::ARM64::R13, 31, 0);
+    if (reg_name == "w14") return maat::ir::Reg(maat::ARM64::R14, 31, 0);
+    if (reg_name == "w15") return maat::ir::Reg(maat::ARM64::R15, 31, 0);
+    if (reg_name == "w16") return maat::ir::Reg(maat::ARM64::R16, 31, 0);
+    if (reg_name == "w17") return maat::ir::Reg(maat::ARM64::R17, 31, 0);
+    if (reg_name == "w18") return maat::ir::Reg(maat::ARM64::R18, 31, 0);
+    if (reg_name == "w19") return maat::ir::Reg(maat::ARM64::R19, 31, 0);
+    if (reg_name == "w20") return maat::ir::Reg(maat::ARM64::R20, 31, 0);
+    if (reg_name == "w21") return maat::ir::Reg(maat::ARM64::R21, 31, 0);
+    if (reg_name == "w22") return maat::ir::Reg(maat::ARM64::R22, 31, 0);
+    if (reg_name == "w23") return maat::ir::Reg(maat::ARM64::R23, 31, 0);
+    if (reg_name == "w24") return maat::ir::Reg(maat::ARM64::R24, 31, 0);
+    if (reg_name == "w25") return maat::ir::Reg(maat::ARM64::R25, 31, 0);
+    if (reg_name == "w26") return maat::ir::Reg(maat::ARM64::R26, 31, 0);
+    if (reg_name == "w27") return maat::ir::Reg(maat::ARM64::R27, 31, 0);
+    if (reg_name == "w28") return maat::ir::Reg(maat::ARM64::R28, 31, 0);
+    if (reg_name == "w29") return maat::ir::Reg(maat::ARM64::R29, 31, 0);
+    if (reg_name == "w30") return maat::ir::Reg(maat::ARM64::R30, 31, 0);
+    // /* Floating Point Registers */
+    // /*  #	128-bit registers named Q0-Q31
+    //     #	64-bit registers named D0-D31
+    //     #	32-bit registers named S0-S31
+    //     #	16-bit registers named H0-H31
+    //     #	8-bit registers named B0-B31    
+    //   maat doesn't have IR:: instruction for FLOAT_ADD*/
+    if (reg_name == "q0") return maat::ir::Reg(maat::ARM64::V0, 127, 0);
+    if (reg_name == "q1") return maat::ir::Reg(maat::ARM64::V1, 127, 0);
+    if (reg_name == "q2") return maat::ir::Reg(maat::ARM64::V2, 127, 0);
+    if (reg_name == "q3") return maat::ir::Reg(maat::ARM64::V3, 127, 0);
+    if (reg_name == "q4") return maat::ir::Reg(maat::ARM64::V4, 127, 0);
+    if (reg_name == "q5") return maat::ir::Reg(maat::ARM64::V5, 127, 0);
+    if (reg_name == "q6") return maat::ir::Reg(maat::ARM64::V6, 127, 0);
+    if (reg_name == "q7") return maat::ir::Reg(maat::ARM64::V7, 127, 0);
+    if (reg_name == "q8") return maat::ir::Reg(maat::ARM64::V8, 127, 0);
+    if (reg_name == "q9") return maat::ir::Reg(maat::ARM64::V9, 127, 0);
+    if (reg_name == "q10") return maat::ir::Reg(maat::ARM64::V10, 127, 0);
+    if (reg_name == "q11") return maat::ir::Reg(maat::ARM64::V11, 127, 0);
+    if (reg_name == "q12") return maat::ir::Reg(maat::ARM64::V12, 127, 0);
+    if (reg_name == "q13") return maat::ir::Reg(maat::ARM64::V13, 127, 0);
+    if (reg_name == "q14") return maat::ir::Reg(maat::ARM64::V14, 127, 0);
+    if (reg_name == "q15") return maat::ir::Reg(maat::ARM64::V15, 127, 0);
+    if (reg_name == "q16") return maat::ir::Reg(maat::ARM64::V16, 127, 0);
+    if (reg_name == "q17") return maat::ir::Reg(maat::ARM64::V17, 127, 0);
+    if (reg_name == "q18") return maat::ir::Reg(maat::ARM64::V18, 127, 0);
+    if (reg_name == "q19") return maat::ir::Reg(maat::ARM64::V19, 127, 0);
+    if (reg_name == "q20") return maat::ir::Reg(maat::ARM64::V20, 127, 0);
+    if (reg_name == "q21") return maat::ir::Reg(maat::ARM64::V21, 127, 0);
+    if (reg_name == "q22") return maat::ir::Reg(maat::ARM64::V22, 127, 0);
+    if (reg_name == "q23") return maat::ir::Reg(maat::ARM64::V23, 127, 0);
+    if (reg_name == "q24") return maat::ir::Reg(maat::ARM64::V24, 127, 0);
+    if (reg_name == "q25") return maat::ir::Reg(maat::ARM64::V25, 127, 0);
+    if (reg_name == "q26") return maat::ir::Reg(maat::ARM64::V26, 127, 0);
+    if (reg_name == "q27") return maat::ir::Reg(maat::ARM64::V27, 127, 0);
+    if (reg_name == "q28") return maat::ir::Reg(maat::ARM64::V28, 127, 0);
+    if (reg_name == "q29") return maat::ir::Reg(maat::ARM64::V29, 127, 0);
+    if (reg_name == "q30") return maat::ir::Reg(maat::ARM64::V30, 127, 0);
+    if (reg_name == "q31") return maat::ir::Reg(maat::ARM64::V31, 127, 0);
+    // /* D0-D31 */
+    if (reg_name == "d0") return maat::ir::Reg(maat::ARM64::V0, 63, 0);
+    if (reg_name == "d1") return maat::ir::Reg(maat::ARM64::V1, 63, 0);
+    if (reg_name == "d2") return maat::ir::Reg(maat::ARM64::V2, 63, 0);
+    if (reg_name == "d3") return maat::ir::Reg(maat::ARM64::V3, 63, 0);
+    if (reg_name == "d4") return maat::ir::Reg(maat::ARM64::V4, 63, 0);
+    if (reg_name == "d5") return maat::ir::Reg(maat::ARM64::V5, 63, 0);
+    if (reg_name == "d6") return maat::ir::Reg(maat::ARM64::V6, 63, 0);
+    if (reg_name == "d7") return maat::ir::Reg(maat::ARM64::V7, 63, 0);
+    if (reg_name == "d8") return maat::ir::Reg(maat::ARM64::V8, 63, 0);
+    if (reg_name == "d9") return maat::ir::Reg(maat::ARM64::V9, 63, 0);
+    if (reg_name == "d10") return maat::ir::Reg(maat::ARM64::V10, 63, 0);
+    if (reg_name == "d11") return maat::ir::Reg(maat::ARM64::V11, 63, 0);
+    if (reg_name == "d12") return maat::ir::Reg(maat::ARM64::V12, 63, 0);
+    if (reg_name == "d13") return maat::ir::Reg(maat::ARM64::V13, 63, 0);
+    if (reg_name == "d14") return maat::ir::Reg(maat::ARM64::V14, 63, 0);
+    if (reg_name == "d15") return maat::ir::Reg(maat::ARM64::V15, 63, 0);
+    if (reg_name == "d16") return maat::ir::Reg(maat::ARM64::V16, 63, 0);
+    if (reg_name == "d17") return maat::ir::Reg(maat::ARM64::V17, 63, 0);
+    if (reg_name == "d18") return maat::ir::Reg(maat::ARM64::V18, 63, 0);
+    if (reg_name == "d19") return maat::ir::Reg(maat::ARM64::V19, 63, 0);
+    if (reg_name == "d20") return maat::ir::Reg(maat::ARM64::V20, 63, 0);
+    if (reg_name == "d21") return maat::ir::Reg(maat::ARM64::V21, 63, 0);
+    if (reg_name == "d22") return maat::ir::Reg(maat::ARM64::V22, 63, 0);
+    if (reg_name == "d23") return maat::ir::Reg(maat::ARM64::V23, 63, 0);
+    if (reg_name == "d24") return maat::ir::Reg(maat::ARM64::V24, 63, 0);
+    if (reg_name == "d25") return maat::ir::Reg(maat::ARM64::V25, 63, 0);
+    if (reg_name == "d26") return maat::ir::Reg(maat::ARM64::V26, 63, 0);
+    if (reg_name == "d27") return maat::ir::Reg(maat::ARM64::V27, 63, 0);
+    if (reg_name == "d28") return maat::ir::Reg(maat::ARM64::V28, 63, 0);
+    if (reg_name == "d29") return maat::ir::Reg(maat::ARM64::V29, 63, 0);
+    if (reg_name == "d30") return maat::ir::Reg(maat::ARM64::V30, 63, 0);
+    if (reg_name == "d31") return maat::ir::Reg(maat::ARM64::V31, 63, 0);
+    // // scalable vector extension
+    if (reg_name == "z0") return maat::ir::Reg(maat::ARM64::V0, 127, 0);
+    if (reg_name == "z1") return maat::ir::Reg(maat::ARM64::V1, 127, 0);
+    if (reg_name == "z2") return maat::ir::Reg(maat::ARM64::V2, 127, 0);
+    if (reg_name == "z3") return maat::ir::Reg(maat::ARM64::V3, 127, 0);
+    if (reg_name == "z4") return maat::ir::Reg(maat::ARM64::V4, 127, 0);
+    if (reg_name == "z5") return maat::ir::Reg(maat::ARM64::V5, 127, 0);
+    if (reg_name == "z6") return maat::ir::Reg(maat::ARM64::V6, 127, 0);
+    if (reg_name == "z7") return maat::ir::Reg(maat::ARM64::V7, 127, 0);
+    if (reg_name == "z8") return maat::ir::Reg(maat::ARM64::V8, 127, 0);
+    if (reg_name == "z9") return maat::ir::Reg(maat::ARM64::V9, 127, 0);
+    if (reg_name == "z10") return maat::ir::Reg(maat::ARM64::V10, 127, 0);
+    if (reg_name == "z11") return maat::ir::Reg(maat::ARM64::V11, 127, 0);
+    if (reg_name == "z12") return maat::ir::Reg(maat::ARM64::V12, 127, 0);
+    if (reg_name == "z13") return maat::ir::Reg(maat::ARM64::V13, 127, 0);
+    if (reg_name == "z14") return maat::ir::Reg(maat::ARM64::V14, 127, 0);
+    if (reg_name == "z15") return maat::ir::Reg(maat::ARM64::V15, 127, 0);
+    if (reg_name == "z16") return maat::ir::Reg(maat::ARM64::V16, 127, 0);
+    if (reg_name == "z17") return maat::ir::Reg(maat::ARM64::V17, 127, 0);
+    if (reg_name == "z18") return maat::ir::Reg(maat::ARM64::V18, 127, 0);
+    if (reg_name == "z19") return maat::ir::Reg(maat::ARM64::V19, 127, 0);
+    if (reg_name == "z20") return maat::ir::Reg(maat::ARM64::V20, 127, 0);
+    if (reg_name == "z21") return maat::ir::Reg(maat::ARM64::V21, 127, 0);
+    if (reg_name == "z22") return maat::ir::Reg(maat::ARM64::V22, 127, 0);
+    if (reg_name == "z23") return maat::ir::Reg(maat::ARM64::V23, 127, 0);
+    if (reg_name == "z24") return maat::ir::Reg(maat::ARM64::V24, 127, 0);
+    if (reg_name == "z25") return maat::ir::Reg(maat::ARM64::V25, 127, 0);
+    if (reg_name == "z26") return maat::ir::Reg(maat::ARM64::V26, 127, 0);
+    if (reg_name == "z27") return maat::ir::Reg(maat::ARM64::V27, 127, 0);
+    if (reg_name == "z28") return maat::ir::Reg(maat::ARM64::V28, 127, 0);
+    if (reg_name == "z29") return maat::ir::Reg(maat::ARM64::V29, 127, 0);
+    if (reg_name == "z30") return maat::ir::Reg(maat::ARM64::V30, 127, 0);
+    if (reg_name == "z31") return maat::ir::Reg(maat::ARM64::V31, 127, 0);
+
+    if (reg_name == "pc") return maat::ir::Reg(maat::ARM64::PC, 63, 0);
+    if (reg_name == "sp") return maat::ir::Reg(maat::ARM64::SP, 63, 0);
+    if (reg_name == "wsp") return maat::ir::Reg(maat::ARM64::SP, 31, 0);
+
+    // conditional flags
+    if (reg_name == "NG") return maat::ir::Reg(maat::ARM64::NF, 8);
+    if (reg_name == "ZR") return maat::ir::Reg(maat::ARM64::ZF, 8);
+    if (reg_name == "CY") return maat::ir::Reg(maat::ARM64::CF, 8);
+    if (reg_name == "OV") return maat::ir::Reg(maat::ARM64::VF, 8);
+    // temp conditional flags ?? why do I need them lOLL IDK :)
+    if (reg_name == "tmpNG") return maat::ir::Reg(maat::ARM64::NF, 8);
+    if (reg_name == "tmpZR") return maat::ir::Reg(maat::ARM64::ZF, 8);
+    if (reg_name == "tmpCY") return maat::ir::Reg(maat::ARM64::CF, 8);
+    if (reg_name == "tmpOV") return maat::ir::Reg(maat::ARM64::VF, 8);
+
+
+    throw maat::runtime_exception(maat::Fmt()
+            << "ARM64: Register translation from SLEIGH to MAAT missing for register "
+            << reg_name
+            >> maat::Fmt::to_str
+            );
+}
+
 } // namespace maat

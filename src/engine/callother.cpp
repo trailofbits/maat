@@ -25,6 +25,9 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
             if (mnemonic == "STACK_PUSH") return Id::EVM_STACK_PUSH;
             if (mnemonic == "STACK_POP") return Id::EVM_STACK_POP;
             break;
+        case Arch::Type::ARM64:
+            if (mnemonic == "udf") return Id::AARCH64_UDF;
+            break;
         default:
             break;
     }
@@ -1041,6 +1044,14 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
+void AARCH64_UDF_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    // UDF Does nothing
+    engine.cpu.ctx().set(ARM64::PC,engine.cpu.ctx().get(ARM64::LR));
+    return;
+}
+
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -1082,6 +1093,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
+    h.set_handler(Id::AARCH64_UDF, AARCH64_UDF_handler);
 
     return h;
 }

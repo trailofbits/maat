@@ -65,6 +65,7 @@ enum class Id
     EVM_CREATE,
     EVM_SELFDESTRUCT,
     EVM_LOG,
+    AARCH64_UDF,
     UNSUPPORTED
 };
 

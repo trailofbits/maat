@@ -8,3 +8,5 @@ prefix/
 CMakeLists.txt.user
 CMakeUserPresets.json
 maat_state_*
+bashbuild
+bashbuild2

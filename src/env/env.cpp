@@ -15,6 +15,11 @@ abi::ABI* _get_default_abi(Arch::Type arch, OS os)
         if (os == OS::LINUX)
             return &abi::X64_SYSTEM_V::instance();
     }
+    else if (arch == Arch::Type::ARM64) 
+    {
+        if (os == OS::LINUX)
+            return &abi::AARCH64_ABI::instance();
+    }
     return &abi::ABI_NONE::instance();
 }
 

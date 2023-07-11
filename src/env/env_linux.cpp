@@ -23,6 +23,10 @@ void LinuxEmulator::_init(Arch::Type arch)
             _libraries.push_back(env::emulated::linux_x64_libc());
             _syscall_func_map = env::emulated::linux_x64_syscall_map();
             break;
+        case Arch::Type::ARM64:
+            // placeholders for ARM architecture
+            _libraries.push_back(env::emulated::linux_x64_libc());
+            _syscall_func_map = env::emulated::linux_x64_syscall_map();
         case Arch::Type::NONE:
         default:
             break;

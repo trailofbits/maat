@@ -9096,6 +9096,26 @@ namespace test
             return nb;
             
         }
+
+        unsigned int test_float()
+        {
+            MaatEngine sym = MaatEngine(Arch::Type::X86);
+            unsigned int ret_value = 0;
+            string code;
+
+            sym.mem->map(0x1000,0x2000);
+
+            // sym.cpu.ctx().set(ARM64::V2, exprcst(64,0x123456789));
+            // sym.cpu.ctx().set(ARM64::ST0, exprcst(64,0x987654321));
+            code = string("\xd8\xc1", 2); // FADD st(0), st(1)
+            sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+
+            sym.settings.log_insts = true;
+
+            sym.run_from(0x1000,1);
+            // ret_value += _assert( sym.cpu.ctx().get(ARM64::V0).as_uint() == 0xAAAAAAAAA, "ArchARM64: failed to disassembly and/or execute zero");
+            return ret_value;            
+        }
     }
 }
 
@@ -9296,6 +9316,7 @@ void test_archX86(){
 
     // Other
     total += block_branch_info();
+    // total += test_float();
     //total += some_bench();
 
     cout << "\t" << total << "/" << total << green << "\tOK" << def << endl;
