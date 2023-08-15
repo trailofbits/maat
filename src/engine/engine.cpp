@@ -32,6 +32,11 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
             env = std::make_shared<env::EVM::EthereumEmulator>();
             endianness = Endian::BIG;
             break;
+        case Arch::Type::ARM32:
+            arch = std::make_shared<ARM32::ArchARM32>();
+            lifters[CPUMode::A32] = std::make_shared<Lifter>(CPUMode::A32);
+            _current_cpu_mode = CPUMode::A32;
+            break;
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
             _current_cpu_mode = CPUMode::NONE;
@@ -72,6 +77,25 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
 #ifdef MAAT_PYTHON_BINDINGS
     self_python_wrapper_object = nullptr;
 #endif
+}
+
+void MaatEngine::change_modes(CPUMode _arch)
+{
+    CPUMode tempMode;
+    switch (_arch)
+    {
+        case CPUMode::A32:
+            // switch current_CPU_Mode
+            lifters[CPUMode::A32] = std::make_shared<Lifter>(CPUMode::A32);
+            _current_cpu_mode = CPUMode::A32;
+            break;
+        case CPUMode::T32:
+            lifters[CPUMode::T32] = std::make_shared<Lifter>(CPUMode::T32);
+            _current_cpu_mode = CPUMode::T32;
+            break;
+        default:
+            throw runtime_exception("MaatEngine(): Can't swap modes for this architecture");
+    }
 }
 
 MaatEngine::MaatEngine(
@@ -282,6 +306,25 @@ info::Stop MaatEngine::run(int max_inst)
         }
         _previous_halt_before_exec = -1;
 
+        // If Arch == ARM then check if mode needs to change
+        if ( arch->type == Arch::Type::ARM32)
+        {
+            // check the TF bit and change modes
+            switch (cpu.ctx().get(ARM32::TF).as_uint())
+            {
+                case 0:
+                    if (_current_cpu_mode != CPUMode::A32){
+                        change_modes(CPUMode::A32);
+                    }
+                    break;
+                case 1:
+                    if (_current_cpu_mode != CPUMode::T32){
+                        change_modes(CPUMode::T32);
+                    }
+                    break;
+            }
+            
+        }
         // TODO: periodically increment tsc() ?
 
         // Get the PCODE IR
