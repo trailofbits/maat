@@ -32,6 +32,12 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
             env = std::make_shared<env::EVM::EthereumEmulator>();
             endianness = Endian::BIG;
             break;
+        case Arch::Type::PPC64:
+            arch = std::make_shared<PPC64::ArchPPC64>();
+            lifters[CPUMode::PPC64] = std::make_shared<Lifter>(CPUMode::PPC64);
+            _current_cpu_mode = CPUMode::PPC64;
+            endianness = Endian::BIG;
+            break;
         case Arch::Type::NONE:
             arch = std::make_shared<ArchNone>();
             _current_cpu_mode = CPUMode::NONE;
@@ -325,6 +331,9 @@ info::Stop MaatEngine::run(int max_inst)
             // if settings.log_ir:
             //      log.debug("Run IR: ", inst);
             // std::cout << "DEBUG " << inst << std::endl;
+            if (settings.log_calls) {
+                std::cout << "DEBUG " << inst << std::endl;
+            }
 
             // Check for unsupported instruction
             if (inst.op == ir::Op::UNSUPPORTED)

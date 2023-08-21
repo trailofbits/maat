@@ -65,6 +65,9 @@ enum class Id
     EVM_CREATE,
     EVM_SELFDESTRUCT,
     EVM_LOG,
+    //PPC 64
+    PPC_CNTLZW, ///< CNTLZW instruction
+    PPC_DCBT, ///< Data block cache touch (similar to prefetch in x86)
     UNSUPPORTED
 };
 

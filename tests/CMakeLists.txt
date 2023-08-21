@@ -8,11 +8,12 @@ if(PROJECT_IS_TOP_LEVEL)
   find_package(maat REQUIRED)
   enable_testing()
 endif()
-
+set(CMAKE_BUILD_TYPE Debug)
 # Unit tests
 add_executable(unit-tests
   unit-tests/test_all.cpp
   unit-tests/test_archEVM.cpp
+  unit-tests/test_archPPC64.cpp
   unit-tests/test_archX64.cpp
   unit-tests/test_archX86.cpp
   unit-tests/test_event.cpp

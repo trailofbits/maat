@@ -1320,4 +1320,177 @@ maat::ir::Param sleigh_reg_translate_EVM(const std::string& reg_name)
             );
 }
 
+maat::ir::Param sleigh_reg_translate_PPC64(const std::string& reg_name)
+{
+    if (reg_name == "r0") return maat::ir::Reg(maat::PPC64::R0, 64);
+    if (reg_name == "r1") return maat::ir::Reg(maat::PPC64::R1, 64);
+    if (reg_name == "r2") return maat::ir::Reg(maat::PPC64::R2, 64);
+    if (reg_name == "r3") return maat::ir::Reg(maat::PPC64::R3, 64);
+    if (reg_name == "r4") return maat::ir::Reg(maat::PPC64::R4, 64);
+    if (reg_name == "r5") return maat::ir::Reg(maat::PPC64::R5, 64);
+    if (reg_name == "r6") return maat::ir::Reg(maat::PPC64::R6, 64);
+    if (reg_name == "r7") return maat::ir::Reg(maat::PPC64::R7, 64);
+    if (reg_name == "r8") return maat::ir::Reg(maat::PPC64::R8, 64);
+    if (reg_name == "r9") return maat::ir::Reg(maat::PPC64::R9, 64);
+    if (reg_name == "r10") return maat::ir::Reg(maat::PPC64::R10, 64);
+    if (reg_name == "r11") return maat::ir::Reg(maat::PPC64::R11, 64);
+    if (reg_name == "r12") return maat::ir::Reg(maat::PPC64::R12, 64);
+    if (reg_name == "r13") return maat::ir::Reg(maat::PPC64::R13, 64);
+    if (reg_name == "r14") return maat::ir::Reg(maat::PPC64::R14, 64);
+    if (reg_name == "r15") return maat::ir::Reg(maat::PPC64::R15, 64);
+    if (reg_name == "r16") return maat::ir::Reg(maat::PPC64::R16, 64);
+    if (reg_name == "r17") return maat::ir::Reg(maat::PPC64::R17, 64);
+    if (reg_name == "r18") return maat::ir::Reg(maat::PPC64::R18, 64);
+    if (reg_name == "r19") return maat::ir::Reg(maat::PPC64::R19, 64);
+    if (reg_name == "r20") return maat::ir::Reg(maat::PPC64::R20, 64);
+    if (reg_name == "r21") return maat::ir::Reg(maat::PPC64::R21, 64);
+    if (reg_name == "r22") return maat::ir::Reg(maat::PPC64::R22, 64);
+    if (reg_name == "r23") return maat::ir::Reg(maat::PPC64::R23, 64);
+    if (reg_name == "r24") return maat::ir::Reg(maat::PPC64::R24, 64);
+    if (reg_name == "r25") return maat::ir::Reg(maat::PPC64::R25, 64);
+    if (reg_name == "r26") return maat::ir::Reg(maat::PPC64::R26, 64);
+    if (reg_name == "r27") return maat::ir::Reg(maat::PPC64::R27, 64);
+    if (reg_name == "r28") return maat::ir::Reg(maat::PPC64::R28, 64);
+    if (reg_name == "r29") return maat::ir::Reg(maat::PPC64::R29, 64);
+    if (reg_name == "r30") return maat::ir::Reg(maat::PPC64::R30, 64);
+    if (reg_name == "r31") return maat::ir::Reg(maat::PPC64::R31, 64);
+
+    if (reg_name == "f0") return maat::ir::Reg(maat::PPC64::F0, 64);
+    if (reg_name == "f1") return maat::ir::Reg(maat::PPC64::F1, 64);
+    if (reg_name == "f2") return maat::ir::Reg(maat::PPC64::F2, 64);
+    if (reg_name == "f3") return maat::ir::Reg(maat::PPC64::F3, 64);
+    if (reg_name == "f4") return maat::ir::Reg(maat::PPC64::F4, 64);
+    if (reg_name == "f5") return maat::ir::Reg(maat::PPC64::F5, 64);
+    if (reg_name == "f6") return maat::ir::Reg(maat::PPC64::F6, 64);
+    if (reg_name == "f7") return maat::ir::Reg(maat::PPC64::F7, 64);
+    if (reg_name == "f8") return maat::ir::Reg(maat::PPC64::F8, 64);
+    if (reg_name == "f9") return maat::ir::Reg(maat::PPC64::F9, 64);
+    if (reg_name == "f10") return maat::ir::Reg(maat::PPC64::F10, 64);
+    if (reg_name == "f11") return maat::ir::Reg(maat::PPC64::F11, 64);
+    if (reg_name == "f12") return maat::ir::Reg(maat::PPC64::F12, 64);
+    if (reg_name == "f13") return maat::ir::Reg(maat::PPC64::F13, 64);
+    if (reg_name == "f14") return maat::ir::Reg(maat::PPC64::F14, 64);
+    if (reg_name == "f15") return maat::ir::Reg(maat::PPC64::F15, 64);
+    if (reg_name == "f16") return maat::ir::Reg(maat::PPC64::F16, 64);
+    if (reg_name == "f17") return maat::ir::Reg(maat::PPC64::F17, 64);
+    if (reg_name == "f18") return maat::ir::Reg(maat::PPC64::F18, 64);
+    if (reg_name == "f19") return maat::ir::Reg(maat::PPC64::F19, 64);
+    if (reg_name == "f20") return maat::ir::Reg(maat::PPC64::F20, 64);
+    if (reg_name == "f21") return maat::ir::Reg(maat::PPC64::F21, 64);
+    if (reg_name == "f22") return maat::ir::Reg(maat::PPC64::F22, 64);
+    if (reg_name == "f23") return maat::ir::Reg(maat::PPC64::F23, 64);
+    if (reg_name == "f24") return maat::ir::Reg(maat::PPC64::F24, 64);
+    if (reg_name == "f25") return maat::ir::Reg(maat::PPC64::F25, 64);
+    if (reg_name == "f26") return maat::ir::Reg(maat::PPC64::F26, 64);
+    if (reg_name == "f27") return maat::ir::Reg(maat::PPC64::F27, 64);
+    if (reg_name == "f28") return maat::ir::Reg(maat::PPC64::F28, 64);
+    if (reg_name == "f29") return maat::ir::Reg(maat::PPC64::F29, 64);
+    if (reg_name == "f30") return maat::ir::Reg(maat::PPC64::F30, 64);
+    if (reg_name == "f31") return maat::ir::Reg(maat::PPC64::F31, 64);
+
+    if (reg_name == "pc") return maat::ir::Reg(maat::PPC64::PC, 64);
+    if (reg_name == "LR") return maat::ir::Reg(maat::PPC64::LR, 64);
+    if (reg_name == "CTR") return maat::ir::Reg(maat::PPC64::CTR, 64);
+    if (reg_name == "xer") return maat::ir::Reg(maat::PPC64::XER, 32);
+
+    if (reg_name == "xer_so") return maat::ir::Reg(maat::PPC64::XER_SO,8);
+    if (reg_name == "xer_ov") return maat::ir::Reg(maat::PPC64::XER_OV,8);
+    if (reg_name == "xer_ca") return maat::ir::Reg(maat::PPC64::XER_CA,8);
+
+    if (reg_name == "cr0") return maat::ir::Reg(maat::PPC64::CR0,8);
+    if (reg_name == "cr1") return maat::ir::Reg(maat::PPC64::CR1,8);
+    if (reg_name == "cr2") return maat::ir::Reg(maat::PPC64::CR2,8);
+    if (reg_name == "cr3") return maat::ir::Reg(maat::PPC64::CR3,8);
+    if (reg_name == "cr4") return maat::ir::Reg(maat::PPC64::CR4,8);
+    if (reg_name == "cr5") return maat::ir::Reg(maat::PPC64::CR5,8);
+    if (reg_name == "cr6") return maat::ir::Reg(maat::PPC64::CR6,8);
+    if (reg_name == "cr7") return maat::ir::Reg(maat::PPC64::CR7,8);
+
+    if (reg_name == "tblw") return maat::ir::Reg(maat::PPC64::TBL,32);
+    if (reg_name == "tbuw") return maat::ir::Reg(maat::PPC64::TBU,32);
+    if (reg_name == "tblr") return maat::ir::Reg(maat::PPC64::TBL,32);
+    if (reg_name == "tbur") return maat::ir::Reg(maat::PPC64::TBU,32);
+
+    if (reg_name == "fpscr") return maat::ir::Reg(maat::PPC64::FPSCR,32);
+    if (reg_name == "fp_fx") return maat::ir::Reg(maat::PPC64::FPSCR,0,0);
+    if (reg_name == "fp_fex") return maat::ir::Reg(maat::PPC64::FPSCR,1,1);
+    if (reg_name == "fp_vx") return maat::ir::Reg(maat::PPC64::FPSCR,2,2);
+    if (reg_name == "fp_ox") return maat::ir::Reg(maat::PPC64::FPSCR,3,3);
+    if (reg_name == "fp_ux") return maat::ir::Reg(maat::PPC64::FPSCR,4,4);
+    if (reg_name == "fp_zx") return maat::ir::Reg(maat::PPC64::FPSCR,5,5);
+    if (reg_name == "fp_xx") return maat::ir::Reg(maat::PPC64::FPSCR,6,6);
+    if (reg_name == "fp_vxsnan") return maat::ir::Reg(maat::PPC64::FPSCR,7,7);
+    if (reg_name == "fp_vxisi") return maat::ir::Reg(maat::PPC64::FPSCR,8,8);
+    if (reg_name == "fp_vxidi") return maat::ir::Reg(maat::PPC64::FPSCR,9,9);
+    if (reg_name == "fp_vxzdz") return maat::ir::Reg(maat::PPC64::FPSCR,10,10);
+    if (reg_name == "fp_vximz") return maat::ir::Reg(maat::PPC64::FPSCR,11,11);
+    if (reg_name == "fp_vxvc") return maat::ir::Reg(maat::PPC64::FPSCR,12,12);
+    if (reg_name == "fp_fr") return maat::ir::Reg(maat::PPC64::FPSCR,13,13);
+    if (reg_name == "fp_fi") return maat::ir::Reg(maat::PPC64::FPSCR,14,14);
+    if (reg_name == "fp_fprf") return maat::ir::Reg(maat::PPC64::FPSCR,19,15);
+    if (reg_name == "fp_vxsoft") return maat::ir::Reg(maat::PPC64::FPSCR,21,21);
+    if (reg_name == "fp_vxsqrt") return maat::ir::Reg(maat::PPC64::FPSCR,22,22);
+    if (reg_name == "fp_vxcvi") return maat::ir::Reg(maat::PPC64::FPSCR,23,23);
+    if (reg_name == "fp_ve") return maat::ir::Reg(maat::PPC64::FPSCR,24,24);
+    if (reg_name == "fp_oe") return maat::ir::Reg(maat::PPC64::FPSCR,25,25);
+    if (reg_name == "fp_ue") return maat::ir::Reg(maat::PPC64::FPSCR,26,26);
+    if (reg_name == "fp_ze") return maat::ir::Reg(maat::PPC64::FPSCR,27,27);
+    if (reg_name == "fp_xe") return maat::ir::Reg(maat::PPC64::FPSCR,28,28);
+    if (reg_name == "fp_ni") return maat::ir::Reg(maat::PPC64::FPSCR,29,29);
+    if (reg_name == "fp_rn") return maat::ir::Reg(maat::PPC64::FPSCR,31,30);
+
+    if (reg_name == "MSR") return maat::ir::Reg(maat::PPC64::MSR, 63, 0);
+    if (reg_name == "spr11f") return maat::ir::Reg(maat::PPC64::PVR,32);
+    if (reg_name == "r2Save") return maat::ir::Reg(maat::PPC64::R2SAVE, 63, 0);
+    if (reg_name == "RESERVE") return maat::ir::Reg(maat::PPC64::RESERVE,32);
+
+    throw maat::runtime_exception(maat::Fmt()
+        << "PPC64: Register translation from SLEIGH to MAAT missing for register "
+        << reg_name
+        >> maat::Fmt::to_str
+        );
+}
+
+maat::ir::Param sleigh_masked_reg_translate_PPC64(const std::string& reg_name, const int size)
+{
+    if (reg_name == "r0") return maat::ir::Reg(maat::PPC64::R0, size);
+    if (reg_name == "r1") return maat::ir::Reg(maat::PPC64::R1, size);
+    if (reg_name == "r2") return maat::ir::Reg(maat::PPC64::R2, size);
+    if (reg_name == "r3") return maat::ir::Reg(maat::PPC64::R3, size);
+    if (reg_name == "r4") return maat::ir::Reg(maat::PPC64::R4, size);
+    if (reg_name == "r5") return maat::ir::Reg(maat::PPC64::R5, size);
+    if (reg_name == "r6") return maat::ir::Reg(maat::PPC64::R6, size);
+    if (reg_name == "r7") return maat::ir::Reg(maat::PPC64::R7, size);
+    if (reg_name == "r8") return maat::ir::Reg(maat::PPC64::R8, size);
+    if (reg_name == "r9") return maat::ir::Reg(maat::PPC64::R9, size);
+    if (reg_name == "r10") return maat::ir::Reg(maat::PPC64::R10, size);
+    if (reg_name == "r11") return maat::ir::Reg(maat::PPC64::R11, size);
+    if (reg_name == "r12") return maat::ir::Reg(maat::PPC64::R12, size);
+    if (reg_name == "r13") return maat::ir::Reg(maat::PPC64::R13, size);
+    if (reg_name == "r14") return maat::ir::Reg(maat::PPC64::R14, size);
+    if (reg_name == "r15") return maat::ir::Reg(maat::PPC64::R15, size);
+    if (reg_name == "r16") return maat::ir::Reg(maat::PPC64::R16, size);
+    if (reg_name == "r17") return maat::ir::Reg(maat::PPC64::R17, size);
+    if (reg_name == "r18") return maat::ir::Reg(maat::PPC64::R18, size);
+    if (reg_name == "r19") return maat::ir::Reg(maat::PPC64::R19, size);
+    if (reg_name == "r20") return maat::ir::Reg(maat::PPC64::R20, size);
+    if (reg_name == "r21") return maat::ir::Reg(maat::PPC64::R21, size);
+    if (reg_name == "r22") return maat::ir::Reg(maat::PPC64::R22, size);
+    if (reg_name == "r23") return maat::ir::Reg(maat::PPC64::R23, size);
+    if (reg_name == "r24") return maat::ir::Reg(maat::PPC64::R24, size);
+    if (reg_name == "r25") return maat::ir::Reg(maat::PPC64::R25, size);
+    if (reg_name == "r26") return maat::ir::Reg(maat::PPC64::R26, size);
+    if (reg_name == "r27") return maat::ir::Reg(maat::PPC64::R27, size);
+    if (reg_name == "r28") return maat::ir::Reg(maat::PPC64::R28, size);
+    if (reg_name == "r29") return maat::ir::Reg(maat::PPC64::R29, size);
+    if (reg_name == "r30") return maat::ir::Reg(maat::PPC64::R30, size);
+    if (reg_name == "r31") return maat::ir::Reg(maat::PPC64::R31, size);
+
+    throw maat::runtime_exception(maat::Fmt()
+        << "PPC64: Register translation from SLEIGH to MAAT missing for register "
+        << reg_name
+        >> maat::Fmt::to_str
+        );
+}
+
 } // namespace maat

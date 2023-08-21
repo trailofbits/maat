@@ -15,7 +15,7 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
         case Arch::Type::X64:
             if (mnemonic == "RDTSC") return Id::X86_RDTSC;
             if (mnemonic == "SYSCALL")
-                if (arch == Arch::Type::X64) return Id::X64_SYSCALL;
+            if (arch == Arch::Type::X64) return Id::X64_SYSCALL;
             if (mnemonic == "CPUID") return Id::X86_CPUID;
             if (mnemonic == "PMINUB") return Id::X86_PMINUB;
             if (mnemonic == "INT") return Id::X86_INT;
@@ -24,6 +24,10 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
         case Arch::Type::EVM:
             if (mnemonic == "STACK_PUSH") return Id::EVM_STACK_PUSH;
             if (mnemonic == "STACK_POP") return Id::EVM_STACK_POP;
+            break;
+        case Arch::Type::PPC64:
+            if (mnemonic == "cntlzw") return Id::PPC_CNTLZW;
+            if (mnemonic == "cntlzw.") return Id::PPC_CNTLZW;
             break;
         default:
             break;
@@ -1041,6 +1045,29 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
+// Function handles the countleadingzero instruction in powerpc
+void PPC_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    Value program_counter = engine.cpu.ctx().get(engine.arch->pc());
+    const Value& cnt = pinst.in1.value();
+
+    if (not cnt.is_concrete(*engine.vars))
+        throw callother_exception("CNTLW: got symbolic position");
+
+    Value src1 = pinst.in1.value();
+    ucst_t temp = pinst.in1.value().as_uint();
+
+    int count = 0;
+    while (temp != 0)
+    {
+        temp = temp >> 1;
+        count++;
+    }
+
+    count = inst.out.size() - count;
+    pinst.res = Number(inst.out.size(),count);
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -1082,6 +1109,8 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
+
+    h.set_handler(Id::PPC_CNTLZW, PPC_CNTLZW_handler);
 
     return h;
 }
