@@ -8,7 +8,6 @@ if(PROJECT_IS_TOP_LEVEL)
   enable_testing()
 endif()
 
-set(CMAKE_BUILD_TYPE Debug)
 # Unit tests
 add_executable(unit-tests
   unit-tests/test_all.cpp

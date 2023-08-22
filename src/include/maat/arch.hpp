@@ -395,7 +395,6 @@ namespace ARM64
     static constexpr reg_t R30  = 30;   // X30
     static constexpr reg_t LR   = 30;   // Same as R30
     static constexpr reg_t ZR   = 31;   // Zero Register
-
     /* Floating Point Register */
     static constexpr reg_t V0   = 32;   // V0
     static constexpr reg_t V1   = 33;   // V1
@@ -429,20 +428,16 @@ namespace ARM64
     static constexpr reg_t V29  = 61;   // V29
     static constexpr reg_t V30  = 62;   // V30
     static constexpr reg_t V31  = 63;   // V30
-
-
     static constexpr reg_t PC       = 64; // Program Counter
     static constexpr reg_t SP       = 65; // Stack Pointer
     static constexpr reg_t PSTATE   = 66; // Processor State Register
     static constexpr reg_t SPSR     = 67; // Saved Processor State Register
     static constexpr reg_t ELR      = 68; // Execption level 
-    
     // Conditional Flags
-    static constexpr reg_t ZF = 69; // ZF zero flag
+    static constexpr reg_t ZF = 69; // Zero flag
     static constexpr reg_t NF = 70; // Negative flag
     static constexpr reg_t CF = 71; // Carry Flag
     static constexpr reg_t VF = 72; // OverFlow Flag
-
     static constexpr reg_t CNTPCT_EL0 = 73; // Physical cycle counter
     static constexpr reg_t NB_REGS = 74;
 

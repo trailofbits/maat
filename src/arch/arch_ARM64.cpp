@@ -78,7 +78,6 @@ namespace ARM64
             {"zr", ZR},
             {"pc", PC},
             {"sp", SP},
-
             {"pstate",PSTATE},
             {"zf", ZF},
             {"nf", NF},

@@ -1355,6 +1355,7 @@ maat::ir::Param sleigh_reg_translate_ARM64(const std::string& reg_name)
     if (reg_name == "x29") return maat::ir::Reg(maat::ARM64::R29, 63, 0);
     if (reg_name == "x30") return maat::ir::Reg(maat::ARM64::R30, 63, 0);
 
+    /* 32-bit masked GP Registers */
     if (reg_name == "w0") return maat::ir::Reg(maat::ARM64::R0, 31, 0);
     if (reg_name == "w1") return maat::ir::Reg(maat::ARM64::R1, 31, 0);
     if (reg_name == "w2") return maat::ir::Reg(maat::ARM64::R2, 31, 0);
@@ -1387,7 +1388,7 @@ maat::ir::Param sleigh_reg_translate_ARM64(const std::string& reg_name)
     if (reg_name == "w29") return maat::ir::Reg(maat::ARM64::R29, 31, 0);
     if (reg_name == "w30") return maat::ir::Reg(maat::ARM64::R30, 31, 0);
 
-    // /* Floating Point Registers */
+    /* Floating Point Registers */
     if (reg_name == "q0") return maat::ir::Reg(maat::ARM64::V0, 127, 0);
     if (reg_name == "q1") return maat::ir::Reg(maat::ARM64::V1, 127, 0);
     if (reg_name == "q2") return maat::ir::Reg(maat::ARM64::V2, 127, 0);
@@ -1420,8 +1421,8 @@ maat::ir::Param sleigh_reg_translate_ARM64(const std::string& reg_name)
     if (reg_name == "q29") return maat::ir::Reg(maat::ARM64::V29, 127, 0);
     if (reg_name == "q30") return maat::ir::Reg(maat::ARM64::V30, 127, 0);
     if (reg_name == "q31") return maat::ir::Reg(maat::ARM64::V31, 127, 0);
-
-    // /* D0-D31 */
+     
+    /* 64-bit masked FP Registers*/
     if (reg_name == "d0") return maat::ir::Reg(maat::ARM64::V0, 63, 0);
     if (reg_name == "d1") return maat::ir::Reg(maat::ARM64::V1, 63, 0);
     if (reg_name == "d2") return maat::ir::Reg(maat::ARM64::V2, 63, 0);
@@ -1455,7 +1456,7 @@ maat::ir::Param sleigh_reg_translate_ARM64(const std::string& reg_name)
     if (reg_name == "d30") return maat::ir::Reg(maat::ARM64::V30, 63, 0);
     if (reg_name == "d31") return maat::ir::Reg(maat::ARM64::V31, 63, 0);
 
-    /*  Scalable Vector Extension */
+    /*  Scalable Vector Extension Registers */
     if (reg_name == "z0") return maat::ir::Reg(maat::ARM64::V0, 127, 0);
     if (reg_name == "z1") return maat::ir::Reg(maat::ARM64::V1, 127, 0);
     if (reg_name == "z2") return maat::ir::Reg(maat::ARM64::V2, 127, 0);

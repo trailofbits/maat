@@ -447,7 +447,7 @@ namespace emulated
 Library linux_x86_libc();
 /// Return the emulated libc.so for Linux on X64
 Library linux_x64_libc();
-/// Return the emulated libc.so for Linux on AArch64
+/// Return the emulated libc.so for Linux on AARCH64
 Library linux_arm64_libc();
 }
 

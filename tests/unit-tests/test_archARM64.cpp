@@ -203,7 +203,6 @@ namespace archARM64
         sym.run_from(0x1000,4);
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R0).as_uint() == 0xf,    "1: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::R5).as_uint() == -0x1,   "2: ArchARM64: failed to disassembly and/or execute Branch Conditional");
-        
         ret_value += _assert( sym.cpu.ctx().get(ARM64::CF).as_uint() == 0x1,    "3: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::NF).as_uint() == 0x0,    "4: ArchARM64: failed to disassembly and/or execute Branch Conditional");
         ret_value += _assert( sym.cpu.ctx().get(ARM64::VF).as_uint() == 0x0,    "5: ArchARM64: failed to disassembly and/or execute Branch Conditional");
@@ -310,6 +309,7 @@ namespace archARM64
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());  
 
         sym.run_from(0x1000,1);
+
         ret_value +=  _assert( sym.cpu.ctx().get(ARM64::R2).as_uint() == 0xDEADBEEF, "2: ArchARM64: failed to disassemble store and load instructions.");
 
         // Set Register

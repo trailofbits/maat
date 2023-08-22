@@ -42,7 +42,6 @@ namespace maat
     inline maat::ir::Param sleigh_reg_translate_EVM(const std::string& reg_name);
     inline maat::ir::Param sleigh_reg_translate_ARM64(const std::string& reg_name);
 
-
 }
 
 #endif

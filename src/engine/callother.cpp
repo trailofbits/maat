@@ -1044,19 +1044,23 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
+/*
+Permanently Undefined generates an Undefined Instruction exception.
+The encodings for UDF used in this section are defined as permanently undefined in the ARMv8-A architecture.
+x86 has a similar instruction UD2 for undefined instructions. This indicates that the processor encountered an invalid instruction
+*/
 void AARCH64_UDF_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     // UDF Does nothing
     engine.log.warning(
         Fmt() << "LOG" 
-        << ": UDF instruction called, not implemented yet. UDF does nothing"
+        << ": UDF instruction called, UDF does nothing. UDF stands for (Undefined)"
         >> Fmt::to_str
     );
     throw callother_exception(
         "UDF instruction: Emulation callback signaled an error"
     );
 }
-
 
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
