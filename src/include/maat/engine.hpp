@@ -91,8 +91,8 @@ public:
     info::Info info;
     /// Engine's tweakable settings and options
     Settings settings;
-    // Change CPU modes on the fly Nathan's code
-    void change_modes(maat::CPUMode _arch);
+    // Change CPU mode between ARM32 and Thumb
+    void change_mode(maat::CPUMode _arch);
     /// Logger
     Logger log;
 public:

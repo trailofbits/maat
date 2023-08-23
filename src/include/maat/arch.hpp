@@ -426,6 +426,7 @@ namespace ARM64
 
 namespace ARM32
 {
+    /* General Purpose Registers */
     static constexpr reg_t R0 = 0;
     static constexpr reg_t R1 = 1;
     static constexpr reg_t R2 = 2;
@@ -447,37 +448,25 @@ namespace ARM32
     static constexpr reg_t LR = 14; // Same as R14
     static constexpr reg_t R15 = 15;
     static constexpr reg_t PC = 15; // Same as R15
-
-    static constexpr reg_t CPSR = 16; // Current Program Status Register
-
-    // CPSR bits; TODO: add other flags
+    /* Special Registers */
+    static constexpr reg_t CPSR = 16; // Current Program Status Register CPSR bits; TODO: add other flags
     static constexpr reg_t NF = 17;
     static constexpr reg_t ZF = 18;
     static constexpr reg_t CF = 19;
     static constexpr reg_t VF = 20;
     static constexpr reg_t QF = 21;
-
     static constexpr reg_t JF = 22;
     static constexpr reg_t GE1 = 23;
     static constexpr reg_t GE2 = 24;
     static constexpr reg_t GE3 = 25;
     static constexpr reg_t GE4 = 26;
-    static constexpr reg_t TF = 27;  //thumb-bit (TB)
-
-    static constexpr reg_t tmpNG = 28;
-    static constexpr reg_t tmpZR = 29;
-    static constexpr reg_t tmpCY = 30;
-    static constexpr reg_t tmpOV = 31;
-    static constexpr reg_t SC = 32;  //shift_carry
-
-    // nathan added register (clean up after)
-    static constexpr reg_t ISAModeSwitch = 33;
-    static constexpr reg_t mult_addr = 34; // Special internal register for dealing with multiple stores/loads 32 bits
-    static constexpr reg_t mult_dat8 = 35; // Special internal register for dealing with multiple stores/loads 64 bits
-    static constexpr reg_t mult_dat16 = 36; // Special internal register for dealing with multiple stores/loads 128 bits
-
-
-    static constexpr reg_t NB_REGS = 37;
+    static constexpr reg_t TF = 27;  // thumb-bit (TB)
+    static constexpr reg_t SC = 28;  //shift_carry
+    static constexpr reg_t ISAModeSwitch = 29;
+    static constexpr reg_t mult_addr = 30; // Special internal register for dealing with multiple stores/loads 32 bits
+    static constexpr reg_t mult_dat8 = 31; // Special internal register for dealing with multiple stores/loads 64 bits
+    static constexpr reg_t mult_dat16 = 32; // Special internal register for dealing with multiple stores/loads 128 bits
+    static constexpr reg_t NB_REGS = 33;
 
      /** \addtogroup arch
      * \{ */

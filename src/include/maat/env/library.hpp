@@ -367,8 +367,6 @@ public:
 /** \} */ // doxygen group env
 } // namespace ABI
 
-
-
 /// Emulated function
 class Function
 {

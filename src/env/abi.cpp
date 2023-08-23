@@ -402,7 +402,7 @@ void X86_LINUX_INT80::ret(MaatEngine& engine) const
     // Do nothing
 }
 
-/*============ LINUX PowerPC ABI ============*/
+/*============ LINUX ARM32 ABI ============*/
 ARM32ABI::ARM32ABI(): ABI(Type::ARM32ABI)
 {}
 
@@ -457,7 +457,7 @@ void ARM32ABI::ret(MaatEngine& engine) const
     engine.cpu.ctx().set(ARM32::SP, engine.cpu.ctx().get(ARM32::SP).as_uint() + 4);
 }
 
-/* ============== ABI PowerPC SYSCALL LINUX ==============*/
+/* ============== ABI ARM32 SYSCALL LINUX ==============*/
 ARM32_SYSCALL::ARM32_SYSCALL(): ABI(Type::ARM32_SYSCALL)
 {}
 

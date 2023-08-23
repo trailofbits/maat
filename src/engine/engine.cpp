@@ -79,13 +79,12 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
 #endif
 }
 
-void MaatEngine::change_modes(CPUMode _arch)
+void MaatEngine::change_mode(CPUMode _arch)
 {
-    CPUMode tempMode;
+    // switch current_CPU_Mode
     switch (_arch)
     {
         case CPUMode::A32:
-            // switch current_CPU_Mode
             lifters[CPUMode::A32] = std::make_shared<Lifter>(CPUMode::A32);
             _current_cpu_mode = CPUMode::A32;
             break;
@@ -306,24 +305,21 @@ info::Stop MaatEngine::run(int max_inst)
         }
         _previous_halt_before_exec = -1;
 
-        // If Arch == ARM then check if mode needs to change
-        if ( arch->type == Arch::Type::ARM32)
+        // If Arch == ARM32 then check if mode needs to change
+        if (arch->type == Arch::Type::ARM32)
         {
-            // check the TF bit and change modes
+            // Change CPU mode if TF bit is set
             switch (cpu.ctx().get(ARM32::TF).as_uint())
             {
                 case 0:
-                    if (_current_cpu_mode != CPUMode::A32){
-                        change_modes(CPUMode::A32);
-                    }
+                    if (_current_cpu_mode != CPUMode::A32)
+                        change_mode(CPUMode::A32);
                     break;
                 case 1:
-                    if (_current_cpu_mode != CPUMode::T32){
-                        change_modes(CPUMode::T32);
-                    }
+                    if (_current_cpu_mode != CPUMode::T32)
+                        change_mode(CPUMode::T32);
                     break;
             }
-            
         }
         // TODO: periodically increment tsc() ?
 

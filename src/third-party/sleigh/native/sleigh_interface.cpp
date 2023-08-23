@@ -399,10 +399,11 @@ public:
         // TODO - is this useful ? will this hinder performance ?
         // Needs to be here apparently but maybe we could tweak setData so we don't need to reset...
         m_sleigh->reset(&m_loader, &m_context_internal);
+        
         // If arch is arm32 bit then don't allow contextSet() (fixes low level error in ghidra)
         if (arch == Arch::Type::ARM32)
         {
-            // disable context setting for ARMv7 32-bit architecture
+            // Disable context setting for ARMv7 32-bit architecture
             m_sleigh->allowContextSet(false);
         }
 

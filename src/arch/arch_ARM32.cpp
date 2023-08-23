@@ -27,33 +27,28 @@ namespace ARM32
             {"r13", R13},
             {"r14", R14},
             {"r15", R15},
-
             {"fp", FP},
             {"ip", IP},
             {"sp", SP},
             {"lr", LR},
             {"pc", PC},
-
             {"cpsr", CPSR},
-
             {"nf", NF},
             {"zf", ZF},
             {"cf", CF},
             {"vf", VF},
             {"qf", QF},
-
             {"jf", JF},
             {"ge1", GE1},
             {"ge2", GE2},
             {"ge3", GE3},
             {"ge4", GE4},
             {"tf", TF},
-
             {"tmpNG", tmpNG},
             {"tmpZR", tmpZR},
             {"tmpCY", tmpCY},
             {"tmpOV", tmpOV},
-            {"sc", SC},  //shift_carry
+            {"sc", SC},
             {"ISAModeSwitch", ISAModeSwitch} 
         };
     }
@@ -102,7 +97,6 @@ namespace ARM32
             case SC:
             case ISAModeSwitch: 
                 return 8;
-
             default:
                 throw runtime_exception("ArchARM32::reg_size(): got unsupported reg num");
         }
