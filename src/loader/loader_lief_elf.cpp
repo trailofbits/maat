@@ -244,9 +244,8 @@ void LoaderLIEF::load_elf_using_interpreter(
     stack_base = alloc_segment(engine, stack_top-stack_size, stack_size, maat::mem_flag_rw, "Stack");
     engine->cpu.ctx().set(reg_sp.value(), stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
     // For x86 special register 'reg_bp', leave some space in memory
-    if (reg_bp) {
+    if (reg_bp)
         engine->cpu.ctx().set(*reg_bp, stack_base+stack_size-0x400);
-    }
 
     // Load interpreter
     load_elf_interpreter(engine, interp_path, *this);
@@ -297,9 +296,9 @@ void LoaderLIEF::load_elf_binary(
     stack_base = alloc_segment(engine, stack_top-stack_size, stack_size, maat::mem_flag_rw, "Stack");
     engine->cpu.ctx().set(reg_sp.value(), stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
     // For x86 special register 'reg_bp', leave some space in memory
-    if (reg_bp) {
+    if (reg_bp)
         engine->cpu.ctx().set(*reg_bp, stack_base+stack_size-0x400);
-    }
+
 
     // Setup heap
     heap_base = end_of_segment(*engine->mem, binary_name);
