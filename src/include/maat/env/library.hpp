@@ -103,6 +103,9 @@ enum class Type
     X64_LINUX_SYSCALL,
     /* ARM64 */
     ARM64,
+    /* ARM32 */
+    ARM32ABI,
+    ARM32_SYSCALL,
     /* Custom */
     X86_LINUX_CUSTOM_SYSCALL, ///< Used internally
     X64_LINUX_CUSTOM_SYSCALL, ///< Used internally
@@ -308,8 +311,62 @@ public:
     virtual void ret(MaatEngine& engine) const;
 };
 
-/** \} */ // doxygen group env 
+/// ARM32 defualt ABI
+class ARM32ABI : public ABI
+{
+protected:
+    ARM32ABI();
+public:
+    /// ABI instance (singleton pattern)
+    static ABI& instance();
+public:
+    /// Get function arguments
+    virtual void get_args(
+        MaatEngine& engine,
+        const args_spec_t& args_spec,
+        std::vector<Value>& args
+    ) const;
+    /// Get function argument number 'n' (starting at 0)
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    /// Set a function's return value before it returns
+    virtual void set_ret_value(
+        MaatEngine& engine,
+        const FunctionCallback::return_t& ret_val
+    ) const;
+    /// Set the return address prior to call a function
+    virtual void prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const;
+    /// Return from a function
+    virtual void ret(MaatEngine& engine) const;
+};
+
+/// ARM32 Linux SYSCALL ABI
+class ARM32_SYSCALL : public ABI
+{
+protected:
+    ARM32_SYSCALL();
+public:
+    /// ABI instance (singleton pattern)
+    static ABI& instance();
+public:
+    /// Get function arguments
+    virtual void get_args(
+        MaatEngine& engine,
+        const args_spec_t& args_spec,
+        std::vector<Value>& args
+    ) const;
+    /// Get function argument number 'n' (starting at 0)
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    /// Set a function's return value before it returns
+    virtual void set_ret_value(
+        MaatEngine& engine,
+        const FunctionCallback::return_t& ret_val
+    ) const;
+    /// Return from the syscall
+    virtual void ret(MaatEngine& engine) const;
+};
+/** \} */ // doxygen group env
 } // namespace ABI
+
 
 
 /// Emulated function
@@ -417,6 +474,8 @@ namespace emulated
 Library linux_x86_libc();
 /// Return the emulated libc.so for Linux on X64
 Library linux_x64_libc();
+/// Return the emulated libc.so for Linux on ARM32 
+Library linux_ARM32_libc();
 }
 
 
