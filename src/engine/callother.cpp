@@ -15,7 +15,7 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
         case Arch::Type::X64:
             if (mnemonic == "RDTSC") return Id::X86_RDTSC;
             if (mnemonic == "SYSCALL")
-            if (arch == Arch::Type::X64) return Id::X64_SYSCALL;
+                if (arch == Arch::Type::X64) return Id::X64_SYSCALL;
             if (mnemonic == "CPUID") return Id::X86_CPUID;
             if (mnemonic == "PMINUB") return Id::X86_PMINUB;
             if (mnemonic == "INT") return Id::X86_INT;
@@ -1045,27 +1045,27 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
-// Function handles the countleadingzero instruction in powerpc
+// Function handles the countleadingzero (CNTLZW) instruction in PowerPC
 void PPC_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     Value program_counter = engine.cpu.ctx().get(engine.arch->pc());
     const Value& cnt = pinst.in1.value();
 
     if (not cnt.is_concrete(*engine.vars))
-        throw callother_exception("CNTLW: got symbolic position");
+        throw callother_exception("CNTLZW: got symbolic position");
 
-    Value src1 = pinst.in1.value();
-    ucst_t temp = pinst.in1.value().as_uint();
+    ucst_t reg_value = pinst.in1.value().as_uint();
+    uint32_t reg_value_word = (uint32_t)reg_value; // cast value to 32-bit value
 
     int count = 0;
-    while (temp != 0)
+    while (reg_value_word != 0)
     {
-        temp = temp >> 1;
+        reg_value_word = reg_value_word >> 1;
         count++;
     }
 
-    count = inst.out.size() - count;
-    pinst.res = Number(inst.out.size(),count);
+    count = 32 - count;
+    pinst.res = Number(inst.out.size(), count);
 }
 
 /// Return the default handler map for CALLOTHER occurences

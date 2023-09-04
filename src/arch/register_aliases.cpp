@@ -45,7 +45,7 @@ Value x86_alias_getter(CPUContext& ctx, ir::reg_t reg)
     Value res;
     if (reg == X86::EFLAGS)
     {
-        res = extract(ctx.get(X86::CF),0,0); 
+        res = extract(ctx.get(X86::CF),0,0);
         res.set_concat(Value(1,1), res);
         res.set_concat(extract(ctx.get(X86::PF),0,0), res);
         res.set_concat(Value(1,0), res);
@@ -140,14 +140,14 @@ void PPC64_alias_setter(CPUContext& ctx, ir::reg_t reg, const Value& val)
 {
     if (reg == PPC64::CR)
     {
-        _set_flag_from_bit(ctx, PPC64::CR7, val, 0,4);
-        _set_flag_from_bit(ctx, PPC64::CR6, val, 4,4);
-        _set_flag_from_bit(ctx, PPC64::CR5, val, 8,4);
-        _set_flag_from_bit(ctx, PPC64::CR4, val, 12,4);
-        _set_flag_from_bit(ctx, PPC64::CR3, val, 16,4);
-        _set_flag_from_bit(ctx, PPC64::CR2, val, 20,4);
-        _set_flag_from_bit(ctx, PPC64::CR1, val, 24,4);
-        _set_flag_from_bit(ctx, PPC64::CR0, val, 28,4);
+        _set_flag_from_bit(ctx, PPC64::CR7, val, 0, 4);
+        _set_flag_from_bit(ctx, PPC64::CR6, val, 4, 4);
+        _set_flag_from_bit(ctx, PPC64::CR5, val, 8, 4);
+        _set_flag_from_bit(ctx, PPC64::CR4, val, 12, 4);
+        _set_flag_from_bit(ctx, PPC64::CR3, val, 16, 4);
+        _set_flag_from_bit(ctx, PPC64::CR2, val, 20, 4);
+        _set_flag_from_bit(ctx, PPC64::CR1, val, 24, 4);
+        _set_flag_from_bit(ctx, PPC64::CR0, val, 28, 4);
     }
     else if (reg == PPC64::XER)
     {
@@ -155,9 +155,8 @@ void PPC64_alias_setter(CPUContext& ctx, ir::reg_t reg, const Value& val)
         _set_flag_from_bit(ctx, PPC64::XER_OV, val, 30);
         _set_flag_from_bit(ctx, PPC64::XER_CA, val, 29);
     }
-    else {
-        throw runtime_exception("PPC64_alias_setter: got unsupported register");
-    }    
+    else
+        throw runtime_exception("PPC64_alias_setter: got unsupported register");   
 }
 
 Value PPC64_alias_getter(CPUContext& ctx, ir::reg_t reg)

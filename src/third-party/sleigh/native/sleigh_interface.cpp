@@ -400,7 +400,7 @@ public:
         // Needs to be here apparently but maybe we could tweak setData so we don't need to reset...
         m_sleigh->reset(&m_loader, &m_context_internal);
         
-        // If arch is powerpc 64 bit then don't allow contextSet() (fixes low level error in ghidra)
+        // If arch is PowerPC 64-bit then don't allow contextSet() (fixes low level error from SLASPEC)
         if (arch == Arch::Type::PPC64)
         {
             // Disable context setting for PowerPC 64-bit architecture
@@ -585,7 +585,7 @@ public:
 };
 
 // Translate a sleigh register name into a maat::ir::Param register
-maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name, const int size);
+maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name, const int reg_masked_bits);
 // Translate a pcode varnode into an parameter and add it to inst
 maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
 {
@@ -605,20 +605,17 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
         if (addr_space_name == "register")
         {
             const std::string& reg_name = ctx->getRegisterName(v->space, v->offset, v->size);
-            // std::cout << "DEBUG translating pcode to register " << reg_name_to_maat_reg(ctx->arch, reg_name, v->size*8) << "\n";
             return std::move(reg_name_to_maat_reg(ctx->arch, reg_name, v->size*8));
         }
         else if (addr_space_name == "unique")
         {
             int tmp = ctx->tmp_cache.get_tmp_from_unique(v->offset);
-            // std::cout << "DEBUG translating pcode to tmp of size " << (v->size*8) << "\n";
             return std::move(maat::ir::Tmp(tmp, v->size*8));
         }
         else if (addr_space_name == "ram" or addr_space_name == "code")
         {
             // just store the address
             // the size of the output var will give the nb of accessed bytes
-            // std::cout << "DEBUG translating pcode to addr of offset, size " << v->offset << " " << (v->size*8) << "\n";
             return std::move(maat::ir::Addr(v->offset, v->size*8));
         }
         else
@@ -633,7 +630,7 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
     return maat::ir::Param::None();
 }
 
-maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name, const int reg_size)
+maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name, const int reg_masked_bits)
 {
     if (arch == Arch::Type::X86)
         return sleigh_reg_translate_X86(reg_name);
@@ -642,18 +639,18 @@ maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& r
     else if (arch == Arch::Type::EVM)
         return sleigh_reg_translate_EVM(reg_name);
     else if (arch == Arch::Type::PPC64){
-        maat::ir::Param tmpReg = sleigh_reg_translate_PPC64(reg_name);
-        if(reg_size == tmpReg.size())
+        int reg_max_bits = sleigh_reg_translate_PPC64(reg_name).size();
+
+        if(reg_masked_bits == reg_max_bits)
             return sleigh_reg_translate_PPC64(reg_name);
-        else if(reg_size < tmpReg.size())
-            return sleigh_masked_reg_translate_PPC64(reg_name, reg_size);
+        else if(reg_masked_bits < reg_max_bits)
+            return sleigh_masked_reg_translate_PPC64(reg_name, reg_masked_bits);
         else
             throw maat::runtime_exception("Register translation from SLEIGH to MAAT, sleigh pcode register size is greater than maat register size!");
     }
     else
         throw maat::runtime_exception("Register translation from SLEIGH to MAAT not implemented for this architecture!");
 }
-
 
 std::shared_ptr<TranslationContext> new_sleigh_ctx(
     maat::Arch::Type arch,

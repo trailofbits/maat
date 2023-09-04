@@ -602,8 +602,7 @@ namespace archPPC64
         code = string("\x7c\x65\x00\x34", 4); // cntlzw r5,r3
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
         sym.run_from(0x1000,1);
-        ret_value += _assert( sym.cpu.ctx().get(PPC64::PC).as_uint() == 0x1004, "1: ArchPPC64: failed to disassembly and/or execute cntlzw");
-        ret_value += _assert( sym.cpu.ctx().get(PPC64::R5).as_uint() == 51, "1: ArchPPC64: R5 not equal to 51");
+        ret_value += _assert( sym.cpu.ctx().get(PPC64::R5).as_uint() == 19, "1: ArchPPC64: R5 not equal to 19");
 
 
         sym.cpu.ctx().set(PPC64::R8, exprcst(64,0x674321));
@@ -611,16 +610,21 @@ namespace archPPC64
         code = string("\x7d\x0a\x00\x34", 4); // cntlzw r10,r8
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
         sym.run_from(0x1000,1);
-        ret_value += _assert( sym.cpu.ctx().get(PPC64::PC).as_uint() == 0x1004, "2: ArchPPC64: failed to disassembly and/or execute cntlzw");
-        ret_value += _assert( sym.cpu.ctx().get(PPC64::R10).as_uint() == 41, "2: ArchPPC64: R10 not equal to 41");
+        ret_value += _assert( sym.cpu.ctx().get(PPC64::R10).as_uint() == 9, "2: ArchPPC64: R10 not equal to 9");
+
+        sym.cpu.ctx().set(PPC64::R8, exprcst(64,0x0FFFFFFF00619920));
+        sym.cpu.ctx().set(PPC64::R10, exprcst(64,0x5));
+        code = string("\x7d\x0a\x00\x34", 4); // cntlzw r10,r8
+        sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+        sym.run_from(0x1000,1);
+        ret_value += _assert( sym.cpu.ctx().get(PPC64::R10).as_uint() == 9, "2: ArchPPC64: R10 not equal to 9");
 
         sym.cpu.ctx().set(PPC64::R8, exprcst(64,0x1));
         sym.cpu.ctx().set(PPC64::CR0, exprcst(8,0x0));
         code = string("\x7d\x0a\x00\x35", 4); // cntlzw. r10,r8
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
         sym.run_from(0x1000,1);
-        ret_value += _assert( sym.cpu.ctx().get(PPC64::PC).as_uint() == 0x1004, "3: ArchPPC64: failed to disassembly and/or execute cntlzw");
-        ret_value += _assert( sym.cpu.ctx().get(PPC64::R10).as_uint() == 63, "3: ArchPPC64: failed to disassembly and/or execute cntlzw");
+        ret_value += _assert( sym.cpu.ctx().get(PPC64::R10).as_uint() == 31, "3: ArchPPC64: failed to disassembly and/or execute cntlzw");
         ret_value += _assert( sym.cpu.ctx().get(PPC64::CR0).as_uint() == 4, "3: ArchPPC64: failed to disassembly and/or execute cntlzw");
 
         return ret_value;

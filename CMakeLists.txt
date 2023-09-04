@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.15)
 include(cmake/prelude.cmake)
 
 file(READ "Version.txt" maat_version)
-set(CMAKE_BUILD_TYPE Debug)
 
 project(
   maat
@@ -12,6 +11,7 @@ project(
   HOMEPAGE_URL "https://github.com/trailofbits/maat"
   LANGUAGES C CXX
 )
+
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
 

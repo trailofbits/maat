@@ -401,6 +401,7 @@ void X86_LINUX_INT80::ret(MaatEngine& engine) const
 {
     // Do nothing
 }
+
 /*============ LINUX PowerPC ABI ============*/
 PPC64ABI::PPC64ABI(): ABI(Type::PPC64ABI)
 {}
@@ -504,6 +505,7 @@ void PPC64_SC::set_ret_value(
         [&engine](auto arg){engine.cpu.ctx().set(PPC64::R3, arg);}
     }, ret_val);
 }
+
 void PPC64_SC::ret(MaatEngine& engine) const
 {
     // Do nothing

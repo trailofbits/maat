@@ -521,39 +521,39 @@ namespace PPC64
     static constexpr reg_t TBL = 80;
     static constexpr reg_t TBU = 81;
     /* Floating Point Status and Control Registers */
-    static constexpr reg_t FPSCR    = 82;
-    static constexpr reg_t FX       = 83;
-    static constexpr reg_t FEX      = 84;
-    static constexpr reg_t VX       = 85;
-    static constexpr reg_t OX       = 86;
-    static constexpr reg_t UX       = 87;
-    static constexpr reg_t ZX       = 88;
-    static constexpr reg_t XX       = 89;
-    static constexpr reg_t VXSNAN   = 90;
-    static constexpr reg_t VXISI    = 91;
-    static constexpr reg_t VXIDI    = 92;
-    static constexpr reg_t VXZDZ    = 93;
-    static constexpr reg_t VXIMZ    = 94;
-    static constexpr reg_t VXVC     = 95;
-    static constexpr reg_t FR       = 96;
-    static constexpr reg_t FI       = 97;
-    static constexpr reg_t FPRF     = 98;
-    static constexpr reg_t VXSOFT   = 99;
-    static constexpr reg_t VXSQRT   = 100;
-    static constexpr reg_t VXCVI    = 101;
-    static constexpr reg_t VE       = 102;
-    static constexpr reg_t OE       = 103;
-    static constexpr reg_t UE       = 104;
-    static constexpr reg_t ZE       = 105;
-    static constexpr reg_t XE       = 106;
-    static constexpr reg_t NI       = 107;
-    static constexpr reg_t RN       = 108;
+    static constexpr reg_t FPSCR = 82;
+    static constexpr reg_t FX = 83;
+    static constexpr reg_t FEX = 84;
+    static constexpr reg_t VX = 85;
+    static constexpr reg_t OX = 86;
+    static constexpr reg_t UX = 87;
+    static constexpr reg_t ZX = 88;
+    static constexpr reg_t XX = 89;
+    static constexpr reg_t VXSNAN = 90;
+    static constexpr reg_t VXISI = 91;
+    static constexpr reg_t VXIDI = 92;
+    static constexpr reg_t VXZDZ = 93;
+    static constexpr reg_t VXIMZ = 94;
+    static constexpr reg_t VXVC = 95;
+    static constexpr reg_t FR = 96;
+    static constexpr reg_t FI = 97;
+    static constexpr reg_t FPRF = 98;
+    static constexpr reg_t VXSOFT = 99;
+    static constexpr reg_t VXSQRT = 100;
+    static constexpr reg_t VXCVI = 101;
+    static constexpr reg_t VE = 102;
+    static constexpr reg_t OE = 103;
+    static constexpr reg_t UE = 104;
+    static constexpr reg_t ZE = 105;
+    static constexpr reg_t XE = 106;
+    static constexpr reg_t NI = 107;
+    static constexpr reg_t RN = 108;
     /* Machine State Register */ 
     static constexpr reg_t MSR = 109;
     /* PVR Special Surpose Register */ 
     static constexpr reg_t PVR = 110;
     /* Reserved Registers */
-    static constexpr reg_t R2SAVE  = 111;
+    static constexpr reg_t R2SAVE = 111;
     static constexpr reg_t RESERVE = 112;
     static constexpr reg_t NB_REGS = 113;
 
