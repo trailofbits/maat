@@ -103,7 +103,7 @@ void LoaderLIEF::get_arch_special_registers(
             fs = X64::FS;
             break;
         case Arch::Type::ARM32:
-            bp = ARM32::R12;
+            bp = ARM32::R11;
             break;
         default:
             throw loader_exception(
