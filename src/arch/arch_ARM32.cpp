@@ -44,10 +44,6 @@ namespace ARM32
             {"ge3", GE3},
             {"ge4", GE4},
             {"tf", TF},
-            {"tmpNG", tmpNG},
-            {"tmpZR", tmpZR},
-            {"tmpCY", tmpCY},
-            {"tmpOV", tmpOV},
             {"sc", SC},
             {"ISAModeSwitch", ISAModeSwitch} 
         };
@@ -90,10 +86,6 @@ namespace ARM32
             case GE3:
             case GE4:
             case TF:
-            case tmpNG:
-            case tmpZR:
-            case tmpCY:
-            case tmpOV:
             case SC:
             case ISAModeSwitch: 
                 return 8;
