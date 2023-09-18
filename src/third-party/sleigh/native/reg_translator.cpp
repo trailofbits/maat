@@ -1428,6 +1428,10 @@ maat::ir::Param sleigh_reg_translate_PPC32(const std::string& reg_name)
     if (reg_name == "fp_fr") return maat::ir::Reg(maat::PPC32::FPSCR,13,13);
     if (reg_name == "fp_fi") return maat::ir::Reg(maat::PPC32::FPSCR,14,14);
     if (reg_name == "fp_fprf") return maat::ir::Reg(maat::PPC32::FPSCR,19,15);
+    if (reg_name == "fp_cc0") return maat::ir::Reg(maat::PPC32::FPSCR,16,16);
+    if (reg_name == "fp_cc1") return maat::ir::Reg(maat::PPC32::FPSCR,17,17);
+    if (reg_name == "fp_cc2") return maat::ir::Reg(maat::PPC32::FPSCR,18,18);
+    if (reg_name == "fp_cc3") return maat::ir::Reg(maat::PPC32::FPSCR,19,19);
     if (reg_name == "fp_vxsoft") return maat::ir::Reg(maat::PPC32::FPSCR,21,21);
     if (reg_name == "fp_vxsqrt") return maat::ir::Reg(maat::PPC32::FPSCR,22,22);
     if (reg_name == "fp_vxcvi") return maat::ir::Reg(maat::PPC32::FPSCR,23,23);

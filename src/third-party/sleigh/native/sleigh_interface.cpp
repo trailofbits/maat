@@ -405,7 +405,7 @@ public:
         {
             m_sleigh->allowContextSet(false);
         }
-        
+
         m_sleigh->initialize(m_document_storage);
         // setData doesn't affect performance for a big num_bytes :)
         m_loader.setData(address, bytes, num_bytes);

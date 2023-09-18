@@ -243,9 +243,10 @@ void LoaderLIEF::load_elf_using_interpreter(
     stack_top = engine->arch->bits() == 32 ? 0x0c000000 : 0x80000000000;
     stack_base = alloc_segment(engine, stack_top-stack_size, stack_size, maat::mem_flag_rw, "Stack");
     engine->cpu.ctx().set(reg_sp.value(), stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
-    if (reg_bp) {
+    // For x86 special register 'reg_bp', leave some space in memory
+    if (reg_bp)
         engine->cpu.ctx().set(*reg_bp, stack_base+stack_size-0x400);
-    }
+    
 
     // Load interpreter
     load_elf_interpreter(engine, interp_path, *this);
@@ -295,9 +296,11 @@ void LoaderLIEF::load_elf_binary(
     stack_top = engine->arch->bits() == 32 ? 0x0c000000 : 0x80000000000;
     stack_base = alloc_segment(engine, stack_top-stack_size, stack_size, maat::mem_flag_rw, "Stack");
     engine->cpu.ctx().set(reg_sp.value(), stack_base+stack_size-0x400); // - 0x400 to leave some space in memory
-    if (reg_bp) {
+    
+    // For x86 special register 'reg_bp', leave some space in memory
+    if (reg_bp)
         engine->cpu.ctx().set(*reg_bp, stack_base+stack_size-0x400);
-    }
+    
 
     // Setup heap
     heap_base = end_of_segment(*engine->mem, binary_name);
@@ -310,7 +313,7 @@ void LoaderLIEF::load_elf_binary(
     );
 
     // Allocate some segments for GS and FS segment selectors (stack canary stuff)
-   if (reg_gs && reg_fs)
+    if (reg_gs && reg_fs)
     {
         gs = alloc_segment(engine, 0x00aa0000, 0x1000, maat::mem_flag_rw, "Fake GS: segment");
         fs = alloc_segment(engine, 0x00aa0000, 0x1000, maat::mem_flag_rw, "Fake FS: segment");
@@ -733,7 +736,7 @@ std::vector<std::pair<uint64_t, uint64_t>> LoaderLIEF::generate_aux_vector(
     else if (engine->arch->type == Arch::Type::ARM64)
         platform = "arm64";
     else if (engine->arch->type == Arch::Type::PPC32)
-        platform = "PowerPC";
+        platform = "PowerPC32";
     else
         throw loader_exception("LIEFLoader::_generate_aux_vector(): got unsupported architecture");
 

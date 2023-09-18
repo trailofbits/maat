@@ -1048,27 +1048,28 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
-// Function handles the countleadingzero instruction in powerpc 32 bit
+// Function handles the countleadingzero (CNTLZW) instruction in PowerPC
 void PPC32_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     Value program_counter = engine.cpu.ctx().get(engine.arch->pc());
     const Value& cnt = pinst.in1.value();
 
     if (not cnt.is_concrete(*engine.vars))
-        throw callother_exception("CNTLW: got symbolic position");
+        throw callother_exception("CNTLZW: got symbolic position");
 
-    Value src1 = pinst.in1.value();
-    ucst_t temp = pinst.in1.value().as_uint();
+    ucst_t reg_value = pinst.in1.value().as_uint();
+    uint32_t reg_value_word = (uint32_t)reg_value;
 
     int count = 0;
-    while (temp != 0)
+    while (reg_value_word != 0)
     {
-        temp = temp >> 1;
+        reg_value_word = reg_value_word >> 1;
         count++;
     }
 
-    count = inst.out.size() - count;
-    pinst.res = Number(inst.out.size(),count);
+    count = 32 - count;
+    std::cout<<"answer: "<<count<<std::endl;
+    pinst.res = Number(inst.out.size(), count);
 }
 
 // TODO: Data cache Block doesn't need to be emulated yet however in the future you might want to. Improves performance? 
