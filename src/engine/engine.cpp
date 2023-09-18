@@ -331,9 +331,6 @@ info::Stop MaatEngine::run(int max_inst)
             // if settings.log_ir:
             //      log.debug("Run IR: ", inst);
             // std::cout << "DEBUG " << inst << std::endl;
-            if (settings.log_calls) {
-                std::cout << "DEBUG " << inst << std::endl;
-            }
 
             // Check for unsupported instruction
             if (inst.op == ir::Op::UNSUPPORTED)

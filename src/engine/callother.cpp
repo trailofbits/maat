@@ -1068,7 +1068,6 @@ void PPC32_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
     }
 
     count = 32 - count;
-    std::cout<<"answer: "<<count<<std::endl;
     pinst.res = Number(inst.out.size(), count);
 }
 

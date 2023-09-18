@@ -265,8 +265,6 @@ namespace archPPC32
         MaatEngine sym = MaatEngine(Arch::Type::PPC32);
         sym.mem->map(0x1000,0x2000);
         sym.mem->map(0x0,0x1000);
-        sym.settings.log_calls = true;
-        sym.settings.log_insts = true;
 
         code = string("\x39\x20\x10\x00",4); //  li r9,0x1000
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size()); 
