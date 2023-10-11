@@ -67,6 +67,7 @@ enum class Id
     EVM_LOG,
     // AARCH64
     AARCH64_UDF,
+    AARCH64_SVC,
     UNSUPPORTED
 };
 

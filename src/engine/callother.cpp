@@ -27,6 +27,7 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
             break;
         case Arch::Type::ARM64:
             if (mnemonic == "udf") return Id::AARCH64_UDF;
+            if (mnemonic == "svc") return Id::AARCH64_SVC;
             break;
         default:
             break;
@@ -1045,6 +1046,43 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
 }
 
 /*
+System call for AARCH.
+The syscalls are untested and don't work
+*/
+void AARCH64_SVC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    // Get syscall number
+    const Value& sys_num = engine.cpu.ctx().get(ARM64::R8);
+    if (sys_num.is_symbolic(*engine.vars))
+    {
+        throw callother_exception("SVC #0: syscall number is symbolic!");
+    }
+    // Get function to emulate syscall`
+    try
+    {
+        const env::Function& func = engine.env->get_syscall_func_by_num(
+            sys_num.as_uint(*engine.vars)
+        );
+
+        // Execute function callback
+        switch (func.callback().execute(engine, env::abi::AARCH64_SVC::instance()))
+        {
+            case env::Action::CONTINUE:
+                break;
+            case env::Action::ERROR:
+                throw callother_exception(
+                    "SVC #0: Emulation callback signaled an error, SVC is untested and might not work!!"
+                );
+        }
+    }
+    catch(const env_exception& e)
+    {
+        throw callother_exception(
+            Fmt() << "SVC #0: " << e.what() >> Fmt::to_str
+        );
+    }
+}
+/*
 Permanently Undefined generates an Undefined Instruction exception.
 The encodings for UDF used in this section are defined as permanently undefined in the ARMv8-A architecture.
 x86 has a similar instruction UD2 for undefined instructions. This indicates that the processor encountered an invalid instruction
@@ -1103,8 +1141,9 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
-    h.set_handler(Id::AARCH64_UDF, AARCH64_UDF_handler);
 
+    h.set_handler(Id::AARCH64_UDF, AARCH64_UDF_handler);
+    h.set_handler(Id::AARCH64_SVC, AARCH64_SVC_handler);
     return h;
 }
 
