@@ -104,7 +104,7 @@ enum class Type
     /* ARM64 */
     ARM64,
     AARCH64_ABI,
-    AARCH64_SC,
+    AARCH64_SVC,
     /* Custom */
     X86_LINUX_CUSTOM_SYSCALL, ///< Used internally
     X64_LINUX_CUSTOM_SYSCALL, ///< Used internally
@@ -310,7 +310,7 @@ public:
     virtual void ret(MaatEngine& engine) const;
 };
 
-// AArch64 Default ABI
+/// AArch64 Default ABI
 class AARCH64_ABI : public ABI
 {
 protected:
@@ -338,9 +338,33 @@ public:
     virtual void ret(MaatEngine& engine) const;
 };
 
+/// AArch64 System Call 
+class AARCH64_SVC : public ABI
+{
+protected:
+    AARCH64_SVC();
+public:
+    /// ABI instance (singleton pattern)
+    static ABI& instance();
+public:
+    /// Get function arguments
+    virtual void get_args(
+        MaatEngine& engine,
+        const args_spec_t& args_spec,
+        std::vector<Value>& args
+    ) const;
+    /// Get function argument number 'n' (starting at 0)
+    virtual Value get_arg(MaatEngine& engine, int n, size_t arg_size) const;
+    /// Set a function's return value before it returns
+    virtual void set_ret_value(
+        MaatEngine& engine,
+        const FunctionCallback::return_t& ret_val
+    ) const;
+    /// Return from the syscall
+    virtual void ret(MaatEngine& engine) const;
+};
 /** \} */ // doxygen group env 
 } // namespace ABI
-
 
 /// Emulated function
 class Function
