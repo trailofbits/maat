@@ -1051,6 +1051,7 @@ The syscalls are untested and don't work
 */
 void AARCH64_SVC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
+    engine.log.warning("System Call is untested and might not work!!");
     // Get syscall number
     const Value& sys_num = engine.cpu.ctx().get(ARM64::R8);
     if (sys_num.is_symbolic(*engine.vars))
