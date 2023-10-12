@@ -400,7 +400,8 @@ public:
         // Needs to be here apparently but maybe we could tweak setData so we don't need to reset...
         m_sleigh->reset(&m_loader, &m_context_internal);
         
-        // If arch is powerpc 32 bit then don't allow contextSet() (fixes low level error in ghidra)
+        // If arch is powerpc 32 bit then don't allow contextSet()
+        // this fixes instructions such as bgt and other instructions that use context switching
         if (arch == Arch::Type::PPC32)
         {
             m_sleigh->allowContextSet(false);

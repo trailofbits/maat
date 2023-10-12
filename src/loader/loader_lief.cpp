@@ -102,7 +102,6 @@ void LoaderLIEF::get_arch_special_registers(
             gs = X64::GS;
             fs = X64::FS;
             break;
-        // nathan's code
         case Arch::Type::PPC32:
             break;
         default:

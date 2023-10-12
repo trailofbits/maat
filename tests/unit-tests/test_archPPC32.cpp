@@ -296,82 +296,6 @@ namespace archPPC32
 
         return ret_value;
     }
-
-    // UNFINISHED UNIT TEST
-    unsigned int for_loop()
-    {
-        string code;
-        unsigned int ret_value = 0;
-        MaatEngine sym = MaatEngine(Arch::Type::PPC32);
-        sym.mem->map(0x1000,0x2000);
-        sym.mem->map(0x0,0x1000);
-
-        unsigned int test_reg_val = 0;
-
-        code = string("\x39\x20\x00\x00",4); //  li r9,0x0
-        sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
-        sym.run_from(0x1000,1);
-        ret_value += _assert(sym.cpu.ctx().get(PPC32::R9).as_uint()==0x00,"R9 is not equal to 0x0");
-
-        code = string("\x91\x3f\x00\x0c",4); //  stw r9,12(r31)
-        sym.mem->write_buffer(0x1004, (uint8_t*)code.c_str(), code.size());
-        sym.run_from(0x1000,2);
-
-        cout<<"before b:"<<sym.cpu.ctx().get(PPC32::PC)<<endl;
-        code = string("\x48\x00\x00\x1c",4); //  b 
-        sym.mem->write_buffer(0x1008, (uint8_t*)code.c_str(), code.size());
-        sym.run_from(0x1000,3);
-        cout<<"after b:"<<sym.cpu.ctx().get(PPC32::PC)<<endl;
-
-        code = string("\x81\x3f\x00\x08",4); //  lwz r9,8(r31)
-        sym.mem->write_buffer(0x100c, (uint8_t*)code.c_str(), code.size()); 
-        sym.run_from(0x1000,4);
-        cout<<"what is in r9 offset 8: "<<sym.cpu.ctx().get(PPC32::R9).as_uint()<<endl;
-        test_reg_val= sym.cpu.ctx().get(PPC32::R9).as_uint();
-        //test 
-
-        code = string("\x39\x29\x00\x01",4); //  addi r9 r9 1
-        sym.mem->write_buffer(0x1010, (uint8_t*)code.c_str(), code.size()); // code.size() = 4
-        sym.run_from(0x1000,5);
-        //test
-        test_reg_val;
-        // ret_value += _assert(sym.cpu.ctx().get(PPC32::R9).as_uint()==(test_reg_val+1),"R9 didn't get plus 1");
-
-        code = string("\x91\x3f\x00\x0c",4); //  stw r9,8(r31)
-        sym.mem->write_buffer(0x1014, (uint8_t*)code.c_str(), code.size()); // code.size() = 4
-        sym.run_from(0x1000,6);
-
-        code = string("\x81\x3f\x00\x0c",4);// lwz r9,12(r31)
-        sym.mem->write_buffer(0x1018, (uint8_t*)code.c_str(), code.size()); // code.size() = 4
-        sym.run_from(0x1000,7);
-        cout<<"what is in r9 offset 12: "<<sym.cpu.ctx().get(PPC32::R9).as_uint()<<endl;
-
-        code = string("\x39\x29\x00\x01",4);// addi r9,r9,1
-        sym.mem->write_buffer(0x101c, (uint8_t*)code.c_str(), code.size()); // code.size() = 4
-        sym.run_from(0x1000,8);
-        cout<<"what is in r9 offset 12: "<<sym.cpu.ctx().get(PPC32::R9).as_uint()<<endl;
-
-        code = string("\x91\x3f\x00\x0c",4);// stw r9,12(r31)
-        sym.mem->write_buffer(0x1020, (uint8_t*)code.c_str(), code.size()); // code.size() = 4
-        sym.run_from(0x1000,9);
-        // cout<<"what is in r9 offset 12: "<<sym.cpu.ctx().get(PPC32::r9).as_uint()<<endl;
-
-        code = string("\x81\x3f\x00\x0c",4);// lwz r9,12(r31)
-        sym.mem->write_buffer(0x1024, (uint8_t*)code.c_str(), code.size()); // code.size() = 4
-        sym.run_from(0x1000,10);
-        cout<<"what is in r9 offset 12: "<<sym.cpu.ctx().get(PPC32::R9).as_uint()<<endl;
-
-        code = string("\x2c\x09\x00\x09",4);// cmpwi r9,9
-        sym.mem->write_buffer(0x1028, (uint8_t*)code.c_str(), code.size()); // code.size() = 4
-        sym.run_from(0x1000,11);
-        cout<<"what is inside cmp register: "<<sym.cpu.ctx().get(PPC32::CR).as_uint()<<endl;
-
-        code = string("\x40\x81\xff\xe0",4);// ble 1000046c
-        sym.mem->write_buffer(0x102c, (uint8_t*)code.c_str(), code.size()); // code.size() = 4
-        sym.run_from(0x1000,12);
-
-        return ret_value;
-    }
     
     unsigned int disass_bne()
     {
@@ -700,59 +624,28 @@ namespace archPPC32
         return ret_value;
     }
 
-    unsigned int disass_dcbt()
-    {
-        unsigned int ret_value = 0;
-        MaatEngine sym = MaatEngine(Arch::Type::PPC32);
-        sym.mem->map(0x1000,0x2000);
-        sym.mem->map(0x0,0x1000);
-        string code;
-
-        code = string("\x7c\x02\x52\x2c", 4); // dcbt r2 r10
-        sym.mem->write_buffer(0x1200, (uint8_t*)code.c_str(), code.size());
-        sym.run_from(0x1200,1);
-        ret_value += _assert( sym.cpu.ctx().get(PPC32::PC).as_uint() == 0x1204,"1: ArchPPC32: failed to disassembly and/or execute dcbt");
-
-        return ret_value;
-    }
-
     unsigned int disass_sc()
     {
         unsigned int ret_value = 0;
         MaatEngine sym = MaatEngine(Arch::Type::PPC32, env::OS::LINUX);
-        sym.mem->map(0x10000,0x10000);
+        sym.mem->map(0x1000,0x2000);
         sym.mem->map(0x0,0x0);
 
         string code;
 
 
         sym.cpu.ctx().set(PPC32::R0, exprcst(32,5));
+        sym.cpu.ctx().set(PPC32::R3, exprcst(32,0x1500));
+        sym.cpu.ctx().set(PPC32::R4, exprcst(32,0x40));
         code = string("\x44\x00\x00\x02", 4); // sc 0x0
-        sym.mem->write_buffer(0x10000, (uint8_t*)code.c_str(), code.size());
-        sym.run_from(0x10000,1);
-        
-        ret_value += _assert( sym.cpu.ctx().get(PPC32::PC).as_uint() == 0x1004,"1: ArchPPC32: failed to disassembly and/or execute sc");
-
-        return ret_value;
-    }
-
-    unsigned int disass_lbz()
-    {
-        unsigned int ret_value = 0;
-        MaatEngine sym = MaatEngine(Arch::Type::PPC32, maat::env::OS::LINUX);
-        sym.mem->map(0x1000,0x2000);
-        string code;
-
-        sym.cpu.ctx().set(PPC32::R10, exprcst(32,0x1500));    
-        sym.cpu.ctx().set(PPC32::R9, exprcst(32,0x1234)); 
-        sym.mem->write(0x1234,exprcst(32,0x12345678));
-        code = string("\x89\x49\x00\x00", 4); // lbz r10,0x0(r9)
         sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
-        sym.run_from(0x1000,1);       
-        ret_value += _assert( sym.cpu.ctx().get(PPC32::R10).as_uint() == 0x12, "1: ArchPPC32: failed to disassembly and/or execute lbz");
-        ret_value += _assert( sym.cpu.ctx().get(PPC32::PC).as_uint() == 0x1004,"2: ArchPPC32: failed to disassembly and/or execute lbz");
-        ret_value += _assert( sym.cpu.ctx().get(PPC32::R9).as_uint() == 0x1234,"3: ArchPPC32: failed to disassembly and/or execute lbz");
-        ret_value += _assert( sym.mem->read(0x1234,4).as_uint() == 0x12345678, "4: ArchPPC32: failed to disassembly and/or execute lbz");
+        // /home/nathan/test_syscalls/example.txt
+        code = string("\x2f\x68\x6f\x6d\x65\x2f\x6e\x61\x74\x68\x61\x6e\x2f\x74\x65\x73\x74\x5f\x73\x79\x73\x63\x61\x6c\x6c\x73\x2f\x65\x78\x61\x6d\x70\x6c\x65\x2e\x74\x78\x74",38);
+        sym.mem->write_buffer(0x1500, (uint8_t*)code.c_str(), code.size());
+
+        sym.run_from(0x1000,1);
+        cout << sym.cpu.ctx().get(PPC32::PC).as_uint();
+        ret_value += _assert( sym.cpu.ctx().get(PPC32::PC).as_uint() == 0x1004,"1: ArchPPC32: failed to disassembly and/or execute sc");
 
         return ret_value;
     }
@@ -791,10 +684,9 @@ void test_archPPC32() {
     total += disass_mtspr();
     total += disass_bl();  
     total += disass_bctrl();
-    // total += disass_dcbt();
+
+    // System calls aren't working
     // total += disass_sc(); ///< TODO write a better syscall test...
-    // total += disass_lbz();
-    // total += for_loop();
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

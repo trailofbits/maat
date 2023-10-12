@@ -26,12 +26,9 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
             if (mnemonic == "STACK_POP") return Id::EVM_STACK_POP;
             break;
         case Arch::Type::PPC32:
-            if (mnemonic == "cntlzw") return Id::PPC32_CNTLZW;
-            if (mnemonic == "cntlzw.") return Id::PPC32_CNTLZW;
-            if (mnemonic == "dcbt") return Id::PPC32_DCBT;
-            if (mnemonic == "sc") return Id::PPC32_SC;
-            if (mnemonic == "isync") return Id::PPC32_SYNC;
-            if (mnemonic == "sync") return Id::PPC32_SYNC;
+            if (mnemonic == "cntlzw") return Id::PPC_CNTLZW;
+            if (mnemonic == "cntlzw.") return Id::PPC_CNTLZW;
+            if (mnemonic == "sc") return Id::PPC_SC;
         default:
             break;
     }
@@ -1049,7 +1046,7 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
 }
 
 // Function handles the countleadingzero (CNTLZW) instruction in PowerPC
-void PPC32_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+void PPC_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     Value program_counter = engine.cpu.ctx().get(engine.arch->pc());
     const Value& cnt = pinst.in1.value();
@@ -1071,17 +1068,12 @@ void PPC32_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::Processe
     pinst.res = Number(inst.out.size(), count);
 }
 
-// TODO: Data cache Block doesn't need to be emulated yet however in the future you might want to. Improves performance? 
-void PPC32_DCB_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst) //data cache block instruction assume it works
+/*
+System call for PowerPC.
+The syscalls are untested and don't work
+*/
+void PPC_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
-    return;
-}
-
-void PPC32_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
-{
-    // Get interrupt number
-    cst_t num = pinst.in1.value().as_uint(*engine.vars);
-
     // Get syscall number
     const Value& sys_num = engine.cpu.ctx().get(PPC32::R0);
     if (sys_num.is_symbolic(*engine.vars))
@@ -1102,7 +1094,7 @@ void PPC32_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
                 break;
             case env::Action::ERROR:
                 throw callother_exception(
-                    "SC 0x0: Emulation callback signaled an error"
+                    "SC 0x0: Emulation callback signaled an error, SC is untested and might not work!!"
                 );
         }
     }
@@ -1112,11 +1104,6 @@ void PPC32_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedIns
             Fmt() << "SC 0x0: " << e.what() >> Fmt::to_str
         );
     }
-}
-
-void PPC32_SYNC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst) //data cache block instruction assume it works
-{
-    return;
 }
 
 /// Return the default handler map for CALLOTHER occurences
@@ -1161,10 +1148,8 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
     
-    h.set_handler(Id::PPC32_CNTLZW, PPC32_CNTLZW_handler);
-    h.set_handler(Id::PPC32_DCBT, PPC32_DCB_handler);
-    h.set_handler(Id::PPC32_SC, PPC32_SC_handler);
-    h.set_handler(Id::PPC32_SYNC, PPC32_SYNC_handler);
+    h.set_handler(Id::PPC_CNTLZW, PPC_CNTLZW_handler);
+    h.set_handler(Id::PPC_SC, PPC_SC_handler);
 
     return h;
 }
