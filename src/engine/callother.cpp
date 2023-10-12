@@ -1049,6 +1049,7 @@ The syscalls are untested and don't work
 */
 void ARM32_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
+    engine.log.warning("SC is untested and might not work!!");
     // Get syscall number
     const Value& sys_num = engine.cpu.ctx().get(ARM32::R7);
     if (sys_num.is_symbolic(*engine.vars))
