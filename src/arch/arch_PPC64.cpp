@@ -96,32 +96,6 @@ namespace PPC64
             {"tbl", TBL},
             {"tbu", TBU},
             {"fpscr", FPSCR},
-            {"fx", FX},
-            {"fex", FEX},
-            {"vx", VX},
-            {"ox", OX},
-            {"ux", UX},
-            {"zx", ZX},
-            {"xx", XX},
-            {"vxsnan", VXSNAN},
-            {"vxisi", VXISI},
-            {"vxidi", VXIDI},
-            {"vxzdz", VXZDZ},
-            {"vximz", VXIMZ},
-            {"vxvc" ,VXVC},
-            {"fr", FR},
-            {"fi", FI},
-            {"fprf", FPRF},
-            {"vxsoft", VXSOFT},
-            {"vxsqrt", VXSQRT},
-            {"vxcvi", VXCVI},
-            {"ve", VE},
-            {"oe", OE},
-            {"ue", UE},
-            {"ze", ZE},
-            {"xe", XE},
-            {"ni", NI},
-            {"rn", RN},
             {"msr", MSR},
             {"pvr", PVR},
             {"r2save", R2SAVE},
@@ -225,33 +199,6 @@ namespace PPC64
             case PVR:
             case RESERVE:
                 return 32;
-            case FX:
-            case FEX:
-            case VX:
-            case OX:
-            case UX:
-            case ZX:
-            case XX:
-            case VXSNAN:
-            case VXISI:
-            case VXIDI:
-            case VXZDZ:
-            case VXIMZ:
-            case VXVC:
-            case FR:
-            case FI:
-            case FPRF:
-            case VXSOFT:
-            case VXSQRT:
-            case VXCVI:
-            case VE:
-            case OE:
-            case UE:
-            case ZE:
-            case XE:
-            case NI:
-            case RN:
-                return 8;
             default:
                 throw runtime_exception("ArchPPC64::reg_size(): got unsupported reg_num");
         }

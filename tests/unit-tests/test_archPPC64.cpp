@@ -786,26 +786,6 @@ namespace archPPC64
         return ret_value;
     }
 
-    unsigned int disass_sc()
-    {
-        unsigned int ret_value = 0;
-        MaatEngine sym = MaatEngine(Arch::Type::PPC64, env::OS::LINUX);
-        sym.mem->map(0x10000,0x10000);
-        sym.mem->map(0x0,0x0);
-
-        string code;
-
-
-        sym.cpu.ctx().set(PPC64::R0, exprcst(32,5));
-        code = string("\x44\x00\x00\x02", 4); // sc 0x0
-        sym.mem->write_buffer(0x10000, (uint8_t*)code.c_str(), code.size());
-        sym.run_from(0x10000,1);
-        
-        ret_value += _assert( sym.cpu.ctx().get(PPC64::PC).as_uint() == 0x1004,"1: ArchPPC64: failed to disassembly and/or execute sc");
-
-        return ret_value;
-    }
-
     unsigned int disass_lbz()
     {
         unsigned int ret_value = 0;
@@ -842,6 +822,31 @@ namespace archPPC64
 
         sym.run_from(0x1000,1);
         ret_value += _assert(sym.cpu.ctx().get(PPC64::R9).as_uint() == 0xffffffffabcdef12, "1: ArchPPC64: Failed to disassemble extend signed word");
+        return ret_value;
+    }
+
+    unsigned int disass_sc()
+    {
+        unsigned int ret_value = 0;
+        MaatEngine sym = MaatEngine(Arch::Type::PPC64, env::OS::LINUX);
+        sym.mem->map(0x1000,0x2000);
+        sym.mem->map(0x0,0x0);
+
+        string code;
+
+
+        sym.cpu.ctx().set(PPC64::R0, exprcst(64,5));
+        sym.cpu.ctx().set(PPC64::R3, exprcst(64,0x1500));
+        sym.cpu.ctx().set(PPC64::R4, exprcst(64,0x40));
+        code = string("\x44\x00\x00\x02", 4); // sc 0x0
+        sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
+        // /home/nathan/test_syscalls/example.txt
+        code = string("\x2f\x68\x6f\x6d\x65\x2f\x6e\x61\x74\x68\x61\x6e\x2f\x74\x65\x73\x74\x5f\x73\x79\x73\x63\x61\x6c\x6c\x73\x2f\x65\x78\x61\x6d\x70\x6c\x65\x2e\x74\x78\x74",38);
+        sym.mem->write_buffer(0x1500, (uint8_t*)code.c_str(), code.size());
+
+        sym.run_from(0x1000,1);
+        ret_value += _assert( sym.cpu.ctx().get(PPC64::PC).as_uint() == 0x1004,"1: ArchPPC32: failed to disassembly and/or execute sc");
+
         return ret_value;
     }
 
@@ -890,5 +895,9 @@ void test_archPPC64() {
     total += disass_bctrl();
     total += disass_lbz();
     total += disass_extsw();
+
+    // System calls aren't working
+    // total += disass_sc(); ///< TODO write a better syscall test...
+
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }

@@ -28,6 +28,7 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
         case Arch::Type::PPC64:
             if (mnemonic == "cntlzw") return Id::PPC_CNTLZW;
             if (mnemonic == "cntlzw.") return Id::PPC_CNTLZW;
+            if (mnemonic == "sc") return Id::PPC_SC;
             break;
         default:
             break;
@@ -1068,6 +1069,44 @@ void PPC_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
     pinst.res = Number(inst.out.size(), count);
 }
 
+/*
+System call for PowerPC.
+The syscalls are untested and don't work
+*/
+void PPC_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    // Get syscall number
+    const Value& sys_num = engine.cpu.ctx().get(PPC64::R0);
+    if (sys_num.is_symbolic(*engine.vars))
+    {
+        throw callother_exception("SC 0x0: syscall number is symbolic!");
+    }
+    // Get function to emulate syscall`
+    try
+    {
+        const env::Function& func = engine.env->get_syscall_func_by_num(
+            sys_num.as_uint(*engine.vars)
+        );
+
+        // Execute function callback
+        switch (func.callback().execute(engine, env::abi::PPC64_SC::instance()))
+        {
+            case env::Action::CONTINUE:
+                break;
+            case env::Action::ERROR:
+                throw callother_exception(
+                    "SC 0x0: Emulation callback signaled an error, SC is untested and might not work!!"
+                );
+        }
+    }
+    catch(const env_exception& e)
+    {
+        throw callother_exception(
+            Fmt() << "SC 0x0: " << e.what() >> Fmt::to_str
+        );
+    }
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -1111,6 +1150,7 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
 
     h.set_handler(Id::PPC_CNTLZW, PPC_CNTLZW_handler);
+    h.set_handler(Id::PPC_SC, PPC_SC_handler);
 
     return h;
 }

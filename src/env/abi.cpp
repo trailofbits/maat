@@ -499,7 +499,7 @@ void PPC64_SC::set_ret_value(
     const FunctionCallback::return_t& ret_val
 ) const
 {
-    // Return value in R3 and in R4
+    // Return value in R3
     std::visit(maat::util::overloaded{
         [](std::monostate arg){return;}, // no return value
         [&engine](auto arg){engine.cpu.ctx().set(PPC64::R3, arg);}

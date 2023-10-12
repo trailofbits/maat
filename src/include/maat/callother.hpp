@@ -67,7 +67,7 @@ enum class Id
     EVM_LOG,
     //PPC 64
     PPC_CNTLZW, ///< CNTLZW instruction
-    PPC_DCBT, ///< Data block cache touch (similar to prefetch in x86)
+    PPC_SC, ///< System Call
     UNSUPPORTED
 };
 
