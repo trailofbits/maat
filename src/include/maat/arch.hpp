@@ -424,6 +424,68 @@ namespace ARM64
 
 /** \} */ // Arch doxygen group
 
+namespace ARM32
+{
+    /* General Purpose Registers */
+    static constexpr reg_t R0 = 0;
+    static constexpr reg_t R1 = 1;
+    static constexpr reg_t R2 = 2;
+    static constexpr reg_t R3 = 3;
+    static constexpr reg_t R4 = 4;
+    static constexpr reg_t R5 = 5;
+    static constexpr reg_t R6 = 6;
+    static constexpr reg_t R7 = 7;
+    static constexpr reg_t R8 = 8;
+    static constexpr reg_t R9 = 9;
+    static constexpr reg_t R10 = 10;
+    static constexpr reg_t R11 = 11;
+    static constexpr reg_t FP = 11; // Same as R11
+    static constexpr reg_t R12 = 12;
+    static constexpr reg_t IP = 12; // Same as R12
+    static constexpr reg_t R13 = 13;
+    static constexpr reg_t SP = 13; // Same as R13
+    static constexpr reg_t R14 = 14;
+    static constexpr reg_t LR = 14; // Same as R14
+    static constexpr reg_t R15 = 15;
+    static constexpr reg_t PC = 15; // Same as R15
+    /* Special Registers */
+    static constexpr reg_t CPSR = 16; // Current Program Status Register CPSR bits; TODO: add other flags
+    static constexpr reg_t NF = 17;
+    static constexpr reg_t ZF = 18;
+    static constexpr reg_t CF = 19;
+    static constexpr reg_t VF = 20;
+    static constexpr reg_t QF = 21;
+    static constexpr reg_t JF = 22;
+    static constexpr reg_t GE1 = 23;
+    static constexpr reg_t GE2 = 24;
+    static constexpr reg_t GE3 = 25;
+    static constexpr reg_t GE4 = 26;
+    static constexpr reg_t TF = 27;  // thumb-bit (TB)
+    static constexpr reg_t SC = 28;  //shift_carry
+    static constexpr reg_t ISAModeSwitch = 29;
+    static constexpr reg_t mult_addr = 30; // Special internal register for dealing with multiple stores/loads 32 bits
+    static constexpr reg_t mult_dat8 = 31; // Special internal register for dealing with multiple stores/loads 64 bits
+    static constexpr reg_t mult_dat16 = 32; // Special internal register for dealing with multiple stores/loads 128 bits
+    static constexpr reg_t NB_REGS = 33;
+
+     /** \addtogroup arch
+     * \{ */
+    class ArchARM32: public Arch
+    {
+    public:
+        ArchARM32();
+        virtual ~ArchARM32() = default;
+        const std::string& reg_name(reg_t num) const;
+        reg_t reg_num(const std::string& name) const;
+        size_t reg_size(reg_t reg_num) const;
+        reg_t sp() const;
+        reg_t pc() const;
+        reg_t tsc() const;
+    };
+    /** \} */ // Arch doxygen group
+
+} // namespace ARM32
+
 } // namespace maat
 
 #endif
