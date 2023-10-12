@@ -463,6 +463,8 @@ void test_archARM64() {
     total += disass_store_load(engine);
     total += logical_shift(engine);
     total += disass_bitwise(engine);
+    
+    // System calls aren't working
     // total += test_systemcall();
 
 
