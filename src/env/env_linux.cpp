@@ -25,7 +25,7 @@ void LinuxEmulator::_init(Arch::Type arch)
             break;
         case Arch::Type::ARM32:
             _libraries.push_back(env::emulated::linux_ARM32_libc());
-            _syscall_func_map = env::emulated::linux_x64_syscall_map();
+            _syscall_func_map = env::emulated::linux_ARM32_syscall_map();
         case Arch::Type::NONE:
         default:
             break;

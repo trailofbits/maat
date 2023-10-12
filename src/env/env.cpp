@@ -18,7 +18,7 @@ abi::ABI* _get_default_abi(Arch::Type arch, OS os)
     else if (arch == Arch::Type::ARM32)
     {
         if (os == OS::LINUX)
-            return &abi::ARM32ABI::instance();
+            return &abi::ARM32EABI::instance();
     }
     return &abi::ABI_NONE::instance();
 }

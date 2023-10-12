@@ -104,7 +104,7 @@ enum class Type
     /* ARM64 */
     ARM64,
     /* ARM32 */
-    ARM32ABI,
+    ARM32EABI,
     ARM32_SYSCALL,
     /* Custom */
     X86_LINUX_CUSTOM_SYSCALL, ///< Used internally
@@ -312,10 +312,10 @@ public:
 };
 
 /// ARM32 defualt ABI
-class ARM32ABI : public ABI
+class ARM32EABI : public ABI
 {
 protected:
-    ARM32ABI();
+    ARM32EABI();
 public:
     /// ABI instance (singleton pattern)
     static ABI& instance();

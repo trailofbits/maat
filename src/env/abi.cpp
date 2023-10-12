@@ -402,17 +402,17 @@ void X86_LINUX_INT80::ret(MaatEngine& engine) const
     // Do nothing
 }
 
-/*============ LINUX ARM32 ABI ============*/
-ARM32ABI::ARM32ABI(): ABI(Type::ARM32ABI)
+/*============ LINUX ARM32 EABI ============*/
+ARM32EABI::ARM32EABI(): ABI(Type::ARM32EABI)
 {}
 
-ABI& ARM32ABI::instance()
+ABI& ARM32EABI::instance()
 {
-    static ARM32ABI abi;
+    static ARM32EABI abi;
     return abi;
 }
 
-void ARM32ABI::get_args(
+void ARM32EABI::get_args(
     MaatEngine& engine,
     const args_spec_t& args_spec,
     std::vector<Value>& args
@@ -423,7 +423,7 @@ void ARM32ABI::get_args(
         args.push_back(get_arg(engine, i++, arg));
 }
 
-Value ARM32ABI::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+Value ARM32EABI::get_arg(MaatEngine& engine, int n, size_t arg_size) const
 {
     // Regs on the stack, pushed right to left
     arg_size = ABI::real_arg_size(engine, arg_size);
@@ -431,7 +431,7 @@ Value ARM32ABI::get_arg(MaatEngine& engine, int n, size_t arg_size) const
     return _adjust_value_to_size(res, arg_size, engine);
 }
 
-void ARM32ABI::set_ret_value(
+void ARM32EABI::set_ret_value(
     MaatEngine& engine,
     const FunctionCallback::return_t& ret_val
 ) const
@@ -443,21 +443,21 @@ void ARM32ABI::set_ret_value(
     }, ret_val);
 }
 
-void ARM32ABI::prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const
+void ARM32EABI::prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const
 {
     // Push the return address, simply
     engine.cpu.ctx().set(ARM32::PC, engine.cpu.ctx().get(ARM32::PC).as_uint() - 4);
     engine.mem->write(engine.cpu.ctx().get(ARM32::SP).as_uint(), ret_addr, 4);
 }
 
-void ARM32ABI::ret(MaatEngine& engine) const
+void ARM32EABI::ret(MaatEngine& engine) const
 {
     // Pop return address, SP (pop from the stack)
     engine.cpu.ctx().set(ARM32::PC, engine.mem->read((engine.cpu.ctx().get(ARM32::SP).as_uint()), 4));
     engine.cpu.ctx().set(ARM32::SP, engine.cpu.ctx().get(ARM32::SP).as_uint() + 4);
 }
 
-/* ============== ABI ARM32 SYSCALL LINUX ==============*/
+/* ============== EABI ARM32 SYSCALL LINUX ==============*/
 ARM32_SYSCALL::ARM32_SYSCALL(): ABI(Type::ARM32_SYSCALL)
 {}
 
@@ -480,12 +480,12 @@ void ARM32_SYSCALL::get_args(
 
 Value ARM32_SYSCALL::get_arg(MaatEngine& engine, int n, size_t arg_size) const
 {
-    std::vector<reg_t> arg_regs{ARM32::R0,ARM32::R1,ARM32::R2,ARM32::R3,ARM32::R4,ARM32::R5,ARM32::R6,ARM32::R7, ARM32::R8};
+    std::vector<reg_t> arg_regs{ARM32::R0,ARM32::R1,ARM32::R2,ARM32::R3,ARM32::R4,ARM32::R5,ARM32::R6};
     Value res;
     arg_size = ABI::real_arg_size(engine, arg_size);
     if (n >= arg_regs.size())
     {
-        throw env_exception("get_arg(): Linux ARM32 CS ABI supports only up to 9 arguments");
+        throw env_exception("get_arg(): Linux ARM32 CS ABI supports only up to 7 arguments");
     }
     else
     {
@@ -499,7 +499,7 @@ void ARM32_SYSCALL::set_ret_value(
     const FunctionCallback::return_t& ret_val
 ) const
 {
-    // Return value in R3 and in R4
+    // Return value in R0
     std::visit(maat::util::overloaded{
         [](std::monostate arg){return;}, // no return value
         [&engine](auto arg){engine.cpu.ctx().set(ARM32::R0, arg);}
