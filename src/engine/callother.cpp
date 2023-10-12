@@ -15,7 +15,7 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
         case Arch::Type::X64:
             if (mnemonic == "RDTSC") return Id::X86_RDTSC;
             if (mnemonic == "SYSCALL")
-            if (arch == Arch::Type::X64) return Id::X64_SYSCALL;
+                if (arch == Arch::Type::X64) return Id::X64_SYSCALL;
             if (mnemonic == "CPUID") return Id::X86_CPUID;
             if (mnemonic == "PMINUB") return Id::X86_PMINUB;
             if (mnemonic == "INT") return Id::X86_INT;
@@ -1074,6 +1074,7 @@ The syscalls are untested and don't work
 */
 void PPC_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
+    engine.log.warning("SC is untested and might not work!!");
     // Get syscall number
     const Value& sys_num = engine.cpu.ctx().get(PPC32::R0);
     if (sys_num.is_symbolic(*engine.vars))

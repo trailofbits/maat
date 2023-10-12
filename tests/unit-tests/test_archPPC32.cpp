@@ -686,7 +686,7 @@ void test_archPPC32() {
     total += disass_bctrl();
 
     // System calls aren't working
-    // total += disass_sc(); ///< TODO write a better syscall test...
+    total += disass_sc(); ///< TODO write a better syscall test...
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }
