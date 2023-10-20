@@ -345,32 +345,6 @@ namespace test
             return return_val;
         }
 
-        unsigned int test_systemcall(){
-            unsigned int return_val = 0;
-            string code;
-            MaatEngine sym = MaatEngine(Arch::Type::ARM32, env::OS::LINUX);
-            sym.mem->map(0x1000,0x2000);
-
-            // set registers
-            sym.cpu.ctx().set(ARM32::R0, exprcst(32,0x1500));
-            sym.cpu.ctx().set(ARM32::R1, exprcst(32,0x40));
-            sym.cpu.ctx().set(ARM32::R2, exprcst(32,0x1500));
-            sym.cpu.ctx().set(ARM32::R3, exprcst(32,0));
-            sym.cpu.ctx().set(ARM32::R4, exprcst(32,0));
-            sym.cpu.ctx().set(ARM32::R5, exprcst(32,0));
-            sym.cpu.ctx().set(ARM32::R6, exprcst(32,0));
-            sym.cpu.ctx().set(ARM32::R7, exprcst(32,5));
-
-            // /home/nathan/test_syscalls/example.txt
-            code = string("\x2f\x68\x6f\x6d\x65\x2f\x6e\x61\x74\x68\x61\x6e\x2f\x74\x65\x73\x74\x5f\x73\x79\x73\x63\x61\x6c\x6c\x73\x2f\x65\x78\x61\x6d\x70\x6c\x65\x2e\x74\x78\x74",38);
-            sym.mem->write_buffer(0x1500, (uint8_t*)code.c_str(), code.size());
-
-            code = string("\x00\x00\x00\xef",4);
-            sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
-            sym.settings.log_insts = true;
-            sym.run_from(0x1000,1);
-            return return_val;
-        }
     }
 }
 
@@ -396,9 +370,5 @@ void test_archARM32() {
     total += disass_store_load(engine);
     total += test_THUMB();
 
-    // System calls aren't working
-    // total += test_systemcall();
-
-    // total += test_float();
     cout << "\t" << total << "/" << total << green << "\tOK" << def << endl;
 }
