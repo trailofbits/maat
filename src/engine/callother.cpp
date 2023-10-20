@@ -26,9 +26,9 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
             if (mnemonic == "STACK_POP") return Id::EVM_STACK_POP;
             break;
         case Arch::Type::PPC64:
-            if (mnemonic == "cntlzw") return Id::PPC_CNTLZW;
-            if (mnemonic == "cntlzw.") return Id::PPC_CNTLZW;
-            if (mnemonic == "sc") return Id::PPC_SC;
+            if (mnemonic == "cntlzw") return Id::PPC64_CNTLZW;
+            if (mnemonic == "cntlzw.") return Id::PPC64_CNTLZW;
+            if (mnemonic == "sc") return Id::PPC64_SC;
             break;
         default:
             break;
@@ -1047,7 +1047,7 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
 }
 
 // Function handles the countleadingzero (CNTLZW) instruction in PowerPC
-void PPC_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+void PPC64_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     Value program_counter = engine.cpu.ctx().get(engine.arch->pc());
     const Value& cnt = pinst.in1.value();
@@ -1073,7 +1073,7 @@ void PPC_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedI
 System call for PowerPC.
 The syscalls are untested and don't work
 */
-void PPC_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+void PPC64_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
 {
     engine.log.warning("System Call is untested and might not work!!");
     // Get syscall number
@@ -1150,8 +1150,8 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
 
-    h.set_handler(Id::PPC_CNTLZW, PPC_CNTLZW_handler);
-    h.set_handler(Id::PPC_SC, PPC_SC_handler);
+    h.set_handler(Id::PPC64_CNTLZW, PPC64_CNTLZW_handler);
+    h.set_handler(Id::PPC64_SC, PPC64_SC_handler);
 
     return h;
 }
