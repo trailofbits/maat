@@ -66,8 +66,8 @@ enum class Id
     EVM_SELFDESTRUCT,
     EVM_LOG,
     //PPC 32
-    PPC_CNTLZW, ///< CNTLZW instruction
-    PPC_SC, ///< System Call
+    PPC32_CNTLZW, ///< CNTLZW instruction
+    PPC32_SC, ///< System Call
     UNSUPPORTED
 };
 

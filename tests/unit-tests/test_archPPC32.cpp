@@ -624,32 +624,6 @@ namespace archPPC32
         return ret_value;
     }
 
-    unsigned int disass_sc()
-    {
-        unsigned int ret_value = 0;
-        MaatEngine sym = MaatEngine(Arch::Type::PPC32, env::OS::LINUX);
-        sym.mem->map(0x1000,0x2000);
-        sym.mem->map(0x0,0x0);
-
-        string code;
-
-
-        sym.cpu.ctx().set(PPC32::R0, exprcst(32,5));
-        sym.cpu.ctx().set(PPC32::R3, exprcst(32,0x1500));
-        sym.cpu.ctx().set(PPC32::R4, exprcst(32,0x40));
-        code = string("\x44\x00\x00\x02", 4); // sc 0x0
-        sym.mem->write_buffer(0x1000, (uint8_t*)code.c_str(), code.size());
-        // /home/nathan/test_syscalls/example.txt
-        code = string("\x2f\x68\x6f\x6d\x65\x2f\x6e\x61\x74\x68\x61\x6e\x2f\x74\x65\x73\x74\x5f\x73\x79\x73\x63\x61\x6c\x6c\x73\x2f\x65\x78\x61\x6d\x70\x6c\x65\x2e\x74\x78\x74",38);
-        sym.mem->write_buffer(0x1500, (uint8_t*)code.c_str(), code.size());
-
-        sym.run_from(0x1000,1);
-        cout << sym.cpu.ctx().get(PPC32::PC).as_uint();
-        ret_value += _assert( sym.cpu.ctx().get(PPC32::PC).as_uint() == 0x1004,"1: ArchPPC32: failed to disassembly and/or execute sc");
-
-        return ret_value;
-    }
-
 }// Namespace PPC32
 }// Namespace Test
 using namespace test::archPPC32;
@@ -684,9 +658,6 @@ void test_archPPC32() {
     total += disass_mtspr();
     total += disass_bl();  
     total += disass_bctrl();
-
-    // System calls aren't working
-    // total += disass_sc(); ///< TODO write a better syscall test...
 
     std::cout << "\t" << total << "/" << total << green << "\t\tOK" << def << std::endl;
 }
