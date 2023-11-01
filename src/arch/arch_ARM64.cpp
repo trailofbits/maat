@@ -1,3 +1,9 @@
+/*
+Commonwealth of Australia represented by the Department of Defence
+
+Produced by Nathan Do, Student Intern at DSTG (Defence Science and Technology Group)
+*/
+
 #include "maat/arch.hpp"
 #include "maat/exception.hpp"
 #include "maat/cpu.hpp"
