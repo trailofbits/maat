@@ -192,6 +192,6 @@ namespace ARM64
     {
         throw runtime_exception("ArchARM64::tsc(): method not available");
     }
-} // namespace RISCV
+} // namespace ARM64
 
 } // namespace maat
