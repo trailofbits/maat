@@ -228,7 +228,7 @@ void Number::set_add(const Number& n1, const Number& n2)
 {
     size = n1.size;
     if (size <= 64)
-        set_cst(n1.cst_ + n2.cst_);
+        set_cst((ucst_t)n1.cst_ + (ucst_t)n2.cst_);
     else
     {
         mpz_ = n1.mpz_ + n2.mpz_;
@@ -400,7 +400,7 @@ void Number::set_sar(const Number& n1, const Number& n2)
         cst_t tmp;
         if (n2.cst_ >= n1.size)
         {
-            if( n1.cst_ & (0x1 << (n1.size-1)))
+            if( n1.cst_ & ((ucst_t)0x1 << (n1.size-1)))
                 tmp = 0xffffffffffffffff;
             else
                 tmp = 0;
