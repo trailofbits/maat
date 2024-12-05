@@ -21,6 +21,8 @@ namespace emulated
 syscall_func_map_t linux_x86_syscall_map();
 /// Return the emulated syscalls for Linux on X64
 syscall_func_map_t linux_x64_syscall_map();
+/// Return the emulated syscalls for Linux on PPC64
+syscall_func_map_t linux_ppc64_syscall_map();
 }
 
 

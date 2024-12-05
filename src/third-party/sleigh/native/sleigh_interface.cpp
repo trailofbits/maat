@@ -399,6 +399,15 @@ public:
         // TODO - is this useful ? will this hinder performance ?
         // Needs to be here apparently but maybe we could tweak setData so we don't need to reset...
         m_sleigh->reset(&m_loader, &m_context_internal);
+        
+        // If arch is PowerPC 64-bit then don't allow contextSet()
+        // this fixes instructions such as bgt and other instructions that use context switching
+        if (arch == Arch::Type::PPC64)
+        {
+            // Disable context setting for PowerPC 64-bit architecture
+            m_sleigh->allowContextSet(false);
+        }
+
         m_sleigh->initialize(m_document_storage);
         // setData doesn't affect performance for a big num_bytes :)
         m_loader.setData(address, bytes, num_bytes);
@@ -577,7 +586,7 @@ public:
 };
 
 // Translate a sleigh register name into a maat::ir::Param register
-maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name);
+maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name, const int reg_masked_bits);
 // Translate a pcode varnode into an parameter and add it to inst
 maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
 {
@@ -597,7 +606,7 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
         if (addr_space_name == "register")
         {
             const std::string& reg_name = ctx->getRegisterName(v->space, v->offset, v->size);
-            return std::move(reg_name_to_maat_reg(ctx->arch, reg_name));
+            return std::move(reg_name_to_maat_reg(ctx->arch, reg_name, v->size*8));
         }
         else if (addr_space_name == "unique")
         {
@@ -622,7 +631,7 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
     return maat::ir::Param::None();
 }
 
-maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name)
+maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name, const int reg_masked_bits)
 {
     if (arch == Arch::Type::X86)
         return sleigh_reg_translate_X86(reg_name);
@@ -630,10 +639,18 @@ maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& r
         return sleigh_reg_translate_X64(reg_name);
     else if (arch == Arch::Type::EVM)
         return sleigh_reg_translate_EVM(reg_name);
+    else if (arch == Arch::Type::PPC64){
+        int reg_max_bits = sleigh_reg_translate_PPC64(reg_name).size();
+        if(reg_masked_bits == reg_max_bits)
+            return sleigh_reg_translate_PPC64(reg_name);
+        else if(reg_masked_bits < reg_max_bits)
+            return sleigh_masked_reg_translate_PPC64(reg_name, reg_masked_bits);
+        else
+            throw maat::runtime_exception("Register translation from SLEIGH to MAAT, sleigh pcode register size is greater than maat register size!");
+    }
     else
         throw maat::runtime_exception("Register translation from SLEIGH to MAAT not implemented for this architecture!");
 }
-
 
 std::shared_ptr<TranslationContext> new_sleigh_ctx(
     maat::Arch::Type arch,

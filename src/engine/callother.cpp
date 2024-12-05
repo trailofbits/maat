@@ -25,6 +25,11 @@ Id mnemonic_to_id(const std::string& mnemonic, Arch::Type arch)
             if (mnemonic == "STACK_PUSH") return Id::EVM_STACK_PUSH;
             if (mnemonic == "STACK_POP") return Id::EVM_STACK_POP;
             break;
+        case Arch::Type::PPC64:
+            if (mnemonic == "cntlzw") return Id::PPC64_CNTLZW;
+            if (mnemonic == "cntlzw.") return Id::PPC64_CNTLZW;
+            if (mnemonic == "sc") return Id::PPC64_SC;
+            break;
         default:
             break;
     }
@@ -1041,6 +1046,68 @@ void EVM_LOG_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst
     }
 }
 
+// Function handles the countleadingzero (CNTLZW) instruction in PowerPC
+void PPC64_CNTLZW_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    Value program_counter = engine.cpu.ctx().get(engine.arch->pc());
+    const Value& cnt = pinst.in1.value();
+
+    if (not cnt.is_concrete(*engine.vars))
+        throw callother_exception("CNTLZW: got symbolic position");
+
+    ucst_t reg_value = pinst.in1.value().as_uint();
+    uint32_t reg_value_word = (uint32_t)reg_value; // cast value to 32-bit value
+
+    int count = 0;
+    while (reg_value_word != 0)
+    {
+        reg_value_word = reg_value_word >> 1;
+        count++;
+    }
+
+    count = 32 - count;
+    pinst.res = Number(inst.out.size(), count);
+}
+
+/*
+System call for PowerPC.
+The syscalls are untested and don't work
+*/
+void PPC64_SC_handler(MaatEngine& engine, const ir::Inst& inst, ir::ProcessedInst& pinst)
+{
+    engine.log.warning("System Call is untested and might not work!!");
+    // Get syscall number
+    const Value& sys_num = engine.cpu.ctx().get(PPC64::R0);
+    if (sys_num.is_symbolic(*engine.vars))
+    {
+        throw callother_exception("SC 0x0: syscall number is symbolic!");
+    }
+    // Get function to emulate syscall`
+    try
+    {
+        const env::Function& func = engine.env->get_syscall_func_by_num(
+            sys_num.as_uint(*engine.vars)
+        );
+
+        // Execute function callback
+        switch (func.callback().execute(engine, env::abi::PPC64_SC::instance()))
+        {
+            case env::Action::CONTINUE:
+                break;
+            case env::Action::ERROR:
+                throw callother_exception(
+                    "SC 0x0: Emulation callback signaled an error, SC is untested and might not work!!"
+                );
+        }
+    }
+    catch(const env_exception& e)
+    {
+        throw callother_exception(
+            Fmt() << "SC 0x0: " << e.what() >> Fmt::to_str
+        );
+    }
+}
+
 /// Return the default handler map for CALLOTHER occurences
 HandlerMap default_handler_map()
 {
@@ -1082,6 +1149,9 @@ HandlerMap default_handler_map()
     h.set_handler(Id::EVM_CREATE, EVM_CREATE_handler);
     h.set_handler(Id::EVM_SELFDESTRUCT, EVM_SELFDESTRUCT_handler);
     h.set_handler(Id::EVM_LOG, EVM_LOG_handler);
+
+    h.set_handler(Id::PPC64_CNTLZW, PPC64_CNTLZW_handler);
+    h.set_handler(Id::PPC64_SC, PPC64_SC_handler);
 
     return h;
 }
