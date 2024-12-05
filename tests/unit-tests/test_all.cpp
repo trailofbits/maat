@@ -12,6 +12,7 @@ void test_symbolic_memory();
 void test_ir();
 void test_archX86();
 void test_archX64();
+void test_archARM64();
 void test_events();
 void test_snapshots();
 void test_solver();
@@ -52,6 +53,7 @@ int main(int argc, char ** argv)
                 test_archX86();
                 test_archX64();
                 test_archEVM();
+                test_archARM64();
                 test_solver();
                 test_loader();
                 test_serialization();
@@ -82,6 +84,8 @@ int main(int argc, char ** argv)
                         test_archX64();
                     else if( !strcmp(argv[i], "EVM"))
                         test_archEVM();
+                    else if( !strcmp(argv[i], "ARM64"))
+                        test_archARM64();
                     else if( !strcmp(argv[i], "event"))
                         test_events();
                     else if( !strcmp(argv[i], "snap"))
@@ -92,9 +96,8 @@ int main(int argc, char ** argv)
                         test_loader();
                     else if( !strcmp(argv[i], "serial"))
                         test_serialization();
+
                     /*
-                    else if( !strcmp(argv[i], "ARM64"))
-                        test_archARM64();
                     else if( !strcmp(argv[i], "env"))
                         test_env();
                     */

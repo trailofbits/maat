@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.14)
-
 project(maatTests LANGUAGES CXX)
 include(../cmake/project-is-top-level.cmake)
 include(../cmake/folders.cmake)
@@ -12,6 +11,7 @@ endif()
 # Unit tests
 add_executable(unit-tests
   unit-tests/test_all.cpp
+  unit-tests/test_archARM64.cpp
   unit-tests/test_archEVM.cpp
   unit-tests/test_archX64.cpp
   unit-tests/test_archX86.cpp
