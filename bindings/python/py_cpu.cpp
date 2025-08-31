@@ -45,17 +45,24 @@ int CPU_set_attro(PyObject *self, PyObject *attr, PyObject *value)
         }
         else if (PyLong_Check(value))
         {
-            int overflow = 0;
-            cst_t int_val = PyLong_AsLongLongAndOverflow(value, &overflow);
-            if (overflow == 0)
-                as_cpu_object(self).cpu->ctx().set(reg, int_val);
-            else // More than 64 bits, set as number
+            // Try to get as unsigned 64-bit first
+            unsigned long long uint_val = PyLong_AsUnsignedLongLong(value);
+            if (uint_val != (unsigned long long)-1 || !PyErr_Occurred())
             {
+                // Successfully got as unsigned 64-bit
+                PyErr_Clear();
+                as_cpu_object(self).cpu->ctx().set(reg, (cst_t)uint_val);
+            }
+            else
+            {
+                // Value exceeds 64 bits, use Number for multiprecision
+                PyErr_Clear();
                 Number number(as_cpu_object(self).arch->reg_size(reg));
                 PyObject* repr = PyObject_Repr(value);
                 std::string s = std::string(PyUnicode_AsUTF8(repr));
-                number.set_mpz(s, 10); // Base 10 because python repr() uses base 10
+                number.set_mpz(s, 10);
                 as_cpu_object(self).cpu->ctx().set(reg, number);
+                Py_DECREF(repr);
             }
         }
         else
