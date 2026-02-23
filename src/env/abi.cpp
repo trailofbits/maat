@@ -401,6 +401,113 @@ void X86_LINUX_INT80::ret(MaatEngine& engine) const
 {
     // Do nothing
 }
+/*============ LINUX PowerPC ABI ============*/
+PPC32ABI::PPC32ABI(): ABI(Type::PPC32ABI)
+{}
+
+ABI& PPC32ABI::instance()
+{
+    static PPC32ABI abi;
+    return abi;
+}
+
+void PPC32ABI::get_args(
+    MaatEngine& engine,
+    const args_spec_t& args_spec,
+    std::vector<Value>& args
+) const
+{
+    int i = 0;
+    for (auto arg : args_spec)
+        args.push_back(get_arg(engine, i++, arg));
+}
+
+Value PPC32ABI::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+{
+    // Regs on the stack, pushed right to left
+    arg_size = ABI::real_arg_size(engine, arg_size);
+    Value res = engine.mem->read(engine.cpu.ctx().get(PPC32::R1).as_uint() + 4 + 4*n, 4);
+    return _adjust_value_to_size(res, arg_size, engine);
+}
+
+void PPC32ABI::set_ret_value(
+    MaatEngine& engine,
+    const FunctionCallback::return_t& ret_val
+) const
+{
+    // Return value in R3
+    std::visit(maat::util::overloaded{
+        [](std::monostate arg){return;}, // no return value
+        [&engine](auto arg){engine.cpu.ctx().set(PPC32::R3, arg);}
+    }, ret_val);
+}
+
+void PPC32ABI::prepare_ret_address(MaatEngine& engine, addr_t ret_addr) const
+{
+    // Push the return address, simply
+    engine.cpu.ctx().set(PPC32::PC, engine.cpu.ctx().get(PPC32::PC).as_uint() - 4);
+    engine.mem->write(engine.cpu.ctx().get(PPC32::R1).as_uint(), ret_addr, 4);
+}
+
+void PPC32ABI::ret(MaatEngine& engine) const
+{
+    // Pop R1 (pop from the stack)
+    engine.cpu.ctx().set(PPC32::PC, engine.mem->read((engine.cpu.ctx().get(PPC32::R1).as_uint()), 4));
+    engine.cpu.ctx().set(PPC32::R1, engine.cpu.ctx().get(PPC32::R1).as_uint() + 4);
+}
+
+/* ============== ABI PowerPC SYSCALL LINUX ==============*/
+PPC_SC::PPC_SC(): ABI(Type::PPC_SC)
+{}
+
+ABI& PPC_SC::instance()
+{
+    static PPC_SC abi;
+    return abi;
+}
+
+void PPC_SC::get_args(
+    MaatEngine& engine,
+    const args_spec_t& args_spec,
+    std::vector<Value>& args
+) const
+{
+    int i = 0;
+    for (auto arg : args_spec)
+        args.push_back(get_arg(engine, i++, arg));
+}
+
+Value PPC_SC::get_arg(MaatEngine& engine, int n, size_t arg_size) const
+{
+    std::vector<reg_t> arg_regs{PPC32::R3,PPC32::R4,PPC32::R5,PPC32::R6,PPC32::R7,PPC32::R8,PPC32::R9,PPC32::R10};
+    Value res;
+    arg_size = ABI::real_arg_size(engine, arg_size);
+    if (n >= arg_regs.size())
+    {
+        throw env_exception("get_arg(): Linux PPC32 CS ABI supports only up to 8 arguments");
+    }
+    else
+    {
+        res = engine.cpu.ctx().get(arg_regs[n]);
+    }
+    return _adjust_value_to_size(res, arg_size, engine);
+}
+
+void PPC_SC::set_ret_value(
+    MaatEngine& engine,
+    const FunctionCallback::return_t& ret_val
+) const
+{
+    // Return value in R3 and in R4
+    std::visit(maat::util::overloaded{
+        [](std::monostate arg){return;}, // no return value
+        [&engine](auto arg){engine.cpu.ctx().set(PPC32::R3, arg);}
+    }, ret_val);
+}
+void PPC_SC::ret(MaatEngine& engine) const
+{
+    // Do nothing
+}
 
 } // namespace abi
 } // namespace env
