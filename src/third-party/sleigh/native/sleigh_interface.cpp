@@ -399,6 +399,15 @@ public:
         // TODO - is this useful ? will this hinder performance ?
         // Needs to be here apparently but maybe we could tweak setData so we don't need to reset...
         m_sleigh->reset(&m_loader, &m_context_internal);
+        
+        // If arch is arm32 bit then don't allow contextSet()
+        // this fixes instructions such as mov lr, pc and other instructions that use context switching
+        if (arch == Arch::Type::ARM32)
+        {
+            // Disable context setting for ARMv7 32-bit architecture
+            m_sleigh->allowContextSet(false);
+        }
+
         m_sleigh->initialize(m_document_storage);
         // setData doesn't affect performance for a big num_bytes :)
         m_loader.setData(address, bytes, num_bytes);
@@ -630,6 +639,8 @@ maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& r
         return sleigh_reg_translate_X64(reg_name);
     else if (arch == Arch::Type::EVM)
         return sleigh_reg_translate_EVM(reg_name);
+    else if (arch == Arch::Type::ARM32)
+        return sleigh_reg_translate_ARM32(reg_name);
     else
         throw maat::runtime_exception("Register translation from SLEIGH to MAAT not implemented for this architecture!");
 }
