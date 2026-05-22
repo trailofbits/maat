@@ -168,6 +168,11 @@ jobs:
     name: upload wheels to PyPI
     runs-on: ubuntu-latest
     needs: [build_wheels_linux, build_wheels_macos]
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pymaat
+    permissions:
+      id-token: write
     strategy:
       matrix:
         # The os names must match the ones in the build_wheels job
@@ -182,8 +187,5 @@ jobs:
           path: ${{ matrix.os }}-wheels/
 
       - name: "Upload wheels"
-        uses: pypa/gh-action-pypi-publish@v1.13.0
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: ${{ matrix.os }}-wheels/
+        uses: pypa/gh-action-pypi-publish@release/v1
+          packages-dir: ${{ matrix.os }}-wheels/
