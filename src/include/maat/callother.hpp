@@ -65,6 +65,8 @@ enum class Id
     EVM_CREATE,
     EVM_SELFDESTRUCT,
     EVM_LOG,
+    // ARM32
+    ARM32_SC,
     UNSUPPORTED
 };
 

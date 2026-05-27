@@ -15,6 +15,7 @@ add_executable(unit-tests
   unit-tests/test_archEVM.cpp
   unit-tests/test_archX64.cpp
   unit-tests/test_archX86.cpp
+  unit-tests/test_archARM32.cpp
   unit-tests/test_event.cpp
   unit-tests/test_expression.cpp
   unit-tests/test_ir.cpp
