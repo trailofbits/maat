@@ -74,8 +74,8 @@ the project. The following is a real example of a contributor's user preset (ins
       "inherits": ["dev-common", "ci-sanitize"],
       "binaryDir": "${sourceDir}/build/sanitize",
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "/usr/local/opt/llvm@13/bin/clang++",
-        "CMAKE_C_COMPILER": "/usr/local/opt/llvm@13/bin/clang"
+        "CMAKE_CXX_COMPILER": "/usr/local/opt/llvm/bin/clang++",
+        "CMAKE_C_COMPILER": "/usr/local/opt/llvm/bin/clang"
       }
     }
   ],

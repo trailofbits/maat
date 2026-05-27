@@ -2090,7 +2090,10 @@ cst_t cst_mask(size_t size)
     if( size == sizeof(cst_t)*8 )
         return -1;
     else
-        return ((ucst_t)1<<size)-1; 
+        if (size > sizeof(cst_t)*8) {
+            printf("Break here\n");
+        }
+        return ((ucst_t)1<<size)-1;
 }
 
 cst_t cst_sign_extend(size_t size, cst_t c)
