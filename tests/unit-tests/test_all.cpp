@@ -18,6 +18,7 @@ void test_solver();
 void test_loader();
 void test_serialization();
 void test_archEVM();
+void test_archPPC64();
 
 
 int main(int argc, char ** argv)
@@ -52,6 +53,7 @@ int main(int argc, char ** argv)
                 test_archX86();
                 test_archX64();
                 test_archEVM();
+                test_archPPC64();
                 test_solver();
                 test_loader();
                 test_serialization();
@@ -92,6 +94,8 @@ int main(int argc, char ** argv)
                         test_loader();
                     else if( !strcmp(argv[i], "serial"))
                         test_serialization();
+                    else if( !strcmp(argv[i], "PPC64"))
+                        test_archPPC64();
                     /*
                     else if( !strcmp(argv[i], "ARM64"))
                         test_archARM64();

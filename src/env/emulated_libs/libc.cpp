@@ -659,6 +659,20 @@ Library linux_x64_libc()
     return lib;
 }
 
+// For PowerPC 64-bit
+Library linux_ppc64_libc()
+{
+    Library lib("libc", libc_common_functions, libc_common_data);
+    // Arch specific functions...
+    lib.add_function(Function("__libc_start_main",
+        FunctionCallback({8,8,8,8,8,8,8}, linux_x64_libc_start_main_callback_part1)
+    ));
+    lib.add_function(Function("__libc_start_main_part2",
+        FunctionCallback({}, linux_x64_libc_start_main_callback_part2)
+    ));
+    return lib;
+}
+
 } // namespace emulated
 } // namespace env
 } // namespace maat
