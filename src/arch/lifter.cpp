@@ -38,6 +38,12 @@ Lifter::Lifter(CPUMode m): mode(m)
             pspecfile = config.find_sleigh_file("EVM.pspec");
             arch = Arch::Type::EVM;
         }
+        else if (mode == CPUMode::A64)
+        {
+            slafile = config.find_sleigh_file("AARCH64.sla");
+            pspecfile = config.find_sleigh_file("AARCH64.pspec");
+            arch = Arch::Type::ARM64;
+        }
         else
         {
             throw lifter_exception("Lifter: this CPU mode is not supported");
