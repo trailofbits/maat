@@ -36,6 +36,7 @@ enum class CPUMode
     T32, ///< ARM Thumb
     A64, ///< ARM 64-bits
     EVM, ///< Ethereum byte-code
+    PPC32, ///< PowerPC 32-bits
     NONE
 };
 
@@ -57,6 +58,7 @@ public:
         ARM32, // TODO ///< armv7 (32 bits)
         ARM64, // TODO ///< armv8 (64 bits)
         EVM, ///< Ethereum byte-code
+        PPC32, ///< PowerPC 32-bits
         NONE
     };
 
@@ -421,6 +423,129 @@ namespace ARM64
     /** \} */ // Arch doxygen group
 
 } // namespace ARM64
+
+/* ==================================================
+ *                      PowerPC
+ * ================================================= */
+
+/// Namespace for PPC32 specific definitions and classes
+namespace PPC32
+{
+    /* Registers */
+    static constexpr reg_t R0 = 0; ///< General Purpose Register
+    static constexpr reg_t R1 = 1; ///< General Purpose Register
+    static constexpr reg_t R2 = 2; ///< General Purpose Register
+    static constexpr reg_t R3 = 3; ///< General Purpose Register
+    static constexpr reg_t R4 = 4; ///< General Purpose Register
+    static constexpr reg_t R5 = 5; ///< General Purpose Register
+    static constexpr reg_t R6 = 6; ///< General Purpose Register
+    static constexpr reg_t R7 = 7; ///< General Purpose Register
+    static constexpr reg_t R8 = 8; ///< General Purpose Register
+    static constexpr reg_t R9 = 9; ///< General Purpose Register
+    static constexpr reg_t R10 = 10; ///< General Purpose Register
+    static constexpr reg_t R11 = 11; ///< General Purpose Register
+    static constexpr reg_t R12 = 12; ///< General Purpose Register
+    static constexpr reg_t R13 = 13; ///< General Purpose Register
+    static constexpr reg_t R14 = 14; ///< General Purpose Register
+    static constexpr reg_t R15 = 15; ///< General Purpose Register
+    static constexpr reg_t R16 = 16; ///< General Purpose Register
+    static constexpr reg_t R17 = 17; ///< General Purpose Register
+    static constexpr reg_t R18 = 18; ///< General Purpose Register
+    static constexpr reg_t R19 = 19; ///< General Purpose Register
+    static constexpr reg_t R20 = 20; ///< General Purpose Register
+    static constexpr reg_t R21 = 21; ///< General Purpose Register
+    static constexpr reg_t R22 = 22; ///< General Purpose Register
+    static constexpr reg_t R23 = 23; ///< General Purpose Register
+    static constexpr reg_t R24 = 24; ///< General Purpose Register
+    static constexpr reg_t R25 = 25; ///< General Purpose Register
+    static constexpr reg_t R26 = 26; ///< General Purpose Register
+    static constexpr reg_t R27 = 27; ///< General Purpose Register
+    static constexpr reg_t R28 = 28; ///< General Purpose Register
+    static constexpr reg_t R29 = 29; ///< General Purpose Register
+    static constexpr reg_t R30 = 30; ///< General Purpose Register
+    static constexpr reg_t R31 = 31; ///< General Purpose Register
+    /* Floating Point Registers */
+    static constexpr reg_t F0 = 32; ///< Floating Point Registers
+    static constexpr reg_t F1 = 33; ///< Floating Point Registers
+    static constexpr reg_t F2 = 34; ///< Floating Point Registers
+    static constexpr reg_t F3 = 35; ///< Floating Point Registers
+    static constexpr reg_t F4 = 36; ///< Floating Point Registers
+    static constexpr reg_t F5 = 37; ///< Floating Point Registers
+    static constexpr reg_t F6 = 38; ///< Floating Point Registers
+    static constexpr reg_t F7 = 39; ///< Floating Point Registers
+    static constexpr reg_t F8 = 40; ///< Floating Point Registers
+    static constexpr reg_t F9 = 41; ///< Floating Point Registers
+    static constexpr reg_t F10 = 42; ///< Floating Point Registers
+    static constexpr reg_t F11 = 43; ///< Floating Point Registers
+    static constexpr reg_t F12 = 44; ///< Floating Point Registers
+    static constexpr reg_t F13 = 45; ///< Floating Point Registers
+    static constexpr reg_t F14 = 46; ///< Floating Point Registers
+    static constexpr reg_t F15 = 47; ///< Floating Point Registers
+    static constexpr reg_t F16 = 48; ///< Floating Point Registers
+    static constexpr reg_t F17 = 49; ///< Floating Point Registers
+    static constexpr reg_t F18 = 50; ///< Floating Point Registers
+    static constexpr reg_t F19 = 51; ///< Floating Point Registers
+    static constexpr reg_t F20 = 52; ///< Floating Point Registers
+    static constexpr reg_t F21 = 53; ///< Floating Point Registers
+    static constexpr reg_t F22 = 54; ///< Floating Point Registers
+    static constexpr reg_t F23 = 55; ///< Floating Point Registers
+    static constexpr reg_t F24 = 56; ///< Floating Point Registers
+    static constexpr reg_t F25 = 57; ///< Floating Point Registers
+    static constexpr reg_t F26 = 58; ///< Floating Point Registers
+    static constexpr reg_t F27 = 59; ///< Floating Point Registers
+    static constexpr reg_t F28 = 60; ///< Floating Point Registers
+    static constexpr reg_t F29 = 61; ///< Floating Point Registers
+    static constexpr reg_t F30 = 62; ///< Floating Point Registers
+    static constexpr reg_t F31 = 63; ///< Floating Point Registers
+    /* Special Registers */
+    static constexpr reg_t PC = 64; ///< Program Counter
+    static constexpr reg_t SP = 1; ///< Same As R1
+    static constexpr reg_t CR = 65; ///< Condition Register
+    static constexpr reg_t LR = 66; ///< Link Register
+    static constexpr reg_t CTR = 67; ///< Count Register
+    static constexpr reg_t XER = 68; ///< Bit Control Register (CA,OV,SO)
+    /* CR Flags */
+    static constexpr reg_t CR0 = 69; ///< Condition Register 0
+    static constexpr reg_t CR1 = 70; ///< Condition Register 1
+    static constexpr reg_t CR2 = 71; ///< Condition Register 2
+    static constexpr reg_t CR3 = 72; ///< Condition Register 3
+    static constexpr reg_t CR4 = 73; ///< Condition Register 4
+    static constexpr reg_t CR5 = 74; ///< Condition Register 5
+    static constexpr reg_t CR6 = 75; ///< Condition Register 6
+    static constexpr reg_t CR7 = 76; ///< Condition Register 7
+    /* XER Flags */
+    static constexpr reg_t XER_SO = 77; ///< Summary Overflow flag
+    static constexpr reg_t XER_OV = 78; ///< Overflow flag
+    static constexpr reg_t XER_CA = 79; ///< Carry flag
+    /* Time Base Register */
+    static constexpr reg_t TBL = 80;
+    static constexpr reg_t TBU = 81;
+    /* Floating Point Status and Control Registers */
+    static constexpr reg_t FPSCR = 82;
+    /* Machine State Register */ 
+    static constexpr reg_t MSR = 83;
+    /* PVR Special Surpose Register */ 
+    static constexpr reg_t PVR = 84;
+    /* Reserved Registers */
+    static constexpr reg_t R2SAVE = 85;
+    static constexpr reg_t RESERVE = 86;
+    static constexpr reg_t NB_REGS = 87;
+    
+    /// PowerPC 32-bits Architecture
+    class ArchPPC32: public Arch
+    {
+    public:
+        ArchPPC32();
+        virtual ~ArchPPC32() = default;
+        const std::string& reg_name(reg_t num) const;
+        reg_t reg_num(const std::string& name) const;
+        size_t reg_size(reg_t reg_num) const;
+        reg_t sp() const;
+        reg_t pc() const;
+        reg_t tsc() const;
+    };
+    
+} //namespace ppc32
 
 /** \} */ // Arch doxygen group
 
