@@ -1,7 +1,7 @@
 #ifndef MAAT_SERIALIZER_HPP
 #define MAAT_SERIALIZER_HPP
 
-#include <optional>
+#include <cstdint>
 #include <unordered_map>
 #include <queue>
 #include <string>
@@ -28,7 +28,7 @@ namespace serial{
  * \{ */
 
 /// Unique identifier of a serialized object
-typedef uint16_t uid_t;
+typedef std::uint16_t uid_t;
 
 
 /** UID for Maat classes. The UID is used to store the class of a serialized object
