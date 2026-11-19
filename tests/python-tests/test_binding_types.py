@@ -1,3 +1,4 @@
+import importlib
 import sys
 
 import maat
@@ -59,3 +60,21 @@ def test_update_from_releases_context_type():
     target.update_from(source)
     after = sys.getrefcount(context_type)
     assert after == before
+
+
+def test_reimport_restores_original_exports(monkeypatch):
+    value = maat.Cst(8, 7)
+    arch, stats = maat.ARCH, maat.MaatStats
+    monkeypatch.delattr(maat, "ARCH")
+    monkeypatch.setattr(maat, "MaatStats", None)
+    monkeypatch.delattr(maat, "Var")
+    monkeypatch.delitem(sys.modules, "maat")
+    fresh = importlib.import_module("maat")
+    assert fresh is not maat
+    assert fresh.ARCH is arch
+    assert fresh.OS is maat.OS
+    assert fresh.MaatStats is stats
+    assert fresh.Var.__self__ is fresh
+    assert fresh.Var(8, "x").name == "x"
+    assert fresh.Value is type(value)
+    assert (value + fresh.Cst(8, 1)).as_uint() == 8

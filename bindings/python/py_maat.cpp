@@ -78,29 +78,42 @@ static const struct {
     {&BindingTypes::VarContext, &BindingTypes::VarContext_spec},
 };
 
-static int traverse_types(PyObject* module, visitproc visit, void* arg)
+struct ModuleState
 {
-    auto* types = static_cast<BindingTypes*>(PyModule_GetState(module));
-    if (!types)
+    BindingTypes types;
+    PyObject* exports;
+};
+
+static ModuleState* module_state(PyObject* module)
+{
+    return static_cast<ModuleState*>(PyModule_GetState(module));
+}
+
+static int traverse_state(PyObject* module, visitproc visit, void* arg)
+{
+    auto* state = module_state(module);
+    if (!state)
         return 0;
     for (const auto& def : type_definitions)
-        Py_VISIT(types->*def.member);
+        Py_VISIT(state->types.*def.member);
+    Py_VISIT(state->exports);
     return 0;
 }
 
-static int clear_types(PyObject* module)
+static int clear_state(PyObject* module)
 {
-    auto* types = static_cast<BindingTypes*>(PyModule_GetState(module));
-    if (!types)
+    auto* state = module_state(module);
+    if (!state)
         return 0;
     for (const auto& def : type_definitions)
-        Py_CLEAR(types->*def.member);
+        Py_CLEAR(state->types.*def.member);
+    Py_CLEAR(state->exports);
     return 0;
 }
 
-static void free_types(void* module)
+static void free_state(void* module)
 {
-    clear_types(static_cast<PyObject*>(module));
+    clear_state(static_cast<PyObject*>(module));
 }
 
 // Module information
@@ -108,17 +121,17 @@ PyModuleDef maat_module_def = {
     PyModuleDef_HEAD_INIT,
     "maat",
     nullptr,
-    sizeof(BindingTypes),
-    module_methods, // m_methods
+    sizeof(ModuleState),
+    nullptr, // Methods are bound to each fresh module after restoring its exports.
     nullptr, // m_slots
-    traverse_types,
-    clear_types,
-    free_types
+    traverse_state,
+    clear_state,
+    free_state
 };
 
 BindingTypes& binding_types()
 {
-    return *static_cast<BindingTypes*>(PyModule_GetState(PyState_FindModule(&maat_module_def)));
+    return module_state(PyState_FindModule(&maat_module_def))->types;
 }
 
 std::optional<std::filesystem::path> get_maat_module_directory()
@@ -138,51 +151,77 @@ std::optional<std::filesystem::path> get_maat_module_directory()
     return directory;
 }
 
-} // namespace py
-} // namespace maat
-
-using namespace maat;
-using namespace maat::py;
-PyMODINIT_FUNC PyInit_maat()
+static PyObject* create_exports(PyObject* module, const BindingTypes& types)
 {
-    PyObject* module = PyModule_Create(&maat_module_def);
-    if (!module)
-        return nullptr;
-
-    auto* types = static_cast<BindingTypes*>(PyModule_GetState(module));
-    for (const auto& def : type_definitions)
-    {
-        types->*def.member = reinterpret_cast<PyTypeObject*>(PyType_FromSpec(def.spec));
-        if (!(types->*def.member))
-        {
-            Py_DECREF(module);
-            return nullptr;
-        }
-    }
-
-    for (auto* type : {types->Value, types->Constraint, types->Info, types->Config, types->EVMContract})
+    for (auto* type : {types.Value, types.Constraint, types.Info, types.Config, types.EVMContract})
     {
         if (PyModule_AddType(module, type) < 0)
-        {
-            Py_DECREF(module);
             return nullptr;
-        }
     }
-
     init_arch(module);
     init_memory(module);
     init_engine(module);
     init_event(module);
     init_loader(module);
     init_env(module);
-    init_stats(module, types->Stats);
+    init_stats(module, types.Stats);
     init_evm(module);
-
     if (PyErr_Occurred())
+        return nullptr;
+
+    // Save the original bindings before adding methods that reference the module.
+    return PyDict_Copy(PyModule_GetDict(module));
+}
+
+} // namespace py
+} // namespace maat
+
+using namespace maat::py;
+PyMODINIT_FUNC PyInit_maat()
+{
+    PyObject* previous = PyState_FindModule(&maat_module_def);
+    ModuleState* previous_state = previous ? module_state(previous) : nullptr;
+    PyObject* module = PyModule_Create(&maat_module_def);
+    if (!module)
+        return nullptr;
+
+    auto* state = module_state(module);
+    for (const auto& def : type_definitions)
+    {
+        auto& type = state->types.*def.member;
+        if (previous_state)
+        {
+            type = previous_state->types.*def.member;
+            Py_INCREF(type);
+            continue;
+        }
+        type = reinterpret_cast<PyTypeObject*>(PyType_FromSpec(def.spec));
+        if (!type)
+        {
+            Py_DECREF(module);
+            return nullptr;
+        }
+    }
+
+    if (previous_state)
+    {
+        state->exports = Py_NewRef(previous_state->exports);
+        // Preserve the new module's own metadata while restoring shared exports.
+        if (PyDict_Merge(PyModule_GetDict(module), state->exports, 0) < 0)
+        {
+            Py_DECREF(module);
+            return nullptr;
+        }
+    }
+    else
+    {
+        state->exports = create_exports(module, state->types);
+    }
+
+    if (!state->exports || PyModule_AddFunctions(module, module_methods) < 0)
     {
         Py_DECREF(module);
         return nullptr;
     }
-
     return module;
 }
