@@ -1,6 +1,8 @@
 name: Python wheels
 
 on:
+  push:
+    branches: [master]
   pull_request:
   workflow_dispatch:
   release:
@@ -31,23 +33,72 @@ jobs:
           submodules: true
           persist-credentials: false
 
+      - name: Set up Docker Buildx
+        if: runner.os == 'Linux'
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Load manylinux image with native dependencies
+        if: runner.os == 'Linux'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
+        with:
+          context: .
+          file: .github/ci/wheel-deps.Dockerfile
+          tags: maat-wheel-deps:manylinux2014
+          load: true
+          cache-from: ${{ github.event_name != 'release' && 'type=gha,scope=maat-wheels-manylinux2014-x86_64' || '' }}
+          cache-to: ${{ github.event_name != 'release' && 'type=gha,mode=max,scope=maat-wheels-manylinux2014-x86_64' || '' }}
+
+      - name: Identify macOS build inputs
+        if: runner.os == 'macOS'
+        id: inputs
+        run: |
+          {
+            xcodebuild -version
+            xcrun --sdk macosx --show-sdk-build-version
+            xcrun clang --version
+            git rev-parse HEAD:src/third-party/sleigh/sleigh-cmake
+          } > "$RUNNER_TEMP/wheel-build-inputs"
+          digest=$(shasum -a 256 "$RUNNER_TEMP/wheel-build-inputs" | cut -d' ' -f1)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Cache macOS native dependencies
+        if: runner.os == 'macOS' && github.event_name != 'release'
+        # Release jobs skip this step and compile their own dependencies.
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 # zizmor: ignore[cache-poisoning]
+        id: deps
+        with:
+          path: /tmp/maat-wheel-deps
+          key: wheel-deps-${{ matrix.runner }}-${{ runner.arch }}-${{ matrix.deployment }}-${{ steps.inputs.outputs.digest }}-${{ hashFiles('.github/ci/install-wheel-deps.sh') }}
+
+      - name: Build macOS native dependencies
+        if: runner.os == 'macOS' && steps.deps.outputs.cache-hit != 'true'
+        env:
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment }}
+          CMAKE_PREFIX_PATH: /tmp/maat-wheel-deps
+          CMAKE_BUILD_PARALLEL_LEVEL: 4
+        run: bash .github/ci/install-wheel-deps.sh .
+
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: '0.13.9'
           enable-cache: false
 
-      - name: Select PR smoke build
-        if: github.event_name == 'pull_request'
+      - name: Select smoke build
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          if git diff --quiet "$BASE...$HEAD_SHA" -- pyproject.toml .github/workflows/python-package.yml .github/ci/install-wheel-deps.sh bindings/bindings.cmake cmake/install-rules.cmake CMakeLists.txt; then
+          if [[ "$GITHUB_EVENT_NAME" == push ]] || git diff --quiet "$BASE...$HEAD_SHA" -- pyproject.toml .github/workflows/python-package.yml .github/ci/install-wheel-deps.sh .github/ci/wheel-deps.Dockerfile src/third-party/sleigh/sleigh-cmake bindings/bindings.cmake cmake/install-rules.cmake CMakeLists.txt; then
             echo 'CIBW_BUILD=cp313-{manylinux_x86_64,macosx_x86_64,macosx_arm64}' >> "$GITHUB_ENV"
           fi
 
       - name: Build, repair, and test wheels
         env:
+          CIBW_BEFORE_ALL: "true"
+          CIBW_MANYLINUX_X86_64_IMAGE: maat-wheel-deps:manylinux2014
           MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment }}
         run: uvx --python 3.13 --from 'cibuildwheel[uv]==4.3.5' cibuildwheel
 

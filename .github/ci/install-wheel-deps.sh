@@ -3,7 +3,9 @@ set -euo pipefail
 
 project=$(cd "$1" && pwd)
 prefix=${CMAKE_PREFIX_PATH:?}
-cd "$(mktemp -d)"
+build_root=$(mktemp -d)
+trap 'rm -rf "$build_root"' EXIT
+cd "$build_root"
 
 # Build once per platform with the same deployment target and C++ ABI as the wheel.
 if [[ $(uname -s) == Darwin ]]; then
