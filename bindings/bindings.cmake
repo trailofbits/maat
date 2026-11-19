@@ -86,34 +86,28 @@ if(maat_USE_LIEF)
   target_compile_definitions(maat_python PRIVATE MAAT_LIEF_BACKEND=1 MAAT_HAS_LOADER_BACKEND=1)
 endif()
 
+include(GNUInstallDirs)
+set(python_spec_dir "maat/${CMAKE_INSTALL_DATADIR}/${spec_out_prefix}")
+
 if(NOT CMAKE_SKIP_INSTALL_RULES)
-  include(GNUInstallDirs)
-
-  execute_process(
-    COMMAND "${Python3_EXECUTABLE}" -c "if True:
-      import site; import os; import sysconfig as sc
-      if site.ENABLE_USER_SITE:
-        print(site.getusersitepackages())
-      else:
-        print(sc.get_path('platlib'))"
-    OUTPUT_VARIABLE python_site_rel
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-
-  if(maat_PYTHON_PACKAGING)
-    # For packaging the way we want to use maat, we need to output the native
-    # Python module in the 'site-packages' directory, not the
-    # CMAKE_INSTALL_PREFIX of 'site-packages/maat'
-    set(
-      maat_INSTALL_PYTHONMODULEDIR ".."
-      CACHE PATH "Python module directory location relative to install prefix"
-    )
-  else()
-    # Allow package maintainers to freely override the path for the Python module
-    set(
-      maat_INSTALL_PYTHONMODULEDIR "${python_site_rel}"
-      CACHE PATH "Python module directory location relative to install prefix"
-    )
+  if(NOT DEFINED maat_INSTALL_PYTHONMODULEDIR)
+    if(maat_PYTHON_PACKAGING)
+      # The wheel builder sets its install prefix to site-packages/maat.
+      set(python_site_rel "..")
+    else()
+      execute_process(
+        COMMAND "${Python3_EXECUTABLE}" -c
+          "import sysconfig; print(sysconfig.get_path('platlib', vars={'base': '.', 'platbase': '.'}))"
+        OUTPUT_VARIABLE python_site_rel
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE python_site_status
+      )
+      if(NOT python_site_status EQUAL 0)
+        message(FATAL_ERROR "Could not determine the Python module install directory")
+      endif()
+    endif()
+    set(maat_INSTALL_PYTHONMODULEDIR "${python_site_rel}" CACHE STRING
+      "Python module directory relative to the install prefix")
   endif()
 
   install(
@@ -124,10 +118,9 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
     DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}"
   )
 
-  # Need to also install sleigh files when packaging
   install(
     DIRECTORY "${PROJECT_BINARY_DIR}/${spec_out_prefix}/"
-    DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}/maat/${CMAKE_INSTALL_DATADIR}/${spec_out_prefix}"
+    DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}/${python_spec_dir}"
     COMPONENT maat_Python
   )
 endif()

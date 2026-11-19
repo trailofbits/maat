@@ -58,26 +58,18 @@ cmake --install build --config Release
 
 ### Python bindings
 
-Python bindings should be built and installed by default. If not, make sure the project is configured with the option `-Dmaat_BUILD_PYTHON_BINDINGS=ON`.
-
-CMake will install the Python module to the location specified by `maat_INSTALL_PYTHONMODULEDIR`; if it is an absolute path, it will be installed to that location, but if it is a relative path, then it will be located relative to the installation prefix.
-
-If `maat_INSTALL_PYTHONMODULEDIR` isn't specified, CMake uses a default location that matches the most common use-case for regular users, in a way that is equivalent to:
+The Python extension and its processor files install under the CMake install
+prefix using the selected interpreter’s platform-specific package layout
+(for example, `lib/python3.11/site-packages`). To install into a virtual
+environment, activate it before configuring and use it as the install prefix:
 
 ```sh
-# If you're configuring outside a virtualenv
-prefix="$(python3 -m site --user-site)"
-# If you're configuring inside a virtualenv
-prefix="$(python3 -c 'import sysconfig as sc; print(sc.get_path("platlib"))')"
-
-cmake -S . -B build "-Dmaat_INSTALL_PYTHONMODULEDIR=${prefix}" -Dmaat_BUILD_PYTHON_BINDINGS=ON
+cmake -S . -B build "-DPython3_EXECUTABLE=$VIRTUAL_ENV/bin/python"
 cmake --build build
-cmake --install build
+cmake --install build --prefix "$VIRTUAL_ENV"
 ```
 
-NOTE: CMake configuration and installation should both take place either inside or outside of the virtual environment or else the install path for the Python module could be incorrect (especially on macOS).
-
-If you are packaging this project, you will likely want to change the default value of `maat_INSTALL_PYTHONMODULEDIR`.
+Packagers can override the layout with `-Dmaat_INSTALL_PYTHONMODULEDIR=<relative-path>`.
 
 [1]: https://cmake.org/cmake/help/latest/command/find_package.html#config-mode-search-procedure
 [2]: https://cmake.org/cmake/help/latest/manual/cmake.1.html#install-a-project

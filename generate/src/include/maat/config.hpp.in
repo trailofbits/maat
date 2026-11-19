@@ -149,7 +149,7 @@ public:
         std::optional<path_t> rel_dir = maat::py::get_maat_module_directory();
         if (rel_dir)
         {
-            auto dir = rel_dir.value() / "maat" / path_t(maat_specfile_dir_prefix);
+            auto dir = rel_dir.value() / "@python_spec_dir@";
             if (auto res = find_sleigh_file_in_dir(filename, dir))
                     return res;
         }
