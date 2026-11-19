@@ -8,7 +8,12 @@ dynamic = ["version"]
 description = "Maat symbolic execution framework"
 readme = "README.md"
 requires-python = ">=3.10"
-license-files = ["LICENCE"]
+license-files = [
+    "LICENCE",
+    "licenses/*.txt",
+    "src/third-party/sleigh/licencing/LICENCE.txt",
+    "src/third-party/sleigh/licencing/ghidra/*",
+]
 keywords = ["symbolic execution", "emulation", "binary analysis", "pcode"]
 classifiers = [
     "Development Status :: 4 - Beta",
