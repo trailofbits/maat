@@ -1,10 +1,9 @@
 Native components in pymaat wheels
 
 GMP is distributed under the LGPL version 3 or later. See GMP.txt,
-LGPL-3.0.txt and GPL-3.0.txt. The wheel build uses the manylinux2014
-gmp package on Linux and GMP 6.3.0 on macOS (https://gmplib.org/).
+LGPL-3.0.txt and GPL-3.0.txt. The wheel build uses GMP 6.3.0 (https://gmplib.org/).
 
-Z3 4.13.4 and LIEF 0.13.2 are built into the extension. See Z3.txt,
+Z3 5.4.1 and LIEF 1.0.0 are built into the extension. See Z3.txt,
 LIEF.txt and LIEF-dependencies.txt.
 
 Sleigh and the Ghidra processor definitions use the Apache License 2.0.

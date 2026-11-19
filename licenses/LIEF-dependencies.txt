@@ -1,10 +1,11 @@
-LIEF 0.13.2 bundled libraries
+LIEF 1.0.0 bundled libraries
+
+tl::expected by Simon Brand is distributed under CC0 1.0 Universal.
 
 Frozen (Copyright 2017 Quarkslab) and Mbed TLS (Copyright The Mbed TLS
 Contributors) use the Apache License 2.0 reproduced in LIEF.txt.
 
-Boost LEAF, tcb-span, and UTF8-CPP use the Boost Software License below.
-LEAF: Copyright 2018-2022 Emil Dotchevski and Reverge Studios, Inc.
+tcb-span and UTF8-CPP use the Boost Software License below.
 tcb-span: Copyright Tristan Brindle 2018.
 UTF8-CPP: Copyright 2006 Nemanja Trifunovic.
 
@@ -37,7 +38,7 @@ spdlog
 
 The MIT License (MIT)
 
-Copyright (c) 2016 Gabi Melman.
+Copyright (c) 2016 - present, Gabi Melman and spdlog contributors.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -95,7 +96,7 @@ JSON for Modern C++
 
 MIT License
 
-Copyright (c) 2013-2022 Niels Lohmann
+Copyright (c) 2013-2025 Niels Lohmann
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -119,6 +120,6 @@ Additional copyright notices in the JSON single-header distribution
 
 2008-2009 Björn Hoehrmann <bjoern@hoehrmann.de>
 2009 Florian Loitsch <https://florian.loitsch.com/>
-2013-2022 Niels Lohmann <https://nlohmann.me>
+2013-2025 Niels Lohmann <https://nlohmann.me>
 2016-2021 Evan Nemerson <evan@nemerson.com>
 2018 The Abseil Authors

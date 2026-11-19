@@ -22,8 +22,8 @@ jobs:
       matrix:
         include:
           - { runner: ubuntu-latest, platform: manylinux_x86_64 }
-          - { runner: macos-26-intel, platform: macosx_x86_64, deployment: '10.15' }
-          - { runner: macos-26, platform: macosx_arm64, deployment: '11.0' }
+          - { runner: macos-26-intel, platform: macosx_x86_64, deployment: '14.0' }
+          - { runner: macos-26, platform: macosx_arm64, deployment: '14.0' }
     name: Wheels (${{ matrix.platform }})
     runs-on: ${{ matrix.runner }}
     steps:
@@ -45,10 +45,10 @@ jobs:
         with:
           context: .
           file: .github/ci/wheel-deps.Dockerfile
-          tags: maat-wheel-deps:manylinux2014
+          tags: maat-wheel-deps:manylinux_2_28
           load: true
-          cache-from: ${{ github.event_name != 'release' && 'type=gha,scope=maat-wheels-manylinux2014-x86_64' || '' }}
-          cache-to: ${{ github.event_name != 'release' && 'type=gha,mode=max,scope=maat-wheels-manylinux2014-x86_64' || '' }}
+          cache-from: ${{ github.event_name != 'release' && 'type=gha,scope=maat-wheels-manylinux_2_28-x86_64' || '' }}
+          cache-to: ${{ github.event_name != 'release' && 'type=gha,mode=max,scope=maat-wheels-manylinux_2_28-x86_64' || '' }}
 
       - name: Identify macOS build inputs
         if: runner.os == 'macOS'
@@ -88,7 +88,7 @@ jobs:
       - name: Build, repair, and test wheels
         env:
           CIBW_BEFORE_ALL: "true"
-          CIBW_MANYLINUX_X86_64_IMAGE: maat-wheel-deps:manylinux2014
+          CIBW_MANYLINUX_X86_64_IMAGE: maat-wheel-deps:manylinux_2_28
           MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment }}
         run: uvx --python 3.13 --from 'cibuildwheel[uv]==4.3.5' cibuildwheel
 

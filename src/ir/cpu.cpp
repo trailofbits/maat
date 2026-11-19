@@ -403,15 +403,23 @@ event::Action CPU::_get_param_value(
         if (tmp_ctx.exists(param.tmp()))
         {
             const Value& res = tmp_ctx.get(param.tmp());
-            if (res.size() != param.size())
+            if (get_full_register && res.size() < param.hb + 1)
             {
-                // TODO this should return Value&& !!!!
+                dest = zext(param.hb + 1, res);
+            }
+            else if (!get_full_register && res.size() != param.size())
+            {
                 dest = _extract_value_bits(res, param.hb, param.lb);
             }
             else
             {
                 dest.set_value_by_ref(res);
             }
+        }
+        else if (get_full_register && param.lb != 0)
+        {
+            // A first write may start partway through the temporary.
+            dest.set_cst(param.hb + 1, 0);
         }
         else
         {

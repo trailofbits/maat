@@ -1,4 +1,3 @@
 [submodule "src/third-party/sleigh/sleigh-cmake"]
 	path = src/third-party/sleigh/sleigh-cmake
 	url = https://github.com/lifting-bits/sleigh
-	branch = cmake-module-sleigh-compile

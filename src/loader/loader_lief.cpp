@@ -68,7 +68,7 @@ void LoaderLIEF::parse_binary(const std::string& binary, Format type)
                     << "'" >> Fmt::to_str
                 );
             }
-            binary_name = _elf->name();
+            binary_name = binary;
         }
         else
         {
@@ -154,13 +154,13 @@ addr_t LoaderLIEF::find_free_space(MaatEngine*engine, addr_t start, addr_t size)
 mem_flag_t get_segment_flags(LIEF::ELF::Segment& segment)
 {
     mem_flag_t flags = 0;
-    if( segment.has(LIEF::ELF::ELF_SEGMENT_FLAGS::PF_R) ){
+    if( segment.has(LIEF::ELF::Segment::FLAGS::R) ){
         flags |= maat::mem_flag_r;
     }
-    if( segment.has(LIEF::ELF::ELF_SEGMENT_FLAGS::PF_W) ){
+    if( segment.has(LIEF::ELF::Segment::FLAGS::W) ){
         flags |= maat::mem_flag_w;
     }
-    if( segment.has(LIEF::ELF::ELF_SEGMENT_FLAGS::PF_X) ){
+    if( segment.has(LIEF::ELF::Segment::FLAGS::X) ){
         flags |= maat::mem_flag_x;
     }
     return flags;
