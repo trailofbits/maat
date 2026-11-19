@@ -49,3 +49,13 @@ def test_length_aware_buffer_arguments():
     assert ctx.get_as_buffer("buf") == b"a\x00b"
     assert maat.Var(8, "x").name == "x"
     assert maat.Var(size=8, name=b"y").name == "y"
+
+
+def test_update_from_releases_context_type():
+    target = maat.VarContext()
+    source = maat.VarContext()
+    context_type = type(target)
+    before = sys.getrefcount(context_type)
+    target.update_from(source)
+    after = sys.getrefcount(context_type)
+    assert after == before

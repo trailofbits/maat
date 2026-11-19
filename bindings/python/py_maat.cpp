@@ -131,9 +131,11 @@ std::optional<std::filesystem::path> get_maat_module_directory()
     if (not filename_obj)
         return std::nullopt;
     const char* filename = PyUnicode_AsUTF8AndSize(filename_obj, nullptr);
-    if (!filename)
-        return std::nullopt;
-    return std::filesystem::path(filename).parent_path();
+    std::optional<std::filesystem::path> directory;
+    if (filename)
+        directory = std::filesystem::path(filename).parent_path();
+    Py_DECREF(filename_obj);
+    return directory;
 }
 
 } // namespace py

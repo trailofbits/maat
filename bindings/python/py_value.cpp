@@ -840,7 +840,7 @@ static PyObject* VarContext_update_from(PyObject* self, PyObject* args)
 {
     PyObject* other;
     
-    if( !PyArg_ParseTuple(args, "O!", PyObject_Type(self), &other)){
+    if( !PyArg_ParseTuple(args, "O!", Py_TYPE(self), &other)){
         return NULL;
     }
     as_varctx_object(self).ctx->update_from(*(as_varctx_object(other).ctx));
