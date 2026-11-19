@@ -1,4 +1,5 @@
 #include "python_bindings.hpp"
+#include <climits>
 #include <iostream>
 #include <sstream>
 
@@ -696,31 +697,29 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
     {
         PyErr_Clear();
 
+        if (elem_size <= 0)
+            return PyErr_Format(PyExc_ValueError, "Element size must be positive");
         if (nb_elems == -1)
         {
             if (bytes_len % elem_size != 0)
-                return PyErr_Format(PyExc_ValueError, "Buffer size (%d) isn't a multiple of the element size (%d)", bytes_len, elem_size);
-            nb_elems = bytes_len / elem_size;
+                return PyErr_Format(PyExc_ValueError, "Buffer size must be a multiple of the element size");
+            if (bytes_len / elem_size > INT_MAX)
+                return PyErr_Format(PyExc_OverflowError, "Buffer contains too many elements");
+            nb_elems = static_cast<int>(bytes_len / elem_size);
         }
-        // Buffer = concrete bytes
-        if (
-            bytes_len % elem_size != 0
-            and nb_elems*elem_size >= bytes_len
-        )
-        {
-            return PyErr_Format(PyExc_ValueError, "Buffer size (%d) isn't a multiple of the element size (%d)", bytes_len, elem_size);
-        }
+        if (nb_elems < 0 || nb_elems > bytes_len / elem_size)
+            return PyErr_Format(PyExc_ValueError, "Buffer contains fewer elements than requested");
 
         // NOTE: this assumes little endian!! (inverting the bytes to build the values)
-        for (int i = 0; i < bytes_len and i < nb_elems; i += 1)
+        for (int i = 0; i < nb_elems; i += 1)
         {
             cst_t val = 0;
             for (int j = elem_size-1; j >= 0; j--)
             {
                 if (as_varctx_object(self).ctx->endianness() == Endian::LITTLE)
-                    val = (val << 8) | ((cst_t)(bytes[i*elem_size+j]) & 0xff);
+                    val = (val << 8) | ((cst_t)(bytes[static_cast<Py_ssize_t>(i)*elem_size+j]) & 0xff);
                 else
-                    val |= ((ucst_t)(bytes[i*elem_size+j]) << j);
+                    val |= ((ucst_t)(bytes[static_cast<Py_ssize_t>(i)*elem_size+j]) << j);
             }
             concrete_buffer.push_back(val);
         }

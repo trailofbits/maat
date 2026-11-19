@@ -1,4 +1,5 @@
 #include "python_bindings.hpp"
+#include <climits>
 
 namespace maat{
 namespace py{
@@ -241,8 +242,12 @@ static PyObject* FileAccessor_write_buffer(PyObject* self, PyObject *args)
     {
         if (PyArg_ParseTuple(args, "s#|i", &bytes, &bytes_len, &len))
         {
-            len = (len < 0)? bytes_len : len;
-            return PyLong_FromLong(as_fileaccessor_object(self).fa->write_buffer((uint8_t*)bytes, len));
+            if (len < 0 && bytes_len > INT_MAX)
+                return PyErr_Format(PyExc_OverflowError, "Buffer is too large");
+            if (len > bytes_len)
+                return PyErr_Format(PyExc_ValueError, "Length exceeds the buffer size");
+            int count = len < 0 ? static_cast<int>(bytes_len) : len;
+            return PyLong_FromLong(as_fileaccessor_object(self).fa->write_buffer((uint8_t*)bytes, count));
         }
         else if (PyArg_ParseTuple(args, "O!", &PyList_Type, &buf))
         {
@@ -355,8 +360,12 @@ static PyObject* File_write_buffer(PyObject* self, PyObject *args)
         if (PyArg_ParseTuple(args, "s#K|i", &bytes, &bytes_len, &offset, &len))
         {
             PyErr_Clear();
-            len = (len < 0)? bytes_len : len;
-            return PyLong_FromLong(as_file_object(self).file->write_buffer((uint8_t*)bytes, offset, len));
+            if (len < 0 && bytes_len > INT_MAX)
+                return PyErr_Format(PyExc_OverflowError, "Buffer is too large");
+            if (len > bytes_len)
+                return PyErr_Format(PyExc_ValueError, "Length exceeds the buffer size");
+            int count = len < 0 ? static_cast<int>(bytes_len) : len;
+            return PyLong_FromLong(as_file_object(self).file->write_buffer((uint8_t*)bytes, offset, count));
         }
         else if (PyArg_ParseTuple(args, "O!K", &PyList_Type, &buf, &offset))
         {

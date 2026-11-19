@@ -22,3 +22,22 @@ def test_instance_releases_its_heap_type():
     del values
     after = sys.getrefcount(value_type)
     assert after == before
+
+
+def test_requested_buffer_sizes(tmp_path):
+    ctx = maat.VarContext()
+    with pytest.raises(ValueError):
+        ctx.new_concolic_buffer("buf", b"ab", elem_size=0)
+    with pytest.raises(ValueError):
+        ctx.new_concolic_buffer("buf", b"ab", nb_elems=2, elem_size=2)
+    engine = maat.MaatEngine(maat.ARCH.X64, maat.OS.LINUX)
+    source = tmp_path / "input"
+    source.write_bytes(b"")
+    fs = engine.env.fs
+    assert fs.add_real_file(str(source), "/input")
+    file = fs.get_file("/input")
+    with pytest.raises(ValueError):
+        file.write_buffer(b"ab", 0, 3)
+    handle = fs.get_fa_by_handle(fs.new_fa("/input"))
+    with pytest.raises(ValueError):
+        handle.write_buffer(b"ab", 3)
