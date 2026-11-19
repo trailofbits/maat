@@ -10,18 +10,13 @@ static void MemEngine_dealloc(PyObject* self){
         delete ((MemEngine_Object*)self)->mem;
     }
     as_mem_object(self).mem = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 static PyObject* MemEngine_str(PyObject* self){
     std::stringstream res;
     res << *((MemEngine_Object*) self)->mem;
     return PyUnicode_FromString(res.str().c_str());
-}
-
-static int MemEngine_print(PyObject* self, void * io, int s){
-    std::cout << *((MemEngine_Object*) self)->mem << std::flush;
-    return 0;
 }
 
 static PyObject* MemEngine_repr(PyObject* self) {
@@ -58,7 +53,7 @@ static PyObject* MemEngine_read(PyObject* self, PyObject* args) {
     PyObject* addr = nullptr;
     
     if(PyArg_ParseTuple(args, "OI", &addr, &nb_bytes)){
-        if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Value_Type()) ){
+        if( PyObject_TypeCheck(addr, binding_types().Value) ){
             try{
                 // Handles both symbolic and concrete addresses
                 res = as_mem_object(self).mem->read(*(as_value_object(addr).value), nb_bytes);
@@ -91,7 +86,7 @@ static PyObject* MemEngine_read_buffer(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Value_Type()) ){
+    if( PyObject_TypeCheck(addr, binding_types().Value) ){
         try{
             res = as_mem_object(self).mem->read_buffer(*(as_value_object(addr).value), nb_elems, elem_size);
         }catch(mem_exception e){
@@ -131,7 +126,7 @@ static PyObject* MemEngine_read_str(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Value_Type()) ){
+    if( PyObject_TypeCheck(addr, binding_types().Value) ){
         try{
             res = as_mem_object(self).mem->read_string(*(as_value_object(addr).value), len );
         }catch(const mem_exception& e){
@@ -178,7 +173,7 @@ static PyObject* MemEngine_write(PyObject* self, PyObject* args, PyObject* keywo
     // Check addr first
     if( PyLong_Check(addr)){
         concrete_addr = PyLong_AsUnsignedLongLong(addr);
-    }else if( PyObject_TypeCheck(addr, (PyTypeObject*)get_Value_Type())){
+    }else if( PyObject_TypeCheck(addr, binding_types().Value)){
         val_addr = *(as_value_object(addr).value);
     }else{
         return PyErr_Format(PyExc_TypeError, "MemEngine.write(): address must be 'int' or 'Expr'"); 
@@ -187,7 +182,7 @@ static PyObject* MemEngine_write(PyObject* self, PyObject* args, PyObject* keywo
     try{
         // Check arguments types, function is overloaded
         // (addr, expr)
-        if( PyObject_TypeCheck(arg2, (PyTypeObject*)get_Value_Type()) ){
+        if( PyObject_TypeCheck(arg2, binding_types().Value) ){
             if (not val_addr.is_none())
                 as_mem_object(self).mem->write(val_addr, *(as_value_object(arg2).value), (bool)ignore_flags);
             else
@@ -303,46 +298,18 @@ static PyMemberDef MemEngine_members[] = {
     {NULL}
 };
 
-/* Type description for python MemEngine objects */
-static PyTypeObject MemEngine_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "MemEngine",                             /* tp_name */
-    sizeof(MemEngine_Object),                /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)MemEngine_dealloc,           /* tp_dealloc */
-    (printfunc)MemEngine_print,              /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    MemEngine_repr,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    MemEngine_str,                            /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Memory engine",                          /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    MemEngine_methods,                       /* tp_methods */
-    MemEngine_members,                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot MemEngine_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(MemEngine_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(MemEngine_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(MemEngine_str)},
+    {Py_tp_doc, const_cast<char*>("Memory engine")},
+    {Py_tp_methods, MemEngine_methods},
+    {Py_tp_members, MemEngine_members},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::MemEngine_spec = {
+    "maat.MemEngine", sizeof(MemEngine_Object), 0, binding_type_flags, MemEngine_slots
 };
 
 /* Constructors */
@@ -351,8 +318,7 @@ PyObject* PyMemEngine_FromMemEngine(MemEngine* mem, bool is_ref)
     MemEngine_Object* object;
     
     // Create object
-    PyType_Ready(&MemEngine_Type);
-    object = PyObject_New(MemEngine_Object, &MemEngine_Type);
+    object = PyObject_New(MemEngine_Object, binding_types().MemEngine);
     if( object != nullptr ){
         object->mem = mem;
         object->is_ref = is_ref;

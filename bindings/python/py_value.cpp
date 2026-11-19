@@ -20,14 +20,8 @@ static void Value_dealloc(PyObject* self)
         as_value_object(self).varctx = nullptr;
     }
 
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
-
-static int Value_print(PyObject* self, void * io, int s)
-{
-    std::cout << *as_value_object(self).value << std::flush;
-    return 0;
-}
 
 static PyObject* Value_str(PyObject* self)
 {
@@ -44,7 +38,7 @@ static PyObject* Value_repr(PyObject* self)
 static PyObject* Value_is_concolic(PyObject* self, PyObject* args)
 {
     PyObject* varctx = nullptr;
-    if( !PyArg_ParseTuple(args, "|O!", get_VarContext_Type(), &varctx)){
+    if( !PyArg_ParseTuple(args, "|O!", binding_types().VarContext, &varctx)){
         return NULL;
     }
     if (varctx)
@@ -58,7 +52,7 @@ static PyObject* Value_is_concolic(PyObject* self, PyObject* args)
 static PyObject* Value_is_concrete(PyObject* self, PyObject* args)
 {
     PyObject* varctx = nullptr;
-    if( !PyArg_ParseTuple(args, "|O!", get_VarContext_Type(), &varctx)){
+    if( !PyArg_ParseTuple(args, "|O!", binding_types().VarContext, &varctx)){
         return NULL;
     }
 
@@ -73,7 +67,7 @@ static PyObject* Value_is_concrete(PyObject* self, PyObject* args)
 
 static PyObject* Value_is_symbolic(PyObject* self, PyObject* args){
     PyObject* varctx = nullptr;
-    if( !PyArg_ParseTuple(args, "|O!", get_VarContext_Type(), &varctx)){
+    if( !PyArg_ParseTuple(args, "|O!", binding_types().VarContext, &varctx)){
         return NULL;
     }
 
@@ -89,7 +83,7 @@ static PyObject* Value_as_uint(PyObject* self, PyObject* args)
 {
     PyObject* varctx = nullptr;
     
-    if( !PyArg_ParseTuple(args, "|O!", get_VarContext_Type(), &varctx))
+    if( !PyArg_ParseTuple(args, "|O!", binding_types().VarContext, &varctx))
     {
         return NULL;
     }
@@ -131,7 +125,7 @@ static PyObject* Value_as_int(PyObject* self, PyObject* args)
 {
     PyObject* varctx = nullptr;
     
-    if( !PyArg_ParseTuple(args, "|O!", get_VarContext_Type(), &varctx))
+    if( !PyArg_ParseTuple(args, "|O!", binding_types().VarContext, &varctx))
     {
         return NULL;
     }
@@ -173,7 +167,7 @@ static PyObject* Value_as_float(PyObject* self, PyObject* args)
 {
     PyObject* varctx = nullptr;
     
-    if( !PyArg_ParseTuple(args, "|O!", get_VarContext_Type(), &varctx)){
+    if( !PyArg_ParseTuple(args, "|O!", binding_types().VarContext, &varctx)){
         return NULL;
     }
 
@@ -204,7 +198,7 @@ static PyObject* Value_as_float(PyObject* self, PyObject* args)
 static PyObject* Value_eq(PyObject* self, PyObject* args)
 {
     PyObject* other = nullptr;
-    if( !PyArg_ParseTuple(args, "O!", get_Value_Type(), &other)){
+    if( !PyArg_ParseTuple(args, "O!", binding_types().Value, &other)){
         return NULL;
     }
     return PyBool_FromLong(
@@ -261,7 +255,7 @@ static PyObject* Value_richcompare(PyObject* self, PyObject* other, int op)
 
     if( PyLong_Check(other)){
         e2 = exprcst(e1.size(), PyLong_AsUnsignedLongLong(other));
-    }else if( PyObject_IsInstance(other, get_Value_Type())){
+    }else if( PyObject_TypeCheck(other, binding_types().Value)){
         e2 = *as_value_object(other).value;
     }else{
         return PyErr_Format(PyExc_TypeError, "Expected 'Value' or 'int' as second argument");
@@ -289,53 +283,6 @@ Py_hash_t Value_hash(PyObject* self)
     return as_value_object(self).value->as_expr()->hash();
 }
 
-static PyNumberMethods Value_operators; // Empty PyNumberMethods, will be filled in the init_expression() function
-
-/* Type description for python Value objects */
-PyTypeObject Value_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "Value",                                   /* tp_name */
-    sizeof(Value_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)Value_dealloc,                 /* tp_dealloc */
-    (printfunc)Value_print,                    /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    Value_repr,                                /* tp_repr */
-    &Value_operators,                          /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    (hashfunc)Value_hash,                     /* tp_hash  */
-    0,                                        /* tp_call */
-    Value_str,                                 /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Abstract expression",                    /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    Value_richcompare,                         /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    Value_methods,                             /* tp_methods */
-    0,                                        /* tp_members */
-    Value_getset,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
-};
-
-PyObject* get_Value_Type(){
-    return (PyObject*)&Value_Type;
-};
 
 #define CATCH_EXPRESSION_EXCEPTION(x) try{x}catch(expression_exception e){ \
     return PyErr_Format(PyExc_ValueError, "%s", e.what()); \
@@ -343,12 +290,12 @@ PyObject* get_Value_Type(){
 
 /* Number methods & Various Constructors */
 static PyObject* Value_nb_add(PyObject* self, PyObject *other){
-    if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) &&
-            PyObject_IsInstance(self, (PyObject*)&(Value_Type))){
+    if( PyObject_TypeCheck(other, binding_types().Value) &&
+            PyObject_TypeCheck(self, binding_types().Value)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) + *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) && PyLong_Check(self)){
+    }else if( PyObject_TypeCheck(other, binding_types().Value) && PyLong_Check(self)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(self) + *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(self, (PyObject*)&(Value_Type)) && PyLong_Check(other)){
+    }else if( PyObject_TypeCheck(self, binding_types().Value) && PyLong_Check(other)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(other) + *(as_value_object(self).value)); )
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching types for operator '+'");
@@ -356,12 +303,12 @@ static PyObject* Value_nb_add(PyObject* self, PyObject *other){
 }
 
 static PyObject* Value_nb_sub(PyObject* self, PyObject *other){
-    if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) &&
-            PyObject_IsInstance(self, (PyObject*)&(Value_Type))){
+    if( PyObject_TypeCheck(other, binding_types().Value) &&
+            PyObject_TypeCheck(self, binding_types().Value)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) - *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) && PyLong_Check(self)){
+    }else if( PyObject_TypeCheck(other, binding_types().Value) && PyLong_Check(self)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(self) - *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(self, (PyObject*)&(Value_Type)) && PyLong_Check(other)){
+    }else if( PyObject_TypeCheck(self, binding_types().Value) && PyLong_Check(other)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) - PyLong_AsLongLong(other)); )
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching types for operator '-'");
@@ -369,12 +316,12 @@ static PyObject* Value_nb_sub(PyObject* self, PyObject *other){
 }
 
 static PyObject* Value_nb_mul(PyObject* self, PyObject *other){
-    if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) &&
-            PyObject_IsInstance(self, (PyObject*)&(Value_Type))){
+    if( PyObject_TypeCheck(other, binding_types().Value) &&
+            PyObject_TypeCheck(self, binding_types().Value)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) * *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) && PyLong_Check(self)){
+    }else if( PyObject_TypeCheck(other, binding_types().Value) && PyLong_Check(self)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(self) * (*(as_value_object(other).value))); )
-    }else if( PyObject_IsInstance(self, (PyObject*)&(Value_Type)) && PyLong_Check(other)){
+    }else if( PyObject_TypeCheck(self, binding_types().Value) && PyLong_Check(other)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) * PyLong_AsLongLong(other)); )
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching types for operator '*'");
@@ -382,12 +329,12 @@ static PyObject* Value_nb_mul(PyObject* self, PyObject *other){
 }
 
 static PyObject* Value_nb_div(PyObject* self, PyObject *other){
-    if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) &&
-            PyObject_IsInstance(self, (PyObject*)&(Value_Type))){
+    if( PyObject_TypeCheck(other, binding_types().Value) &&
+            PyObject_TypeCheck(self, binding_types().Value)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) / *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) && PyLong_Check(self)){
+    }else if( PyObject_TypeCheck(other, binding_types().Value) && PyLong_Check(self)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(self) / *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(self, (PyObject*)&(Value_Type)) && PyLong_Check(other)){
+    }else if( PyObject_TypeCheck(self, binding_types().Value) && PyLong_Check(other)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) / PyLong_AsLongLong(other)); )
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching types for operator '/'");
@@ -395,12 +342,12 @@ static PyObject* Value_nb_div(PyObject* self, PyObject *other){
 }
 
 static PyObject* Value_nb_and(PyObject* self, PyObject *other){
-    if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) &&
-            PyObject_IsInstance(self, (PyObject*)&(Value_Type))){
+    if( PyObject_TypeCheck(other, binding_types().Value) &&
+            PyObject_TypeCheck(self, binding_types().Value)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) & *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) && PyLong_Check(self)){
+    }else if( PyObject_TypeCheck(other, binding_types().Value) && PyLong_Check(self)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(self) & *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(self, (PyObject*)&(Value_Type)) && PyLong_Check(other)){
+    }else if( PyObject_TypeCheck(self, binding_types().Value) && PyLong_Check(other)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) & PyLong_AsLongLong(other)); )
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching types for operator '&'");
@@ -408,12 +355,12 @@ static PyObject* Value_nb_and(PyObject* self, PyObject *other){
 }
 
 static PyObject* Value_nb_or(PyObject* self, PyObject *other){
-    if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) &&
-            PyObject_IsInstance(self, (PyObject*)&(Value_Type))){
+    if( PyObject_TypeCheck(other, binding_types().Value) &&
+            PyObject_TypeCheck(self, binding_types().Value)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) | *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) && PyLong_Check(self)){
+    }else if( PyObject_TypeCheck(other, binding_types().Value) && PyLong_Check(self)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(self) | *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(self, (PyObject*)&(Value_Type)) && PyLong_Check(other)){
+    }else if( PyObject_TypeCheck(self, binding_types().Value) && PyLong_Check(other)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) | PyLong_AsLongLong(other)); )
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching types for operator '|'");
@@ -421,12 +368,12 @@ static PyObject* Value_nb_or(PyObject* self, PyObject *other){
 }
 
 static PyObject* Value_nb_xor(PyObject* self, PyObject *other){
-    if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) &&
-            PyObject_IsInstance(self, (PyObject*)&(Value_Type))){
+    if( PyObject_TypeCheck(other, binding_types().Value) &&
+            PyObject_TypeCheck(self, binding_types().Value)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) ^ *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) && PyLong_Check(self)){
+    }else if( PyObject_TypeCheck(other, binding_types().Value) && PyLong_Check(self)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(self) ^ *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(self, (PyObject*)&(Value_Type)) && PyLong_Check(other)){
+    }else if( PyObject_TypeCheck(self, binding_types().Value) && PyLong_Check(other)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) ^ PyLong_AsLongLong(other)); )
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching types for operator '^'");
@@ -434,12 +381,12 @@ static PyObject* Value_nb_xor(PyObject* self, PyObject *other){
 }
 
 static PyObject* Value_nb_rem(PyObject* self, PyObject *other){
-    if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) &&
-            PyObject_IsInstance(self, (PyObject*)&(Value_Type))){
+    if( PyObject_TypeCheck(other, binding_types().Value) &&
+            PyObject_TypeCheck(self, binding_types().Value)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) % *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) && PyLong_Check(self)){
+    }else if( PyObject_TypeCheck(other, binding_types().Value) && PyLong_Check(self)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(self) % *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(self, (PyObject*)&(Value_Type)) && PyLong_Check(other)){
+    }else if( PyObject_TypeCheck(self, binding_types().Value) && PyLong_Check(other)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) % PyLong_AsLongLong(other)); )
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching types for operator '%'");
@@ -447,12 +394,12 @@ static PyObject* Value_nb_rem(PyObject* self, PyObject *other){
 }
 
 static PyObject* Value_nb_lshift(PyObject* self, PyObject *other){
-    if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) &&
-            PyObject_IsInstance(self, (PyObject*)&(Value_Type))){
+    if( PyObject_TypeCheck(other, binding_types().Value) &&
+            PyObject_TypeCheck(self, binding_types().Value)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) << *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) && PyLong_Check(self)){
+    }else if( PyObject_TypeCheck(other, binding_types().Value) && PyLong_Check(self)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(self) << *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(self, (PyObject*)&(Value_Type)) && PyLong_Check(other)){
+    }else if( PyObject_TypeCheck(self, binding_types().Value) && PyLong_Check(other)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) << PyLong_AsLongLong(other)); )
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching types for operator '<<'");
@@ -460,12 +407,12 @@ static PyObject* Value_nb_lshift(PyObject* self, PyObject *other){
 }
 
 static PyObject* Value_nb_rshift(PyObject* self, PyObject *other){
-    if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) &&
-            PyObject_IsInstance(self, (PyObject*)&(Value_Type))){
+    if( PyObject_TypeCheck(other, binding_types().Value) &&
+            PyObject_TypeCheck(self, binding_types().Value)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) >> *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(other, (PyObject*)&(Value_Type)) && PyLong_Check(self)){
+    }else if( PyObject_TypeCheck(other, binding_types().Value) && PyLong_Check(self)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(PyLong_AsLongLong(self) >> *(as_value_object(other).value)); )
-    }else if( PyObject_IsInstance(self, (PyObject*)&(Value_Type)) && PyLong_Check(other)){
+    }else if( PyObject_TypeCheck(self, binding_types().Value) && PyLong_Check(other)){
         CATCH_EXPRESSION_EXCEPTION (return PyValue_FromValue(*(as_value_object(self).value) >> PyLong_AsLongLong(other)); )
     }else{
         return PyErr_Format(PyExc_TypeError, "Mismatching types for operator '>>'");
@@ -540,7 +487,7 @@ PyObject* maat_Var(PyObject* self, PyObject* args, PyObject* keywords)
 PyObject* maat_Concat(PyObject* self, PyObject* args)
 {
     Value_Object* upper, *lower;
-    if( ! PyArg_ParseTuple(args, "O!O!", (PyObject*)&Value_Type, &upper, (PyObject*)&Value_Type, &lower)){
+    if( ! PyArg_ParseTuple(args, "O!O!", binding_types().Value, &upper, binding_types().Value, &lower)){
         return NULL;
     }
     CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( concat(*(as_value_object(upper).value), *(as_value_object(lower).value))); )
@@ -550,7 +497,7 @@ PyObject* maat_Extract(PyObject* self, PyObject* args)
 {
     Value_Object* val;
     long lower, higher;
-    if( ! PyArg_ParseTuple(args, "O!ll", (PyObject*)&Value_Type, &val, &higher, &lower)){
+    if( ! PyArg_ParseTuple(args, "O!ll", binding_types().Value, &val, &higher, &lower)){
         return NULL;
     }
     CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( extract(*(as_value_object(val).value), higher, lower)); )
@@ -561,7 +508,7 @@ PyObject* maat_Zext(PyObject* self, PyObject* args)
 {
     Value_Object* val;
     long new_size;
-    if( ! PyArg_ParseTuple(args, "lO!", &new_size, (PyObject*)&Value_Type, &val)){
+    if( ! PyArg_ParseTuple(args, "lO!", &new_size, binding_types().Value, &val)){
         return NULL;
     }
     CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( zext(new_size, *(as_value_object(val).value)));)
@@ -571,7 +518,7 @@ PyObject* maat_Sext(PyObject* self, PyObject* args)
 {
     Value_Object* val;
     long new_size;
-    if( ! PyArg_ParseTuple(args, "lO!", &new_size, (PyObject*)&Value_Type, &val)){
+    if( ! PyArg_ParseTuple(args, "lO!", &new_size, binding_types().Value, &val)){
         return NULL;
     }
     CATCH_EXPRESSION_EXCEPTION ( return PyValue_FromValue( sext(new_size, *(as_value_object(val).value)));)
@@ -584,9 +531,7 @@ PyObject* PyValue_FromValue(const Value& e)
     Value_Object* object;
     
     // Create object
-    PyType_Ready(&Value_Type);
-    object = PyObject_New(Value_Object, &Value_Type);
-    PyObject_Init((PyObject*)object, &Value_Type);
+    object = PyObject_New(Value_Object, binding_types().Value);
     if( object != nullptr )
     {
         object->value = new Value();
@@ -601,9 +546,7 @@ PyObject* PyValue_FromValueAndVarContext(const Value& e, std::shared_ptr<VarCont
     Value_Object* object;
 
     // Create object
-    PyType_Ready(&Value_Type);
-    object = PyObject_New(Value_Object, &Value_Type);
-    PyObject_Init((PyObject*)object, &Value_Type);
+    object = PyObject_New(Value_Object, binding_types().Value);
     if( object != nullptr )
     {
         // This code is ugly but smh necessary to avoid random segfaults
@@ -622,14 +565,8 @@ static void VarContext_dealloc(PyObject* self)
         delete ((VarContext_Object*)self)->ctx;
     }
     as_varctx_object(self).ctx = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
-
-static int VarContext_print(PyObject* self, void * io, int s)
-{
-    std::cout << *((VarContext_Object*)self)->ctx << std::flush;
-    return 0;
-}
 
 static PyObject* VarContext_str(PyObject* self) 
 {
@@ -754,7 +691,7 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
 
     static char* kwlist[] = {"", "", "nb_elems", "elem_size", "trailing_value", NULL};
 
-    if (PyArg_ParseTupleAndKeywords(args, keywords, "ss#|iiO!", kwlist, &name, &bytes, 
+    if (PyArg_ParseTupleAndKeywords(args, keywords, "ss#|iiO!", kwlist, &name, &bytes,
         &bytes_len, &nb_elems, &elem_size, &PyLong_Type, &trailing_value))
     {
         PyErr_Clear();
@@ -949,50 +886,18 @@ static PyMemberDef VarContext_members[] = {
     {NULL}
 };
 
-/* Type description for python VarContext objects */
-static PyTypeObject VarContext_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "VarContext",                             /* tp_name */
-    sizeof(VarContext_Object),                /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)VarContext_dealloc,           /* tp_dealloc */
-    (printfunc)VarContext_print,              /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    VarContext_repr,                          /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    VarContext_str,                           /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Concrete context for abstract variables", /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    VarContext_methods,                       /* tp_methods */
-    VarContext_members,                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot VarContext_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(VarContext_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(VarContext_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(VarContext_str)},
+    {Py_tp_doc, const_cast<char*>("Concrete context for abstract variables")},
+    {Py_tp_methods, VarContext_methods},
+    {Py_tp_members, VarContext_members},
+    {0, nullptr}
 };
 
-PyObject* get_VarContext_Type(){
-    return (PyObject*)&VarContext_Type;
+PyType_Spec BindingTypes::VarContext_spec = {
+    "maat.VarContext", sizeof(VarContext_Object), 0, binding_type_flags, VarContext_slots
 };
 
 /* Constructors */
@@ -1000,8 +905,7 @@ PyObject* PyVarContext_FromVarContext(VarContext* ctx, bool is_ref){
     VarContext_Object* object;
     
     // Create object
-    PyType_Ready(&VarContext_Type);
-    object = PyObject_New(VarContext_Object, &VarContext_Type);
+    object = PyObject_New(VarContext_Object, binding_types().VarContext);
     if( object != nullptr ){
         object->ctx = ctx;
         object->is_ref = is_ref;
@@ -1017,26 +921,34 @@ PyObject* maat_VarContext(PyObject* self, PyObject* args){
     return PyVarContext_FromVarContext(ctx, false);
 }
 
-// ========= Module initialisation ===========
-void init_expression(PyObject* module)
-{
-    // Add number operators to Value
-    Value_operators.nb_add = Value_nb_add;
-    Value_operators.nb_subtract = Value_nb_sub;
-    Value_operators.nb_multiply = Value_nb_mul;
-    Value_operators.nb_floor_divide = Value_nb_div;
-    Value_operators.nb_true_divide = Value_nb_div;
-    Value_operators.nb_and = Value_nb_and;
-    Value_operators.nb_or = Value_nb_or;
-    Value_operators.nb_xor = Value_nb_xor;
-    Value_operators.nb_remainder = Value_nb_rem;
-    Value_operators.nb_lshift = Value_nb_lshift;
-    Value_operators.nb_rshift = Value_nb_rshift;
-    Value_operators.nb_negative = Value_nb_neg;
-    Value_operators.nb_invert = Value_nb_not;
+static PyType_Slot Value_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(Value_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(Value_repr)},
+    {Py_nb_add, reinterpret_cast<void*>(Value_nb_add)},
+    {Py_nb_subtract, reinterpret_cast<void*>(Value_nb_sub)},
+    {Py_nb_multiply, reinterpret_cast<void*>(Value_nb_mul)},
+    {Py_nb_floor_divide, reinterpret_cast<void*>(Value_nb_div)},
+    {Py_nb_true_divide, reinterpret_cast<void*>(Value_nb_div)},
+    {Py_nb_and, reinterpret_cast<void*>(Value_nb_and)},
+    {Py_nb_or, reinterpret_cast<void*>(Value_nb_or)},
+    {Py_nb_xor, reinterpret_cast<void*>(Value_nb_xor)},
+    {Py_nb_remainder, reinterpret_cast<void*>(Value_nb_rem)},
+    {Py_nb_lshift, reinterpret_cast<void*>(Value_nb_lshift)},
+    {Py_nb_rshift, reinterpret_cast<void*>(Value_nb_rshift)},
+    {Py_nb_negative, reinterpret_cast<void*>(Value_nb_neg)},
+    {Py_nb_invert, reinterpret_cast<void*>(Value_nb_not)},
+    {Py_tp_hash, reinterpret_cast<void*>(Value_hash)},
+    {Py_tp_str, reinterpret_cast<void*>(Value_str)},
+    {Py_tp_doc, const_cast<char*>("Abstract expression")},
+    {Py_tp_richcompare, reinterpret_cast<void*>(Value_richcompare)},
+    {Py_tp_methods, Value_methods},
+    {Py_tp_getset, Value_getset},
+    {0, nullptr}
+};
 
-    register_type(module, (PyTypeObject*)get_Value_Type());
-}
+PyType_Spec BindingTypes::Value_spec = {
+    "maat.Value", sizeof(Value_Object), 0, binding_type_flags, Value_slots
+};
 
 } // namespace py
 } // namespace maat

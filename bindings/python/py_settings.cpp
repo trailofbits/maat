@@ -8,13 +8,8 @@ static void Settings_dealloc(PyObject* self){
         delete ((Settings_Object*)self)->settings;
     }
     as_settings_object(self).settings = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
-
-static int Settings_print(PyObject* self, void * io, int s){
-    std::cout << *((Settings_Object*)self)->settings << std::flush;
-    return 0;
-}
 
 static PyObject* Settings_str(PyObject* self) {
     std::stringstream res;
@@ -143,8 +138,6 @@ static int Settings_set_symptr_refine_range(PyObject* self, PyObject* val, void*
 }
 
 
-
-
 static PyObject* Settings_get_print_insts(PyObject* self, void* closure){
     return PyBool_FromLong((long)as_settings_object(self).settings->log_insts);
 }
@@ -180,46 +173,17 @@ static PyGetSetDef Settings_getset[] = {
     {NULL}
 };
 
-/* Type description for python Expr objects */
-PyTypeObject Settings_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "Settings",                                   /* tp_name */
-    sizeof(Settings_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)Settings_dealloc,            /* tp_dealloc */
-    (printfunc)Settings_print,               /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    Settings_repr,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    Settings_str,                            /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Engine settings and options",             /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    0,                                        /* tp_methods */
-    0,                                        /* tp_members */
-    Settings_getset,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot Settings_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(Settings_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(Settings_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(Settings_str)},
+    {Py_tp_doc, const_cast<char*>("Engine settings and options")},
+    {Py_tp_getset, Settings_getset},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::Settings_spec = {
+    "maat.Settings", sizeof(Settings_Object), 0, binding_type_flags, Settings_slots
 };
 
 /* Constructors */
@@ -227,8 +191,7 @@ PyObject* PySettings_FromSettings(Settings* _settings, bool is_ref){
     Settings_Object* object;
     
     // Create object
-    PyType_Ready(&Settings_Type);
-    object = PyObject_New(Settings_Object, &Settings_Type);
+    object = PyObject_New(Settings_Object, binding_types().Settings);
     if( object != nullptr ){
         object->settings = _settings;
         object->is_ref = is_ref;

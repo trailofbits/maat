@@ -11,7 +11,7 @@ static void Env_dealloc(PyObject* self)
     ((Env_Object*)self)->env = nullptr;
 
     Py_DECREF(as_env_object(self).fs);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 
@@ -20,45 +20,15 @@ static PyMemberDef Env_members[] = {
     {NULL}
 };
 
-PyTypeObject Env_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "EnvEmulator",                         /* tp_name */
-    sizeof(Env_Object),            /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)Env_dealloc,       /* tp_dealloc */
-    0,                                        /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Process environment emulator",      /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    0,                                        /* tp_methods */
-    Env_members,                              /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot Env_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(Env_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Process environment emulator")},
+    {Py_tp_members, Env_members},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::Env_spec = {
+    "maat.EnvEmulator", sizeof(Env_Object), 0, binding_type_flags, Env_slots
 };
 
 // Constructor
@@ -67,8 +37,7 @@ PyObject* PyEnv_FromEnvEmulator(maat::env::EnvEmulator* env, bool is_ref)
     Env_Object* object;
 
     // Create object
-    PyType_Ready(&Env_Type);
-    object = PyObject_New(Env_Object, &Env_Type);
+    object = PyObject_New(Env_Object, binding_types().Env);
     if (object != nullptr)
     {
         object->env = env;

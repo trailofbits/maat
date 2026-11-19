@@ -8,14 +8,8 @@ static void EventManager_dealloc(PyObject* self){
         delete as_event_object(self).manager;
     }
     as_event_object(self).manager = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
-
-static int EventManager_print(PyObject* self, void * io, int s)
-{
-    std::cout << *(as_event_object(self).manager);
-    return 0;
-}
 
 static PyObject* EventManager_str(PyObject* self)
 {
@@ -204,56 +198,26 @@ static PyMemberDef EventManager_members[] = {
     {NULL}
 };
 
-/* Type description for python BreakopintManager objects */
-static PyTypeObject EventManager_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "EventManager",                             /* tp_name */
-    sizeof(EventManager_Object),                /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)EventManager_dealloc,           /* tp_dealloc */
-    (printfunc)EventManager_print,               /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    EventManager_repr,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    EventManager_str,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Event hooks manager",                  /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    EventManager_methods,                /* tp_methods */
-    EventManager_members,                /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot EventManager_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(EventManager_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(EventManager_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(EventManager_str)},
+    {Py_tp_doc, const_cast<char*>("Event hooks manager")},
+    {Py_tp_methods, EventManager_methods},
+    {Py_tp_members, EventManager_members},
+    {0, nullptr}
 };
 
+PyType_Spec BindingTypes::EventManager_spec = {
+    "maat.EventManager", sizeof(EventManager_Object), 0, binding_type_flags, EventManager_slots
+};
 
 PyObject* PyEventManager_FromEventManager(event::EventManager* m, bool is_ref)
 {
     EventManager_Object* object;
     
     // Create object
-    PyType_Ready(&EventManager_Type);
-    object = PyObject_New(EventManager_Object, &EventManager_Type);
+    object = PyObject_New(EventManager_Object, binding_types().EventManager);
     if (object != nullptr)
     {
         object->manager = m;

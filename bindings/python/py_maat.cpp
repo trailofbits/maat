@@ -1,4 +1,3 @@
-#include "Python.h"
 #include "python_bindings.hpp"
 #include <filesystem>
 #include <optional>
@@ -41,18 +40,86 @@ PyMethodDef module_methods[] = {
     {NULL}
 };
 
+static const struct {
+    PyTypeObject* BindingTypes::*member;
+    PyType_Spec* spec;
+} type_definitions[] = {
+    {&BindingTypes::Branch, &BindingTypes::Branch_spec},
+    {&BindingTypes::CPU, &BindingTypes::CPU_spec},
+    {&BindingTypes::Config, &BindingTypes::Config_spec},
+    {&BindingTypes::Constraint, &BindingTypes::Constraint_spec},
+    {&BindingTypes::EVMContract, &BindingTypes::EVMContract_spec},
+    {&BindingTypes::EVMMemory, &BindingTypes::EVMMemory_spec},
+    {&BindingTypes::EVMStack, &BindingTypes::EVMStack_spec},
+    {&BindingTypes::EVMStorage, &BindingTypes::EVMStorage_spec},
+    {&BindingTypes::EVMTransaction, &BindingTypes::EVMTransaction_spec},
+    {&BindingTypes::EVMTransactionResult, &BindingTypes::EVMTransactionResult_spec},
+    {&BindingTypes::Env, &BindingTypes::Env_spec},
+    {&BindingTypes::EventManager, &BindingTypes::EventManager_spec},
+    {&BindingTypes::File, &BindingTypes::File_spec},
+    {&BindingTypes::FileAccessor, &BindingTypes::FileAccessor_spec},
+    {&BindingTypes::FileSystem, &BindingTypes::FileSystem_spec},
+    {&BindingTypes::Info, &BindingTypes::Info_spec},
+    {&BindingTypes::MaatEngine, &BindingTypes::MaatEngine_spec},
+    {&BindingTypes::MemAccess, &BindingTypes::MemAccess_spec},
+    {&BindingTypes::MemEngine, &BindingTypes::MemEngine_spec},
+    {&BindingTypes::Path, &BindingTypes::Path_spec},
+    {&BindingTypes::PathIterator, &BindingTypes::PathIterator_spec},
+    {&BindingTypes::ProcessInfo, &BindingTypes::ProcessInfo_spec},
+    {&BindingTypes::RegAccess, &BindingTypes::RegAccess_spec},
+    {&BindingTypes::Settings, &BindingTypes::Settings_spec},
+    {&BindingTypes::SimpleStateManager, &BindingTypes::SimpleStateManager_spec},
+#ifdef MAAT_HAS_SOLVER_BACKEND
+    {&BindingTypes::Solver, &BindingTypes::Solver_spec},
+#endif
+    {&BindingTypes::Stats, &BindingTypes::Stats_spec},
+    {&BindingTypes::StorageIterator, &BindingTypes::StorageIterator_spec},
+    {&BindingTypes::Value, &BindingTypes::Value_spec},
+    {&BindingTypes::VarContext, &BindingTypes::VarContext_spec},
+};
+
+static int traverse_types(PyObject* module, visitproc visit, void* arg)
+{
+    auto* types = static_cast<BindingTypes*>(PyModule_GetState(module));
+    if (!types)
+        return 0;
+    for (const auto& def : type_definitions)
+        Py_VISIT(types->*def.member);
+    return 0;
+}
+
+static int clear_types(PyObject* module)
+{
+    auto* types = static_cast<BindingTypes*>(PyModule_GetState(module));
+    if (!types)
+        return 0;
+    for (const auto& def : type_definitions)
+        Py_CLEAR(types->*def.member);
+    return 0;
+}
+
+static void free_types(void* module)
+{
+    clear_types(static_cast<PyObject*>(module));
+}
+
 // Module information
 PyModuleDef maat_module_def = {
     PyModuleDef_HEAD_INIT,
     "maat",
     nullptr,
-    -1,      // m_size
+    sizeof(BindingTypes),
     module_methods, // m_methods
     nullptr, // m_slots
-    nullptr, // m_traverse
-    nullptr, // m_clear
-    nullptr  // m_free    
+    traverse_types,
+    clear_types,
+    free_types
 };
+
+BindingTypes& binding_types()
+{
+    return *static_cast<BindingTypes*>(PyModule_GetState(PyState_FindModule(&maat_module_def)));
+}
 
 std::optional<std::filesystem::path> get_maat_module_directory()
 {
@@ -63,8 +130,8 @@ std::optional<std::filesystem::path> get_maat_module_directory()
     PyObject* filename_obj = PyModule_GetFilenameObject(maat_module);
     if (not filename_obj)
         return std::nullopt;
-    const char* filename = PyUnicode_AsUTF8(filename_obj);
-    if (not filename)
+    const char* filename = PyUnicode_AsUTF8AndSize(filename_obj, nullptr);
+    if (!filename)
         return std::nullopt;
     return std::filesystem::path(filename).parent_path();
 }
@@ -76,22 +143,44 @@ using namespace maat;
 using namespace maat::py;
 PyMODINIT_FUNC PyInit_maat()
 {
-    Py_Initialize();
     PyObject* module = PyModule_Create(&maat_module_def);
+    if (!module)
+        return nullptr;
+
+    auto* types = static_cast<BindingTypes*>(PyModule_GetState(module));
+    for (const auto& def : type_definitions)
+    {
+        types->*def.member = reinterpret_cast<PyTypeObject*>(PyType_FromSpec(def.spec));
+        if (!(types->*def.member))
+        {
+            Py_DECREF(module);
+            return nullptr;
+        }
+    }
+
+    for (auto* type : {types->Value, types->Constraint, types->Info, types->Config, types->EVMContract})
+    {
+        if (PyModule_AddType(module, type) < 0)
+        {
+            Py_DECREF(module);
+            return nullptr;
+        }
+    }
 
     init_arch(module);
-    init_expression(module);
-    init_constraint(module);
     init_memory(module);
     init_engine(module);
     init_event(module);
     init_loader(module);
     init_env(module);
-    init_config(module);
-    init_stats(module);
+    init_stats(module, types->Stats);
     init_evm(module);
 
-    PyState_AddModule(module, &maat_module_def);
+    if (PyErr_Occurred())
+    {
+        Py_DECREF(module);
+        return nullptr;
+    }
 
     return module;
 }

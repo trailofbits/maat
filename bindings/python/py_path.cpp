@@ -10,9 +10,8 @@ static void Path_dealloc(PyObject* self)
         delete ((Path_Object*)self)->path;
     }
     as_path_object(self).path = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
-
 
 
 static PyObject* Path_get_related_constraints(PyObject* self, PyObject* args)
@@ -23,13 +22,13 @@ static PyObject* Path_get_related_constraints(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    if (PyObject_TypeCheck(arg, (PyTypeObject*)get_Value_Type()))
+    if (PyObject_TypeCheck(arg, binding_types().Value))
     {
         res = as_path_object(self).path->get_related_constraints(
             as_value_object(arg).value->as_expr()
         );
     }
-    else if (PyObject_TypeCheck(arg, (PyTypeObject*)get_Constraint_Type()))
+    else if (PyObject_TypeCheck(arg, binding_types().Constraint))
     {
         res = as_path_object(self).path->get_related_constraints(
             *as_constraint_object(arg).constr
@@ -45,7 +44,7 @@ static PyObject* Path_get_related_constraints(PyObject* self, PyObject* args)
 
 static PyObject* Path_get_constraints_containing(PyObject* self, PyObject* args, PyObject* keywords)
 {
-    PySetObject* py_vars = nullptr;
+    PyObject* py_vars = nullptr;
     std::set<std::string> vars;
 
     // Process arguments
@@ -71,7 +70,7 @@ static PyObject* Path_constraints(PyObject* self, PyObject* args)
 static PyObject* Path_add(PyObject* self, PyObject* args)
 {
     PyObject* constr;
-    if (! PyArg_ParseTuple(args, "O!", get_Constraint_Type(), &constr)){
+    if (! PyArg_ParseTuple(args, "O!", binding_types().Constraint, &constr)){
         return NULL;
     }
 
@@ -91,45 +90,16 @@ static PyMemberDef Path_members[] = {
     {NULL}
 };
 
-static PyTypeObject Path_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "PathManager",                            /* tp_name */
-    sizeof(Path_Object),                /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)Path_dealloc,           /* tp_dealloc */
-    0,                                       /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Path Manager",                          /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    Path_methods,                       /* tp_methods */
-    Path_members,                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot Path_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(Path_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Path Manager")},
+    {Py_tp_methods, Path_methods},
+    {Py_tp_members, Path_members},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::Path_spec = {
+    "maat.PathManager", sizeof(Path_Object), 0, binding_type_flags, Path_slots
 };
 
 /* Constructors */
@@ -138,8 +108,7 @@ PyObject* PyPath_FromPath(PathManager* path, bool is_ref)
     Path_Object* object;
     
     // Create object
-    PyType_Ready(&Path_Type);
-    object = PyObject_New(Path_Object, &Path_Type);
+    object = PyObject_New(Path_Object, binding_types().Path);
     if (object != nullptr){
         object->path = path;
         object->is_ref = is_ref;
@@ -153,7 +122,7 @@ static void PathIterator_dealloc(PyObject* self)
 {
     delete as_pathiterator_object(self).wrapper;
     as_pathiterator_object(self).wrapper = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 PyObject* PathIterator_iter(PyObject *self)
@@ -179,45 +148,16 @@ PyObject* PathIterator_iternext(PyObject *self)
     }
 }
 
-static PyTypeObject PathIterator_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "PathIterator ",                            /* tp_name */
-    sizeof(PathIterator_Object),                /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)PathIterator_dealloc,           /* tp_dealloc */
-    0,                                       /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Path constraints custom iterator",                          /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    PathIterator_iter,                                        /* tp_iter */
-    PathIterator_iternext,                                        /* tp_iternext */
-    0,                       /* tp_methods */
-    0,                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot PathIterator_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(PathIterator_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Path constraints custom iterator")},
+    {Py_tp_iter, reinterpret_cast<void*>(PathIterator_iter)},
+    {Py_tp_iternext, reinterpret_cast<void*>(PathIterator_iternext)},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::PathIterator_spec = {
+    "maat.PathIterator", sizeof(PathIterator_Object), 0, binding_type_flags, PathIterator_slots
 };
 
 PyObject* PyPathIterator_FromWrapper(const PathManager::IteratorWrapper& wrapper)
@@ -225,8 +165,7 @@ PyObject* PyPathIterator_FromWrapper(const PathManager::IteratorWrapper& wrapper
     PathIterator_Object* object;
 
     // Create object
-    PyType_Ready(&PathIterator_Type);
-    object = PyObject_New(PathIterator_Object, &PathIterator_Type);
+    object = PyObject_New(PathIterator_Object, binding_types().PathIterator);
     if (object != nullptr)
     {
         object->wrapper = new PathManager::IteratorWrapper(wrapper); // iterators point to wrapper so it needs to live as long as the iterator themselves

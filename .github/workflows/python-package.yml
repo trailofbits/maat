@@ -85,16 +85,6 @@ jobs:
           version: '0.13.9'
           enable-cache: false
 
-      - name: Select smoke build
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          if [[ "$GITHUB_EVENT_NAME" == push ]] || git diff --quiet "$BASE...$HEAD_SHA" -- pyproject.toml .github/workflows/python-package.yml .github/ci/install-wheel-deps.sh .github/ci/wheel-deps.Dockerfile src/third-party/sleigh/sleigh-cmake bindings/bindings.cmake cmake/install-rules.cmake CMakeLists.txt; then
-            echo 'CIBW_BUILD=cp313-{manylinux_x86_64,macosx_x86_64,macosx_arm64}' >> "$GITHUB_ENV"
-          fi
-
       - name: Build, repair, and test wheels
         env:
           CIBW_BEFORE_ALL: "true"
@@ -105,7 +95,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: wheels-${{ matrix.platform }}
-          path: wheelhouse/*.whl
+          path: wheelhouse/*-cp310-abi3-*.whl
           if-no-files-found: error
 
   publish:

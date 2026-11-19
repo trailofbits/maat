@@ -1,4 +1,3 @@
-#include "Python.h"
 #include <vector>
 #include "maat/value.hpp"
 #include "python_bindings.hpp"
@@ -63,7 +62,7 @@ Number bigint_to_number(size_t bits, PyObject* num)
     else
     {
         PyObject* str = PyObject_Str(num);
-        const char* s = PyUnicode_AsUTF8(str);
+        const char* s = PyUnicode_AsUTF8AndSize(str, nullptr);
         return Number(bits, std::string(s), 10); // base 10
     }
 }
@@ -75,25 +74,21 @@ PyObject* number_to_bigint(const Number& num)
     return PyLong_FromString(ss.str().c_str(), NULL, 16);
 }
 
-void register_type(PyObject* module, PyTypeObject* type_obj)
+void free_binding_object(PyObject* self)
 {
-    // TODO(boyan): We could use PyModule_AddType(module, get_Config_Type()); instead
-    // of the cumbersome code below but it's not avaialble before Python 3.10 and we
-    // don't want to force Python 3.10 yet
-    if (PyType_Ready(type_obj) < 0)
-        return;
-    Py_INCREF(type_obj);
-    PyModule_AddObject(module, type_obj->tp_name, (PyObject*)type_obj);
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_Free(self);
+    Py_DECREF(type);
 }
 
-bool py_to_c_string_set(PySetObject* set, std::set<std::string>& res)
+bool py_to_c_string_set(PyObject* set, std::set<std::string>& res)
 {
-    PyObject *iterator = PyObject_GetIter((PyObject*)set);
+    PyObject *iterator = PyObject_GetIter(set);
     PyObject *item;
     bool error = false;
     while ((item = PyIter_Next(iterator))) {
         // Translate item to string
-        const char* s = PyUnicode_AsUTF8(item);
+        const char* s = PyUnicode_AsUTF8AndSize(item, nullptr);
         if (s == nullptr)
             error = true;
         else

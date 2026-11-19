@@ -1,25 +1,17 @@
 # ---- Python bindings ----
-if(${CMAKE_VERSION} VERSION_LESS "3.18.0")
-  find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-else()
-  find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+# FindPython3 gained stable ABI module support in CMake 3.26.
+cmake_minimum_required(VERSION 3.26)
+find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter Development.SABIModule)
+if(Python3_FREE_THREADED)
+  message(FATAL_ERROR "Building the cp310-abi3 extension requires GIL-enabled CPython")
 endif()
-
-execute_process(
-  COMMAND "${Python3_EXECUTABLE}" -c "if True:
-    import sysconfig
-    print(sysconfig.get_config_var('EXT_SUFFIX'))"
-  OUTPUT_VARIABLE python_soabi
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
 # Get the same source files as the main library uses
 # NOTE: These source file paths are relative to where the maat::maat target was
 # declared, so this file needs to be "include"d instead of add_subdirectory by
 # CMake
 get_target_property(maat_sources maat::maat SOURCES)
 
-add_library(maat_python MODULE
+Python3_add_library(maat_python MODULE USE_SABI 3.10 WITH_SOABI
   bindings/python/py_arch.cpp
   bindings/python/py_config.cpp
   bindings/python/py_constraint.cpp
@@ -53,7 +45,6 @@ set_target_properties(
   #SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
   EXPORT_NAME python
   OUTPUT_NAME maat
-  SUFFIX "${python_soabi}"
   PREFIX ""
 )
 
@@ -71,7 +62,6 @@ target_compile_features(maat_python PRIVATE cxx_std_17)
 target_compile_definitions(maat_python PRIVATE MAAT_PYTHON_BINDINGS=1)
 
 target_link_libraries(maat_python PRIVATE
-  Python3::Module
   GMP::GMP
   sleigh::sla
 )

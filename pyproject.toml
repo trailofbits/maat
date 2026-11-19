@@ -33,6 +33,8 @@ Changelog = "https://github.com/trailofbits/maat/releases"
 
 [tool.scikit-build]
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+cmake.version = ">=3.26"
+wheel.py-api = "cp310"
 wheel.packages = []
 build.targets = ["maat_python"]
 install.components = ["maat_Python"]
@@ -48,7 +50,8 @@ local_scheme = "dirty-tag"
 build = "cp3{10,11,12,13,14,15}-{manylinux_x86_64,macosx_x86_64,macosx_arm64}"
 build-frontend = "uv"
 before-all = "bash {project}/.github/ci/install-wheel-deps.sh {project}"
-test-command = "python -I -c 'from maat import ARCH, MaatEngine; MaatEngine(ARCH.X64)'"
+test-requires = ["pytest"]
+test-command = "python -I -m pytest -q {project}/tests/python-tests"
 config-settings = { "cmake.define.maat_USE_EXTERNAL_SLEIGH" = "ON", "cmake.define.CMAKE_INSTALL_RPATH_USE_LINK_PATH" = "ON" }
 environment = { CMAKE_PREFIX_PATH = "/tmp/maat-wheel-deps", CMAKE_BUILD_PARALLEL_LEVEL = "4" }
 

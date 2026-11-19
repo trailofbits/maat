@@ -10,14 +10,14 @@ namespace py{
 static void SimpleStateManager_dealloc(PyObject* self){
     delete ((SimpleStateManager_Object*)self)->s; 
     ((SimpleStateManager_Object*)self)->s = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 static PyObject* SimpleStateManager_enqueue_state(PyObject* self, PyObject* args)
 {
     PyObject* engine;
 
-    if( !PyArg_ParseTuple(args, "O!", get_MaatEngine_Type(), &engine))
+    if( !PyArg_ParseTuple(args, "O!", binding_types().MaatEngine, &engine))
     {
         return NULL;
     }
@@ -38,7 +38,7 @@ static PyObject* SimpleStateManager_dequeue_state(PyObject* self, PyObject* args
 {
     PyObject* engine;
     
-    if( !PyArg_ParseTuple(args, "O!", get_MaatEngine_Type(), &engine))
+    if( !PyArg_ParseTuple(args, "O!", binding_types().MaatEngine, &engine))
     {
         return NULL;
     }
@@ -73,50 +73,15 @@ static PyMethodDef SimpleStateManager_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-/* Type description for python Expr objects */
-PyTypeObject SimpleStateManager_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "SimpleStateManager",                                   /* tp_name */
-    sizeof(SimpleStateManager_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)SimpleStateManager_dealloc,                 /* tp_dealloc */
-    0,                    /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                                /* tp_repr */
-    0,                          /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                                 /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Simple engine serializer helper",     /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    SimpleStateManager_methods,                       /* tp_methods */
-    0,                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot SimpleStateManager_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(SimpleStateManager_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Simple engine serializer helper")},
+    {Py_tp_methods, SimpleStateManager_methods},
+    {0, nullptr}
 };
 
-PyObject* get_SimpleStateManager_Type(){
-    return (PyObject*)&SimpleStateManager_Type;
+PyType_Spec BindingTypes::SimpleStateManager_spec = {
+    "maat.SimpleStateManager", sizeof(SimpleStateManager_Object), 0, binding_type_flags, SimpleStateManager_slots
 };
 
 PyObject* maat_SimpleStateManager(PyObject* self, PyObject* args)
@@ -146,8 +111,7 @@ PyObject* maat_SimpleStateManager(PyObject* self, PyObject* args)
         base_filename = std::string("maat_state");
 
     // Create object
-    PyType_Ready(&SimpleStateManager_Type);
-    object = PyObject_New(SimpleStateManager_Object, &SimpleStateManager_Type);
+    object = PyObject_New(SimpleStateManager_Object, binding_types().SimpleStateManager);
     if( object != nullptr ){
         object->s = new serial::SimpleStateManager(dir, base_filename, (bool)delete_on_load);
     }
