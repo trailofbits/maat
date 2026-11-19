@@ -29,8 +29,8 @@ git clone --quiet --depth 1 --branch 0.13.2 https://github.com/lief-project/LIEF
 test "$(git -C lief rev-parse HEAD)" = 2d9855fc7f9d4ce6325245f8b75c98eb7663db60
 build_dependency lief -DLIEF_EXAMPLES=OFF -DLIEF_PYTHON_API=OFF -DLIEF_TESTS=OFF
 
-git clone --quiet --depth 1 --branch z3-4.8.14 https://github.com/Z3Prover/z3 z3
-test "$(git -C z3 rev-parse HEAD)" = df8f9d7dcb8b9f9b3de1072017b7c2b7f63f0af8
+git clone --quiet --depth 1 --branch z3-4.13.4 https://github.com/Z3Prover/z3 z3
+test "$(git -C z3 rev-parse HEAD)" = 6f24123f0c9d1d8bd84dec275c5c7aea939a19fe
 build_dependency z3 -DZ3_BUILD_LIBZ3_SHARED=OFF -DZ3_BUILD_EXECUTABLE=OFF
 
 # The pinned Sleigh submodule applies a bundled Ghidra patch with git am.
