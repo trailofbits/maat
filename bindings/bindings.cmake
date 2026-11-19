@@ -5,13 +5,14 @@ find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter Development.SABIModule
 if(Python3_FREE_THREADED)
   message(FATAL_ERROR "Building the cp310-abi3 extension requires GIL-enabled CPython")
 endif()
+
 # Get the same source files as the main library uses
 # NOTE: These source file paths are relative to where the maat::maat target was
 # declared, so this file needs to be "include"d instead of add_subdirectory by
 # CMake
 get_target_property(maat_sources maat::maat SOURCES)
 
-Python3_add_library(maat_python MODULE USE_SABI 3.10 WITH_SOABI
+Python3_add_library(maat_python MODULE USE_SABI 3.10
   bindings/python/py_arch.cpp
   bindings/python/py_config.cpp
   bindings/python/py_constraint.cpp
@@ -37,6 +38,12 @@ Python3_add_library(maat_python MODULE USE_SABI 3.10 WITH_SOABI
   ${maat_sources}
 )
 add_library(maat::python ALIAS maat_python)
+
+# Unix CPython 3.10+ recognizes .abi3.so. A newer build interpreter may
+# also advertise platform-qualified or free-threaded suffixes.
+if(UNIX AND NOT CYGWIN)
+  set_property(TARGET maat_python PROPERTY SUFFIX ".abi3${CMAKE_SHARED_MODULE_SUFFIX}")
+endif()
 
 set_target_properties(
   maat_python PROPERTIES
