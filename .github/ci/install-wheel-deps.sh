@@ -19,7 +19,7 @@ build_dependency() {
   local src=$1
   local build_dir="$PWD/${src##*/}-build"
   shift
-  cmake -S "$src" -B "$build_dir" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  cmake -S "$src" -B "$build_dir" -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_POSITION_INDEPENDENT_CODE=ON "$@"
   cmake --build "$build_dir"
   cmake --install "$build_dir"
