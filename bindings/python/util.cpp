@@ -74,6 +74,26 @@ PyObject* number_to_bigint(const Number& num)
     return PyLong_FromString(ss.str().c_str(), NULL, 16);
 }
 
+int ByteString::convert(PyObject* value, void* destination)
+{
+    auto& result = *static_cast<ByteString*>(destination);
+    if (PyUnicode_Check(value))
+        result.bytes.reset(PyUnicode_AsUTF8String(value));
+    else if (PyBytes_Check(value))
+        result.bytes.reset(Py_NewRef(value));
+    else
+    {
+        // Require the buffer protocol here. PyBytes_FromObject alone also
+        // accepts lists, which have their own symbolic-value conversion.
+        PyObject* view = PyMemoryView_FromObject(value);
+        if (!view)
+            return 0;
+        result.bytes.reset(PyBytes_FromObject(view));
+        Py_DECREF(view);
+    }
+    return result.bytes != nullptr;
+}
+
 void free_binding_object(PyObject* self)
 {
     PyTypeObject* type = Py_TYPE(self);

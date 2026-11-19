@@ -41,3 +41,11 @@ def test_requested_buffer_sizes(tmp_path):
     handle = fs.get_fa_by_handle(fs.new_fa("/input"))
     with pytest.raises(ValueError):
         handle.write_buffer(b"ab", 3)
+
+
+def test_length_aware_buffer_arguments():
+    ctx = maat.VarContext()
+    ctx.new_concolic_buffer("buf", b"a\x00b", elem_size=1)
+    assert ctx.get_as_buffer("buf") == b"a\x00b"
+    assert maat.Var(8, "x").name == "x"
+    assert maat.Var(size=8, name=b"y").name == "y"

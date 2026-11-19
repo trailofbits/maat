@@ -234,20 +234,19 @@ static PyObject* FileAccessor_write_buffer(PyObject* self, PyObject *args)
 {
     PyObject* buf;
     std::vector<Value> native_buf;
-    const char* bytes;
-    Py_ssize_t bytes_len = 0;
+    ByteString bytes;
     int len = -1;
 
     try
     {
-        if (PyArg_ParseTuple(args, "s#|i", &bytes, &bytes_len, &len))
+        if (PyArg_ParseTuple(args, "O&|i", ByteString::convert, &bytes, &len))
         {
-            if (len < 0 && bytes_len > INT_MAX)
+            if (len < 0 && bytes.size() > INT_MAX)
                 return PyErr_Format(PyExc_OverflowError, "Buffer is too large");
-            if (len > bytes_len)
+            if (len > bytes.size())
                 return PyErr_Format(PyExc_ValueError, "Length exceeds the buffer size");
-            int count = len < 0 ? static_cast<int>(bytes_len) : len;
-            return PyLong_FromLong(as_fileaccessor_object(self).fa->write_buffer((uint8_t*)bytes, count));
+            int count = len < 0 ? static_cast<int>(bytes.size()) : len;
+            return PyLong_FromLong(as_fileaccessor_object(self).fa->write_buffer(reinterpret_cast<uint8_t*>(bytes.data()), count));
         }
         else if (PyArg_ParseTuple(args, "O!", &PyList_Type, &buf))
         {
@@ -351,21 +350,20 @@ static PyObject* File_write_buffer(PyObject* self, PyObject *args)
     PyObject* buf;
     std::vector<Value> native_buf;
     addr_t offset = 0;
-    const char* bytes;
-    Py_ssize_t bytes_len = 0;
+    ByteString bytes;
     int len = -1;
 
     try
     {
-        if (PyArg_ParseTuple(args, "s#K|i", &bytes, &bytes_len, &offset, &len))
+        if (PyArg_ParseTuple(args, "O&K|i", ByteString::convert, &bytes, &offset, &len))
         {
             PyErr_Clear();
-            if (len < 0 && bytes_len > INT_MAX)
+            if (len < 0 && bytes.size() > INT_MAX)
                 return PyErr_Format(PyExc_OverflowError, "Buffer is too large");
-            if (len > bytes_len)
+            if (len > bytes.size())
                 return PyErr_Format(PyExc_ValueError, "Length exceeds the buffer size");
-            int count = len < 0 ? static_cast<int>(bytes_len) : len;
-            return PyLong_FromLong(as_file_object(self).file->write_buffer((uint8_t*)bytes, offset, count));
+            int count = len < 0 ? static_cast<int>(bytes.size()) : len;
+            return PyLong_FromLong(as_file_object(self).file->write_buffer(reinterpret_cast<uint8_t*>(bytes.data()), offset, count));
         }
         else if (PyArg_ParseTuple(args, "O!K", &PyList_Type, &buf, &offset))
         {

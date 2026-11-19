@@ -417,6 +417,17 @@ PyObject* maat_evm_get_static_flag(PyObject* mod, PyObject* args);
 PyObject* maat_evm_set_static_flag(PyObject* mod, PyObject* args);
 PyObject* maat_evm_set_gas_price(PyObject* mod, PyObject* args);
 
+// Parse a str or bytes-like argument without depending on the
+// build interpreter's choice of entry point for the s# format.
+class ByteString
+{
+    std::unique_ptr<PyObject, decltype(&Py_DecRef)> bytes{nullptr, Py_DecRef};
+public:
+    static int convert(PyObject* value, void* destination);
+    char* data() const { return PyBytes_AsString(bytes.get()); }
+    Py_ssize_t size() const { return PyBytes_Size(bytes.get()); }
+};
+
 // ====== Utils =======
 // Transform a list of values into a list of python values,
 // returns a python error on error

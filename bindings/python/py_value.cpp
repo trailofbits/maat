@@ -467,22 +467,21 @@ PyObject* maat_Cst(PyObject* self, PyObject* args, PyObject* keywords)
 
 PyObject* maat_Var(PyObject* self, PyObject* args, PyObject* keywords)
 {
-    const char * name;
-    Py_ssize_t name_length;
+    ByteString name;
     int size = 0;
     static char* kwlist[] = {"size", "name", NULL};
     
     // Parse arguments
-    if( !PyArg_ParseTupleAndKeywords(args, keywords, "is#|p", kwlist, &size, &name, &name_length)){
+    if( !PyArg_ParseTupleAndKeywords(args, keywords, "iO&", kwlist, &size, ByteString::convert, &name)){
         return NULL;
     }
     
-    if (name_length > 255)
+    if (name.size() > 255)
     {
         return PyErr_Format(PyExc_TypeError, "Var: name cannot be longer than 255 characters");
     }
     
-    CATCH_EXPRESSION_EXCEPTION( return PyValue_FromValue(exprvar(size, name)); )
+    CATCH_EXPRESSION_EXCEPTION( return PyValue_FromValue(exprvar(size, name.data())); )
 }
 
 PyObject* maat_Concat(PyObject* self, PyObject* args)
@@ -684,16 +683,15 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
     const char * name;
     std::vector<cst_t> concrete_buffer;
     PyObject* py_concrete_buffer;
-    const char* bytes;
-    Py_ssize_t bytes_len=0;
+    ByteString bytes;
     int nb_elems = -1, elem_size =1;
     PyObject* trailing_value = NULL;
     std::optional<cst_t> tval = std::nullopt;
 
     static char* kwlist[] = {"", "", "nb_elems", "elem_size", "trailing_value", NULL};
 
-    if (PyArg_ParseTupleAndKeywords(args, keywords, "ss#|iiO!", kwlist, &name, &bytes,
-        &bytes_len, &nb_elems, &elem_size, &PyLong_Type, &trailing_value))
+    if (PyArg_ParseTupleAndKeywords(args, keywords, "sO&|iiO!", kwlist, &name, ByteString::convert, &bytes,
+        &nb_elems, &elem_size, &PyLong_Type, &trailing_value))
     {
         PyErr_Clear();
 
@@ -701,13 +699,13 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
             return PyErr_Format(PyExc_ValueError, "Element size must be positive");
         if (nb_elems == -1)
         {
-            if (bytes_len % elem_size != 0)
+            if (bytes.size() % elem_size != 0)
                 return PyErr_Format(PyExc_ValueError, "Buffer size must be a multiple of the element size");
-            if (bytes_len / elem_size > INT_MAX)
+            if (bytes.size() / elem_size > INT_MAX)
                 return PyErr_Format(PyExc_OverflowError, "Buffer contains too many elements");
-            nb_elems = static_cast<int>(bytes_len / elem_size);
+            nb_elems = static_cast<int>(bytes.size() / elem_size);
         }
-        if (nb_elems < 0 || nb_elems > bytes_len / elem_size)
+        if (nb_elems < 0 || nb_elems > bytes.size() / elem_size)
             return PyErr_Format(PyExc_ValueError, "Buffer contains fewer elements than requested");
 
         // NOTE: this assumes little endian!! (inverting the bytes to build the values)
@@ -717,9 +715,9 @@ static PyObject* VarContext_new_concolic_buffer(PyObject* self, PyObject* args, 
             for (int j = elem_size-1; j >= 0; j--)
             {
                 if (as_varctx_object(self).ctx->endianness() == Endian::LITTLE)
-                    val = (val << 8) | ((cst_t)(bytes[static_cast<Py_ssize_t>(i)*elem_size+j]) & 0xff);
+                    val = (val << 8) | ((cst_t)(bytes.data()[static_cast<Py_ssize_t>(i)*elem_size+j]) & 0xff);
                 else
-                    val |= ((ucst_t)(bytes[static_cast<Py_ssize_t>(i)*elem_size+j]) << j);
+                    val |= ((ucst_t)(bytes.data()[static_cast<Py_ssize_t>(i)*elem_size+j]) << j);
             }
             concrete_buffer.push_back(val);
         }
