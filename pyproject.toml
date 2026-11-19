@@ -1,0 +1,56 @@
+[build-system]
+requires = ["scikit-build-core>=1.1", "setuptools-scm>=8"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "pymaat"
+dynamic = ["version"]
+description = "Maat symbolic execution framework"
+readme = "README.md"
+requires-python = ">=3.10"
+license-files = [
+    "LICENCE",
+    "licenses/*.txt",
+    "src/third-party/sleigh/licencing/LICENCE.txt",
+    "src/third-party/sleigh/licencing/ghidra/*",
+]
+keywords = ["symbolic execution", "emulation", "binary analysis", "pcode"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[project.urls]
+Homepage = "https://maat.re"
+Documentation = "https://maat.re"
+Source = "https://github.com/trailofbits/maat"
+Issues = "https://github.com/trailofbits/maat/issues"
+Changelog = "https://github.com/trailofbits/maat/releases"
+
+[tool.scikit-build]
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+wheel.packages = []
+build.targets = ["maat_python"]
+install.components = ["maat_Python"]
+
+[tool.scikit-build.cmake.define]
+maat_PYTHON_PACKAGING = "ON"
+maat_USE_EXTERNAL_SLEIGH = "OFF"
+
+[tool.setuptools_scm]
+local_scheme = "dirty-tag"
+
+[tool.cibuildwheel]
+build = "cp3{10,11,12,13,14,15}-{manylinux_x86_64,macosx_x86_64,macosx_arm64}"
+build-frontend = "uv"
+before-all = "bash {project}/.github/ci/install-wheel-deps.sh {project}"
+test-command = "python -I -c 'from maat import ARCH, MaatEngine; MaatEngine(ARCH.X64)'"
+config-settings = { "cmake.define.maat_USE_EXTERNAL_SLEIGH" = "ON", "cmake.define.CMAKE_INSTALL_RPATH_USE_LINK_PATH" = "ON" }
+environment = { CMAKE_PREFIX_PATH = "/tmp/maat-wheel-deps", CMAKE_BUILD_PARALLEL_LEVEL = "4" }
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux2014"

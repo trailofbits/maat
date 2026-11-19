@@ -92,8 +92,8 @@ set(python_spec_dir "maat/${CMAKE_INSTALL_DATADIR}/${spec_out_prefix}")
 if(NOT CMAKE_SKIP_INSTALL_RULES)
   if(NOT DEFINED maat_INSTALL_PYTHONMODULEDIR)
     if(maat_PYTHON_PACKAGING)
-      # The wheel builder sets its install prefix to site-packages/maat.
-      set(python_site_rel "..")
+      # The packaging backend installs directly into the wheel root.
+      set(python_site_rel ".")
     else()
       execute_process(
         COMMAND "${Python3_EXECUTABLE}" -c
