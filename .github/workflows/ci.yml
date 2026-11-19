@@ -23,11 +23,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos, ubuntu]
+        os: [macos, macos-arm64, ubuntu]
         type: [shared, static]
         include:
-          # The pinned macOS LIEF and Sleigh binaries are x86-64.
           - { os: macos, runner: macos-26-intel }
+          - { os: macos-arm64, runner: macos-26 }
           - { os: ubuntu, runner: ubuntu-latest }
 
     steps:
@@ -35,6 +35,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          submodules: ${{ runner.arch == 'ARM64' }}
 
       - name: Install Ubuntu packages
         if: runner.os == 'Linux'
@@ -52,7 +53,7 @@ jobs:
 
       - name: Configure
         env:
-          PRESET: ci-${{ matrix.os }}
+          PRESET: ${{ runner.os == 'macOS' && 'ci-macos' || 'ci-ubuntu' }}
           SHARED: ${{ matrix.type == 'shared' }}
         run: |
           python3 -m venv "$RUNNER_TEMP/venv"
