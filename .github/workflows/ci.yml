@@ -2,175 +2,110 @@ name: CI
 
 on:
   push:
-    branches:
-    - master
-
+    branches: [master]
   pull_request:
-    branches:
-    - '**'
+
+permissions:
+  contents: read
+
+# Cancel superseded PR builds. Every push to master gets its own run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  LIEF_VERSION: 0.12.3
-  # Stage Python artifacts under the same install prefix as the native library.
-  PYTHON_INSTALL_DIR: python
+  CMAKE_BUILD_PARALLEL_LEVEL: 2
+  CTEST_PARALLEL_LEVEL: 2
 
 jobs:
-  coverage:
-    runs-on: ubuntu-latest
-
-    if: github.repository_owner == 'trailofbits'
-      && false
-
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        submodules: recursive
-
-    - name: Install Dependencies
-      run: |
-        sudo apt-get install libgmp-dev python3-dev libz3-dev
-        wget -O - -c "https://github.com/lief-project/LIEF/releases/download/$LIEF_VERSION/LIEF-$LIEF_VERSION-Linux-x86_64.tar.gz" | sudo tar xz -C /usr/local --strip-components=1
-        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/Linux-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
-
-    - name: Install LCov
-      run: sudo apt-get update -q
-        && sudo apt-get install lcov -q -y
-
-    - name: Configure
-      run: cmake --preset=ci-coverage
-
-    - name: Build
-      run: cmake --build build/coverage -j 2
-
-    - name: Test
-      working-directory: build/coverage
-      run: ctest --output-on-failure -j 2
-
-    - name: Process coverage info
-      run: cmake --build build/coverage -t coverage
-
-    - name: Print coverage info
-      run: lcov --summary build/coverage/coverage.info
-
-    #- name: Submit to codecov.io
-    #  uses: codecov/codecov-action@v1
-    #  with:
-    #    file: build/coverage/coverage.info
-
-  sanitize:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        submodules: recursive
-
-    - name: Install Dependencies
-      run: |
-        sudo apt-get install libgmp-dev python3-dev
-        # LIEF
-        wget -O- "https://github.com/lief-project/LIEF/releases/download/$LIEF_VERSION/LIEF-$LIEF_VERSION-Linux-x86_64.tar.gz" | sudo tar xz -C /usr/local --strip-components=1
-        # Sleigh
-        wget -O- https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/Linux-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
-        # Z3 Ubuntu 20.04 package doesn't play nice with sanitizers
-        # (also remove top-level directory from zip)
-        wget -O z3.zip https://github.com/Z3Prover/z3/releases/download/z3-4.8.14/z3-4.8.14-x64-glibc-2.31.zip
-        dest=/opt/z3; zip=./z3.zip; \
-          sudo mkdir -p "${dest}" && \
-          sudo unzip -d "${dest}" "${zip}" && \
-            f=("${dest}"/*) && sudo mv "${dest}"/*/* "$dest" && sudo rmdir "${f[@]}"
-
-    - name: Configure
-      env: { CC: clang, CXX: clang++ }
-      run: cmake --preset=ci-sanitize -DZ3_ROOT=/opt/z3
-        -Dmaat_INSTALL_PYTHONMODULEDIR:STRING=${{ env.PYTHON_INSTALL_DIR }}
-
-    - name: Build
-      run: |
-        cmake --build build/sanitize -j 2
-
-    - name: Test
-      working-directory: build/sanitize
-      env:
-        ASAN_OPTIONS: "strict_string_checks=1:\
-          detect_stack_use_after_return=1:\
-          check_initialization_order=1:\
-          strict_init_order=1:\
-          detect_leaks=1"
-        UBSAN_OPTIONS: print_stacktrace=1
-      run: ctest --output-on-failure -j 2
-
   test:
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        os: [
-          # TODO: windows,
-          macos,
-          ubuntu
-        ]
-
+        os: [macos, ubuntu]
         type: [shared, static]
-
         include:
-        - { os: ubuntu, runner: ubuntu-latest }
-        # The pinned macOS LIEF and Sleigh packages are x86-64.
-        - { os: macos, runner: macos-26-intel }
-        - { type: shared, shared: YES }
-        - { type: static, shared: NO }
-
-    runs-on: ${{ matrix.runner }}
+          # The pinned macOS LIEF and Sleigh binaries are x86-64.
+          - { os: macos, runner: macos-26-intel }
+          - { os: ubuntu, runner: ubuntu-latest }
 
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        submodules: recursive
+      - &checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-    - name: Setup Git User for Sleigh
-      # See this thread for more details https://github.community/t/github-actions-bot-email-address/17204/5
-      run: |
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
+      - name: Install Ubuntu packages
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y libgmp-dev libz3-dev python3-dev
 
-    - name: Install Dependencies
-      if: matrix.os == 'ubuntu'
-      run: |
-        sudo apt-get install libgmp-dev python3-dev libz3-dev
-        wget -O - -c "https://github.com/lief-project/LIEF/releases/download/$LIEF_VERSION/LIEF-$LIEF_VERSION-Linux-x86_64.tar.gz" | sudo tar xz -C /usr/local --strip-components=1
-        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/Linux-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+      - name: Install macOS packages
+        if: runner.os == 'macOS'
+        run: brew install gmp z3
 
-    - name: Install Dependencies
-      if: matrix.os == 'macos'
-      run: |
-        brew install gmp z3
-        wget -O - -c "https://github.com/lief-project/LIEF/releases/download/$LIEF_VERSION/LIEF-$LIEF_VERSION-Darwin-x86_64.tar.gz" | sudo tar xz -C /usr/local --strip-components=1
-        wget -O - -c https://github.com/lifting-bits/sleigh/releases/download/v10.1.2-2/macOS-sleigh-10.1.2-2.x86_64.tar.gz | sudo tar xz -C /usr/local --strip-components=1
+      - &native_deps
+        name: Install LIEF and Sleigh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/ci/install-native-deps.sh
 
-    - name: Install pytest
-      run: |
-        python3 -m venv "$RUNNER_TEMP/venv"
-        "$RUNNER_TEMP/venv/bin/python" -m pip install pytest
+      - name: Configure
+        env:
+          PRESET: ci-${{ matrix.os }}
+          SHARED: ${{ matrix.type == 'shared' }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/python" -m pip install pytest
+          cmake --preset "$PRESET" -DBUILD_SHARED_LIBS="$SHARED" \
+            -DPython3_EXECUTABLE="$RUNNER_TEMP/venv/bin/python" \
+            -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
 
-    - name: Configure
-      run: cmake --preset=ci-${{ matrix.os }}
-        -D BUILD_SHARED_LIBS=${{ matrix.shared }}
-        -Dmaat_INSTALL_PYTHONMODULEDIR:STRING=${{ env.PYTHON_INSTALL_DIR }}
-        -DPython3_EXECUTABLE="${RUNNER_TEMP}/venv/bin/python"
+      - name: Build and test
+        run: |
+          cmake --build build
+          ctest --test-dir build --output-on-failure --no-tests=error
 
-    - name: Build
-      run: cmake --build build --config Release -j 2
+      - name: Test the installed C++ and Python packages
+        run: |
+          prefix="$RUNNER_TEMP/venv"
+          cmake --install build --prefix "$prefix"
+          cmake -S tests/find-package -B build/consumer -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$prefix"
+          cmake --build build/consumer
+          ./build/consumer/maat_find_package_test
+          "$prefix/bin/python" -I -c 'from maat import ARCH, MaatEngine; MaatEngine(ARCH.X64)'
 
-    - name: Install
-      run: cmake --install build --config Release --prefix prefix
+  sanitize:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
 
-    - name: Test install directory
-      working-directory: tests/find-package
-      run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -Dmaat_DIR=${{ github.workspace }}/prefix/share/maat
-        cmake --build build
-        ./build/maat_find_package_test
+      - name: Install Ubuntu packages
+        run: sudo apt-get install -y libgmp-dev python3-dev
 
-    - name: Test
-      working-directory: build
-      run: |
-        ctest --output-on-failure -C Release -j 2
+      - *native_deps
+
+      - name: Install sanitizer-compatible Z3
+        working-directory: ${{ runner.temp }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          archive=z3-4.8.14-x64-glibc-2.31.zip
+          gh release download z3-4.8.14 --repo Z3Prover/z3 --pattern "$archive"
+          echo "5ffa4b8b2e04309560d78ef88779bd8353f64248129ca24f6d9e7eb9fdb0af6c  $archive" | sha256sum --check
+          unzip -q "$archive"
+
+      - name: Configure and build
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          cmake --preset ci-sanitize -DZ3_ROOT="$RUNNER_TEMP/z3-4.8.14-x64-glibc-2.31"
+          cmake --build build/sanitize
+
+      - name: Test with AddressSanitizer and UndefinedBehaviorSanitizer
+        env:
+          ASAN_OPTIONS: strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1:detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1
+        run: ctest --test-dir build/sanitize --output-on-failure --no-tests=error
