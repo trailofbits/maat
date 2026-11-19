@@ -8,7 +8,9 @@ Install GMP, Z3, and LIEF as described in [BUILDING.md](BUILDING.md), then run t
 
 ```sh
 git submodule update --init
-uv build --wheel --python 3.13
+# Sleigh uses git am to patch its private Ghidra checkout during this build.
+GIT_COMMITTER_NAME="Maat build" GIT_COMMITTER_EMAIL=build@example.invalid \
+  uv build --wheel --python 3.13
 uv venv --python 3.13 /tmp/pymaat-test
 uv pip install --python /tmp/pymaat-test/bin/python dist/*.whl
 /tmp/pymaat-test/bin/python -I -c 'from maat import ARCH, MaatEngine; MaatEngine(ARCH.X64)'
