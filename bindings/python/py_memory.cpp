@@ -80,7 +80,6 @@ static PyObject* MemEngine_read_buffer(PyObject* self, PyObject* args) {
     PyObject* addr;
     unsigned int nb_elems, elem_size=1;
     std::vector<Value> res;
-    PyObject* list;
 
     if( !PyArg_ParseTuple(args, "OI|I", &addr, &nb_elems, &elem_size)){
         return NULL;
@@ -102,18 +101,7 @@ static PyObject* MemEngine_read_buffer(PyObject* self, PyObject* args) {
         return PyErr_Format(PyExc_TypeError, "%s", "read_buffer(): first argument must be int or Expr");
     }
 
-    // Translate expressions list into python list
-    list = PyList_New(0);
-    if( list == NULL ){
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& val : res)
-    {
-        if( PyList_Append(list, PyValue_FromValue(val)) == -1){
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-    return list;
+    return native_to_py(res);
 }
 
 static PyObject* MemEngine_read_str(PyObject* self, PyObject* args) {

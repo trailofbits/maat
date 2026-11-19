@@ -271,7 +271,6 @@ static PyObject* FileAccessor_read_buffer(PyObject* self, PyObject* args)
 {
     unsigned int nb_elems, elem_size=1;
     std::vector<Value> res;
-    PyObject* list;
 
     if( !PyArg_ParseTuple(args, "I|I", &nb_elems, &elem_size)){
         return NULL;
@@ -286,19 +285,7 @@ static PyObject* FileAccessor_read_buffer(PyObject* self, PyObject* args)
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
 
-    // Translate expressions list into python list
-    list = PyList_New(0);
-    if( list == NULL ){
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& val : res)
-    {
-        if( PyList_Append(list, PyValue_FromValue(val)) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-    return list;
+    return native_to_py(res);
 }
 
 static PyMethodDef FileAccessor_methods[] = {
@@ -389,7 +376,6 @@ static PyObject* File_read_buffer(PyObject* self, PyObject* args)
 {
     unsigned int nb_elems, elem_size=1;
     std::vector<Value> res;
-    PyObject* list;
     addr_t offset = 0;
 
     if( !PyArg_ParseTuple(args, "KI|I", &offset, &nb_elems, &elem_size))
@@ -406,19 +392,7 @@ static PyObject* File_read_buffer(PyObject* self, PyObject* args)
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
 
-    // Translate expressions list into python list
-    list = PyList_New(0);
-    if( list == NULL ){
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& val : res)
-    {
-        if( PyList_Append(list, PyValue_FromValue(val)) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-    return list;
+    return native_to_py(res);
 }
 
 static PyMethodDef File_methods[] = {

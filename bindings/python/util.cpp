@@ -13,38 +13,41 @@ PyObject* create_class(PyObject* name, PyObject* bases, PyObject* dict){
     return res;
 }
 
-PyObject* native_to_py(const std::vector<Value>& values)
+template <typename Range, typename Convert>
+static PyObject* make_python_list(const Range& items, Convert convert)
 {
-    PyObject* list = PyList_New(0);
-    if( list == NULL )
+    PyObject* list = PyList_New(static_cast<Py_ssize_t>(items.size()));
+    if (!list)
+        return nullptr;
+    Py_ssize_t index = 0;
+    for (const auto& item : items)
     {
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& e : values)
-    {
-        if( PyList_Append(list, PyValue_FromValue(e)) == -1)
+        PyObject* object = convert(item);
+        // PyList_SetItem takes ownership of the factory's new reference.
+        if (!object || PyList_SetItem(list, index++, object) < 0)
         {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
+            Py_DECREF(list);
+            return nullptr;
         }
     }
     return list;
 }
 
+PyObject* native_to_py(const std::vector<Value>& values)
+{
+    return make_python_list(values, PyValue_FromValue);
+}
+
 PyObject* native_to_py(const std::unordered_set<Constraint>& constraints)
 {
-    PyObject* list = PyList_New(0);
-    if( list == NULL )
-    {
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Constraint& c : constraints)
-    {
-        if( PyList_Append(list, PyConstraint_FromConstraint(c)) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add constraint to python list");
-        }
-    }
-    return list;
+    return make_python_list(constraints, PyConstraint_FromConstraint);
+}
+
+PyObject* native_to_py(const std::set<std::string>& names)
+{
+    return make_python_list(names, [](const std::string& name) {
+        return PyUnicode_FromString(name.c_str());
+    });
 }
 
 Number bigint_to_number(size_t bits, PyObject* num)

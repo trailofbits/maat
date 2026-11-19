@@ -465,19 +465,7 @@ static PyObject* EVMTransaction_get_gas_price(PyObject* self, void* closure)
 
 static PyObject* EVMTransaction_get_data(PyObject* self, void* closure)
 {
-    // TODO(boyan): factorize this code with other places where we translate
-    // value lists to python
-    PyObject* list = PyList_New(0);
-    if( list == NULL ){
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& val : as_tx_object(self).transaction->data)
-    {
-        if( PyList_Append(list, PyValue_FromValue(val)) == -1){
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-    return list;
+    return native_to_py(as_tx_object(self).transaction->data);
 }
 
 static int EVMTransaction_set_data(PyObject* self, PyObject* py_data, void* closure){

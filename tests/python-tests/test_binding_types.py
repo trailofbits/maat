@@ -78,3 +78,27 @@ def test_reimport_restores_original_exports(monkeypatch):
     assert fresh.Var(8, "x").name == "x"
     assert fresh.Value is type(value)
     assert (value + fresh.Cst(8, 1)).as_uint() == 8
+
+
+def test_value_list_releases_wrappers():
+    ctx = maat.VarContext()
+    value_type = maat.Value
+    before = sys.getrefcount(value_type)
+    values = ctx.new_concolic_buffer("buf", b"abcd")
+    assert len(values) == 4
+    del values
+    after = sys.getrefcount(value_type)
+    assert after == before
+
+
+def test_constraint_list_releases_wrappers():
+    engine = maat.MaatEngine(maat.ARCH.X64)
+    value = maat.Var(8, "x")
+    engine.path.add(value == 1)
+    constraint_type = maat.Constraint
+    before = sys.getrefcount(constraint_type)
+    constraints = engine.path.get_related_constraints(value)
+    assert len(constraints) == 1
+    del constraints
+    after = sys.getrefcount(constraint_type)
+    assert after == before

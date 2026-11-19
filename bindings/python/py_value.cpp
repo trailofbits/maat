@@ -850,19 +850,7 @@ static PyObject* VarContext_update_from(PyObject* self, PyObject* args)
 
 static PyObject* VarContext_contained_vars(PyObject* self)
 {
-    PyObject* list = PyList_New(0);
-    if( list == NULL )
-    {
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const std::string& var : as_varctx_object(self).ctx->contained_vars())
-    {
-        if( PyList_Append(list, PyUnicode_FromString(var.c_str())) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-    return list;
+    return native_to_py(as_varctx_object(self).ctx->contained_vars());
 }
 
 static PyMethodDef VarContext_methods[] = {

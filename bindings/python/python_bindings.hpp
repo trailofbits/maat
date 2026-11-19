@@ -433,6 +433,7 @@ public:
 // returns a python error on error
 PyObject* native_to_py(const std::vector<Value>&);
 PyObject* native_to_py(const std::unordered_set<Constraint>& constraints);
+PyObject* native_to_py(const std::set<std::string>& names);
 
 // Python bigint into multiprecision number
 // num MUST be a PyLong object (no further type checks in the function)
