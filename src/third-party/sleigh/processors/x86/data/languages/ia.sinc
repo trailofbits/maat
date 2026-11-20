@@ -8866,38 +8866,15 @@ define pcodeop pmaddwd;
     conditionalAssign(XmmReg1[112,16],srcCopy[112,16] s< XmmReg1[112,16],srcCopy[112,16],XmmReg1[112,16]);
 }
 
-:PMINUB        mmxreg1, mmxreg2_m64      is vexMode=0 &  mandover=0 & byte=0x0F; byte=0xDA; mmxreg1 ... & mmxreg2_m64 
-{ 
-    local srcCopy:8 = mmxreg2_m64;
-    conditionalAssign(mmxreg1[0,8],srcCopy[0,8] < mmxreg1[0,8],srcCopy[0,8],mmxreg1[0,8]); 
-    conditionalAssign(mmxreg1[8,8],srcCopy[8,8] < mmxreg1[8,8],srcCopy[8,8],mmxreg1[8,8]); 
-    conditionalAssign(mmxreg1[16,8],srcCopy[16,8] < mmxreg1[16,8],srcCopy[16,8],mmxreg1[16,8]); 
-    conditionalAssign(mmxreg1[24,8],srcCopy[24,8] < mmxreg1[24,8],srcCopy[24,8],mmxreg1[24,8]); 
-    conditionalAssign(mmxreg1[32,8],srcCopy[32,8] < mmxreg1[32,8],srcCopy[32,8],mmxreg1[32,8]); 
-    conditionalAssign(mmxreg1[40,8],srcCopy[40,8] < mmxreg1[40,8],srcCopy[40,8],mmxreg1[40,8]); 
-    conditionalAssign(mmxreg1[48,8],srcCopy[48,8] < mmxreg1[48,8],srcCopy[48,8],mmxreg1[48,8]); 
-    conditionalAssign(mmxreg1[56,8],srcCopy[56,8] < mmxreg1[56,8],srcCopy[56,8],mmxreg1[56,8]); 
+define pcodeop pminub;
+:PMINUB mmxreg1, mmxreg2_m64 is vexMode=0 & mandover=0 & byte=0x0F; byte=0xDA; mmxreg1 ... & mmxreg2_m64
+{
+    mmxreg1 = pminub(mmxreg1, mmxreg2_m64);
 }
 
-:PMINUB        XmmReg1, XmmReg2_m128     is vexMode=0 &  $(PRE_66) & byte=0x0F; byte=0xDA; XmmReg1 ... & XmmReg2_m128 
-{ 
-    local srcCopy:16 = XmmReg2_m128;
-    conditionalAssign(XmmReg1[0,8],srcCopy[0,8] < XmmReg1[0,8],srcCopy[0,8],XmmReg1[0,8]); 
-    conditionalAssign(XmmReg1[8,8],srcCopy[8,8] < XmmReg1[8,8],srcCopy[8,8],XmmReg1[8,8]); 
-    conditionalAssign(XmmReg1[16,8],srcCopy[16,8] < XmmReg1[16,8],srcCopy[16,8],XmmReg1[16,8]); 
-    conditionalAssign(XmmReg1[24,8],srcCopy[24,8] < XmmReg1[24,8],srcCopy[24,8],XmmReg1[24,8]); 
-    conditionalAssign(XmmReg1[32,8],srcCopy[32,8] < XmmReg1[32,8],srcCopy[32,8],XmmReg1[32,8]); 
-    conditionalAssign(XmmReg1[40,8],srcCopy[40,8] < XmmReg1[40,8],srcCopy[40,8],XmmReg1[40,8]); 
-    conditionalAssign(XmmReg1[48,8],srcCopy[48,8] < XmmReg1[48,8],srcCopy[48,8],XmmReg1[48,8]); 
-    conditionalAssign(XmmReg1[56,8],srcCopy[56,8] < XmmReg1[56,8],srcCopy[56,8],XmmReg1[56,8]); 
-    conditionalAssign(XmmReg1[64,8],srcCopy[64,8] < XmmReg1[64,8],srcCopy[64,8],XmmReg1[64,8]); 
-    conditionalAssign(XmmReg1[72,8],srcCopy[72,8] < XmmReg1[72,8],srcCopy[72,8],XmmReg1[72,8]); 
-    conditionalAssign(XmmReg1[80,8],srcCopy[80,8] < XmmReg1[80,8],srcCopy[80,8],XmmReg1[80,8]); 
-    conditionalAssign(XmmReg1[88,8],srcCopy[88,8] < XmmReg1[88,8],srcCopy[88,8],XmmReg1[88,8]); 
-    conditionalAssign(XmmReg1[96,8],srcCopy[96,8] < XmmReg1[96,8],srcCopy[96,8],XmmReg1[96,8]); 
-    conditionalAssign(XmmReg1[104,8],srcCopy[104,8] < XmmReg1[104,8],srcCopy[104,8],XmmReg1[104,8]); 
-    conditionalAssign(XmmReg1[112,8],srcCopy[112,8] < XmmReg1[112,8],srcCopy[112,8],XmmReg1[112,8]); 
-    conditionalAssign(XmmReg1[120,8],srcCopy[120,8] < XmmReg1[120,8],srcCopy[120,8],XmmReg1[120,8]); 
+:PMINUB XmmReg1, XmmReg2_m128 is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0xDA; XmmReg1 ... & XmmReg2_m128
+{
+    XmmReg1 = pminub(XmmReg1, XmmReg2_m128);
 }
 
 #in 64-bit mode the default operand size is 64 bits
