@@ -109,6 +109,97 @@ def test_cmpxchg_memory_falls_through(arch, equal):
     assert m.mem.read(0x2000, 4).as_uint() == (3 if equal else 1)
 
 
+@pytest.mark.parametrize("arch,width,opcode", [
+    (ARCH.X86, 8, "0f b0"), (ARCH.X86, 16, "66 0f b1"),
+    (ARCH.X64, 8, "0f b0"), (ARCH.X64, 16, "66 0f b1"), (ARCH.X64, 64, "48 0f b1"),
+])
+@pytest.mark.parametrize("memory", [False, True], ids=["register", "memory"])
+def test_cmpxchg_symbolic_accumulator(arch, width, opcode, memory):
+    m = MaatEngine(arch)
+    m.mem.map(0x1000, 0x2fff)
+    # Compare the accumulator with BL/BX/RBX or [EBX/RBX], with CL/CX/RCX as source.
+    code = bytes.fromhex(opcode) + bytes([0x0b if memory else 0xcb])
+    m.mem.write(0x1000, code + b"\x90")
+    reg_width = 64 if arch == ARCH.X64 else 32
+    if arch == ARCH.X64:
+        m.cpu.rax = Var(reg_width, "acc")
+        m.cpu.rbx, m.cpu.rcx = 0x2000 if memory else 7, 9
+    else:
+        m.cpu.eax = Var(reg_width, "acc")
+        m.cpu.ebx, m.cpu.ecx = 0x2000 if memory else 7, 9
+    if memory:
+        m.mem.write(0x2000, Cst(width, 7))
+
+    writes = []
+
+    def record_write(engine):
+        access = engine.info.mem_access
+        writes.append((access.addr.as_uint(), access.size, access.value))
+
+    m.hooks.add(EVENT.MEM_W, WHEN.BEFORE, callbacks=[record_write])
+    assert m.run_from(0x1000, 2) == STOP.INST_COUNT
+    assert (m.cpu.rip if arch == ARCH.X64 else m.cpu.eip).as_uint() == 0x1001 + len(code)
+    if memory:
+        assert [(addr, size) for addr, size, _ in writes] == [(0x2000, width // 8)]
+        dest = m.mem.read(0x2000, width // 8)
+    else:
+        assert writes == []
+        dest = m.cpu.rbx if arch == ARCH.X64 else m.cpu.ebx
+    acc = m.cpu.rax if arch == ARCH.X64 else m.cpu.eax
+    upper = 1 << width if width < reg_width else 0
+    for old_acc, equal in ((upper | 7, True), (upper | 6, False)):
+        m.vars.set("acc", old_acc, reg_width)
+        assert acc.as_uint(m.vars) == upper | 7
+        assert m.cpu.zf.as_uint(m.vars) == equal
+        assert dest.as_uint(m.vars) == (9 if equal else 7)
+        if memory:
+            assert writes[0][2].as_uint(m.vars) == dest.as_uint(m.vars)
+
+
+def test_cmpxchg_accumulator_is_destination():
+    m = MaatEngine(ARCH.X64)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes.fromhex("48 0f b1 c8"))  # CMPXCHG RAX, RCX
+    m.cpu.rax = Var(64, "acc")
+    m.cpu.rcx = 9
+
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    m.vars.set("acc", 7, 64)
+    assert m.cpu.rax.as_uint(m.vars) == 9
+    assert m.cpu.zf.as_uint(m.vars) == 1
+
+
+@pytest.mark.parametrize("width,opcode", [(32, "f0 0f b1 08"), (64, "f0 48 0f b1 08")])
+@pytest.mark.parametrize("equal", [False, True])
+def test_locked_cmpxchg_uses_original_address(width, opcode, equal):
+    m = MaatEngine(ARCH.X64)
+    m.mem.map(0x1000, 0x2fff)
+    # LOCK CMPXCHG [RAX], ECX/RCX. Set upper bits to exercise the 32-bit failure path.
+    address = 0x100002000
+    m.mem.map(address, address + 0xfff)
+    m.mem.write(0x1000, bytes.fromhex(opcode))
+    old = (address & ((1 << width) - 1)) if equal else 7
+    m.mem.write(address, Cst(width, old))
+    m.cpu.rax, m.cpu.rcx = address, 9
+    accesses = []
+
+    def record_read(engine):
+        access = engine.info.mem_access
+        accesses.append(("read", access.addr.as_uint(), access.size))
+
+    def record_write(engine):
+        access = engine.info.mem_access
+        accesses.append(("write", access.addr.as_uint(), access.size, access.value.as_uint()))
+
+    m.hooks.add(EVENT.MEM_R, WHEN.BEFORE, callbacks=[record_read])
+    m.hooks.add(EVENT.MEM_W, WHEN.BEFORE, callbacks=[record_write])
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    result = 9 if equal else old
+    assert accesses == [("read", address, width // 8), ("write", address, width // 8, result)]
+    assert m.mem.read(address, width // 8).as_uint() == result
+    assert m.cpu.rax.as_uint() == (address if equal else old)
+
+
 @pytest.mark.parametrize("opcode,src", [("d3 e8", 0), ("0f ad d0", 0), ("0f ad d0", 1)])
 @pytest.mark.parametrize("count", [0, 1, 32, 33])
 @pytest.mark.parametrize("old_of", [0, 1])
