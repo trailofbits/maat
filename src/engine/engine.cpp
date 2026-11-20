@@ -356,7 +356,17 @@ info::Stop MaatEngine::run(int max_inst)
             ASSERT_SUCCESS(process_addr_params(inst, pinst))
 
             // Post-process IR instruction once Addr params are resolved
-            pinst = cpu.post_process_inst(inst, pinst);
+            try
+            {
+                pinst = cpu.post_process_inst(inst, pinst);
+            }
+            catch (const unsupported_instruction_exception& e)
+            {
+                info.stop = info::Stop::UNSUPPORTED_INST;
+                info.addr = asm_inst->addr();
+                log.error(e.what(), " at 0x", std::hex, asm_inst->addr());
+                return info.stop;
+            }
 
             // Handle CALLOTHER operation
             if (inst.op == ir::Op::CALLOTHER)
