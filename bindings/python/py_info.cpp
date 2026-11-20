@@ -9,15 +9,8 @@ static void RegAccess_dealloc(PyObject* self){
         delete ((RegAccess_Object*)self)->access;
     }
     as_regaccess_object(self).access = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
-
-static int RegAccess_print(PyObject* self, void * io, int s){
-    if (as_regaccess_object(self).arch == nullptr)
-        return 1;
-    as_regaccess_object(self).access->print(std::cout, *as_regaccess_object(self).arch);
-    return 0;
-}
 
 static PyObject* RegAccess_str(PyObject* self){
     std::stringstream res;
@@ -71,45 +64,17 @@ static PyGetSetDef RegAccess_getset[] = {
     {NULL}
 };
 
-PyTypeObject RegAccess_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "RegAccess",                                   /* tp_name */
-    sizeof(RegAccess_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)RegAccess_dealloc,            /* tp_dealloc */
-    (printfunc)RegAccess_print,               /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    RegAccess_repr,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    RegAccess_str,                            /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Register access info",                     /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    0,                                        /* tp_methods */
-    0,                                        /* tp_members */
-    RegAccess_getset,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot RegAccess_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(RegAccess_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(RegAccess_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(RegAccess_str)},
+    {Py_tp_doc, const_cast<char*>("Register access info")},
+    {Py_tp_getset, RegAccess_getset},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::RegAccess_spec = {
+    "maat.RegAccess", sizeof(RegAccess_Object), 0, binding_type_flags, RegAccess_slots
 };
 
 PyObject* PyRegAccess_FromRegAccess(info::RegAccess* access, bool is_ref)
@@ -117,8 +82,7 @@ PyObject* PyRegAccess_FromRegAccess(info::RegAccess* access, bool is_ref)
     RegAccess_Object* object;
 
     // Create object
-    PyType_Ready(&RegAccess_Type);
-    object = PyObject_New(RegAccess_Object, &RegAccess_Type);
+    object = PyObject_New(RegAccess_Object, binding_types().RegAccess);
     if( object != nullptr ){
         object->access = access;
         object->is_ref = is_ref;
@@ -132,8 +96,7 @@ PyObject* PyRegAccess_FromRegAccessAndArch(info::RegAccess* access, bool is_ref,
     RegAccess_Object* object;
 
     // Create object
-    PyType_Ready(&RegAccess_Type);
-    object = PyObject_New(RegAccess_Object, &RegAccess_Type);
+    object = PyObject_New(RegAccess_Object, binding_types().RegAccess);
     if( object != nullptr ){
         object->access = access;
         object->is_ref = is_ref;
@@ -149,13 +112,8 @@ static void MemAccess_dealloc(PyObject* self){
         delete ((MemAccess_Object*)self)->access;
     }
     as_memaccess_object(self).access = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
-
-static int MemAccess_print(PyObject* self, void * io, int s){
-    std::cout << std::endl << *((MemAccess_Object*)self)->access << std::flush;
-    return 0;
-}
 
 static PyObject* MemAccess_str(PyObject* self) {
     std::stringstream res;
@@ -205,53 +163,24 @@ static PyGetSetDef MemAccess_getset[] = {
 };
 
 
-PyTypeObject MemAccess_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "MemAccess",                                   /* tp_name */
-    sizeof(MemAccess_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)MemAccess_dealloc,            /* tp_dealloc */
-    (printfunc)MemAccess_print,               /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    MemAccess_repr,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    MemAccess_str,                            /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Memory Access Info",                     /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    0,                                        /* tp_methods */
-    0,                                        /* tp_members */
-    MemAccess_getset,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot MemAccess_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(MemAccess_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(MemAccess_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(MemAccess_str)},
+    {Py_tp_doc, const_cast<char*>("Memory Access Info")},
+    {Py_tp_getset, MemAccess_getset},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::MemAccess_spec = {
+    "maat.MemAccess", sizeof(MemAccess_Object), 0, binding_type_flags, MemAccess_slots
 };
 
 PyObject* PyMemAccess_FromMemAccess(info::MemAccess* access, bool is_ref){
     MemAccess_Object* object;
     
     // Create object
-    PyType_Ready(&MemAccess_Type);
-    object = PyObject_New(MemAccess_Object, &MemAccess_Type);
+    object = PyObject_New(MemAccess_Object, binding_types().MemAccess);
     if( object != nullptr ){
         object->access = access;
         object->is_ref = is_ref;
@@ -265,13 +194,8 @@ static void Branch_dealloc(PyObject* self){
         delete ((Branch_Object*)self)->branch;
     }
     as_branch_object(self).branch = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
-
-static int Branch_print(PyObject* self, void * io, int s){
-    std::cout << std::endl << *(((Branch_Object*)self)->branch) << std::flush;
-    return 0;
-}
 
 static PyObject* Branch_str(PyObject* self) {
     std::stringstream res;
@@ -331,54 +255,24 @@ static PyGetSetDef Branch_getset[] = {
 };
 
 
-PyTypeObject Branch_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "Branch",                                   /* tp_name */
-    sizeof(Branch_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)Branch_dealloc,          /* tp_dealloc */
-    (printfunc)Branch_print,             /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    Branch_repr,                         /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    Branch_str,                          /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Branch operation info",                              /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    0,                                        /* tp_methods */
-    0,                                        /* tp_members */
-    Branch_getset,                       /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot Branch_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(Branch_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(Branch_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(Branch_str)},
+    {Py_tp_doc, const_cast<char*>("Branch operation info")},
+    {Py_tp_getset, Branch_getset},
+    {0, nullptr}
 };
 
+PyType_Spec BindingTypes::Branch_spec = {
+    "maat.Branch", sizeof(Branch_Object), 0, binding_type_flags, Branch_slots
+};
 
 PyObject* PyBranch_FromBranch(info::Branch* branch, bool is_ref){
     Branch_Object* object;
     
     // Create object
-    PyType_Ready(&Branch_Type);
-    object = PyObject_New(Branch_Object, &Branch_Type);
+    object = PyObject_New(Branch_Object, binding_types().Branch);
     if( object != nullptr ){
         object->branch = branch;
         object->is_ref = is_ref;
@@ -392,19 +286,13 @@ static void Info_dealloc(PyObject* self){
         delete ((Info_Object*)self)->info;
     }
     as_info_object(self).info = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 static PyObject* Info_str(PyObject* self) {
     std::stringstream res;
     as_info_object(self).info->print(res, *as_info_object(self).arch);
     return PyUnicode_FromString(res.str().c_str());
-}
-
-static int Info_print(PyObject* self, void * io, int s){
-    as_info_object(self).info->print(std::cout, *as_info_object(self).arch);
-    std::cout << std::flush;
-    return 0;
 }
 
 static PyObject* Info_repr(PyObject* self) {
@@ -469,58 +357,24 @@ static PyGetSetDef Info_getset[] = {
     {NULL}
 };
 
-/* Type description for python Info objects */
-PyTypeObject Info_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "Info",                                   /* tp_name */
-    sizeof(Info_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)Info_dealloc,                 /* tp_dealloc */
-    (printfunc)Info_print,                    /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    Info_repr,                                /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    Info_str,                                 /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Symbolic Engine Info",                   /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    0,                                        /* tp_methods */
-    0,                                        /* tp_members */
-    Info_getset,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot Info_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(Info_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(Info_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(Info_str)},
+    {Py_tp_doc, const_cast<char*>("Symbolic Engine Info")},
+    {Py_tp_getset, Info_getset},
+    {0, nullptr}
 };
 
-PyObject* get_Info_Type(){
-    return (PyObject*)&Info_Type;
-}
+PyType_Spec BindingTypes::Info_spec = {
+    "maat.Info", sizeof(Info_Object), 0, binding_type_flags, Info_slots
+};
 
 PyObject* PyInfo_FromInfo(info::Info* info, bool is_ref){
     Info_Object* object;
     
     // Create object
-    PyType_Ready(&Info_Type);
-    object = PyObject_New(Info_Object, &Info_Type);
+    object = PyObject_New(Info_Object, binding_types().Info);
     if( object != nullptr ){
         object->info = info;
         object->is_ref = is_ref;
@@ -533,8 +387,7 @@ PyObject* PyInfo_FromInfoAndArch(info::Info* info, bool is_ref, Arch* arch){
     Info_Object* object;
 
     // Create object
-    PyType_Ready(&Info_Type);
-    object = PyObject_New(Info_Object, &Info_Type);
+    object = PyObject_New(Info_Object, binding_types().Info);
     if( object != nullptr ){
         object->info = info;
         object->is_ref = is_ref;

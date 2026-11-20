@@ -7,18 +7,13 @@ namespace py {
 // =============== Storage =================
 static void EVMStorage_dealloc(PyObject* self){
     as_storage_object(self).storage = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 static PyObject* EVMStorage_str(PyObject* self){
     std::stringstream res;
     res << *as_storage_object(self).storage;
     return PyUnicode_FromString(res.str().c_str());
-}
-
-static int EVMStorage_print(PyObject* self, void * io, int s){
-    std::cout << *as_storage_object(self).storage;
-    return 0;
 }
 
 static PyObject* EVMStorage_repr(PyObject* self) {
@@ -38,45 +33,17 @@ static PyMethodDef Storage_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-PyTypeObject EVMStorage_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "EVMStorage",                                   /* tp_name */
-    sizeof(EVMStorage_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)EVMStorage_dealloc,            /* tp_dealloc */
-    (printfunc)EVMStorage_print,               /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    EVMStorage_repr,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    EVMStorage_str,                            /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "EVM Storage memory",                     /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    Storage_methods,                        /* tp_methods */
-    0,                                        /* tp_members */
-    0,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot EVMStorage_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(EVMStorage_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(EVMStorage_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(EVMStorage_str)},
+    {Py_tp_doc, const_cast<char*>("EVM Storage memory")},
+    {Py_tp_methods, Storage_methods},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::EVMStorage_spec = {
+    "maat.EVMStorage", sizeof(EVMStorage_Object), 0, binding_type_flags, EVMStorage_slots
 };
 
 PyObject* PyEVMStorage_FromStorage(env::EVM::Storage* s)
@@ -84,8 +51,7 @@ PyObject* PyEVMStorage_FromStorage(env::EVM::Storage* s)
     EVMStorage_Object* object;
 
     // Create object
-    PyType_Ready(&EVMStorage_Type);
-    object = PyObject_New(EVMStorage_Object, &EVMStorage_Type);
+    object = PyObject_New(EVMStorage_Object, binding_types().EVMStorage);
     if( object != nullptr ){
         object->storage = s;
     }
@@ -96,18 +62,13 @@ PyObject* PyEVMStorage_FromStorage(env::EVM::Storage* s)
 // =============== Stack =================
 static void EVMStack_dealloc(PyObject* self){
     as_stack_object(self).stack = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 static PyObject* EVMStack_str(PyObject* self){
     std::stringstream res;
     res << *as_stack_object(self).stack;
     return PyUnicode_FromString(res.str().c_str());
-}
-
-static int EVMStack_print(PyObject* self, void * io, int s){
-    std::cout << *as_stack_object(self).stack;
-    return 0;
 }
 
 static PyObject* EVMStack_repr(PyObject* self) {
@@ -118,7 +79,7 @@ static PyObject* Stack_push(PyObject* self, PyObject* args)
 {
     Value_Object* value;
 
-    if (not PyArg_ParseTuple(args, "O!", get_Value_Type(), &value))
+    if (not PyArg_ParseTuple(args, "O!", binding_types().Value, &value))
         return NULL;
 
     as_stack_object(self).stack->push(*(value->value));
@@ -131,45 +92,17 @@ static PyMethodDef Stack_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-PyTypeObject EVMStack_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "EVMStack",                                   /* tp_name */
-    sizeof(EVMStack_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)EVMStack_dealloc,            /* tp_dealloc */
-    (printfunc)EVMStack_print,               /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    EVMStack_repr,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    EVMStack_str,                            /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "EVM Stack",                     /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    Stack_methods,                        /* tp_methods */
-    0,                                        /* tp_members */
-    0,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot EVMStack_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(EVMStack_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(EVMStack_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(EVMStack_str)},
+    {Py_tp_doc, const_cast<char*>("EVM Stack")},
+    {Py_tp_methods, Stack_methods},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::EVMStack_spec = {
+    "maat.EVMStack", sizeof(EVMStack_Object), 0, binding_type_flags, EVMStack_slots
 };
 
 PyObject* PyEVMStack_FromStack(env::EVM::Stack* s)
@@ -177,8 +110,7 @@ PyObject* PyEVMStack_FromStack(env::EVM::Stack* s)
     EVMStack_Object* object;
 
     // Create object
-    PyType_Ready(&EVMStack_Type);
-    object = PyObject_New(EVMStack_Object, &EVMStack_Type);
+    object = PyObject_New(EVMStack_Object, binding_types().EVMStack);
     if( object != nullptr ){
         object->stack = s;
     }
@@ -188,14 +120,14 @@ PyObject* PyEVMStack_FromStack(env::EVM::Stack* s)
 // =============== Memory =================
 static void EVMMemory_dealloc(PyObject* self){
     as_evm_memory_object(self).memory = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 static PyObject* EVMMemory_write(PyObject* self, PyObject* args)
 {
     Value_Object *value, *addr;
 
-    if (not PyArg_ParseTuple(args, "O!O!", get_Value_Type(), &addr, get_Value_Type(), &value))
+    if (not PyArg_ParseTuple(args, "O!O!", binding_types().Value, &addr, binding_types().Value, &value))
         return NULL;
 
     as_evm_memory_object(self).memory->write(
@@ -211,7 +143,7 @@ static PyObject* EVMMemory_write_buffer(PyObject* self, PyObject* args)
     PyObject *py_values, *addr;
     std::vector<Value> values;
 
-    if (not PyArg_ParseTuple(args, "O!O!", get_Value_Type(), &addr, &PyList_Type, &py_values))
+    if (not PyArg_ParseTuple(args, "O!O!", binding_types().Value, &addr, &PyList_Type, &py_values))
         return NULL;
 
     // TODO(boyan): factorize this with other code that translates a Value list
@@ -219,7 +151,7 @@ static PyObject* EVMMemory_write_buffer(PyObject* self, PyObject* args)
     for (int i = 0; i < PyList_Size(py_values); i++)
     {
         PyObject* val = PyList_GetItem(py_values, i);
-        if (!PyObject_TypeCheck(val, (PyTypeObject*)get_Value_Type()))
+        if (!PyObject_TypeCheck(val, binding_types().Value))
         {
             return PyErr_Format(PyExc_TypeError, "Expected a a list of 'Value'");
         }
@@ -240,45 +172,15 @@ static PyMethodDef EVMMemory_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-PyTypeObject EVMMemory_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "EVMMemory",                                   /* tp_name */
-    sizeof(EVMMemory_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)EVMMemory_dealloc,            /* tp_dealloc */
-    0,               /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                            /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "EVM Memory",                     /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    EVMMemory_methods,                        /* tp_methods */
-    0,                                        /* tp_members */
-    0,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot EVMMemory_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(EVMMemory_dealloc)},
+    {Py_tp_doc, const_cast<char*>("EVM Memory")},
+    {Py_tp_methods, EVMMemory_methods},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::EVMMemory_spec = {
+    "maat.EVMMemory", sizeof(EVMMemory_Object), 0, binding_type_flags, EVMMemory_slots
 };
 
 PyObject* PyEVMMemory_FromMemory(env::EVM::Memory* m)
@@ -286,8 +188,7 @@ PyObject* PyEVMMemory_FromMemory(env::EVM::Memory* m)
     EVMMemory_Object* object;
 
     // Create object
-    PyType_Ready(&EVMMemory_Type);
-    object = PyObject_New(EVMMemory_Object, &EVMMemory_Type);
+    object = PyObject_New(EVMMemory_Object, binding_types().EVMMemory);
     if( object != nullptr ){
         object->memory = m;
     }
@@ -297,7 +198,7 @@ PyObject* PyEVMMemory_FromMemory(env::EVM::Memory* m)
 // =============== Storage slots iterator ===================
 static void StorageIterator_dealloc(PyObject* self)
 {
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 PyObject* StorageIterator_iter(PyObject *self)
@@ -327,45 +228,16 @@ PyObject* StorageIterator_iternext(PyObject *self)
     }
 }
 
-static PyTypeObject StorageIterator_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "StorageIterator ",                            /* tp_name */
-    sizeof(StorageIterator_Object),                /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)StorageIterator_dealloc,           /* tp_dealloc */
-    0,                                       /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "EVM Storage iterator",                          /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    StorageIterator_iter,                                        /* tp_iter */
-    StorageIterator_iternext,                                        /* tp_iternext */
-    0,                       /* tp_methods */
-    0,                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot StorageIterator_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(StorageIterator_dealloc)},
+    {Py_tp_doc, const_cast<char*>("EVM Storage iterator")},
+    {Py_tp_iter, reinterpret_cast<void*>(StorageIterator_iter)},
+    {Py_tp_iternext, reinterpret_cast<void*>(StorageIterator_iternext)},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::StorageIterator_spec = {
+    "maat.StorageIterator", sizeof(StorageIterator_Object), 0, binding_type_flags, StorageIterator_slots
 };
 
 PyObject* PyStorageIterator(
@@ -375,8 +247,7 @@ PyObject* PyStorageIterator(
     StorageIterator_Object* object;
 
     // Create object
-    PyType_Ready(&StorageIterator_Type);
-    object = PyObject_New(StorageIterator_Object, &StorageIterator_Type);
+    object = PyObject_New(StorageIterator_Object, binding_types().StorageIterator);
     if (object != nullptr)
     {
         object->current = begin;
@@ -392,7 +263,7 @@ static void EVMContract_dealloc(PyObject* self){
     Py_XDECREF(as_contract_object(self).storage); as_contract_object(self).storage = nullptr;
     Py_XDECREF(as_contract_object(self).stack); as_contract_object(self).stack = nullptr;
     Py_XDECREF(as_contract_object(self).memory); as_contract_object(self).memory = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 
@@ -410,7 +281,7 @@ static PyObject* EVMContract_get_transaction(PyObject* self, void* closure)
 static int EVMContract_set_transaction(PyObject* self, PyObject* tx, void* closure){
     if (tx == Py_None)
         as_contract_object(self).contract->transaction = std::nullopt;
-    else if (PyObject_TypeCheck(tx, (PyTypeObject*)get_EVMTransaction_Type()))
+    else if (PyObject_TypeCheck(tx, binding_types().EVMTransaction))
         as_contract_object(self).contract->transaction = *as_tx_object(tx).transaction;
     else{
         PyErr_SetString(PyExc_TypeError, "Expected EVM transaction");
@@ -433,7 +304,7 @@ static PyObject* EVMContract_get_out_transaction(PyObject* self, void* closure)
 static int EVMContract_set_out_transaction(PyObject* self, PyObject* tx, void* closure){
     if (tx == Py_None)
         as_contract_object(self).contract->outgoing_transaction = std::nullopt;
-    else if (PyObject_TypeCheck(tx, (PyTypeObject*)get_EVMTransaction_Type()))
+    else if (PyObject_TypeCheck(tx, binding_types().EVMTransaction))
         as_contract_object(self).contract->outgoing_transaction = *as_tx_object(tx).transaction;
     else
     {
@@ -456,7 +327,7 @@ static PyObject* EVMContract_get_result_from_last_call(PyObject* self, void* clo
 static int EVMContract_set_result_from_last_call(PyObject* self, PyObject* tx, void* closure){
     if (tx == Py_None)
         as_contract_object(self).contract->result_from_last_call = std::nullopt;
-    else if (PyObject_TypeCheck(tx, (PyTypeObject*)get_EVMTransactionResult_Type()))
+    else if (PyObject_TypeCheck(tx, binding_types().EVMTransactionResult))
         as_contract_object(self).contract->result_from_last_call = 
             *as_tx_result_object(tx).result;
     else
@@ -476,7 +347,7 @@ static PyObject* EVMContract_get_balance(PyObject* self, void* closure){
 }
 
 static int EVMContract_set_balance(PyObject* self, PyObject* balance, void* closure){
-    if (PyObject_TypeCheck(balance, (PyTypeObject*)get_Value_Type()))
+    if (PyObject_TypeCheck(balance, binding_types().Value))
         as_contract_object(self).contract->balance = 
             *as_value_object(balance).value;
     else if (PyLong_Check(balance))
@@ -505,45 +376,16 @@ static PyMemberDef EVMContract_members[] = {
     {NULL}
 };
 
-PyTypeObject EVMContract_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "EVMContract",                                   /* tp_name */
-    sizeof(EVMContract_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)EVMContract_dealloc,            /* tp_dealloc */
-    0,               /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                            /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Ethereum contract",                     /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    0,                                        /* tp_methods */
-    EVMContract_members,                    /* tp_members */
-    EVMContract_getset,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot EVMContract_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(EVMContract_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Ethereum contract")},
+    {Py_tp_members, EVMContract_members},
+    {Py_tp_getset, EVMContract_getset},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::EVMContract_spec = {
+    "maat.EVMContract", sizeof(EVMContract_Object), 0, binding_type_flags, EVMContract_slots
 };
 
 PyObject* PyEVMContract_FromContract(env::EVM::Contract* contract)
@@ -551,8 +393,7 @@ PyObject* PyEVMContract_FromContract(env::EVM::Contract* contract)
     EVMContract_Object* object;
 
     // Create object
-    PyType_Ready(&EVMContract_Type);
-    object = PyObject_New(EVMContract_Object, &EVMContract_Type);
+    object = PyObject_New(EVMContract_Object, binding_types().EVMContract);
     if( object != nullptr ){
         object->contract = contract;
         object->storage = PyEVMStorage_FromStorage(contract->storage.get());
@@ -562,11 +403,6 @@ PyObject* PyEVMContract_FromContract(env::EVM::Contract* contract)
     return (PyObject*)object;
 }
 
-PyObject* get_EVMContract_Type()
-{
-    return (PyObject*)&EVMContract_Type;
-}
-
 
 // ================== EVM Transaction =================
 
@@ -574,7 +410,7 @@ static void EVMTransaction_dealloc(PyObject* self){
     if (not as_tx_object(self).is_ref)
         delete as_tx_object(self).transaction;
     as_tx_object(self).transaction = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 
@@ -629,19 +465,7 @@ static PyObject* EVMTransaction_get_gas_price(PyObject* self, void* closure)
 
 static PyObject* EVMTransaction_get_data(PyObject* self, void* closure)
 {
-    // TODO(boyan): factorize this code with other places where we translate
-    // value lists to python
-    PyObject* list = PyList_New(0);
-    if( list == NULL ){
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& val : as_tx_object(self).transaction->data)
-    {
-        if( PyList_Append(list, PyValue_FromValue(val)) == -1){
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-    return list;
+    return native_to_py(as_tx_object(self).transaction->data);
 }
 
 static int EVMTransaction_set_data(PyObject* self, PyObject* py_data, void* closure){
@@ -656,7 +480,7 @@ static int EVMTransaction_set_data(PyObject* self, PyObject* py_data, void* clos
     for (int i = 0; i < PyList_Size(py_data); i++)
     {
         PyObject* val = PyList_GetItem(py_data, i);
-        if (!PyObject_TypeCheck(val, (PyTypeObject*)get_Value_Type()))
+        if (!PyObject_TypeCheck(val, binding_types().Value))
         {
             PyErr_SetString(PyExc_TypeError, "'data' must be a list of 'Value'");
             return 1;
@@ -691,45 +515,16 @@ static PyGetSetDef EVMTransaction_getset[] = {
     {NULL}
 };
 
-PyTypeObject EVMTransaction_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "EVMTransaction",                                   /* tp_name */
-    sizeof(EVMTransaction_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)EVMTransaction_dealloc,            /* tp_dealloc */
-    0,               /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                            /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Ethereum transaction",                     /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    EVMTransaction_methods,                   /* tp_methods */
-    0,                                        /* tp_members */
-    EVMTransaction_getset,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot EVMTransaction_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(EVMTransaction_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Ethereum transaction")},
+    {Py_tp_methods, EVMTransaction_methods},
+    {Py_tp_getset, EVMTransaction_getset},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::EVMTransaction_spec = {
+    "maat.EVMTransaction", sizeof(EVMTransaction_Object), 0, binding_type_flags, EVMTransaction_slots
 };
 
 PyObject* PyEVMTx_FromTx(env::EVM::Transaction* tx, bool is_ref)
@@ -737,18 +532,12 @@ PyObject* PyEVMTx_FromTx(env::EVM::Transaction* tx, bool is_ref)
     EVMTransaction_Object* object;
 
     // Create object
-    PyType_Ready(&EVMTransaction_Type);
-    object = PyObject_New(EVMTransaction_Object, &EVMTransaction_Type);
+    object = PyObject_New(EVMTransaction_Object, binding_types().EVMTransaction);
     if( object != nullptr ){
         object->transaction = tx;
         object->is_ref = is_ref;
     }
     return (PyObject*)object;
-}
-
-PyObject* get_EVMTransaction_Type()
-{
-    return (PyObject*)&EVMTransaction_Type;
 }
 
 
@@ -763,13 +552,13 @@ PyObject* maat_Transaction(PyObject* self, PyObject* args){
     std::vector<Value> data;
 
     if( !PyArg_ParseTuple(args, "O!O!O!O!OO!O!",
-        get_Value_Type(), &py_origin,
-        get_Value_Type(), &py_sender,
+        binding_types().Value, &py_origin,
+        binding_types().Value, &py_sender,
         &PyLong_Type, &py_recipient,
-        get_Value_Type(), &py_value,
+        binding_types().Value, &py_value,
         &py_data,
-        get_Value_Type(), &py_gas_price,
-        get_Value_Type(), &py_gas_limit)
+        binding_types().Value, &py_gas_price,
+        binding_types().Value, &py_gas_limit)
     ){
         return NULL;
     }
@@ -782,7 +571,7 @@ PyObject* maat_Transaction(PyObject* self, PyObject* args){
     for (int i = 0; i < PyList_Size(py_data); i++)
     {
         PyObject* val = PyList_GetItem(py_data, i);
-        if (!PyObject_TypeCheck(val, (PyTypeObject*)get_Value_Type()))
+        if (!PyObject_TypeCheck(val, binding_types().Value))
         {
             return PyErr_Format(PyExc_TypeError, "'data' parameter must be a list of 'Value'");
         }
@@ -808,7 +597,7 @@ PyObject* maat_Transaction(PyObject* self, PyObject* args){
 
 static void EVMTransactionResult_dealloc(PyObject* self){
     as_tx_result_object(self).result = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 
@@ -837,45 +626,15 @@ static PyGetSetDef EVMTransactionResult_getset[] = {
     {NULL}
 };
 
-PyTypeObject EVMTransactionResult_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "EVMTransactionResult",                                   /* tp_name */
-    sizeof(EVMTransactionResult_Object),                      /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)EVMTransactionResult_dealloc,            /* tp_dealloc */
-    0,               /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                            /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Ethereum transaction result",                     /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    0,                                        /* tp_methods */
-    0,                                        /* tp_members */
-    EVMTransactionResult_getset,                              /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot EVMTransactionResult_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(EVMTransactionResult_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Ethereum transaction result")},
+    {Py_tp_getset, EVMTransactionResult_getset},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::EVMTransactionResult_spec = {
+    "maat.EVMTransactionResult", sizeof(EVMTransactionResult_Object), 0, binding_type_flags, EVMTransactionResult_slots
 };
 
 PyObject* PyEVMTxResult_FromTxResult(env::EVM::TransactionResult* result)
@@ -883,17 +642,11 @@ PyObject* PyEVMTxResult_FromTxResult(env::EVM::TransactionResult* result)
     EVMTransactionResult_Object* object;
 
     // Create object
-    PyType_Ready(&EVMTransactionResult_Type);
-    object = PyObject_New(EVMTransactionResult_Object, &EVMTransactionResult_Type);
+    object = PyObject_New(EVMTransactionResult_Object, binding_types().EVMTransactionResult);
     if( object != nullptr ){
         object->result = result;
     }
     return (PyObject*)object;
-}
-
-PyObject* get_EVMTransactionResult_Type()
-{
-    return (PyObject*)&EVMTransactionResult_Type;
 }
 
 
@@ -901,7 +654,7 @@ PyObject* get_EVMTransactionResult_Type()
 PyObject* maat_contract(PyObject* mod, PyObject* args)
 {
     PyObject * engine;
-    if( !PyArg_ParseTuple(args, "O!", get_MaatEngine_Type(), &engine))
+    if( !PyArg_ParseTuple(args, "O!", binding_types().MaatEngine, &engine))
     {
         return NULL;
     }
@@ -925,7 +678,7 @@ PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args)
     PyObject *new_engine, *old_engine;
     PyObject* py_share_storage_uid = nullptr;
     std::optional<int> share_storage_uid;
-    if( !PyArg_ParseTuple(args, "O!O!|O", get_MaatEngine_Type(), &new_engine, get_MaatEngine_Type(), &old_engine, &share_storage_uid))
+    if( !PyArg_ParseTuple(args, "O!O!|O", binding_types().MaatEngine, &new_engine, binding_types().MaatEngine, &old_engine, &share_storage_uid))
     {
         return NULL;
     }
@@ -954,7 +707,7 @@ PyObject* maat_new_evm_runtime(PyObject* mod, PyObject* args)
 PyObject* maat_set_evm_bytecode(PyObject* mod, PyObject* args)
 {
     PyObject *engine, *bytecode;
-    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &engine, &PyList_Type, &bytecode))
+    if( !PyArg_ParseTuple(args, "O!O!", binding_types().MaatEngine, &engine, &PyList_Type, &bytecode))
     {
         return NULL;
     }
@@ -965,7 +718,7 @@ PyObject* maat_set_evm_bytecode(PyObject* mod, PyObject* args)
     for (int i = 0; i < PyList_Size(bytecode); i++)
     {
         PyObject* val = PyList_GetItem(bytecode, i);
-        if (!PyObject_TypeCheck(val, (PyTypeObject*)get_Value_Type()))
+        if (!PyObject_TypeCheck(val, binding_types().Value))
         {
             return PyErr_Format(PyExc_TypeError, "'bytecode' must be a list of 'Value'");
         }
@@ -990,7 +743,7 @@ PyObject* maat_increment_block_number(PyObject* mod, PyObject* args)
 {
     PyObject* engine;
     PyObject* inc;
-    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &engine, get_Value_Type(), &inc))
+    if( !PyArg_ParseTuple(args, "O!O!", binding_types().MaatEngine, &engine, binding_types().Value, &inc))
     {
         return NULL;
     }
@@ -1012,7 +765,7 @@ PyObject* maat_increment_block_timestamp(PyObject* mod, PyObject* args)
 {
     PyObject* engine;
     PyObject* inc;
-    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &engine, get_Value_Type(), &inc))
+    if( !PyArg_ParseTuple(args, "O!O!", binding_types().MaatEngine, &engine, binding_types().Value, &inc))
     {
         return NULL;
     }
@@ -1034,7 +787,7 @@ PyObject* maat_allow_symbolic_keccak(PyObject* mod, PyObject* args)
 {
     PyObject* engine;
     int allow = 0;
-    if( !PyArg_ParseTuple(args, "O!p", get_MaatEngine_Type(), &engine, &allow))
+    if( !PyArg_ParseTuple(args, "O!p", binding_types().MaatEngine, &engine, &allow))
         return NULL;
 
     try
@@ -1054,7 +807,7 @@ PyObject* maat_allow_symbolic_keccak(PyObject* mod, PyObject* args)
 PyObject* maat_evm_get_static_flag(PyObject* mod, PyObject* args)
 {
     PyObject* engine;
-    if( !PyArg_ParseTuple(args, "O!", get_MaatEngine_Type(), &engine))
+    if( !PyArg_ParseTuple(args, "O!", binding_types().MaatEngine, &engine))
         return NULL;
 
     try
@@ -1074,7 +827,7 @@ PyObject* maat_evm_set_static_flag(PyObject* mod, PyObject* args)
 {
     PyObject* engine;
     int flag = 0;
-    if( !PyArg_ParseTuple(args, "O!p", get_MaatEngine_Type(), &engine, &flag))
+    if( !PyArg_ParseTuple(args, "O!p", binding_types().MaatEngine, &engine, &flag))
         return NULL;
 
     try
@@ -1095,7 +848,7 @@ PyObject* maat_evm_set_gas_price(PyObject* mod, PyObject* args)
 {
     PyObject* engine;
     PyObject* price;
-    if( !PyArg_ParseTuple(args, "O!O!", get_MaatEngine_Type(), &engine, get_Value_Type(), &price))
+    if( !PyArg_ParseTuple(args, "O!O!", binding_types().MaatEngine, &engine, binding_types().Value, &price))
         return NULL;
 
     try
@@ -1168,8 +921,6 @@ void init_evm(PyObject* module)
     PyObject* tx_class = create_class(PyUnicode_FromString("TX"), PyTuple_New(0), tx_enum);
     PyModule_AddObject(module, "TX", tx_class);
 
-    // Classes
-    register_type(module, (PyTypeObject*)get_EVMContract_Type());
 };
 
 }} // namespaces maat::py

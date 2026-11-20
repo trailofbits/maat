@@ -1,4 +1,3 @@
-#include "Python.h"
 #include <vector>
 #include "maat/value.hpp"
 #include "python_bindings.hpp"
@@ -14,38 +13,41 @@ PyObject* create_class(PyObject* name, PyObject* bases, PyObject* dict){
     return res;
 }
 
-PyObject* native_to_py(const std::vector<Value>& values)
+template <typename Range, typename Convert>
+static PyObject* make_python_list(const Range& items, Convert convert)
 {
-    PyObject* list = PyList_New(0);
-    if( list == NULL )
+    PyObject* list = PyList_New(static_cast<Py_ssize_t>(items.size()));
+    if (!list)
+        return nullptr;
+    Py_ssize_t index = 0;
+    for (const auto& item : items)
     {
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& e : values)
-    {
-        if( PyList_Append(list, PyValue_FromValue(e)) == -1)
+        PyObject* object = convert(item);
+        // PyList_SetItem takes ownership of the factory's new reference.
+        if (!object || PyList_SetItem(list, index++, object) < 0)
         {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
+            Py_DECREF(list);
+            return nullptr;
         }
     }
     return list;
 }
 
+PyObject* native_to_py(const std::vector<Value>& values)
+{
+    return make_python_list(values, PyValue_FromValue);
+}
+
 PyObject* native_to_py(const std::unordered_set<Constraint>& constraints)
 {
-    PyObject* list = PyList_New(0);
-    if( list == NULL )
-    {
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Constraint& c : constraints)
-    {
-        if( PyList_Append(list, PyConstraint_FromConstraint(c)) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add constraint to python list");
-        }
-    }
-    return list;
+    return make_python_list(constraints, PyConstraint_FromConstraint);
+}
+
+PyObject* native_to_py(const std::set<std::string>& names)
+{
+    return make_python_list(names, [](const std::string& name) {
+        return PyUnicode_FromString(name.c_str());
+    });
 }
 
 Number bigint_to_number(size_t bits, PyObject* num)
@@ -63,7 +65,7 @@ Number bigint_to_number(size_t bits, PyObject* num)
     else
     {
         PyObject* str = PyObject_Str(num);
-        const char* s = PyUnicode_AsUTF8(str);
+        const char* s = PyUnicode_AsUTF8AndSize(str, nullptr);
         return Number(bits, std::string(s), 10); // base 10
     }
 }
@@ -75,25 +77,41 @@ PyObject* number_to_bigint(const Number& num)
     return PyLong_FromString(ss.str().c_str(), NULL, 16);
 }
 
-void register_type(PyObject* module, PyTypeObject* type_obj)
+int ByteString::convert(PyObject* value, void* destination)
 {
-    // TODO(boyan): We could use PyModule_AddType(module, get_Config_Type()); instead
-    // of the cumbersome code below but it's not avaialble before Python 3.10 and we
-    // don't want to force Python 3.10 yet
-    if (PyType_Ready(type_obj) < 0)
-        return;
-    Py_INCREF(type_obj);
-    PyModule_AddObject(module, type_obj->tp_name, (PyObject*)type_obj);
+    auto& result = *static_cast<ByteString*>(destination);
+    if (PyUnicode_Check(value))
+        result.bytes.reset(PyUnicode_AsUTF8String(value));
+    else if (PyBytes_Check(value))
+        result.bytes.reset(Py_NewRef(value));
+    else
+    {
+        // Require the buffer protocol here. PyBytes_FromObject alone also
+        // accepts lists, which have their own symbolic-value conversion.
+        PyObject* view = PyMemoryView_FromObject(value);
+        if (!view)
+            return 0;
+        result.bytes.reset(PyBytes_FromObject(view));
+        Py_DECREF(view);
+    }
+    return result.bytes != nullptr;
 }
 
-bool py_to_c_string_set(PySetObject* set, std::set<std::string>& res)
+void free_binding_object(PyObject* self)
 {
-    PyObject *iterator = PyObject_GetIter((PyObject*)set);
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_Free(self);
+    Py_DECREF(type);
+}
+
+bool py_to_c_string_set(PyObject* set, std::set<std::string>& res)
+{
+    PyObject *iterator = PyObject_GetIter(set);
     PyObject *item;
     bool error = false;
     while ((item = PyIter_Next(iterator))) {
         // Translate item to string
-        const char* s = PyUnicode_AsUTF8(item);
+        const char* s = PyUnicode_AsUTF8AndSize(item, nullptr);
         if (s == nullptr)
             error = true;
         else

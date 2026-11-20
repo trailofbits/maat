@@ -9,13 +9,13 @@ static void MaatEngine_dealloc(PyObject* self)
 {
     delete ((MaatEngine_Object*)self)->engine;  ((MaatEngine_Object*)self)->engine = nullptr;
     _clear_MaatEngine_attributes((MaatEngine_Object*)self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 static PyObject* MaatEngine_duplicate(PyObject* self, PyObject* args, PyObject* keywords)
 {
     static char *kwlist[] = {"duplicate", "share", NULL};
-    PySetObject     *py_duplicate = nullptr,
+    PyObject     *py_duplicate = nullptr,
                     *py_share = nullptr; 
 
     std::set<std::string> duplicate, share;
@@ -168,7 +168,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
                 for (int j = 0; j < PyList_Size(arg); j++)
                 {
                     PyObject * val = PyList_GetItem(arg, j);
-                    if (not PyObject_TypeCheck(val, (PyTypeObject*)get_Value_Type()))
+                    if (not PyObject_TypeCheck(val, binding_types().Value))
                     {
                         return PyErr_Format(
                             PyExc_TypeError,
@@ -201,7 +201,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
             {
                 return PyErr_Format(PyExc_TypeError, "'libs' parameter contains a non-'str' element");
             }
-            lib_paths.push_back(std::string(PyUnicode_AsUTF8(lib)));
+            lib_paths.push_back(std::string(PyUnicode_AsUTF8AndSize(lib, nullptr)));
         }
     }
 
@@ -220,7 +220,7 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
             {
                 return PyErr_Format(PyExc_TypeError, "'ignore_libs' parameter contains a non-'str' element");
             }
-            ignore_libs.push_back(std::string(PyUnicode_AsUTF8(lib)));
+            ignore_libs.push_back(std::string(PyUnicode_AsUTF8AndSize(lib, nullptr)));
         }
     }
 
@@ -245,8 +245,8 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
                 return PyErr_Format(PyExc_TypeError, "'envp' values must be str");
             }
             const char *key_str, *value_str;
-            key_str = PyUnicode_AsUTF8(key);
-            value_str = PyUnicode_AsUTF8(value);
+            key_str = PyUnicode_AsUTF8AndSize(key, nullptr);
+            value_str = PyUnicode_AsUTF8AndSize(value, nullptr);
             envp[std::string(key_str)] = std::string(value_str);
         }
     }
@@ -263,11 +263,11 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
         while (PyDict_Next(py_virtual_fs, &pos, &key, &value))
         {
             const char *key_str = nullptr, *value_str = nullptr;
-            if ((key_str = PyUnicode_AsUTF8(key)) == nullptr)
+            if ((key_str = PyUnicode_AsUTF8AndSize(key, nullptr)) == nullptr)
             {
                 return PyErr_Format(PyExc_TypeError, "couldn't translate 'virtual_fs' key to string");
             }
-            if ((value_str = PyUnicode_AsUTF8(value)) == nullptr)
+            if ((value_str = PyUnicode_AsUTF8AndSize(value, nullptr)) == nullptr)
             {
                 return PyErr_Format(PyExc_TypeError, "couldn't translate 'virtual_fs' value to string");
             }
@@ -296,7 +296,6 @@ static PyObject* MaatEngine_load(PyObject* self, PyObject* args, PyObject* keywo
 
     Py_RETURN_NONE;
 };
-
 
 
 static PyObject* MaatEngine_get_uid(PyObject* self, void* closure){
@@ -369,49 +368,17 @@ static PyMemberDef MaatEngine_members[] = {
     {NULL}
 };
 
-PyTypeObject MaatEngine_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "MaatEngine",                         /* tp_name */
-    sizeof(MaatEngine_Object),            /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)MaatEngine_dealloc,       /* tp_dealloc */
-    0,                                        /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Dynamic Symbolic Execution Engine",      /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    MaatEngine_methods,                   /* tp_methods */
-    MaatEngine_members,                   /* tp_members */
-    MaatEngine_getset,                         /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot MaatEngine_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(MaatEngine_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Dynamic Symbolic Execution Engine")},
+    {Py_tp_methods, MaatEngine_methods},
+    {Py_tp_members, MaatEngine_members},
+    {Py_tp_getset, MaatEngine_getset},
+    {0, nullptr}
 };
 
-PyObject* get_MaatEngine_Type(){
-    return (PyObject*)&MaatEngine_Type;
+PyType_Spec BindingTypes::MaatEngine_spec = {
+    "maat.MaatEngine", sizeof(MaatEngine_Object), 0, binding_type_flags, MaatEngine_slots
 };
 
 #define MAAT_PY_CLEAR(x) \
@@ -478,8 +445,8 @@ PyObject* PyMaatEngine_FromMaatEngine(MaatEngine* engine)
     // Create object
     try
     {
-        PyType_Ready(&MaatEngine_Type);
-        object = PyObject_New(MaatEngine_Object, &MaatEngine_Type);
+
+        object = PyObject_New(MaatEngine_Object, binding_types().MaatEngine);
         if (object != nullptr)
         {
             object->engine = engine;
@@ -516,7 +483,6 @@ void init_engine(PyObject* module)
     PyObject* stop_class = create_class(PyUnicode_FromString("STOP"), PyTuple_New(0), stop_enum);
     PyModule_AddObject(module, "STOP", stop_class);
 
-    register_type(module, (PyTypeObject*)get_Info_Type());
 };
     
 } // namespace py

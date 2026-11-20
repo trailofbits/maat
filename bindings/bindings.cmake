@@ -1,17 +1,10 @@
 # ---- Python bindings ----
-if(${CMAKE_VERSION} VERSION_LESS "3.18.0")
-  find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-else()
-  find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+# FindPython3 gained stable ABI module support in CMake 3.26.
+cmake_minimum_required(VERSION 3.26)
+find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter Development.SABIModule)
+if(Python3_FREE_THREADED)
+  message(FATAL_ERROR "Building the cp310-abi3 extension requires GIL-enabled CPython")
 endif()
-
-execute_process(
-  COMMAND "${Python3_EXECUTABLE}" -c "if True:
-    import sysconfig
-    print(sysconfig.get_config_var('EXT_SUFFIX'))"
-  OUTPUT_VARIABLE python_soabi
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
 
 # Get the same source files as the main library uses
 # NOTE: These source file paths are relative to where the maat::maat target was
@@ -19,7 +12,7 @@ execute_process(
 # CMake
 get_target_property(maat_sources maat::maat SOURCES)
 
-add_library(maat_python MODULE
+Python3_add_library(maat_python MODULE USE_SABI 3.10
   bindings/python/py_arch.cpp
   bindings/python/py_config.cpp
   bindings/python/py_constraint.cpp
@@ -46,6 +39,12 @@ add_library(maat_python MODULE
 )
 add_library(maat::python ALIAS maat_python)
 
+# Unix CPython 3.10+ recognizes .abi3.so. A newer build interpreter may
+# also advertise platform-qualified or free-threaded suffixes.
+if(UNIX AND NOT CYGWIN)
+  set_property(TARGET maat_python PROPERTY SUFFIX ".abi3${CMAKE_SHARED_MODULE_SUFFIX}")
+endif()
+
 set_target_properties(
   maat_python PROPERTIES
   # See issue https://gitlab.kitware.com/cmake/cmake/-/issues/20782
@@ -53,7 +52,6 @@ set_target_properties(
   #SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
   EXPORT_NAME python
   OUTPUT_NAME maat
-  SUFFIX "${python_soabi}"
   PREFIX ""
 )
 
@@ -71,7 +69,6 @@ target_compile_features(maat_python PRIVATE cxx_std_17)
 target_compile_definitions(maat_python PRIVATE MAAT_PYTHON_BINDINGS=1)
 
 target_link_libraries(maat_python PRIVATE
-  Python3::Module
   GMP::GMP
   sleigh::sla
 )

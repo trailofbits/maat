@@ -16,6 +16,78 @@ namespace maat
 namespace py
 {
 
+// Each interpreter owns its heap types through the module state.
+struct BindingTypes
+{
+    PyTypeObject* Branch;
+    static PyType_Spec Branch_spec;
+    PyTypeObject* CPU;
+    static PyType_Spec CPU_spec;
+    PyTypeObject* Config;
+    static PyType_Spec Config_spec;
+    PyTypeObject* Constraint;
+    static PyType_Spec Constraint_spec;
+    PyTypeObject* EVMContract;
+    static PyType_Spec EVMContract_spec;
+    PyTypeObject* EVMMemory;
+    static PyType_Spec EVMMemory_spec;
+    PyTypeObject* EVMStack;
+    static PyType_Spec EVMStack_spec;
+    PyTypeObject* EVMStorage;
+    static PyType_Spec EVMStorage_spec;
+    PyTypeObject* EVMTransaction;
+    static PyType_Spec EVMTransaction_spec;
+    PyTypeObject* EVMTransactionResult;
+    static PyType_Spec EVMTransactionResult_spec;
+    PyTypeObject* Env;
+    static PyType_Spec Env_spec;
+    PyTypeObject* EventManager;
+    static PyType_Spec EventManager_spec;
+    PyTypeObject* File;
+    static PyType_Spec File_spec;
+    PyTypeObject* FileAccessor;
+    static PyType_Spec FileAccessor_spec;
+    PyTypeObject* FileSystem;
+    static PyType_Spec FileSystem_spec;
+    PyTypeObject* Info;
+    static PyType_Spec Info_spec;
+    PyTypeObject* MaatEngine;
+    static PyType_Spec MaatEngine_spec;
+    PyTypeObject* MemAccess;
+    static PyType_Spec MemAccess_spec;
+    PyTypeObject* MemEngine;
+    static PyType_Spec MemEngine_spec;
+    PyTypeObject* Path;
+    static PyType_Spec Path_spec;
+    PyTypeObject* PathIterator;
+    static PyType_Spec PathIterator_spec;
+    PyTypeObject* ProcessInfo;
+    static PyType_Spec ProcessInfo_spec;
+    PyTypeObject* RegAccess;
+    static PyType_Spec RegAccess_spec;
+    PyTypeObject* Settings;
+    static PyType_Spec Settings_spec;
+    PyTypeObject* SimpleStateManager;
+    static PyType_Spec SimpleStateManager_spec;
+#ifdef MAAT_HAS_SOLVER_BACKEND
+    PyTypeObject* Solver;
+    static PyType_Spec Solver_spec;
+#endif
+    PyTypeObject* Stats;
+    static PyType_Spec Stats_spec;
+    PyTypeObject* StorageIterator;
+    static PyType_Spec StorageIterator_spec;
+    PyTypeObject* Value;
+    static PyType_Spec Value_spec;
+    PyTypeObject* VarContext;
+    static PyType_Spec VarContext_spec;
+};
+
+BindingTypes& binding_types();
+constexpr unsigned int binding_type_flags =
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION;
+void free_binding_object(PyObject* self);
+
 // Util function
 PyObject* create_class(PyObject* name, PyObject* bases, PyObject* dict);
 std::optional<std::filesystem::path> get_maat_module_directory();
@@ -24,7 +96,6 @@ std::optional<std::filesystem::path> get_maat_module_directory();
 void init_arch(PyObject* module);
 
 // ================= Expressions ====================
-void init_expression(PyObject* module);
 
 typedef struct {
     PyObject_HEAD
@@ -43,7 +114,6 @@ PyObject* maat_ULT(PyObject* self, PyObject* args);
 PyObject* maat_Zext(PyObject* self, PyObject* args);
 PyObject* PyValue_FromValue(const Value& val);
 PyObject* PyValue_FromValueAndVarContext(const Value& val, std::shared_ptr<VarContext> ctx);
-PyObject* get_Value_Type();
 #define as_value_object(x) (*((Value_Object*)x))
 
 typedef struct {
@@ -53,18 +123,15 @@ typedef struct {
 } VarContext_Object;
 PyObject* maat_VarContext(PyObject* self, PyObject* args);
 PyObject* PyVarContext_FromVarContext(VarContext* ctx, bool is_ref);
-PyObject* get_VarContext_Type();
 #define as_varctx_object(x) (*((VarContext_Object*)x))
 
 // =============== Constraints ==================
-void init_constraint(PyObject* module);
 
 typedef struct {
     PyObject_HEAD
     Constraint* constr;
 } Constraint_Object;
 PyObject* PyConstraint_FromConstraint(Constraint c);
-PyObject* get_Constraint_Type();
 #define as_constraint_object(x) (*((Constraint_Object*)x))
 
 // ================= Memory ==================
@@ -106,7 +173,6 @@ typedef struct{
     PyObject* settings;
     PyObject* process;
 } MaatEngine_Object;
-PyObject* get_MaatEngine_Type();
 PyObject* maat_MaatEngine(PyObject* self, PyObject* args);
 PyObject* PyMaatEngine_FromMaatEngine(MaatEngine*);
 // This method initializes all the attributes of a python MaatEngine object. It
@@ -152,7 +218,6 @@ typedef struct{
 } Info_Object;
 PyObject* PyInfo_FromInfo(info::Info* info, bool is_ref);
 PyObject* PyInfo_FromInfoAndArch(info::Info* info, bool is_ref, Arch* arch);
-PyObject* get_Info_Type();
 #define as_info_object(x)  (*((Info_Object*)x))
 
 typedef struct {
@@ -217,7 +282,6 @@ typedef struct{
     env::PhysicalFile* file;
     bool is_ref;
 } File_Object;
-PyObject* get_File_Type();
 PyObject* PyFile_FromPhysicalFile(env::PhysicalFile* file, bool is_ref);
 #define as_file_object(x)  (*((File_Object*)x))
 
@@ -226,7 +290,6 @@ typedef struct{
     maat::env::FileAccessor* fa;
     bool is_ref;
 } FileAccessor_Object;
-PyObject* get_FileAccessor_Type();
 PyObject* PyFileAccessor_FromFileAccessor(env::FileAccessor* fa, bool is_ref);
 #define as_fileaccessor_object(x)  (*((FileAccessor_Object*)x))
 
@@ -235,7 +298,6 @@ typedef struct{
     maat::env::FileSystem* fs;
     bool is_ref;
 } FileSystem_Object;
-PyObject* get_FileSystem_Type();
 PyObject* PyFileSystem_FromFileSystem(env::FileSystem* fs, bool is_ref);
 #define as_fs_object(x)  (*((FileSystem_Object*)x))
 
@@ -246,7 +308,6 @@ typedef struct{
     /* Wrappers to members */
     PyObject* fs;
 } Env_Object;
-PyObject* get_Env_Type();
 PyObject* PyEnv_FromEnvEmulator(env::EnvEmulator* env, bool is_ref);
 #define as_env_object(x)  (*((Env_Object*)x))
 
@@ -256,28 +317,22 @@ typedef struct{
     PyObject_HEAD
     maat::solver::Solver* solver;
 } Solver_Object;
-PyObject* get_Solver_Type();
 PyObject* maat_Solver(PyObject* module);
 #define as_solver_object(x)  (*((Solver_Object*)x))
 #endif
 
 
 // ================= Config =================
-void init_config(PyObject* module);
 typedef struct{
     PyObject_HEAD
 } Config_Object;
-PyObject* get_Config_Type();
-PyObject* maat_Config();
 #define as_config_object(x)  (*((Config_Object*)x))
 
 // ================= Stats ==================
-void init_stats(PyObject* module);
+void init_stats(PyObject* module, PyTypeObject* type);
 typedef struct{
     PyObject_HEAD
 } Stats_Object;
-PyObject* get_Stats_Type();
-PyObject* maat_Stats();
 #define as_stats_object(x)  (*((Stats_Object*)x))
 
 // ============ SimpleStateManager ============
@@ -286,7 +341,6 @@ typedef struct{
     PyObject_HEAD
     maat::serial::SimpleStateManager* s;
 } SimpleStateManager_Object;
-PyObject* get_SimpleStateManager_Type();
 PyObject* maat_SimpleStateManager(PyObject* self, PyObject* args);
 #define as_simple_serializer_object(x)  (*((SimpleStateManager_Object*)x))
 
@@ -333,7 +387,6 @@ typedef struct{
     PyObject* stack;
     PyObject* memory;
 } EVMContract_Object;
-PyObject* get_EVMContract_Type();
 PyObject* PyEVMContract_FromContract(env::EVM::Contract*);
 #define as_contract_object(x)  (*((EVMContract_Object*)x))
 
@@ -342,7 +395,6 @@ typedef struct{
     bool is_ref;
     maat::env::EVM::Transaction* transaction;
 } EVMTransaction_Object;
-PyObject* get_EVMTransaction_Type();
 PyObject* PyEVMTx_FromTx(env::EVM::Transaction*, bool is_ref);
 PyObject* maat_Transaction(PyObject* self, PyObject* args);
 #define as_tx_object(x)  (*((EVMTransaction_Object*)x))
@@ -351,7 +403,6 @@ typedef struct{
     PyObject_HEAD
     maat::env::EVM::TransactionResult* result;
 } EVMTransactionResult_Object;
-PyObject* get_EVMTransactionResult_Type();
 PyObject* PyEVMTxResult_FromTxResult(env::EVM::TransactionResult*);
 #define as_tx_result_object(x)  (*((EVMTransactionResult_Object*)x))
 
@@ -366,11 +417,23 @@ PyObject* maat_evm_get_static_flag(PyObject* mod, PyObject* args);
 PyObject* maat_evm_set_static_flag(PyObject* mod, PyObject* args);
 PyObject* maat_evm_set_gas_price(PyObject* mod, PyObject* args);
 
+// Parse a str or bytes-like argument without depending on the
+// build interpreter's choice of entry point for the s# format.
+class ByteString
+{
+    std::unique_ptr<PyObject, decltype(&Py_DecRef)> bytes{nullptr, Py_DecRef};
+public:
+    static int convert(PyObject* value, void* destination);
+    char* data() const { return PyBytes_AsString(bytes.get()); }
+    Py_ssize_t size() const { return PyBytes_Size(bytes.get()); }
+};
+
 // ====== Utils =======
 // Transform a list of values into a list of python values,
 // returns a python error on error
 PyObject* native_to_py(const std::vector<Value>&);
 PyObject* native_to_py(const std::unordered_set<Constraint>& constraints);
+PyObject* native_to_py(const std::set<std::string>& names);
 
 // Python bigint into multiprecision number
 // num MUST be a PyLong object (no further type checks in the function)
@@ -378,11 +441,8 @@ Number bigint_to_number(size_t bits, PyObject* num);
 // Multiprecision number to python bigint
 PyObject* number_to_bigint(const Number& num);
 
-// Expose a type in python module
-void register_type(PyObject* module, PyTypeObject* type_obj);
-
 // Translate a python set to a set of strings in C++. Returns false on error
-bool py_to_c_string_set(PySetObject* set, std::set<std::string>& res);
+bool py_to_c_string_set(PyObject* set, std::set<std::string>& res);
 
 } // namespace py
 } // namespace maat

@@ -12,18 +12,13 @@ static void CPU_dealloc(PyObject* self){
         delete ((CPU_Object*)self)->cpu;
     }
     as_cpu_object(self).cpu = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 static PyObject* CPU_str(PyObject* self){
     std::stringstream res;
     as_cpu_object(self).cpu->ctx().print(res, *as_cpu_object(self).arch);
     return PyUnicode_FromString(res.str().c_str());
-}
-
-static int CPU_print(PyObject* self, void * io, int s){
-    as_cpu_object(self).cpu->ctx().print(std::cout, *as_cpu_object(self).arch);
-    return 0;
 }
 
 static PyObject* CPU_repr(PyObject* self) {
@@ -33,13 +28,13 @@ static PyObject* CPU_repr(PyObject* self) {
 
 int CPU_set_attro(PyObject *self, PyObject *attr, PyObject *value)
 {
-    std::string name(PyUnicode_AsUTF8(attr));
+    std::string name(PyUnicode_AsUTF8AndSize(attr, nullptr));
     try
     {
         // Get reg number
         ir::reg_t reg = as_cpu_object(self).arch->reg_num(name);
         // Check if value to set is expression or integer
-        if (PyObject_TypeCheck(value, (PyTypeObject*)get_Value_Type()))
+        if (PyObject_TypeCheck(value, binding_types().Value))
         {
             as_cpu_object(self).cpu->ctx().set(reg, *(as_value_object(value).value));
         }
@@ -59,7 +54,7 @@ int CPU_set_attro(PyObject *self, PyObject *attr, PyObject *value)
                 PyErr_Clear();
                 Number number(as_cpu_object(self).arch->reg_size(reg));
                 PyObject* repr = PyObject_Repr(value);
-                std::string s = std::string(PyUnicode_AsUTF8(repr));
+                std::string s = std::string(PyUnicode_AsUTF8AndSize(repr, nullptr));
                 number.set_mpz(s, 10);
                 as_cpu_object(self).cpu->ctx().set(reg, number);
                 Py_DECREF(repr);
@@ -96,7 +91,7 @@ int CPU_set_attro(PyObject *self, PyObject *attr, PyObject *value)
 
 PyObject* CPU_get_attro(PyObject *self, PyObject *attr)
 {
-    std::string name(PyUnicode_AsUTF8(attr));
+    std::string name(PyUnicode_AsUTF8AndSize(attr, nullptr));
     try
     {
         ir::reg_t reg = as_cpu_object(self).arch->reg_num(name);
@@ -121,46 +116,20 @@ static PyMemberDef CPU_members[] = {
 };
 
 
-/* Type description for python CPU objects */
-static PyTypeObject CPU_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "CPU",                             /* tp_name */
-    sizeof(CPU_Object),                /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)CPU_dealloc,           /* tp_dealloc */
-    (printfunc)CPU_print,              /* tp_print */
-    0,                /* tp_getattr */
-    0,                /* tp_setattr */
-    0,                                        /* tp_reserved */
-    CPU_repr,                           /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    CPU_str,                            /* tp_str */
-    (getattrofunc)CPU_get_attro,                                        /* tp_getattro */
-    (setattrofunc)CPU_set_attro,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Emulated CPU",                           /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    CPU_methods,                       /* tp_methods */
-    CPU_members,                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot CPU_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(CPU_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(CPU_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(CPU_str)},
+    {Py_tp_getattro, reinterpret_cast<void*>(CPU_get_attro)},
+    {Py_tp_setattro, reinterpret_cast<void*>(CPU_set_attro)},
+    {Py_tp_doc, const_cast<char*>("Emulated CPU")},
+    {Py_tp_methods, CPU_methods},
+    {Py_tp_members, CPU_members},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::CPU_spec = {
+    "maat.CPU", sizeof(CPU_Object), 0, binding_type_flags, CPU_slots
 };
 
 PyObject* PyCPU_FromCPUAndArchAndVarContext(ir::CPU* cpu, bool is_ref, Arch* arch, std::shared_ptr<VarContext>& ctx)
@@ -168,8 +137,7 @@ PyObject* PyCPU_FromCPUAndArchAndVarContext(ir::CPU* cpu, bool is_ref, Arch* arc
     CPU_Object* object;
 
     // Create object
-    PyType_Ready(&CPU_Type);
-    object = PyObject_New(CPU_Object, &CPU_Type);
+    object = PyObject_New(CPU_Object, binding_types().CPU);
     if( object != nullptr ){
         object->cpu = cpu;
         object->is_ref = is_ref;

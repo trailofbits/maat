@@ -1,4 +1,5 @@
 #include "python_bindings.hpp"
+#include <climits>
 
 namespace maat{
 namespace py{
@@ -10,18 +11,13 @@ static void FileSystem_dealloc(PyObject* self)
         delete ((FileSystem_Object*)self)->fs;
     ((FileSystem_Object*)self)->fs = nullptr;
 
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 static PyObject* FileSystem_str(PyObject* self){
     std::stringstream res;
     res << *((FileSystem_Object*) self)->fs;
     return PyUnicode_FromString(res.str().c_str());
-}
-
-static int FileSystem_print(PyObject* self, void * io, int s){
-    std::cout << *((FileSystem_Object*) self)->fs << std::flush;
-    return 0;
 }
 
 static PyObject* FileSystem_repr(PyObject* self) {
@@ -170,45 +166,17 @@ static PyMethodDef FileSystem_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-PyTypeObject FileSystem_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "FileSystem",                         /* tp_name */
-    sizeof(FileSystem_Object),            /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)FileSystem_dealloc,       /* tp_dealloc */
-    (printfunc)FileSystem_print,                                        /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    FileSystem_repr,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    FileSystem_str,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Symbolic file-system emulator",      /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    FileSystem_methods,                      /* tp_methods */
-    0,                                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot FileSystem_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(FileSystem_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(FileSystem_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(FileSystem_str)},
+    {Py_tp_doc, const_cast<char*>("Symbolic file-system emulator")},
+    {Py_tp_methods, FileSystem_methods},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::FileSystem_spec = {
+    "maat.FileSystem", sizeof(FileSystem_Object), 0, binding_type_flags, FileSystem_slots
 };
 
 // Constructor
@@ -217,8 +185,7 @@ PyObject* PyFileSystem_FromFileSystem(maat::env::FileSystem* fs, bool is_ref)
     FileSystem_Object* object;
 
     // Create object
-    PyType_Ready(&FileSystem_Type);
-    object = PyObject_New(FileSystem_Object, &FileSystem_Type);
+    object = PyObject_New(FileSystem_Object, binding_types().FileSystem);
     if (object != nullptr)
     {
         object->fs = fs;
@@ -235,7 +202,7 @@ static void FileAccessor_dealloc(PyObject* self)
         delete ((FileAccessor_Object*)self)->fa;
     ((FileAccessor_Object*)self)->fa = nullptr;
 
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 // buf must be list, returns NULL on success
@@ -245,7 +212,7 @@ PyObject* generic_buffer_translate(std::vector<Value>& native_buf, PyObject* buf
     for (int i = 0; i < PyList_Size(buf); i++)
     {
         PyObject* val = PyList_GetItem(buf, i);
-        if (PyObject_TypeCheck(val, (PyTypeObject*)get_Value_Type()))
+        if (PyObject_TypeCheck(val, binding_types().Value))
         {
             native_buf.push_back(*as_value_object(val).value);
             val_size_hint = (*as_value_object(val).value).size();
@@ -267,16 +234,19 @@ static PyObject* FileAccessor_write_buffer(PyObject* self, PyObject *args)
 {
     PyObject* buf;
     std::vector<Value> native_buf;
-    const char* bytes;
-    Py_ssize_t bytes_len = 0; 
+    ByteString bytes;
     int len = -1;
 
     try
     {
-        if (PyArg_ParseTuple(args, "s#|i", &bytes, &bytes_len, &len))
+        if (PyArg_ParseTuple(args, "O&|i", ByteString::convert, &bytes, &len))
         {
-            len = (len < 0)? bytes_len : len;
-            return PyLong_FromLong(as_fileaccessor_object(self).fa->write_buffer((uint8_t*)bytes, len));
+            if (len < 0 && bytes.size() > INT_MAX)
+                return PyErr_Format(PyExc_OverflowError, "Buffer is too large");
+            if (len > bytes.size())
+                return PyErr_Format(PyExc_ValueError, "Length exceeds the buffer size");
+            int count = len < 0 ? static_cast<int>(bytes.size()) : len;
+            return PyLong_FromLong(as_fileaccessor_object(self).fa->write_buffer(reinterpret_cast<uint8_t*>(bytes.data()), count));
         }
         else if (PyArg_ParseTuple(args, "O!", &PyList_Type, &buf))
         {
@@ -301,7 +271,6 @@ static PyObject* FileAccessor_read_buffer(PyObject* self, PyObject* args)
 {
     unsigned int nb_elems, elem_size=1;
     std::vector<Value> res;
-    PyObject* list;
 
     if( !PyArg_ParseTuple(args, "I|I", &nb_elems, &elem_size)){
         return NULL;
@@ -316,19 +285,7 @@ static PyObject* FileAccessor_read_buffer(PyObject* self, PyObject* args)
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
 
-    // Translate expressions list into python list
-    list = PyList_New(0);
-    if( list == NULL ){
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& val : res)
-    {
-        if( PyList_Append(list, PyValue_FromValue(val)) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-    return list;
+    return native_to_py(res);
 }
 
 static PyMethodDef FileAccessor_methods[] = {
@@ -337,45 +294,15 @@ static PyMethodDef FileAccessor_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-PyTypeObject FileAccessor_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "FileAccessor",                         /* tp_name */
-    sizeof(FileAccessor_Object),            /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)FileAccessor_dealloc,       /* tp_dealloc */
-    0,                                        /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Wrapper to read/write emulated files",      /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    FileAccessor_methods,                      /* tp_methods */
-    0,                                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot FileAccessor_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(FileAccessor_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Wrapper to read/write emulated files")},
+    {Py_tp_methods, FileAccessor_methods},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::FileAccessor_spec = {
+    "maat.FileAccessor", sizeof(FileAccessor_Object), 0, binding_type_flags, FileAccessor_slots
 };
 
 // Constructor
@@ -384,8 +311,7 @@ PyObject* PyFileAccessor_FromFileAccessor(maat::env::FileAccessor* fa, bool is_r
     FileAccessor_Object* object;
 
     // Create object
-    PyType_Ready(&FileAccessor_Type);
-    object = PyObject_New(FileAccessor_Object, &FileAccessor_Type);
+    object = PyObject_New(FileAccessor_Object, binding_types().FileAccessor);
     if (object != nullptr)
     {
         object->fa = fa;
@@ -402,7 +328,7 @@ static void File_dealloc(PyObject* self)
         delete ((File_Object*)self)->file;
     ((File_Object*)self)->file = nullptr;
 
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 
@@ -411,17 +337,20 @@ static PyObject* File_write_buffer(PyObject* self, PyObject *args)
     PyObject* buf;
     std::vector<Value> native_buf;
     addr_t offset = 0;
-    const char* bytes;
-    Py_ssize_t bytes_len = 0;
+    ByteString bytes;
     int len = -1;
 
     try
     {
-        if (PyArg_ParseTuple(args, "s#K|i", &bytes, &bytes_len, &offset, &len))
+        if (PyArg_ParseTuple(args, "O&K|i", ByteString::convert, &bytes, &offset, &len))
         {
             PyErr_Clear();
-            len = (len < 0)? bytes_len : len;
-            return PyLong_FromLong(as_file_object(self).file->write_buffer((uint8_t*)bytes, offset, len));
+            if (len < 0 && bytes.size() > INT_MAX)
+                return PyErr_Format(PyExc_OverflowError, "Buffer is too large");
+            if (len > bytes.size())
+                return PyErr_Format(PyExc_ValueError, "Length exceeds the buffer size");
+            int count = len < 0 ? static_cast<int>(bytes.size()) : len;
+            return PyLong_FromLong(as_file_object(self).file->write_buffer(reinterpret_cast<uint8_t*>(bytes.data()), offset, count));
         }
         else if (PyArg_ParseTuple(args, "O!K", &PyList_Type, &buf, &offset))
         {
@@ -447,7 +376,6 @@ static PyObject* File_read_buffer(PyObject* self, PyObject* args)
 {
     unsigned int nb_elems, elem_size=1;
     std::vector<Value> res;
-    PyObject* list;
     addr_t offset = 0;
 
     if( !PyArg_ParseTuple(args, "KI|I", &offset, &nb_elems, &elem_size))
@@ -464,19 +392,7 @@ static PyObject* File_read_buffer(PyObject* self, PyObject* args)
         return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
     }
 
-    // Translate expressions list into python list
-    list = PyList_New(0);
-    if( list == NULL ){
-        return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to create new python list");
-    }
-    for (const Value& val : res)
-    {
-        if( PyList_Append(list, PyValue_FromValue(val)) == -1)
-        {
-            return PyErr_Format(PyExc_RuntimeError, "%s", "Failed to add expression to python list");
-        }
-    }
-    return list;
+    return native_to_py(res);
 }
 
 static PyMethodDef File_methods[] = {
@@ -485,45 +401,15 @@ static PyMethodDef File_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-PyTypeObject File_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "File",                         /* tp_name */
-    sizeof(File_Object),            /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)File_dealloc,       /* tp_dealloc */
-    0,                                        /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Physical emulated file",                 /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    File_methods,                      /* tp_methods */
-    0,                                       /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot File_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(File_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Physical emulated file")},
+    {Py_tp_methods, File_methods},
+    {0, nullptr}
+};
+
+PyType_Spec BindingTypes::File_spec = {
+    "maat.File", sizeof(File_Object), 0, binding_type_flags, File_slots
 };
 
 // Constructor
@@ -532,8 +418,7 @@ PyObject* PyFile_FromPhysicalFile(maat::env::PhysicalFile* file, bool is_ref)
     File_Object* object;
 
     // Create object
-    PyType_Ready(&File_Type);
-    object = PyObject_New(File_Object, &File_Type);
+    object = PyObject_New(File_Object, binding_types().File);
     if (object != nullptr)
     {
         object->file = file;

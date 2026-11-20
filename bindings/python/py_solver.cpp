@@ -13,7 +13,7 @@ static void Solver_dealloc(PyObject* self)
     // This will destroy the underlying Solver object
     delete as_solver_object(self).solver;
     as_solver_object(self).solver = nullptr;
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    free_binding_object(self);
 };
 
 static PyObject* Solver_reset(PyObject* self)
@@ -26,7 +26,7 @@ static PyObject* Solver_add(PyObject* self, PyObject* args)
 {
     PyObject* constr;
     
-    if( !PyArg_ParseTuple(args, "O!", get_Constraint_Type(), &constr)){
+    if( !PyArg_ParseTuple(args, "O!", binding_types().Constraint, &constr)){
         return NULL;
     }
     
@@ -97,51 +97,18 @@ static PyGetSetDef Solver_getset[] =
     {NULL}
 };
 
-/* Type description for python Solver objects */
-static PyTypeObject Solver_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "Solver",                             /* tp_name */
-    sizeof(Solver_Object),                /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    (destructor)Solver_dealloc,           /* tp_dealloc */
-    0,                                       /* tp_print */
-    0,                                        /* tp_getattr */
-    0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
-    0,                                        /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash  */
-    0,                                        /* tp_call */
-    0,                                        /* tp_str */
-    0,                                        /* tp_getattro */
-    0,                                        /* tp_setattro */
-    0,                                        /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                       /* tp_flags */
-    "Constraint solver",                          /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    0,                                        /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    0,                                        /* tp_iter */
-    0,                                        /* tp_iternext */
-    Solver_methods,                           /* tp_methods */
-    Solver_members,                           /* tp_members */
-    Solver_getset,                            /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    0,                                        /* tp_init */
-    0,                                        /* tp_alloc */
-    0,                                        /* tp_new */
+static PyType_Slot Solver_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(Solver_dealloc)},
+    {Py_tp_doc, const_cast<char*>("Constraint solver")},
+    {Py_tp_methods, Solver_methods},
+    {Py_tp_members, Solver_members},
+    {Py_tp_getset, Solver_getset},
+    {0, nullptr}
 };
 
-PyObject* get_Solver_Type(){
-    return (PyObject*)&Solver_Type;
-}
+PyType_Spec BindingTypes::Solver_spec = {
+    "maat.Solver", sizeof(Solver_Object), 0, binding_type_flags, Solver_slots
+};
 
 /* Constructors */
 PyObject* PySolver_FromSolver(solver::Solver* s)
@@ -149,8 +116,7 @@ PyObject* PySolver_FromSolver(solver::Solver* s)
     Solver_Object* object;
     
     // Create object
-    PyType_Ready(&Solver_Type);
-    object = PyObject_New(Solver_Object, &Solver_Type);
+    object = PyObject_New(Solver_Object, binding_types().Solver);
     if( object != nullptr )
     {
         object->solver = s;

@@ -11,7 +11,7 @@ This project requires a few dependencies:
   * Can be disabled with CMake option `-Dmaat_USE_LIEF=OFF` during configuration
 * [sleigh](https://github.com/lifting-bits/sleigh) - for Ghidra sleigh pcode handling
   * Vendored version can be built with CMake option `-Dmaat_USE_EXTERNAL_SLEIGH=OFF` during configuration after you pull the submodule (`git submodule update --init --recursive`)
-* Python3 development headers and library - for Python bindings
+* CMake 3.26 or newer and CPython 3.10 or newer development headers for the stable ABI Python bindings
   * Bindings can be skipped with CMake option `-Dmaat_BUILD_PYTHON_BINDINGS=OFF` during configuration
 
 You can use our [Dockerfile](Dockerfile) as a reference for how to download and install dependencies. Note that if building the Dockerfile, it uses a submodule'd [sleigh project](https://github.com/lifting-bits/sleigh), so you must either clone Maat with `git clone --recursive ...` or run `git submodule update --init --recursive` after cloning before building the Docker image.
