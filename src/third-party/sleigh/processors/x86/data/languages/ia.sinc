@@ -3694,9 +3694,9 @@ define pcodeop ibhf;
 :INSD^rep^reptail eseDI4,DX is vexMode=0 & rep & reptail & opsize=1 & byte=0x6d & eseDI4 & DX   { build rep; build eseDI4; eseDI4 = in(DX); build reptail; }
 :INSD^rep^reptail eseDI4,DX is vexMode=0 & rep & reptail & opsize=2 & byte=0x6d & eseDI4 & DX   { build rep; build eseDI4; eseDI4 = in(DX); build reptail; }
 
-:INT1           is vexMode=0 & byte=0xf1                            { tmp:1 = 0x1; intloc:$(SIZE) = swi(tmp); call [intloc]; return [0:1]; }
-:INT3           is vexMode=0 & byte=0xcc                            { tmp:1 = 0x3; intloc:$(SIZE) = swi(tmp); call [intloc]; return [0:1]; }
-:INT imm8       is vexMode=0 & byte=0xcd; imm8                      { tmp:1 = imm8; intloc:$(SIZE) = swi(tmp); call [intloc]; }
+:INT1           is vexMode=0 & byte=0xf1                            { tmp:1 = 0x1; swi(tmp); return [0:1]; }
+:INT3           is vexMode=0 & byte=0xcc                            { tmp:1 = 0x3; swi(tmp); return [0:1]; }
+:INT imm8       is vexMode=0 & byte=0xcd; imm8                      { tmp:1 = imm8; swi(tmp); }
 :INTO           is vexMode=0 & byte=0xce & bit64=0
 {
   tmp:1 = 0x4;
