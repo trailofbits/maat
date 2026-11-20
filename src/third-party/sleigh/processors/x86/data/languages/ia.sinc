@@ -5265,7 +5265,15 @@ define pcodeop xend;
 @endif
 
 define pcodeop xinuse;
-:XGETBV         is vexMode=0 & byte=0x0F; byte=0x01; byte=0xD0  { local test = (ECX == 1); local xiu:8 = xinuse(test); local tXCR0 = (zext(test) * XCR0) + (zext(!test) * (XCR0 & xiu)); local tmp = tXCR0 >> 32; EDX = tmp:4;  EAX = tXCR0:4; }
+:XGETBV is vexMode=0 & byte=0x0F; byte=0x01; byte=0xD0 & check_EAX_dest & check_EDX_dest {
+    local value = XCR0;
+    if (ECX == 0) goto <write>;
+    # Other selectors require processor state outside Maat's XCR0 model.
+    value = XCR0 & xinuse(ECX);
+<write>
+    EDX = value(4); build check_EDX_dest;
+    EAX = value:4; build check_EAX_dest;
+}
 :XSETBV         is vexMode=0 & byte=0x0F; byte=0x01; byte=0xD1  { local sel = ECX; XCR0 = (zext(EDX) << 32) | zext(EAX); }
 
 define pcodeop xsave;
