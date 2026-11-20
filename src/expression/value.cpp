@@ -395,6 +395,30 @@ void Value::set_overwrite(const Value& n1, const Value& n2, int lb)
     }
 }
 
+void Value::set_lzcount(int dest_size, const Value& n)
+{
+    const int width = n.size();
+    if (n.is_abstract())
+    {
+        Expr input = n.as_expr();
+        Expr count = exprcst(dest_size, width);
+        for (int i = 0; i < width; ++i)
+        {
+            count = ITE(maat::extract(input, i, i), ITECond::EQ, exprcst(1, 1),
+                        exprcst(dest_size, width - 1 - i), count);
+        }
+        *this = count;
+    }
+    else
+    {
+        const Number& input = n.as_number();
+        int count = 0;
+        while (count < width && !input.get_bit(width - 1 - count))
+            ++count;
+        set_cst(dest_size, count);
+    }
+}
+
 void Value::set_popcount(int dest_size, const Value& n)
 {
     if (n.is_abstract())

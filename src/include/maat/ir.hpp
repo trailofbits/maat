@@ -100,7 +100,8 @@ enum class Op : uint8_t
         EXTRACT,        
         POPCOUNT,
         UNSUPPORTED,
-        NONE
+        NONE,
+        LZCOUNT
 };
 
 /** Return True if the operation assigns a value to a variable */

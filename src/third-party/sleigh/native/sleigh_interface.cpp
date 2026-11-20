@@ -157,6 +157,7 @@ maat::ir::Op translate_pcode_op(OpCode op)
         case OpCode::CPUI_NEW: return maat::ir::Op::NEW;              
         case OpCode::CPUI_INSERT: return maat::ir::Op::INSERT;          
         case OpCode::CPUI_ZPULL: return maat::ir::Op::EXTRACT;
+        case OpCode::CPUI_LZCOUNT: return maat::ir::Op::LZCOUNT;
         case OpCode::CPUI_POPCOUNT: return maat::ir::Op::POPCOUNT;
         default: throw maat::runtime_exception(maat::Fmt()
                             << "translate_pcode_op(): Got unsupported PCODE operation: "
