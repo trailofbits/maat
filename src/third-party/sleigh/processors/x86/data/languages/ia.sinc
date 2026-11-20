@@ -5695,20 +5695,25 @@ define pcodeop fcos;
     ST0 = int2float(m16) f/ ST0; 
 }      
 
-define pcodeop ffree;
-:FFREE freg         is vexMode=0 & byte=0xDD; frow=12 & fpage=0 & freg          
-{ 
-    FPUInstructionPointer = inst_start;
-    FPUTagWord = ffree(freg);   # Set freg to invalid value
+# Tag pairs are indexed by physical register, while freg names a logical ST(i).
+macro freeFpuTag(top, index) {
+    FPUTagWord = FPUTagWord | (3:2 << (((top + index) & 7) * 2));
 }
 
-:FFREEP freg        is vexMode=0 & byte=0xDF; frow=12 & fpage=0 & freg          
-{ 
+:FFREE freg is vexMode=0 & byte=0xDD; frow=12 & fpage=0 & freg & r_m {
     FPUInstructionPointer = inst_start;
-    FPUTagWord = ffree(freg); 
-    fpop();   # FFREE and pop
+    local top:1 = FPUStatusWord[11,3];
+    freeFpuTag(top, r_m);
 }
-                                                                  
+
+:FFREEP freg is vexMode=0 & byte=0xDF; frow=12 & fpage=0 & freg & r_m {
+    FPUInstructionPointer = inst_start;
+    local top:1 = FPUStatusWord[11,3];
+    freeFpuTag(top, r_m);
+    freeFpuTag(top, 0);
+    finc();
+}
+
 :FICOM m16     is vexMode=0 & byte=0xDE; reg_opcode=2 ... & m16            
 { 
     FPUInstructionPointer = inst_start;
