@@ -3,25 +3,35 @@ import pytest
 from maat import ARCH, EVENT, OS, STOP, WHEN, Cst, MaatEngine, Var
 
 
-@pytest.mark.parametrize("source", ["register", "memory"])
+@pytest.mark.parametrize("source", ["register", "same_register", "memory"])
 @pytest.mark.parametrize("selector", range(4))
 def test_shufpd(source, selector):
     m = MaatEngine(ARCH.X64)
     m.mem.map(0x1000, 0x2fff)
     dst = (0x11, 0x22)
-    src = (0x33, 0x44)
+    src = dst if source == "same_register" else (0x33, 0x44)
     m.cpu.zmm0 = Cst(512, dst[0] | (dst[1] << 64))
     src_value = src[0] | (src[1] << 64)
     if source == "register":
         m.cpu.zmm1 = Cst(512, src_value)
         opcode = bytes.fromhex("66 0f c6 c1")  # SHUFPD XMM0, XMM1, imm8
+    elif source == "same_register":
+        opcode = bytes.fromhex("66 0f c6 c0")  # SHUFPD XMM0, XMM0, imm8
     else:
         m.cpu.rax = 0x2000
         m.mem.write(0x2000, src_value.to_bytes(16, "little"))
         opcode = bytes.fromhex("66 0f c6 00")  # SHUFPD XMM0, [RAX], imm8
     m.mem.write(0x1000, opcode + bytes([selector]))
 
+    reads = []
+
+    def record_read(engine):
+        access = engine.info.mem_access
+        reads.append((access.addr.as_uint(), access.size))
+
+    m.hooks.add(EVENT.MEM_R, WHEN.BEFORE, callbacks=[record_read])
     assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    assert reads == ([(0x2000, 16)] if source == "memory" else [])
     assert m.cpu.zmm0.as_uint() == dst[selector & 1] | (src[selector >> 1] << 64)
 
 
@@ -354,3 +364,53 @@ def test_xgetbv_unresolved_selector():
 
     assert m.run_from(0x1000, 1) == STOP.FATAL
     assert m.cpu.rip.as_uint() == 0x1000
+
+
+@pytest.mark.parametrize("selector", [0, 1, 2, 3, 0xfe])
+@pytest.mark.parametrize("source", ["register", "memory"])
+def test_vpinsrd_lane(selector, source):
+    m = MaatEngine(ARCH.X64)
+    m.mem.map(0x1000, 0x2fff)
+    lanes = [1, 2, 3, 4]
+    m.cpu.zmm1 = Cst(512, sum(value << (32 * i) for i, value in enumerate(lanes)))
+    m.cpu.zmm0 = Cst(512, (1 << 512) - 1)
+    if source == "register":
+        opcode = bytes.fromhex("c4 e3 71 22 c0")  # VPINSRD XMM0, XMM1, EAX, imm8
+        m.cpu.rax = 9
+    else:
+        opcode = bytes.fromhex("c4 e3 71 22 00")  # VPINSRD XMM0, XMM1, [RAX], imm8
+        m.cpu.rax = 0x2000
+        m.mem.write(0x2000, Cst(32, 9))
+    m.mem.write(0x1000, opcode + bytes([selector]))
+
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    lanes[selector & 3] = 9
+    assert m.cpu.zmm0.as_uint() == sum(value << (32 * i) for i, value in enumerate(lanes))
+
+
+@pytest.mark.parametrize("opcode", ["c5 f2 58 c2", "c5 f3 58 c2", "c5 f1 58 c2"],
+                         ids=["vaddss", "vaddsd", "vaddpd"])
+def test_unimplemented_avx_add_stops(opcode):
+    m = MaatEngine(ARCH.X64)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes.fromhex(opcode))
+    m.cpu.zmm0 = Cst(512, (1 << 512) - 1)
+
+    assert m.run_from(0x1000, 1) == STOP.UNSUPPORTED_INST
+    assert m.info.addr == m.cpu.rip.as_uint() == 0x1000
+    assert m.cpu.zmm0.as_uint() == (1 << 512) - 1
+
+
+@pytest.mark.parametrize("arch,count", [(ARCH.X86, 8), (ARCH.X64, 16)])
+def test_vzeroupper(arch, count):
+    m = MaatEngine(arch)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes.fromhex("c5 f8 77"))
+    upper = ((1 << 384) - 1) << 128
+    for i in range(count):
+        low = (1 << 127) | (i + 1)
+        setattr(m.cpu, f"zmm{i}", Cst(512, upper | low))
+
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    for i in range(count):
+        assert getattr(m.cpu, f"zmm{i}").as_uint() == (1 << 127) | (i + 1)
