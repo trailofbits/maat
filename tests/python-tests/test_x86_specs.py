@@ -1,6 +1,6 @@
 import pytest
 
-from maat import ARCH, OS, STOP, Cst, MaatEngine, Var
+from maat import ARCH, EVENT, OS, STOP, WHEN, Cst, MaatEngine, Var
 
 
 @pytest.mark.parametrize("source", ["register", "memory"])
@@ -55,15 +55,18 @@ def test_pminub_symbolic_unsigned_lane():
         assert result.as_uint(m.vars) == min(0x80, lane)
 
 
-def test_pslldq_falls_through():
+@pytest.mark.parametrize("count", [0, 1, 8, 9, 15, 16, 32, 255])
+def test_pslldq_falls_through(count):
     m = MaatEngine(ARCH.X86)
     m.mem.map(0x1000, 0x1fff)
-    m.mem.write(0x1000, bytes.fromhex("66 0f 73 f8 01 41"))  # PSLLDQ XMM0, 1; INC ECX
-    m.cpu.zmm0 = Cst(512, 1)
+    # PSLLDQ XMM0, imm8; INC ECX
+    m.mem.write(0x1000, bytes.fromhex("66 0f 73 f8") + bytes([count, 0x41]))
+    value = (1 << 64) | 1
+    m.cpu.zmm0 = Cst(512, value)
     m.cpu.ecx = 0
 
     assert m.run_from(0x1000, 2) == STOP.INST_COUNT
-    assert m.cpu.zmm0.as_uint() == 0x100
+    assert m.cpu.zmm0.as_uint() == (value << (8 * count)) & ((1 << 128) - 1)
     assert m.cpu.ecx.as_uint() == 1
     assert m.cpu.eip.as_uint() == 0x1006
 
@@ -83,3 +86,180 @@ def test_x64_fxsave_fxrstor_round_trip(prefix):
     m.cpu.zmm0 = Cst(512, 0)
     assert m.run_from(0x1010, 1) == STOP.INST_COUNT
     assert m.cpu.zmm0.as_uint() == value
+
+
+@pytest.mark.parametrize("arch", [ARCH.X86, ARCH.X64])
+@pytest.mark.parametrize("equal", [False, True])
+def test_cmpxchg_memory_falls_through(arch, equal):
+    m = MaatEngine(arch)
+    m.mem.map(0x1000, 0x2fff)
+    m.mem.write(0x1000, bytes.fromhex("0f b1 0b 90"))  # CMPXCHG [EBX/RBX], ECX; NOP
+    m.mem.write(0x2000, Cst(32, 1))
+    if arch == ARCH.X64:
+        m.cpu.rax, m.cpu.rbx, m.cpu.rcx = 1 if equal else 2, 0x2000, 3
+    else:
+        m.cpu.eax, m.cpu.ebx, m.cpu.ecx = 1 if equal else 2, 0x2000, 3
+
+    assert m.run_from(0x1000, 2) == STOP.INST_COUNT
+    pc = m.cpu.rip if arch == ARCH.X64 else m.cpu.eip
+    acc = m.cpu.rax if arch == ARCH.X64 else m.cpu.eax
+    assert pc.as_uint() == 0x1004
+    assert acc.as_uint() == 1
+    assert m.cpu.zf.as_uint() == equal
+    assert m.mem.read(0x2000, 4).as_uint() == (3 if equal else 1)
+
+
+@pytest.mark.parametrize("opcode,src", [("d3 e8", 0), ("0f ad d0", 0), ("0f ad d0", 1)])
+@pytest.mark.parametrize("count", [0, 1, 32, 33])
+@pytest.mark.parametrize("old_of", [0, 1])
+def test_right_shift_overflow(opcode, src, count, old_of):
+    m = MaatEngine(ARCH.X86)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes.fromhex(opcode))  # SHR EAX,CL or SHRD EAX,EDX,CL
+    m.cpu.eax, m.cpu.edx, m.cpu.ecx = 0x80000000, src, count
+    m.cpu.of = old_of
+
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    shifted = count & 31
+    assert m.cpu.eax.as_uint() == ((src << 31) | 0x40000000 if shifted else 0x80000000)
+    assert m.cpu.of.as_uint() == (1 ^ src if shifted else old_of)
+
+
+@pytest.mark.parametrize("prefix,reg", [("", "rcx"), ("44", "r9")])
+def test_xchg_memory_clears_upper_register(prefix, reg):
+    m = MaatEngine(ARCH.X64)
+    m.mem.map(0x1000, 0x2fff)
+    m.mem.write(0x1000, bytes.fromhex(prefix + " 87 0b"))
+    m.cpu.rbx = 0x2000
+    setattr(m.cpu, reg, 0xffffffff00000003)
+    m.mem.write(0x2000, Cst(32, 1))
+
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    assert getattr(m.cpu, reg).as_uint() == 1
+    assert m.mem.read(0x2000, 4).as_uint() == 3
+
+
+@pytest.mark.parametrize("reg,modrm", [("zmm0", 0xc1), ("zmm7", 0xf9)])
+def test_x86_vmovdqa_clears_full_destination(reg, modrm):
+    m = MaatEngine(ARCH.X86)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes.fromhex("c5 f9 6f") + bytes([modrm]))
+    setattr(m.cpu, reg, Cst(512, (1 << 512) - 1))
+    m.cpu.zmm1 = Cst(512, (1 << 511) | 2)
+
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    assert getattr(m.cpu, reg).as_uint() == 2
+
+
+@pytest.mark.parametrize("width,prefix", [(16, "66 f3"), (32, "f3"), (64, "f3 48")])
+@pytest.mark.parametrize("same_register", [True, False])
+def test_lzcnt(width, prefix, same_register):
+    m = MaatEngine(ARCH.X64)
+    m.mem.map(0x1000, 0x1fff)
+    # LZCNT AX/EAX/RAX, AX/EAX/RAX or CX/ECX/RCX
+    m.mem.write(0x1000, bytes.fromhex(prefix + " 0f bd") + bytes([0xc0 if same_register else 0xc1]))
+    for value in (0, 1, 1 << (width - 1)):
+        m.cpu.rax = value if same_register else 0
+        m.cpu.rcx = value
+        expected = width - value.bit_length()
+        assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+        assert m.cpu.rax.as_uint() == expected
+        assert m.cpu.cf.as_uint() == (value == 0)
+        assert m.cpu.zf.as_uint() == (expected == 0)
+
+
+def test_lzcnt_symbolic():
+    m = MaatEngine(ARCH.X64)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes.fromhex("f3 48 0f bd c1"))  # LZCNT RAX, RCX
+    m.cpu.rcx = Var(64, "source")
+
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    for value in (0, 1, 0x101, 1 << 63):
+        m.vars.set("source", value, 64)
+        assert m.cpu.rax.as_uint(m.vars) == 64 - value.bit_length()
+
+
+@pytest.mark.parametrize("arch", [ARCH.X86, ARCH.X64])
+@pytest.mark.parametrize("selector", [0, 1, 2])
+def test_xgetbv(arch, selector):
+    m = MaatEngine(arch)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes.fromhex("0f 01 d0"))  # XGETBV
+    m.cpu.xcr0 = 0x1000002e7
+    if arch == ARCH.X64:
+        m.cpu.rax = m.cpu.rdx = (1 << 64) - 1
+        m.cpu.rcx = selector
+    else:
+        m.cpu.eax = m.cpu.edx = 0xffffffff
+        m.cpu.ecx = selector
+
+    stop = m.run_from(0x1000, 1)
+    low, high = (m.cpu.rax, m.cpu.rdx) if arch == ARCH.X64 else (m.cpu.eax, m.cpu.edx)
+    if selector == 0:
+        assert stop == STOP.INST_COUNT
+        assert (low.as_uint(), high.as_uint()) == (0x2e7, 1)
+    else:
+        assert stop == STOP.UNSUPPORTED_INST
+        assert low.as_uint() == high.as_uint() == (1 << (64 if arch == ARCH.X64 else 32)) - 1
+
+
+@pytest.mark.parametrize("arch", [ARCH.X86, ARCH.X64])
+@pytest.mark.parametrize("pop", [False, True])
+@pytest.mark.parametrize("index", [0, 2])
+@pytest.mark.parametrize("top", [3, 7])
+def test_ffree_physical_tag(arch, pop, index, top):
+    m = MaatEngine(arch)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes([0xdf if pop else 0xdd, 0xc0 + index]))
+    other_bits = 0x8101
+    m.cpu.fpusw = (top << 11) | other_bits
+    m.cpu.fputw = 0x10
+    m.cpu.st0, m.cpu.st1 = Cst(80, 10), Cst(80, 20)
+
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    tags = 0x10 | (3 << (2 * ((top + index) & 7)))
+    if pop:
+        tags |= 3 << (2 * top)
+    assert m.cpu.fputw.as_uint() == tags
+    assert m.cpu.fpusw.as_uint() == ((((top + pop) & 7) << 11) | other_bits)
+    assert m.cpu.st0.as_uint() == (20 if pop else 10)
+
+
+def test_ffree_after_stack_rotation():
+    m = MaatEngine(ARCH.X64)
+    m.mem.map(0x1000, 0x1fff)
+    # FINCSTP; FFREE ST(0); FDECSTP
+    m.mem.write(0x1000, bytes.fromhex("d9 f7 dd c0 d9 f6"))
+    m.cpu.fpusw = m.cpu.fputw = 0
+
+    assert m.run_from(0x1000, 3) == STOP.INST_COUNT
+    assert m.cpu.fputw.as_uint() == (3 << 2)
+    assert m.cpu.fpusw.as_uint() == 0
+
+
+def test_lzcnt_reads_memory_once():
+    m = MaatEngine(ARCH.X64)
+    m.mem.map(0x1000, 0x2fff)
+    m.mem.write(0x1000, bytes.fromhex("f3 48 0f bd 01"))  # LZCNT RAX, [RCX]
+    m.cpu.rcx = 0x2000
+    m.mem.write(0x2000, Cst(64, 0x101))
+    reads = []
+
+    def record_read(engine):
+        reads.append(engine.info.mem_access.addr.as_uint())
+
+    m.hooks.add(EVENT.MEM_R, WHEN.BEFORE, callbacks=[record_read])
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    assert m.cpu.rax.as_uint() == 55
+    assert reads == [0x2000]
+
+
+def test_xgetbv_unresolved_selector():
+    m = MaatEngine(ARCH.X64)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes.fromhex("0f 01 d0"))
+    m.cpu.rcx = Var(64, "selector")
+
+    assert m.run_from(0x1000, 1) == STOP.FATAL
+    assert m.cpu.rip.as_uint() == 0x1000
