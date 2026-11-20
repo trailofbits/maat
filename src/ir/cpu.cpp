@@ -565,6 +565,9 @@ void CPU::_compute_res_value(
         case ir::Op::PIECE:
             dest.set_concat(in0, in1);
             break;
+        case ir::Op::LZCOUNT:
+            dest.set_lzcount(inst.out.size(), in0);
+            break;
         case ir::Op::POPCOUNT:
             dest.set_popcount(inst.out.size(), in0);
             break;
