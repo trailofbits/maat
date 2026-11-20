@@ -65,6 +65,9 @@ enum class Id
     EVM_CREATE,
     EVM_SELFDESTRUCT,
     EVM_LOG,
+    //PPC 32
+    PPC32_CNTLZW, ///< CNTLZW instruction
+    PPC32_SC, ///< System Call
     UNSUPPORTED
 };
 

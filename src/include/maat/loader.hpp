@@ -144,7 +144,7 @@ public:
 private:
     void parse_binary(const std::string& binary, loader::Format type);
     void get_arch_special_registers(
-        const Arch& arch, reg_t& pc, reg_t& sp, reg_t& bp, reg_t& gs, reg_t& fs
+        const Arch& arch, std::optional<reg_t>& pc, std::optional<reg_t>& sp, std::optional<reg_t>& bp, std::optional<reg_t>& gs, std::optional<reg_t>& fs
     );
     void map_elf_segments(MaatEngine*engine, addr_t base_address);
     void load_elf_dependencies(
