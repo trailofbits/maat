@@ -139,3 +139,55 @@ Install `pytest` in the interpreter selected by CMake to run the Python tests.
 To check an installed wheel’s type hints, install `pytest`, `ty`, `mypy`, and `pyright` in that environment and run `python tests/typing/check.py`.
 
 [1]: https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html
+
+### Update the vendored x86 Sleigh specifications
+
+Create a worktree from current `master` and check out the target release in a
+clean Ghidra checkout. Run the following commands from the Maat worktree, with
+`ghidra_checkout` set to the path of the Ghidra checkout.
+
+**1. Identify the patches to carry forward.** Read the vendor directory’s
+history back to the most recent pristine Ghidra import. The entries above that
+import include both the patches from the previous update and any processor
+fixes added since.
+
+```sh
+vendor=src/third-party/sleigh/processors/x86/data
+upstream=Ghidra/Processors/x86/data
+git log --topo-order --no-merges --oneline -- "$vendor"
+```
+
+**2. Commit the pristine import.** Replace the entire vendor directory with
+`$ghidra_checkout/$upstream`, including files added or deleted upstream. Commit
+that replacement on its own. Use a subject such as
+`Import the Ghidra <version> x86 processor data` and record the upstream tag
+and revision in the commit message. Before applying any patches, verify that
+these commands print the same tree ID.
+
+```sh
+git -C "$ghidra_checkout" rev-parse "HEAD:$upstream"
+git rev-parse "HEAD:$vendor"
+```
+
+**3. Replay the patches that Maat still needs.** Work through the patches
+identified in step 1, oldest first. If upstream now implements the behavior,
+run the corresponding Maat regression test against the new import and drop the
+patch when the test passes. Otherwise, use `git cherry-pick -x <patch>` and
+resolve any conflicts against the new specification. Keep each processor change
+in its own commit directly above the import. Existing runtime fixes and tests
+carry forward from `master`. Put new runtime changes and tests in separate
+commits after the processor patches.
+
+**4. Review, test, and merge.** Compare the patched vendor directory with the
+clean Ghidra checkout. The diff should contain only the processor changes Maat
+still carries.
+
+```sh
+git diff --no-index -- "$ghidra_checkout/$upstream" "$vendor"
+```
+
+Build in a fresh build directory and run the native and Python test suites. If
+you edit an included `.sinc` file during testing, remove `processors/x86.sla`
+and `processors/x86-64.sla` from the build directory before rebuilding so
+Sleigh recompiles both specifications. Merge the reviewed PR with **Create a
+merge commit** to preserve the import and each patch for the next update.
