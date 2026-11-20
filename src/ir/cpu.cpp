@@ -603,8 +603,8 @@ void CPU::_compute_res_value(
         case ir::Op::CALLOTHER:
             return;
         default:
-            throw runtime_exception( Fmt() <<
-                "CPU::_compute_res_value(): got unsupported IR operation: "
+            throw unsupported_instruction_exception(Fmt() <<
+                "Cannot execute IR operation "
                 << inst.op
                 >> Fmt::to_str
             );
