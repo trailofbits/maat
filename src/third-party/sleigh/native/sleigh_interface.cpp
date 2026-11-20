@@ -15,6 +15,7 @@
 #include "maat/stats.hpp"
 
 #include <algorithm>
+#include <iterator>
 #include <mutex>
 
 // #define DEBUG
@@ -220,10 +221,13 @@ public:
     void dump(const Address &addr, OpCode opc, VarnodeData *outvar,
               VarnodeData *vars, int4 isize)
     {
-        assert(isize > 0);
-
         m_insts.emplace_back();
         maat::ir::Inst& inst = m_insts.back();
+        if (isize <= 0 || static_cast<size_t>(isize) > std::size(inst.in))
+        {
+            inst.op = maat::ir::Op::UNSUPPORTED;
+            return;
+        }
         // TODO remove addr and size in header also
         inst.op = translate_pcode_op(opc);
 
