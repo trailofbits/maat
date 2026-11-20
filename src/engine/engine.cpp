@@ -69,9 +69,6 @@ MaatEngine::MaatEngine(Arch::Type _arch, env::OS os): env(nullptr), _uid(++_uid_
         cpu.ctx().set(reg, Number(arch->reg_size(reg), 0));
     // Initialize some variables for execution statefullness
     _previous_halt_before_exec = -1;
-#ifdef MAAT_PYTHON_BINDINGS
-    self_python_wrapper_object = nullptr;
-#endif
 }
 
 MaatEngine::MaatEngine(
@@ -126,9 +123,6 @@ MaatEngine::MaatEngine(
         process = std::make_shared<ProcessInfo>();
     // Always share environment for now
     env = other.env;
-#ifdef MAAT_PYTHON_BINDINGS
-    self_python_wrapper_object = nullptr;
-#endif
 }
 
 int MaatEngine::uid() const {

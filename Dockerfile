@@ -1,7 +1,7 @@
 # Build Maat with the same native dependency revisions as the Python wheels.
 FROM ubuntu:24.04 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential ca-certificates cmake curl git m4 python3-dev xz-utils zlib1g-dev \
+    build-essential ca-certificates cmake curl git m4 python3-dev python3-venv xz-utils zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src/maat
@@ -12,7 +12,9 @@ RUN CMAKE_PREFIX_PATH=/usr/local CMAKE_BUILD_PARALLEL_LEVEL=4 \
 
 FROM base AS dev
 COPY . .
+RUN python3 -m venv /opt/maat-build && /opt/maat-build/bin/pip install "nanobind>=3.1,<4"
 RUN cmake -S . -B /tmp/maat/build -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+      -DPython3_EXECUTABLE=/opt/maat-build/bin/python \
       "-DCMAKE_INSTALL_PREFIX=$(python3 -m site --user-base)" \
     && cmake --build /tmp/maat/build --parallel 4 \
     && cmake --install /tmp/maat/build
