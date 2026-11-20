@@ -35,18 +35,18 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          submodules: ${{ runner.arch == 'ARM64' }}
+          submodules: ${{ runner.os == 'macOS' && runner.arch == 'X64' }}
 
       - name: Install Ubuntu packages
         if: runner.os == 'Linux'
-        run: sudo apt-get install -y libgmp-dev libz3-dev python3-dev
+        run: sudo apt-get install -y libgmp-dev zlib1g-dev python3-dev
 
       - name: Install macOS packages
         if: runner.os == 'macOS'
         run: brew install gmp z3
 
       - &native_deps
-        name: Install LIEF and Sleigh
+        name: Install native dependencies
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash .github/ci/install-native-deps.sh
@@ -83,26 +83,16 @@ jobs:
       - *checkout
 
       - name: Install Ubuntu packages
-        run: sudo apt-get install -y libgmp-dev python3-dev
+        run: sudo apt-get install -y libgmp-dev zlib1g-dev python3-dev
 
       - *native_deps
-
-      - name: Install sanitizer-compatible Z3
-        working-directory: ${{ runner.temp }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          archive=z3-4.8.14-x64-glibc-2.31.zip
-          gh release download z3-4.8.14 --repo Z3Prover/z3 --pattern "$archive"
-          echo "5ffa4b8b2e04309560d78ef88779bd8353f64248129ca24f6d9e7eb9fdb0af6c  $archive" | sha256sum --check
-          unzip -q "$archive"
 
       - name: Configure and build
         env:
           CC: clang
           CXX: clang++
         run: |
-          cmake --preset ci-sanitize -DZ3_ROOT="$RUNNER_TEMP/z3-4.8.14-x64-glibc-2.31"
+          cmake --preset ci-sanitize
           cmake --build build/sanitize
 
       - name: Test with AddressSanitizer and UndefinedBehaviorSanitizer

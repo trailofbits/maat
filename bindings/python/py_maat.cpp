@@ -22,8 +22,9 @@ PyMethodDef module_methods[] = {
     {"ITE", (PyCFunction)maat_ITE, METH_VARARGS, "Create an If-Then-Else expression from a Constraint and two abstract expressions"},
     // Engine
     {"MaatEngine", (PyCFunction)maat_MaatEngine, METH_VARARGS, "Create a new DSE engine"},
-    // Solver
+#ifdef MAAT_HAS_SOLVER_BACKEND
     {"Solver", (PyCFunction)maat_Solver, METH_NOARGS, "Create a constraint solver"},
+#endif
     // SimpleStateManager
     {"SimpleStateManager", (PyCFunction)maat_SimpleStateManager, METH_VARARGS, "Create a new helper for serializing/deserializing engine states"},
     // EVM

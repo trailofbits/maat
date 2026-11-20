@@ -56,4 +56,4 @@ config-settings = { "cmake.define.maat_USE_EXTERNAL_SLEIGH" = "ON", "cmake.defin
 environment = { CMAKE_PREFIX_PATH = "/tmp/maat-wheel-deps", CMAKE_BUILD_PARALLEL_LEVEL = "4" }
 
 [tool.cibuildwheel.linux]
-manylinux-x86_64-image = "manylinux2014"
+manylinux-x86_64-image = "manylinux_2_28"

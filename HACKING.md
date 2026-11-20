@@ -15,13 +15,10 @@ Developer mode is always set to on in CI workflows.
 
 ### Presets
 
-This project makes use of [presets][1] to simplify the process of configuring
-the project. As a developer, you are recommended to always have the [latest
-CMake version][2] installed to make use of the latest Quality-of-Life
-additions.
-
-You have a few options to pass `maat_DEVELOPER_MODE` to the configure
-command, but this project prefers to use presets.
+The project's [configure, build, and test presets][1] require CMake 3.20 or
+later. With CMake 3.18 or 3.19, follow the [build instructions](BUILDING.md)
+and configure with `-Dmaat_DEVELOPER_MODE=ON -Dmaat_BUILD_PYTHON_BINDINGS=OFF`.
+The Python bindings require CMake 3.26 or later.
 
 As a developer, you should create a `CMakeUserPresets.json` file at the root of
 the project. The following is a real example of a contributor's user preset (inspect carefully to add, remove, or modify the absolute paths):
@@ -29,11 +26,6 @@ the project. The following is a real example of a contributor's user preset (ins
 ```json
 {
   "version": 2,
-  "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 15,
-    "patch": 0
-  },
   "configurePresets": [
     {
       "name": "dependencies",
@@ -147,4 +139,3 @@ Note that if you are building the python bindings you need to install `pytest` i
 run the tests.
 
 [1]: https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html
-[2]: https://cmake.org/download/

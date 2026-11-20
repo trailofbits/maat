@@ -162,8 +162,8 @@ private:
 
     /** \brief Get value of parameter 'param' (extract bits if needed).
       
-     If get_full_register is set to true, the function doesn't truncate the
-     expression if the parameter is a register. */
+     For an output register or temporary, get_full_register returns the
+     enclosing value so a partial write preserves the other bits. */
     inline event::Action _get_param_value(
         ProcessedInst::Param& dest,
         const ir::Param& param,

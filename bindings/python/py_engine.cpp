@@ -423,7 +423,6 @@ void _init_MaatEngine_attributes(MaatEngine_Object* object)
 
 /* Constructor */
 PyObject* maat_MaatEngine(PyObject* self, PyObject* args){
-    MaatEngine_Object* object;
     int arch;
     int system = (int)env::OS::NONE;
 
@@ -433,9 +432,16 @@ PyObject* maat_MaatEngine(PyObject* self, PyObject* args){
     }
 
     // Create object
-    return PyMaatEngine_FromMaatEngine(
-        new MaatEngine((Arch::Type)arch, (env::OS)system)
-    );
+    try
+    {
+        return PyMaatEngine_FromMaatEngine(
+            new MaatEngine((Arch::Type)arch, (env::OS)system)
+        );
+    }
+    catch (const std::exception& e)
+    {
+        return PyErr_Format(PyExc_RuntimeError, "%s", e.what());
+    }
 }
 
 

@@ -4,9 +4,9 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#include <sleigh/loadimage.hh>
-#include <sleigh/sleigh.hh>
-#include <sleigh/types.h>
+#include <ghidra/loadimage.hh>
+#include <ghidra/sleigh.hh>
+#include <ghidra/types.h>
 
 #include "maat/ir.hpp"
 #include "maat/exception.hpp"
@@ -14,7 +14,8 @@
 #include "maat/callother.hpp"
 #include "maat/stats.hpp"
 
-#include <optional>
+#include <algorithm>
+#include <mutex>
 
 // #define DEBUG
 #ifdef DEBUG
@@ -25,6 +26,8 @@
 
 namespace maat
 {
+
+using namespace ghidra;
 
 class SimpleLoadImage : public LoadImage
 {
@@ -80,7 +83,6 @@ public:
     virtual void adjustVma(long adjust) { }
 };
 
-std::string opcode_to_str(OpCode op);
 maat::ir::Op translate_pcode_op(OpCode op)
 {
     switch (op)
@@ -154,11 +156,11 @@ maat::ir::Op translate_pcode_op(OpCode op)
         case OpCode::CPUI_CPOOLREF: return maat::ir::Op::CPOOLREF;         
         case OpCode::CPUI_NEW: return maat::ir::Op::NEW;              
         case OpCode::CPUI_INSERT: return maat::ir::Op::INSERT;          
-        case OpCode::CPUI_EXTRACT: return maat::ir::Op::EXTRACT;          
+        case OpCode::CPUI_ZPULL: return maat::ir::Op::EXTRACT;
         case OpCode::CPUI_POPCOUNT: return maat::ir::Op::POPCOUNT;
         default: throw maat::runtime_exception(maat::Fmt()
                             << "translate_pcode_op(): Got unsupported PCODE operation: "
-                            << opcode_to_str(op)
+                            << get_opname(op)
                             >> maat::Fmt::to_str
                         );
     }
@@ -167,28 +169,38 @@ maat::ir::Op translate_pcode_op(OpCode op)
 class TmpCache
 {
 private:
-    // tmp_map[x] = y <==> unique[x] in pcode is tmp(y) in maat
-    std::unordered_map<int, int> tmp_map;
-    int tmp_cnt;
+    // Sleigh allocates MAX_UNIQUE_SIZE bytes per temporary. Varnodes can
+    // refer to a byte range inside that allocation.
+    std::unordered_map<uintb, ir::tmp_t> allocations;
+    std::vector<size_t> widths;
+
 public:
-    TmpCache(): tmp_cnt(0){}
-public:
-    int get_tmp_from_unique(int unique)
+    ir::Param get(const VarnodeData& v)
     {
-        auto it = tmp_map.find(unique);
-        if (it != tmp_map.end())
-            return it->second;
-        else
+        const uintb byte_offset = v.offset % SleighBase::MAX_UNIQUE_SIZE;
+        const auto [it, inserted] = allocations.try_emplace(v.offset - byte_offset, widths.size());
+        if (inserted)
+            widths.push_back(0);
+        const auto id = it->second;
+        const size_t low = byte_offset * 8;
+        const size_t end = low + v.size * 8;
+        widths[id] = std::max(widths[id], end);
+        return ir::Tmp(id, end - 1, low);
+    }
+
+    void reverse_byte_order(ir::Param& param) const
+    {
+        if (param.is_tmp())
         {
-            tmp_map[unique] = tmp_cnt++;
-            return tmp_map[unique];
+            const size_t width = widths[param.tmp()];
+            param = ir::Tmp(param.tmp(), width - 1 - param.lb, width - 1 - param.hb);
         }
     }
-    
+
     void clear()
     {
-        tmp_cnt = 0;
-        tmp_map.clear();
+        allocations.clear();
+        widths.clear();
     }
 };
 
@@ -198,14 +210,10 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v);
 class PcodeEmitCacher : public PcodeEmit
 {
 public:
-    uintm m_uniq;
     std::vector<maat::ir::Inst> m_insts;
     TranslationContext* translation_ctx;
 
-    PcodeEmitCacher() : m_uniq(0), translation_ctx(nullptr)
-    {}
-
-    PcodeEmitCacher(TranslationContext* ctx) : m_uniq(0), translation_ctx(ctx)
+    explicit PcodeEmitCacher(TranslationContext* ctx) : translation_ctx(ctx)
     {}
 
     void dump(const Address &addr, OpCode opc, VarnodeData *outvar,
@@ -285,10 +293,8 @@ public:
     SimpleLoadImage     m_loader;
     ContextInternal     m_context_internal;
     DocumentStorage     m_document_storage;
-    Document           *m_document;
-    Element            *m_tags;
+    Element             m_sla_tag{nullptr};
     unique_ptr<Sleigh>  m_sleigh;
-    string              m_register_name_cache;
     TmpCache            tmp_cache;
     maat::Arch::Type    arch;
     AssemblyEmitCacher  asm_cache;
@@ -296,10 +302,7 @@ public:
 
     TranslationContext(maat::Arch::Type a, const std::string& slafile, const std::string& pspecfile): arch(a)
     {
-        if (not loadSlaFile(slafile.c_str()))
-        {
-            throw runtime_exception(Fmt() << "Sleigh: failed to load slafile: " << slafile >> Fmt::to_str);
-        }
+        loadSlaFile(slafile);
         if (not pspecfile.empty() and not loadPspecFile(pspecfile.c_str()))
         {
             throw runtime_exception(Fmt() << "Sleigh: failed to load pspecfile: " << pspecfile >> Fmt::to_str);
@@ -311,22 +314,23 @@ public:
             build_callother_mapping_EVM();
     }
 
-    ~TranslationContext()
-    {}
-
-    bool loadSlaFile(const char *path)
+    void loadSlaFile(const std::string& path)
     {
         LOG("%p Loading slafile...", this);
-        // TODO try/catch XmlError
-        m_document = m_document_storage.openDocument(path);
-        m_tags = m_document->getRoot();
-        m_document_storage.registerTag(m_tags);
+        static std::once_flag ids_initialized;
+        std::call_once(ids_initialized, [] {
+            AttributeId::initialize();
+            ElementId::initialize();
+        });
+
+        // Sleigh reads the binary SLA from the path in this element.
+        m_sla_tag.setName("sleigh");
+        m_sla_tag.addContent(path.data(), 0, static_cast<int4>(path.size()));
+        m_document_storage.registerTag(&m_sla_tag);
 
         LOG("Setting up translator");
         m_sleigh.reset(new Sleigh(&m_loader, &m_context_internal));
         m_sleigh->initialize(m_document_storage);
-
-        return true;
     }
 
     bool loadPspecFile(const char *path)
@@ -419,6 +423,16 @@ public:
                 m_pcode.clear();
                 m_sleigh->oneInstruction(m_pcode, addr);
 
+                if (m_sleigh->isBigEndian())
+                {
+                    // The last byte in a big-endian temporary holds its low bits.
+                    for (auto& inst : m_pcode.m_insts)
+                    {
+                        tmp_cache.reverse_byte_order(inst.out);
+                        for (auto& input : inst.in)
+                            tmp_cache.reverse_byte_order(input);
+                    }
+                }
                 // Create AsmInst
                 ir::AsmInst asm_inst(address+offset, ilen);
                 asm_inst.add_insts(m_pcode.get_pcode_instructions());
@@ -601,8 +615,7 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
         }
         else if (addr_space_name == "unique")
         {
-            int tmp = ctx->tmp_cache.get_tmp_from_unique(v->offset);
-            return std::move(maat::ir::Tmp(tmp, v->size*8));
+            return ctx->tmp_cache.get(*v);
         }
         else if (addr_space_name == "ram" or addr_space_name == "code")
         {
@@ -641,7 +654,18 @@ std::shared_ptr<TranslationContext> new_sleigh_ctx(
     const std::string& pspecfile
 )
 {
-    return std::make_shared<TranslationContext>(arch, slafile, pspecfile);
+    try
+    {
+        return std::make_shared<TranslationContext>(arch, slafile, pspecfile);
+    }
+    catch (const LowlevelError& e)
+    {
+        throw lifter_exception(slafile + ": " + e.explain);
+    }
+    catch (const DecoderError& e)
+    {
+        throw lifter_exception(e.explain);
+    }
 }
 
 void sleigh_translate(
@@ -670,87 +694,6 @@ const std::string& sleigh_get_asm(
 )
 {
     return ctx->get_asm(address, bytes);
-}
-
-std::string opcode_to_str(OpCode op)
-{
-    std::string res;
-    switch (op)
-    {
-        case OpCode::CPUI_COPY: res = "COPY"; break;
-        case OpCode::CPUI_LOAD: res = "LOAD"; break;
-        case OpCode::CPUI_STORE: res = "STORE"; break;
-        case OpCode::CPUI_BRANCH: res = "BRANCH"; break;            
-        case OpCode::CPUI_CBRANCH: res = "CBRANCH"; break;           
-        case OpCode::CPUI_BRANCHIND: res = "BRANCHIND"; break;
-        case OpCode::CPUI_CALL: res = "CALL"; break;         
-        case OpCode::CPUI_CALLIND: res = "CALLIND"; break;           
-        case OpCode::CPUI_CALLOTHER: res = "CALLOTHER"; break;         
-        case OpCode::CPUI_RETURN: res = "RETURN"; break;            
-        case OpCode::CPUI_INT_EQUAL: res = "INT_EQUAL"; break;        
-        case OpCode::CPUI_INT_NOTEQUAL: res = "INT_NOTEQUAL"; break;     
-        case OpCode::CPUI_INT_SLESS: res = "INT_SLESS"; break;        
-        case OpCode::CPUI_INT_SLESSEQUAL: res = "INT_SLESSEQUAL"; break;   
-        case OpCode::CPUI_INT_LESS: res = "INT_LESS"; break;         
-        case OpCode::CPUI_INT_LESSEQUAL: res = "INT_LESSEQUAL"; break;     
-        case OpCode::CPUI_INT_ZEXT: res = "INT_ZEXT"; break;         
-        case OpCode::CPUI_INT_SEXT: res = "INT_SEXT"; break;         
-        case OpCode::CPUI_INT_ADD: res = "INT_ADD"; break;           
-        case OpCode::CPUI_INT_SUB: res = "INT_SUB"; break;           
-        case OpCode::CPUI_INT_CARRY: res = "INT_CARRY"; break;        
-        case OpCode::CPUI_INT_SCARRY: res = "INT_SCARRY"; break;        
-        case OpCode::CPUI_INT_SBORROW: res = "INT_SBORROW"; break;       
-        case OpCode::CPUI_INT_2COMP: res = "INT_2COMP"; break;         
-        case OpCode::CPUI_INT_NEGATE: res = "INT_NEGATE"; break;        
-        case OpCode::CPUI_INT_XOR: res = "INT_XOR"; break;           
-        case OpCode::CPUI_INT_AND: res = "INT_AND"; break;           
-        case OpCode::CPUI_INT_OR: res = "INT_OR"; break;           
-        case OpCode::CPUI_INT_LEFT: res = "INT_SHL"; break;          
-        case OpCode::CPUI_INT_RIGHT: res = "INT_SHR"; break;        
-        case OpCode::CPUI_INT_SRIGHT: res = "INT_SAR"; break;       
-        case OpCode::CPUI_INT_MULT: res = "INT_MULT"; break;         
-        case OpCode::CPUI_INT_DIV: res = "INT_DIV"; break;          
-        case OpCode::CPUI_INT_SDIV: res = "INT_SDIV"; break;         
-        case OpCode::CPUI_INT_REM: res = "INT_REM"; break;          
-        case OpCode::CPUI_INT_SREM: res = "INT_SREM"; break;         
-        case OpCode::CPUI_BOOL_NEGATE: res = "BOOL_NEGATE"; break;     
-        case OpCode::CPUI_BOOL_XOR: res = "BOOL_XOR"; break;         
-        case OpCode::CPUI_BOOL_AND: res = "BOOL_AND"; break;         
-        case OpCode::CPUI_BOOL_OR: res = "BOOL_OR"; break;          
-        case OpCode::CPUI_FLOAT_EQUAL: res = "FLOAT_EQUAL"; break;      
-        case OpCode::CPUI_FLOAT_NOTEQUAL: res = "FLOAT_NOTEQUAL"; break;  
-        case OpCode::CPUI_FLOAT_LESS: res = "FLOAT_LESS"; break;      
-        case OpCode::CPUI_FLOAT_LESSEQUAL: res = "FLOAT_LESSEQUAL"; break;            
-        case OpCode::CPUI_FLOAT_NAN: res = "FLOAT_NAN"; break;         
-        case OpCode::CPUI_FLOAT_ADD: res = "FLOAT_ADD"; break;         
-        case OpCode::CPUI_FLOAT_DIV: res = "FLOAT_DIV"; break;        
-        case OpCode::CPUI_FLOAT_MULT: res = "FLOAT_MULT"; break;       
-        case OpCode::CPUI_FLOAT_SUB: res = "FLOAT_SUB"; break;        
-        case OpCode::CPUI_FLOAT_NEG: res = "FLOAT_NEG"; break;        
-        case OpCode::CPUI_FLOAT_ABS: res = "FLOAT_ABS"; break;        
-        case OpCode::CPUI_FLOAT_SQRT: res = "FLOAT_SQRT"; break;      
-        case OpCode::CPUI_FLOAT_INT2FLOAT: res = "FLOAT_INT2FLOAT"; break;  
-        case OpCode::CPUI_FLOAT_FLOAT2FLOAT: res = "FLOAT_FLOAT2FLOAT"; break;
-        case OpCode::CPUI_FLOAT_TRUNC: res = "FLOAT_TRUNC"; break;     
-        case OpCode::CPUI_FLOAT_CEIL: res = "FLOAT_CEIL"; break;      
-        case OpCode::CPUI_FLOAT_FLOOR: res = "FLOAT_FLOOR"; break;      
-        case OpCode::CPUI_FLOAT_ROUND: res = "FLOAT_ROUND"; break;
-        case OpCode::CPUI_MULTIEQUAL: res = "MULTIEQUAL"; break;     
-        case OpCode::CPUI_INDIRECT: res = "INDIRECT"; break;        
-        case OpCode::CPUI_PIECE: res = "PIECE"; break;           
-        case OpCode::CPUI_SUBPIECE: res = "SUBPIECE"; break;        
-        case OpCode::CPUI_CAST: res = "CAST"; break;           
-        case OpCode::CPUI_PTRADD: res = "PTRADD"; break;           
-        case OpCode::CPUI_PTRSUB: res = "PTRSUB"; break;         
-        case OpCode::CPUI_SEGMENTOP: res = "SEGMENTOP"; break;       
-        case OpCode::CPUI_CPOOLREF: res = "CPOOLREF"; break;         
-        case OpCode::CPUI_NEW: res = "NEW"; break;              
-        case OpCode::CPUI_INSERT: res = "INSERT"; break;          
-        case OpCode::CPUI_EXTRACT: res = "EXTRACT"; break;          
-        case OpCode::CPUI_POPCOUNT: res = "POPCOUNT"; break;          
-        default: res = "????"; break;
-    }
-    return res;
 }
 
 } // namespace maat

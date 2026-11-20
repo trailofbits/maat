@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.18)
 
 include(cmake/prelude.cmake)
 
@@ -112,10 +112,16 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 find_package(GMP REQUIRED)
 
 if(maat_USE_EXTERNAL_SLEIGH)
-  find_package(sleigh REQUIRED)
+  find_package(sleigh 12.2 REQUIRED)
 else()
-  set(sleigh_ENABLE_TESTS OFF CACHE BOOL "")
-  add_subdirectory(src/third-party/sleigh/sleigh-cmake sleigh EXCLUDE_FROM_ALL)
+  function(maat_add_vendored_sleigh)
+    set(BUILD_SHARED_LIBS OFF)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(sleigh_BUILD_TOOLS ON)
+    add_subdirectory(src/third-party/sleigh/sleigh-cmake sleigh EXCLUDE_FROM_ALL)
+  endfunction()
+  maat_add_vendored_sleigh()
+  include(src/third-party/sleigh/sleigh-cmake/cmake/modules/sleighCompile.cmake)
 endif()
 
 target_link_libraries(
@@ -131,7 +137,7 @@ if(maat_USE_Z3)
 endif()
 
 if(maat_USE_LIEF)
-  find_package(LIEF 0.12 REQUIRED)
+  find_package(LIEF 1.0 REQUIRED)
   target_link_libraries(maat_maat PUBLIC LIEF::LIEF)
   target_compile_definitions(maat_maat PUBLIC MAAT_LIEF_BACKEND=1 MAAT_HAS_LOADER_BACKEND=1)
 endif()
@@ -156,14 +162,14 @@ add_custom_command(
 # Allow user to override sleigh compiler to support cross-compilation. Default
 # location is the one imported when we found the sleigh package
 if(CMAKE_CROSSCOMPILING)
-  find_program(maat_SLEIGH_COMPILER "sleigh_opt"
+  find_program(maat_SLEIGH_COMPILER "sleigh"
     DOC "Sleigh compiler executable"
   )
   if(NOT maat_SLEIGH_COMPILER)
     message(FATAL_ERROR "Maat needs a sleigh compiler. Specify path manually by setting 'maat_SLEIGH_COMPILER'")
   endif()
 else()
-  set(maat_SLEIGH_COMPILER "$<TARGET_FILE:sleigh::sleigh_opt>" CACHE PATH "Sleigh compiler executable")
+  set(maat_SLEIGH_COMPILER "$<TARGET_FILE:sleigh::sleigh>" CACHE PATH "Sleigh compiler executable")
 endif()
 
 macro(maat_sleigh_compile ARCH_DIR ARCH)

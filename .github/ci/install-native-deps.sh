@@ -3,15 +3,15 @@ set -euo pipefail
 
 case "$RUNNER_OS/$RUNNER_ARCH" in
 Linux/X64)
-  lief_sha=37674fcecfc93e4f28476400d6264bbbe393d779257ce965aaf0c13a5cf71124
-  sleigh_sha=8a1a5adf23df7d23ae3ecfda1e8321b2388d7600dcc6743f2f9652917191ac18
+  lief_sha=81b86bcc69d311a01ec1914d26c31ebbb605ac761ec02f10bc5b588de74a8e91
+  sleigh_sha=04aeb501858bbacb1cf7afd75d85a94cd1c1abf00354ce43ffaa1e26e2d55ba8
   ;;
 macOS/X64)
-  lief_sha=d5be58c3f44541a45f3f3b2f8a60a38ed484f3f7c2195829ce999dae28349d49
-  sleigh_sha=d35704eee70460971ac7192301f59a37a867d807b516cbba75ada50e24fb76a4
+  lief_sha=f15541e53344b3bb58078472bd9ab737b9f89cd24d51f46866066e554ead7107
   ;;
 macOS/ARM64)
-  lief_sha=029e274f6d46f6b5729318ad6e90828700f077f649424ab820a348b18d70935f
+  lief_sha=c7bedf2e2acab9bced1c8701b06261fc6f4eba1957f80cbf86323a3f5e172167
+  sleigh_sha=6958f37ba8fd5dfd1ce93397f270380f314c8081a132d1e14753c7baef58b8bc
   ;;
 *)
   echo "Unsupported runner: $RUNNER_OS/$RUNNER_ARCH" >&2
@@ -30,18 +30,24 @@ install_archive() {
   tar -xzf "$archive" --strip-components=1 -C "$prefix"
 }
 
-lief_version=0.13.2
+lief_version=1.0.0
 install_archive lief-project/LIEF "$lief_version" "LIEF-$lief_version-$(uname -s)-$(uname -m).tar.gz" "$lief_sha"
 
-if [[ $RUNNER_ARCH == X64 ]]; then
-  install_archive lifting-bits/sleigh v10.1.2-2 "$RUNNER_OS-sleigh-10.1.2-2.x86_64.tar.gz" "$sleigh_sha"
+if [[ -n ${sleigh_sha:-} ]]; then
+  install_archive lifting-bits/sleigh v12.2 "$RUNNER_OS-sleigh-12.2-1.$(uname -m).tar.gz" "$sleigh_sha"
 else
-  # The Sleigh release pinned by the submodule has no arm64 binary.
-  # Its configure step uses git am to apply a bundled Ghidra patch.
-  GIT_COMMITTER_NAME=CI GIT_COMMITTER_EMAIL=ci@example.invalid \
-    cmake -S "$GITHUB_WORKSPACE/src/third-party/sleigh/sleigh-cmake" -B sleigh-build \
+  # Sleigh publishes its macOS binary for arm64. Build the Intel library locally.
+  cmake -S "$GITHUB_WORKSPACE/src/third-party/sleigh/sleigh-cmake" -B sleigh-build \
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$prefix" \
-    -Dsleigh_ENABLE_TESTS=OFF -Dsleigh_ENABLE_EXAMPLES=OFF
+    -Dsleigh_BUILD_SLEIGHSPECS=OFF -Dsleigh_BUILD_SUPPORT=OFF
   cmake --build sleigh-build --target install
+fi
+
+if [[ $RUNNER_OS == Linux ]]; then
+  z3='z3-5.4.1-x64-glibc-2.39'
+  gh release download z3-5.4.1 --repo Z3Prover/z3 --pattern "$z3.zip"
+  echo "b548bac48ef2452b4e09ea2945cf4b011d5f43fcf39e4799df268ee7e0769d85  $z3.zip" | sha256sum --check
+  unzip -q "$z3.zip"
+  prefix="$prefix:$RUNNER_TEMP/$z3"
 fi
 echo "CMAKE_PREFIX_PATH=$prefix" >>"$GITHUB_ENV"
