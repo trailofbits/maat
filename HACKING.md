@@ -139,3 +139,44 @@ Note that if you are building the python bindings you need to install `pytest` i
 run the tests.
 
 [1]: https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html
+
+### Update the vendored x86 Sleigh specifications
+
+Start in a worktree branched from current `master`. Before copying any files,
+list the processor patches from the previous update and subsequent changes to
+the vendor directory. For Ghidra 12.2, the pristine import was `47a352a` and
+its twelve processor patches ended at `9364e04`.
+
+```sh
+vendor=src/third-party/sleigh/processors/x86/data
+previous_import=47a352a  # Use the most recent pristine import.
+git log --reverse --no-merges --oneline "$previous_import"..HEAD -- "$vendor"
+git diff "$previous_import" HEAD -- "$vendor"
+```
+
+Replace the entire vendor directory with `Ghidra/Processors/x86/data` from the
+target release, including upstream deletions. Commit the import alone and
+record the upstream tag and commit in its message. Verify that these two tree
+IDs match before applying patches.
+
+```sh
+git -C "$ghidra_checkout" rev-parse "${ghidra_tag}:Ghidra/Processors/x86/data"
+git rev-parse "HEAD:$vendor"
+new_import=$(git rev-parse HEAD)
+```
+
+Review the listed patches in order. For each adaptation that Maat still needs,
+run `git cherry-pick -x <patch>` and resolve any conflicts against the new
+specification. When upstream implements the behavior, skip
+the patch and run its existing Maat test against the new import. Keep each
+remaining processor change in its own commit directly above the import.
+Runtime fixes and regression tests already on `master` carry forward with the
+branch. Put any new runtime fixes and tests in separate commits after the
+processor patches.
+
+Review the resulting downstream changes with
+`git diff "$new_import" HEAD -- "$vendor"`. Build in a fresh build directory and
+run the native and Python suites. When testing incremental edits to included `.sinc` files, remove the
+generated `processors/x86.sla` and `processors/x86-64.sla` from the build
+directory first so Sleigh recompiles both. Merge the reviewed PR with a merge
+commit to preserve the import and the individual patches for the next update.
