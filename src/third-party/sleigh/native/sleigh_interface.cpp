@@ -15,6 +15,8 @@
 #include "maat/stats.hpp"
 
 #include <algorithm>
+#include <iterator>
+#include <map>
 #include <mutex>
 
 // #define DEBUG
@@ -157,6 +159,7 @@ maat::ir::Op translate_pcode_op(OpCode op)
         case OpCode::CPUI_NEW: return maat::ir::Op::NEW;              
         case OpCode::CPUI_INSERT: return maat::ir::Op::INSERT;          
         case OpCode::CPUI_ZPULL: return maat::ir::Op::EXTRACT;
+        case OpCode::CPUI_LZCOUNT: return maat::ir::Op::LZCOUNT;
         case OpCode::CPUI_POPCOUNT: return maat::ir::Op::POPCOUNT;
         default: throw maat::runtime_exception(maat::Fmt()
                             << "translate_pcode_op(): Got unsupported PCODE operation: "
@@ -204,6 +207,8 @@ public:
     }
 };
 
+maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name);
+
 class TranslationContext;
 maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v);
 
@@ -219,10 +224,13 @@ public:
     void dump(const Address &addr, OpCode opc, VarnodeData *outvar,
               VarnodeData *vars, int4 isize)
     {
-        assert(isize > 0);
-
         m_insts.emplace_back();
         maat::ir::Inst& inst = m_insts.back();
+        if (isize <= 0 || static_cast<size_t>(isize) > std::size(inst.in))
+        {
+            inst.op = maat::ir::Op::UNSUPPORTED;
+            return;
+        }
         // TODO remove addr and size in header also
         inst.op = translate_pcode_op(opc);
 
@@ -298,6 +306,7 @@ public:
     TmpCache            tmp_cache;
     maat::Arch::Type    arch;
     AssemblyEmitCacher  asm_cache;
+    std::map<uintb, ir::Param> vector_registers;
     std::unordered_map<uintm, maat::callother::Id> callother_mapping;
 
     TranslationContext(maat::Arch::Type a, const std::string& slafile, const std::string& pspecfile): arch(a)
@@ -308,10 +317,31 @@ public:
             throw runtime_exception(Fmt() << "Sleigh: failed to load pspecfile: " << pspecfile >> Fmt::to_str);
         }
 
-        // For EVM we add special callother operations, need to build the mapping to callother::Id
-        // for them
         if (a == maat::Arch::Type::EVM)
             build_callother_mapping_EVM();
+        else if (a == maat::Arch::Type::X86 || a == maat::Arch::Type::X64)
+        {
+            // The p-code can address unnamed slices within a vector register.
+            const int count = a == maat::Arch::Type::X86 ? 8 : 16;
+            for (int i = 0; i < count; ++i)
+            {
+                const std::string name = "ZMM" + std::to_string(i);
+                if (m_sleigh->findSymbol(name))
+                    vector_registers.emplace(m_sleigh->getRegister(name).offset,
+                                             reg_name_to_maat_reg(a, name));
+            }
+
+            // Sleigh emits these userops inside instructions such as memory XCHG.
+            // Maat executes one thread and can ignore the lock and elision hints.
+            std::vector<std::string> userops;
+            m_sleigh->getUserOpNames(userops);
+            for (size_t i = 0; i < userops.size(); ++i)
+            {
+                const auto& name = userops[i];
+                if (name == "LOCK" || name == "UNLOCK" || name == "XACQUIRE" || name == "XRELEASE")
+                    callother_mapping[i] = callother::Id::X86_LOCK;
+            }
+        }
     }
 
     void loadSlaFile(const std::string& path)
@@ -530,9 +560,18 @@ public:
         }
     }
 
-    const std::string getRegisterName(AddrSpace* as, uintb off, int4 size)
+    ir::Param translate_register(const VarnodeData& v) const
     {
-        return m_sleigh->getRegisterName(as, off, size);
+        auto next = vector_registers.upper_bound(v.offset);
+        if (next != vector_registers.begin())
+        {
+            const auto& [offset, parent] = *std::prev(next);
+            const uintb first = v.offset - offset;
+            const size_t bytes = parent.size() / 8;
+            if (first < bytes && static_cast<size_t>(v.size) <= bytes - first)
+                return ir::Reg(parent.reg(), (first + v.size) * 8 - 1, first * 8);
+        }
+        return reg_name_to_maat_reg(arch, m_sleigh->getRegisterName(v.space, v.offset, v.size));
     }
 
     void build_callother_mapping_EVM()
@@ -591,7 +630,6 @@ public:
 };
 
 // Translate a sleigh register name into a maat::ir::Param register
-maat::ir::Param reg_name_to_maat_reg(maat::Arch::Type arch, const std::string& reg_name);
 // Translate a pcode varnode into an parameter and add it to inst
 maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
 {
@@ -610,8 +648,7 @@ maat::ir::Param translate_pcode_param(TranslationContext* ctx, VarnodeData* v)
         const std::string& addr_space_name = v->space->getName();
         if (addr_space_name == "register")
         {
-            const std::string& reg_name = ctx->getRegisterName(v->space, v->offset, v->size);
-            return std::move(reg_name_to_maat_reg(ctx->arch, reg_name));
+            return ctx->translate_register(*v);
         }
         else if (addr_space_name == "unique")
         {
