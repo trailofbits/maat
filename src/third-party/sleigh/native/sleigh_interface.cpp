@@ -308,10 +308,21 @@ public:
             throw runtime_exception(Fmt() << "Sleigh: failed to load pspecfile: " << pspecfile >> Fmt::to_str);
         }
 
-        // For EVM we add special callother operations, need to build the mapping to callother::Id
-        // for them
         if (a == maat::Arch::Type::EVM)
             build_callother_mapping_EVM();
+        else if (a == maat::Arch::Type::X86 || a == maat::Arch::Type::X64)
+        {
+            // Sleigh emits these userops inside instructions such as memory XCHG.
+            // Maat executes one thread and can ignore the lock and elision hints.
+            std::vector<std::string> userops;
+            m_sleigh->getUserOpNames(userops);
+            for (size_t i = 0; i < userops.size(); ++i)
+            {
+                const auto& name = userops[i];
+                if (name == "LOCK" || name == "UNLOCK" || name == "XACQUIRE" || name == "XRELEASE")
+                    callother_mapping[i] = callother::Id::X86_LOCK;
+            }
+        }
     }
 
     void loadSlaFile(const std::string& path)
