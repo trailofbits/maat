@@ -576,15 +576,13 @@
 {
     build lockx;
     local dest = m8;
-    subflags(AL,dest); 
-    local diff = AL-dest; 
+    subflags(AL, dest);
+    local diff = AL - dest;
     resultflags(diff);
-    if (ZF) goto <equal>;
+    local selected:1;
+    conditionalAssign(selected, ZF, Reg8, dest);
+    m8 = selected;
     AL = dest;
-    goto <inst_end>;
-<equal>
-    m8 = Reg8;
-<inst_end>
     build unlock;
 }
 
@@ -592,16 +590,14 @@
 {
     build lockx;
     local dest = m16;
-    subflags(AX,dest); 
-    local diff = AX-dest; 
+    subflags(AX, dest);
+    local diff = AX - dest;
     resultflags(diff);
-    if (ZF) goto <equal>;
+    local selected:2;
+    conditionalAssign(selected, ZF, Reg16, dest);
+    m16 = selected;
     AX = dest;
-    goto <inst_end>;
-<equal>
-    m16 = Reg16;
-<inst_end>
-    build unlock; 
+    build unlock;
 }
 
 :CMPXCHG^lockx m32,Reg32    is vexMode=0 & lockx & unlock & opsize=1 & byte=0xf; byte=0xb1; m32 & Reg32 ... & check_EAX_dest ...
@@ -616,6 +612,7 @@
     local diff = EAX-dest; 
     resultflags(diff);
     if (ZF) goto <equal>;
+    m32 = dest;
     EAX = dest;
     build check_EAX_dest;
     goto <inst_end>;
@@ -630,15 +627,13 @@
 {
     build lockx;
     local dest = m64;
-    subflags(RAX,dest); 
-    local diff = RAX-dest; 
+    subflags(RAX, dest);
+    local diff = RAX - dest;
     resultflags(diff);
-    if (ZF) goto <equal>;
+    local selected:8;
+    conditionalAssign(selected, ZF, Reg64, dest);
+    m64 = selected;
     RAX = dest;
-    goto <inst_end>;
-<equal>
-    m64 = Reg64;
-<inst_end>
     build unlock;
 }
 @endif
