@@ -2,6 +2,16 @@
 # FindPython3 gained stable ABI module support in CMake 3.26.
 cmake_minimum_required(VERSION 3.26)
 find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter Development.SABIModule)
+# FindPython3 started reporting the free-threaded build flag in CMake 4.4.
+if(NOT DEFINED Python3_FREE_THREADED AND NOT CMAKE_CROSSCOMPILING)
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -c
+      "import sysconfig; print(sysconfig.get_config_var('Py_GIL_DISABLED') or 0)"
+    OUTPUT_VARIABLE Python3_FREE_THREADED
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+endif()
 if(Python3_FREE_THREADED)
   message(FATAL_ERROR "Building the cp310-abi3 extension requires GIL-enabled CPython")
 endif()
