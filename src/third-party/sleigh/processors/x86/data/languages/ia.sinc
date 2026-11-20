@@ -2219,7 +2219,12 @@ macro shrdflags(op1,result,count) {
  conditionalAssign(OF, count==1, ((op1 s< 0) ^ (result s< 0)), OF);
 }
 
+macro adjustFpuTop(delta) {
+    FPUStatusWord[11,3] = (FPUStatusWord[11,3] + delta) & 7;
+}
+
 macro fdec() {
+    adjustFpuTop(-1);
     local tmp = ST7;
 	ST7 = ST6;
 	ST6 = ST5;
@@ -2232,6 +2237,7 @@ macro fdec() {
 }
 
 macro finc() {
+    adjustFpuTop(1);
     local tmp = ST0;
 	ST0 = ST1;
 	ST1 = ST2;
@@ -2244,6 +2250,7 @@ macro finc() {
 }
 
 macro fpop() {
+    adjustFpuTop(1);
 	ST0 = ST1;
 	ST1 = ST2;
 	ST2 = ST3;
@@ -2254,6 +2261,7 @@ macro fpop() {
 }
 
  macro fpushv(val) {
+    adjustFpuTop(-1);
 	ST7 = ST6;
 	ST6 = ST5;
 	ST5 = ST4;
@@ -2266,13 +2274,7 @@ macro fpop() {
 
 macro fpopv(val) {
     val = ST0;
-	ST0 = ST1;
-	ST1 = ST2;
-	ST2 = ST3;
-	ST3 = ST4;
-	ST4 = ST5;
-	ST5 = ST6;
-	ST6 = ST7;
+    fpop();
 }
 
 macro fcom(val) {
@@ -2282,7 +2284,7 @@ macro fcom(val) {
     C0 = C2 | ( ST0 f< val  ); 
     C3 = C2 | ( ST0 f== val );
 
-    FPUStatusWord = (zext(C0)<<8) | (zext(C1)<<9) | (zext(C2)<<10) | (zext(C3)<<14);
+    FPUStatusWord = (FPUStatusWord & 0xb8ff) | (zext(C0)<<8) | (zext(C1)<<9) | (zext(C2)<<10) | (zext(C3)<<14);
 }
 
 macro fcomi(val) {
@@ -6394,7 +6396,7 @@ define pcodeop fsin;
   # equal to zero  
   C3 = ( ST0 f== fzero );
   
-  FPUStatusWord = (zext(C0)<<8) | (zext(C1)<<9) | (zext(C2)<<10) | (zext(C3)<<14);
+  FPUStatusWord = (FPUStatusWord & 0xb8ff) | (zext(C0)<<8) | (zext(C1)<<9) | (zext(C2)<<10) | (zext(C3)<<14);
 }
                                                                     
 :FXCH freg      is vexMode=0 & byte=0xD9; frow=12 & fpage=1 & freg  
