@@ -1,266 +1,92 @@
 #include "python_bindings.hpp"
+#include <nanobind/stl/pair.h>
 
-namespace maat{
-namespace py{
-    
-static void EventManager_dealloc(PyObject* self){
-    if( ! as_event_object(self).is_ref){
-        delete as_event_object(self).manager;
-    }
-    as_event_object(self).manager = nullptr;
-    free_binding_object(self);
-};
-
-static PyObject* EventManager_str(PyObject* self)
+namespace maat::py
 {
-    std::stringstream res;
-    res << *(as_event_object(self).manager);
-    return PyUnicode_FromString(res.str().c_str());
-}
-
-static PyObject* EventManager_repr(PyObject* self)
+static event::EventCallback python_callback(nb::callable callback, nb::object data)
 {
-    return EventManager_str(self);
-}
-
-static PyObject* EventManager_add(PyObject* self, PyObject*args, PyObject* keywords)
-{
-    int int_event, int_when;
-    const char* name = "";
-    const char* group = "";
-    PyObject* filter = NULL;
-    const char * reg_name = nullptr;
-    unsigned long long  filter_min = 0,
-                        filter_max = 0xffffffffffffffff;
-    PyObject* callbacks = NULL;
-    PyObject* callback_data = NULL;
-    std::vector<event::EventCallback> callbacks_list;
-
-    char* keywd[] = {"", "", "name", "filter", "callbacks", "data", "group", NULL};
-
-    if( !PyArg_ParseTupleAndKeywords(
-        args, keywords, "ii|s(KK)OOs", keywd, &int_event, &int_when, &name, &filter_min, &filter_max, &callbacks, &callback_data, &group))
-    {
-        PyErr_Clear();
-        if( !PyArg_ParseTupleAndKeywords(
-        args, keywords, "ii|sOOOs", keywd, &int_event, &int_when, &name, &filter, &callbacks, &callback_data, &group))
+    using event::Action;
+    return event::EventCallback(
+        [callback = std::move(callback), data = std::move(data)](MaatEngine& engine, void*)
         {
-            return NULL;
-        }
-    }
-
-    // Check callbacks list
-    if (callbacks != NULL)
-    {
-        // Check if it's a list
-        if (not PyList_Check(callbacks))
-        {
-            return PyErr_Format(PyExc_TypeError, "'callbacks' parameter must be a list of callbacks");
-        }
-        for (int i = 0; i < PyList_Size(callbacks); i++)
-        {
-            PyObject* cb = PyList_GetItem(callbacks, i);
-            if (not PyCallable_Check(cb))
+            nb::gil_scoped_acquire gil;
+            auto wrapper = nb::find(&engine);
+            if (!wrapper.is_valid())
+                throw runtime_exception("Missing Python engine for callback");
+            try
             {
-                return PyErr_Format(PyExc_TypeError, "Callback number %d is not a callable object", i);
+                nb::object result = data.is_valid() ? callback(wrapper, data) : callback(wrapper);
+                if (result.is_none())
+                    return Action::CONTINUE;
+                if (!nb::isinstance<nb::int_>(result))
+                {
+                    engine.log.fatal("Python callback didn't return a valid action (wrong object type)");
+                    return Action::ERROR;
+                }
+                auto value = PyLong_AsLong(result.ptr());
+                if (PyErr_Occurred())
+                    throw nb::python_error();
+                auto action = static_cast<Action>(static_cast<int>(value));
+                if (action == Action::CONTINUE || action == Action::HALT || action == Action::ERROR)
+                    return action;
+                engine.log.fatal("Python callback didn't return a valid action");
             }
-            callbacks_list.push_back(event::EventCallback(cb, callback_data));
-        }
-    }
-
-    event::Event event = (event::Event)int_event;
-    event::When when = (event::When)int_when;
-    event::AddrFilter addr_filter;
-    // Get filter
-    if (filter == NULL)
-    {
-        // If not default, then set it to specified value
-        if (filter_min != 0 or filter_max != 0xffffffffffffffff)
-        {
-            addr_filter = event::AddrFilter(filter_min, filter_max);
-        }
-        // Otherwise let the default filter
-    }
-    else
-    {
-        if (not PyLong_Check(filter))
-            return PyErr_Format(PyExc_TypeError, "Expected integer or integer pair for 'filter' argument");
-        addr_filter = event::AddrFilter(PyLong_AsUnsignedLongLong(filter));
-    }
-
-    // Add hook
-    try
-    { 
-        as_event_object(self).manager->add(
-            event, when, callbacks_list, std::string(name), addr_filter, std::string(group)
-        );
-    }
-    catch(const event_exception& e)
-    {
-        return PyErr_Format(PyExc_ValueError, "%s", e.what());
-    }
-
-    Py_RETURN_NONE;
-};
-
-static PyObject* EventManager_disable(PyObject* self, PyObject *args)
-{
-    const char* name;
-    
-    if( !PyArg_ParseTuple(args, "s", &name) ){
-        return NULL;
-    }
-    try
-    {
-        as_event_object(self).manager->disable(std::string(name));
-    }
-    catch (const event_exception& e)
-    {
-        return PyErr_Format(PyExc_ValueError, "%s", e.what());
-    }
-    Py_RETURN_NONE;
-};
-
-static PyObject* EventManager_disable_group(PyObject* self, PyObject *args)
-{
-    const char* name;
-    
-    if( !PyArg_ParseTuple(args, "s", &name) ){
-        return NULL;
-    }
-    try
-    {
-        as_event_object(self).manager->disable_group(std::string(name));
-    }
-    catch (const event_exception& e)
-    {
-        return PyErr_Format(PyExc_ValueError, "%s", e.what());
-    }
-    Py_RETURN_NONE;
-};
-
-static PyObject* EventManager_enable(PyObject* self, PyObject *args)
-{
-    const char* name;
-    
-    if( !PyArg_ParseTuple(args, "s", &name) ){
-        return NULL;
-    }
-
-    try
-    {
-        as_event_object(self).manager->enable(std::string(name));
-    }
-    catch (const event_exception& e)
-    {
-        return PyErr_Format(PyExc_ValueError, "%s", e.what());
-    }
-    Py_RETURN_NONE;
-};
-
-static PyObject* EventManager_enable_group(PyObject* self, PyObject *args)
-{
-    const char* name;
-    
-    if( !PyArg_ParseTuple(args, "s", &name) ){
-        return NULL;
-    }
-
-    try
-    {
-        as_event_object(self).manager->enable_group(std::string(name));
-    }
-    catch (const event_exception& e)
-    {
-        return PyErr_Format(PyExc_ValueError, "%s", e.what());
-    }
-    Py_RETURN_NONE;
-};
-
-static PyObject* EventManager_disable_all(PyObject* self )
-{
-    as_event_object(self).manager->disable_all();
-    Py_RETURN_NONE;
-};
-
-
-static PyMethodDef EventManager_methods[] = {
-    {"add", (PyCFunction)EventManager_add, METH_VARARGS | METH_KEYWORDS, "Add a hook"},
-    {"disable", (PyCFunction)EventManager_disable, METH_VARARGS, "Disable a given hook"},
-    {"disable_group", (PyCFunction)EventManager_disable_group, METH_VARARGS, "Disable a group of hooks"},
-    {"disable_all", (PyCFunction)EventManager_disable_all, METH_NOARGS, "Disable all hooks"},
-    {"enable", (PyCFunction)EventManager_enable, METH_VARARGS, "Enable a given hook"},
-    {"enable_group", (PyCFunction)EventManager_enable_group, METH_VARARGS, "Enable a group of hooks"},
-    {NULL, NULL, 0, NULL}
-};
-
-static PyMemberDef EventManager_members[] = {
-    {NULL}
-};
-
-static PyType_Slot EventManager_slots[] = {
-    {Py_tp_dealloc, reinterpret_cast<void*>(EventManager_dealloc)},
-    {Py_tp_repr, reinterpret_cast<void*>(EventManager_repr)},
-    {Py_tp_str, reinterpret_cast<void*>(EventManager_str)},
-    {Py_tp_doc, const_cast<char*>("Event hooks manager")},
-    {Py_tp_methods, EventManager_methods},
-    {Py_tp_members, EventManager_members},
-    {0, nullptr}
-};
-
-PyType_Spec BindingTypes::EventManager_spec = {
-    "maat.EventManager", sizeof(EventManager_Object), 0, binding_type_flags, EventManager_slots
-};
-
-PyObject* PyEventManager_FromEventManager(event::EventManager* m, bool is_ref)
-{
-    EventManager_Object* object;
-    
-    // Create object
-    object = PyObject_New(EventManager_Object, binding_types().EventManager);
-    if (object != nullptr)
-    {
-        object->manager = m;
-        object->is_ref = is_ref;
-    }
-    return (PyObject*)object;
+            catch (nb::python_error& error)
+            {
+                std::cout << "Error in python callback: " << std::flush;
+                error.restore();
+                PyErr_Print();
+            }
+            return Action::ERROR;
+        });
 }
 
-// Init enums
-void init_event(PyObject* module)
+void bind_events(nb::module_& m)
 {
-    // EVENT enum
-    PyObject* event_enum = PyDict_New();
-    PyDict_SetItemString(event_enum, "EXEC", PyLong_FromLong((int)event::Event::EXEC));
-    PyDict_SetItemString(event_enum, "BRANCH", PyLong_FromLong((int)event::Event::BRANCH));
-    PyDict_SetItemString(event_enum, "MEM_R", PyLong_FromLong((int)event::Event::MEM_R));
-    PyDict_SetItemString(event_enum, "MEM_W", PyLong_FromLong((int)event::Event::MEM_W));
-    PyDict_SetItemString(event_enum, "MEM_RW", PyLong_FromLong((int)event::Event::MEM_RW));
-    PyDict_SetItemString(event_enum, "PATH", PyLong_FromLong((int)event::Event::PATH));
-    PyDict_SetItemString(event_enum, "REG_R", PyLong_FromLong((int)event::Event::REG_R));
-    PyDict_SetItemString(event_enum, "REG_W", PyLong_FromLong((int)event::Event::REG_W));
-    PyDict_SetItemString(event_enum, "REG_RW", PyLong_FromLong((int)event::Event::REG_RW));
-
-    PyObject* event_class = create_class(PyUnicode_FromString("EVENT"), PyTuple_New(0), event_enum);
-    PyModule_AddObject(module, "EVENT", event_class);
-    
-    // Action enum
-    PyObject* action_enum = PyDict_New();
-    PyDict_SetItemString(action_enum, "CONTINUE", PyLong_FromLong((int)event::Action::CONTINUE));
-    PyDict_SetItemString(action_enum, "HALT", PyLong_FromLong((int)event::Action::HALT));
-    PyDict_SetItemString(action_enum, "ERROR", PyLong_FromLong((int)event::Action::ERROR));
-
-    PyObject* action_class = create_class(PyUnicode_FromString("ACTION"), PyTuple_New(0), action_enum);
-    PyModule_AddObject(module, "ACTION", action_class);
-
-    // WHEN enum
-    PyObject* when_enum = PyDict_New();
-    PyDict_SetItemString(when_enum, "BEFORE", PyLong_FromLong((int)event::When::BEFORE));
-    PyDict_SetItemString(when_enum, "AFTER", PyLong_FromLong((int)event::When::AFTER));
-
-    PyObject* when_class = create_class(PyUnicode_FromString("WHEN"), PyTuple_New(0), when_enum);
-    PyModule_AddObject(module, "WHEN", when_class);
+    using namespace event;
+    using Range = nb::typed<nb::sequence, addr_t>;
+    using Filter = std::variant<addr_t, Range>;
+    using Callbacks = nb::typed<nb::list, nb::callable>;
+    // Explicit data=None passes a second callback argument. Omission passes one.
+    auto omitted = nb::module_::import_("builtins").attr("object")();
+    nb::class_<EventManager>(m, "_EventManager", nb::is_final(), "Event hooks manager")
+        .def(
+            "add",
+            [omitted](EventManager& mgr, int kind, int when, const std::string& name, Filter filter,
+                      Callbacks callbacks, nb::object data, const std::string& group)
+            {
+                std::vector<EventCallback> handlers;
+                nb::object callback_data = data.is(omitted) ? nb::object() : data;
+                for (auto f : callbacks)
+                {
+                    if (!nb::isinstance<nb::callable>(f))
+                        throw nb::type_error("Expected a callable");
+                    handlers.push_back(python_callback(nb::borrow<nb::callable>(f), callback_data));
+                }
+                AddrFilter addresses;
+                if (auto addr = std::get_if<addr_t>(&filter))
+                    addresses = AddrFilter(*addr);
+                else
+                {
+                    std::pair<addr_t, addr_t> limits;
+                    if (!nb::try_cast(std::get<Range>(filter), limits))
+                        throw nb::type_error("Expected an address or a pair of addresses");
+                    if (limits.first != 0 || limits.second != UINT64_MAX)
+                        addresses = AddrFilter(limits.first, limits.second);
+                }
+                mgr.add(static_cast<Event>(kind), static_cast<When>(when), handlers, name,
+                        addresses, group);
+            },
+            nb::arg(), nb::arg(), "name"_a = "", "filter"_a = nb::make_tuple(0, UINT64_MAX),
+            "callbacks"_a = nb::list(), nb::arg("data").none().sig("...") = omitted, "group"_a = "",
+            "Add a hook")
+        .def("disable", nb::overload_cast<std::string>(&EventManager::disable),
+             "Disable a given hook")
+        .def("enable", nb::overload_cast<std::string>(&EventManager::enable), "Enable a given hook")
+        .def("disable_group", &EventManager::disable_group, "Disable a group of hooks")
+        .def("enable_group", &EventManager::enable_group, "Enable a group of hooks")
+        .def("disable_all", &EventManager::disable_all, "Disable all hooks")
+        .def("__repr__", &format<EventManager>)
+        .def("__str__", &format<EventManager>);
 }
-
-} // namespace py
-} // namespace maat
+} // namespace maat::py

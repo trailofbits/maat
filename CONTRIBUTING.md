@@ -63,7 +63,7 @@ Once the architecture is implemented, don't forget to add the corresponding file
 source files list in the top-level [CMakeLists.txt](./CMakeLists.txt).
 
 Also don't forget to register the new architecture by adding the appropriate line in
-`bindings/python/py_arch.cpp` so that the architecture becomes available in Python bindings
+`bindings/python/py_constants.cpp` so that the architecture becomes available in Python bindings
 in the `ARCH` enumeration.
 
 #### Optional register aliases

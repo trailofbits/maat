@@ -12,7 +12,8 @@ The default build includes the Python bindings and requires CMake 3.26 or later.
   * Can be disabled with CMake option `-Dmaat_USE_LIEF=OFF` during configuration
 * [sleigh](https://github.com/lifting-bits/sleigh) 12.2 - for Ghidra sleigh pcode handling
   * To build the bundled Sleigh, use CMake 3.25 or later, run `git submodule update --init --recursive`, and configure with `-Dmaat_USE_EXTERNAL_SLEIGH=OFF`.
-* GIL-enabled CPython 3.10 or newer development headers for the stable ABI Python bindings
+* GIL-enabled CPython 3.12 or newer development headers for the stable ABI Python bindings
+  * Install the build dependency in the selected interpreter with `python -m pip install "nanobind>=3.1,<4"`.
   * Bindings can be skipped with CMake option `-Dmaat_BUILD_PYTHON_BINDINGS=OFF` during configuration
 
 You can use our [Dockerfile](Dockerfile) as a reference for how to download and install dependencies. Note that if building the Dockerfile, it uses a submodule'd [sleigh project](https://github.com/lifting-bits/sleigh), so you must either clone Maat with `git clone --recursive ...` or run `git submodule update --init --recursive` after cloning before building the Docker image.
@@ -58,7 +59,7 @@ cmake --install build --config Release
 
 The Python extension and its processor files install under the CMake install
 prefix using the selected interpreter’s platform-specific package layout
-(for example, `lib/python3.11/site-packages`). To install into a virtual
+(for example, `lib/python3.12/site-packages`). To install into a virtual
 environment, activate it before configuring and use it as the install prefix:
 
 ```sh

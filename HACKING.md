@@ -135,7 +135,6 @@ the number of jobs to use, which should ideally be specified to the number of
 threads your CPU has. You may also want to add that to your preset using the
 `jobs` property, see the [presets documentation][1] for more details.
 
-Note that if you are building the python bindings you need to install `pytest` in order to
-run the tests.
+For the Python bindings, install `nanobind>=3.1,<4` and `pytest` in the interpreter selected by CMake. The build generates the stub and CTest checks it against the legacy API inventory.
 
 [1]: https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html

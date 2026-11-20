@@ -1,15 +1,12 @@
 #ifndef MAAT_EVENT_H
 #define MAAT_EVENT_H
 
+#include <functional>
 #include <list>
 #include "maat/types.hpp"
 #include "maat/info.hpp"
 #include "maat/arch.hpp"
 #include "maat/pinst.hpp"
-
-#ifdef MAAT_PYTHON_BINDINGS
-    #include "Python.h"
-#endif
 
 namespace maat
 {
@@ -110,9 +107,8 @@ Action merge_actions(Action a, Action b);
 class EventCallback
 {
 public:
-    /** \typedef native_cb_t 
-     * \brief A callback function taking a pointer to  the MaatEngine */
-    using native_cb_t = std::function<Action(MaatEngine&, void*)>;// Action (*)(maat::MaatEngine&, void*);
+    /// Function called with the active engine and callback data.
+    using native_cb_t = std::function<Action(MaatEngine&, void*)>;
     enum class Type
     {
         NATIVE,
@@ -137,17 +133,6 @@ public:
 public:
     /// Execute callback and return the callback's return value
     Action execute(maat::MaatEngine& engine) const;
-
-// Callbacks from python
-#ifdef MAAT_PYTHON_BINDINGS
-public:
-    using python_cb_t = PyObject*;
-    /// Create a callback calling a python function
-    EventCallback(python_cb_t cb, PyObject* cb_data=nullptr);
-private:
-    python_cb_t python_cb;
-    PyObject* python_cb_data;
-#endif
 };
 
 /// Filter addresses to monitor

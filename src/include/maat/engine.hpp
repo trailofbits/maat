@@ -94,12 +94,6 @@ public:
     /// Logger
     Logger log;
 public:
-#ifdef MAAT_PYTHON_BINDINGS
-    /** \brief Pointer to the python objcet wrapping the MaatEngine if it was created using the
-     * python API. This class is used internally to pass the 'Python' engine to potential callbacks
-     * written in Python. DO NOT MODIFY. */
-    PyObject* self_python_wrapper_object;
-#endif
 
 public:
     /// Instanciate an engine for architecture 'arch' and operating system 'os'

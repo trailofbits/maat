@@ -53,164 +53,31 @@ bool is_exec_event(Event event)
 }
 
 EventCallback::EventCallback():
-    type(EventCallback::Type::NONE),
-    native_cb(nullptr),
-    native_cb_data(nullptr)
-{
-#ifdef MAAT_PYTHON_BINDINGS
-    python_cb = nullptr;
-    python_cb_data = nullptr;
-#endif
-}
+    type(Type::NONE), native_cb_data(nullptr)
+{}
 
 EventCallback::EventCallback(native_cb_t cb, void* cb_data):
-    type(EventCallback::Type::NATIVE),
-    native_cb(cb),
-    native_cb_data(cb_data)
-{
-#ifdef MAAT_PYTHON_BINDINGS
-    python_cb = nullptr;
-    python_cb_data = nullptr;
-#endif
-}
+    type(Type::NATIVE), native_cb(std::move(cb)), native_cb_data(cb_data)
+{}
 
-#ifdef MAAT_PYTHON_BINDINGS
-EventCallback::EventCallback(python_cb_t cb, PyObject* cb_data):
-    type(EventCallback::Type::PYTHON),
-    native_cb(nullptr), native_cb_data(nullptr),
-    python_cb(cb), python_cb_data(cb_data)
-
-{
-    Py_XINCREF(python_cb); // Increment python ref count for callback 
-    Py_XINCREF(python_cb_data); // Increment ref count for callback data
-}
-#endif
-
-EventCallback::EventCallback(const EventCallback& other)
-{
-    *this = other;
-}
-
-EventCallback::EventCallback(EventCallback&& other)
-{
-    *this = other;
-}
-
-EventCallback& EventCallback::operator=(const EventCallback& other)
-{
-    type = other.type;
-    native_cb = other.native_cb;
-    native_cb_data = other.native_cb_data;
-#ifdef MAAT_PYTHON_BINDINGS
-    python_cb = other.python_cb;
-    python_cb_data = other.python_cb_data;
-    Py_XINCREF(python_cb);
-    Py_XINCREF(python_cb_data);
-#endif
-    return *this;
-}
-
-EventCallback& EventCallback::operator=(EventCallback&& other)
-{
-    type = other.type;
-    native_cb = other.native_cb;
-    native_cb_data = other.native_cb_data;
-#ifdef MAAT_PYTHON_BINDINGS
-    python_cb = other.python_cb;
-    python_cb_data = other.python_cb_data;
-    Py_XINCREF(python_cb);
-    Py_XINCREF(python_cb_data);
-#endif
-    return *this;
-}
-
-EventCallback::~EventCallback()
-{
-#ifdef MAAT_PYTHON_BINDINGS
-    Py_XDECREF(python_cb);
-    Py_XDECREF(python_cb_data);
-    python_cb = nullptr;
-    python_cb_data = nullptr;
-#endif
-}
-
-bool is_valid_action(int action)
-{
-    return  action == (int)Action::CONTINUE
-            or action == (int)Action::HALT
-            or action == (int)Action::ERROR;
-}
+EventCallback::EventCallback(const EventCallback&) = default;
+EventCallback::EventCallback(EventCallback&&) = default;
+EventCallback& EventCallback::operator=(const EventCallback&) = default;
+EventCallback& EventCallback::operator=(EventCallback&&) = default;
+EventCallback::~EventCallback() = default;
 
 Action EventCallback::execute(MaatEngine& engine) const
 {
-    if (type == EventCallback::Type::NATIVE)
-    {
-        try
-        {
-            return native_cb(engine, native_cb_data);
-        }
-        catch (const std::exception& e)
-        {
-            engine.log.error("Caught exception in event callback: ", e.what());
-            return Action::ERROR;
-        }
-    }
-    else if (type == EventCallback::Type::PYTHON)
-    {
-        Action res = Action::CONTINUE;
-#ifdef MAAT_PYTHON_BINDINGS
-            // Build args list
-            PyObject* argslist = nullptr;
-            // Note: PyTuple_Pack does increment the ref count on objects
-            if (python_cb_data == nullptr)
-                argslist = PyTuple_Pack(1, engine.self_python_wrapper_object);
-            else
-                argslist = PyTuple_Pack(2, engine.self_python_wrapper_object, python_cb_data);
-
-            if( argslist == NULL )
-                throw runtime_exception("EventCallback::execute(): failed to create args tuple for python callback");
-
-            Py_INCREF(argslist);
-            PyObject* result = PyObject_CallObject(python_cb, argslist);
-            Py_DECREF(argslist);
-            if (result != NULL)
-            {
-                if (result == Py_None)
-                {
-                    res = Action::CONTINUE;
-                }
-                else if (PyLong_Check(result))
-                {
-                    int int_res = PyLong_AsLong(result);
-                    if (not is_valid_action(int_res))
-                    {
-                        engine.log.fatal("Python callback didn't return a valid action");
-                        res = Action::ERROR;
-                    }
-                    else
-                        res = (Action)int_res;
-                }
-                else
-                {
-                    engine.log.fatal("Python callback didn't return a valid action (wrong object type)");
-                    res = Action::ERROR;
-                }
-            }
-            else // Callback failed, returned NULL
-            {
-                // TODO: log error properly
-                std::cout << "Error in python callback: ";
-                PyErr_Print(); // No PyErr_ print to string in Python's API ???
-                PyErr_Clear();
-                res = Action::ERROR;
-            }
-            Py_XDECREF(result);
-#endif
-            return res;
-    }
-    else
-    {
+    if (type != Type::NATIVE)
         throw runtime_exception("EventCallback::execute(): called for unsupported callback type!");
+    try
+    {
+        return native_cb(engine, native_cb_data);
+    }
+    catch (const std::exception& e)
+    {
+        engine.log.error("Caught exception in event callback: ", e.what());
+        return Action::ERROR;
     }
 }
 
