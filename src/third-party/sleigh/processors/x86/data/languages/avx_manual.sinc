@@ -202,9 +202,9 @@
 	local cond2:1 = (imm8:1 & 0x3) == 2;
 	local cond3:1 = (imm8:1 & 0x3) == 3;
 	conditionalAssign(XmmReg1[ 0,32], cond0, tmp, vexVVVV_XmmReg[ 0,32]);
-	conditionalAssign(XmmReg1[32,32], cond0, tmp, vexVVVV_XmmReg[32,32]);
-	conditionalAssign(XmmReg1[64,32], cond0, tmp, vexVVVV_XmmReg[64,32]);
-	conditionalAssign(XmmReg1[96,32], cond0, tmp, vexVVVV_XmmReg[96,32]);
+	conditionalAssign(XmmReg1[32,32], cond1, tmp, vexVVVV_XmmReg[32,32]);
+	conditionalAssign(XmmReg1[64,32], cond2, tmp, vexVVVV_XmmReg[64,32]);
+	conditionalAssign(XmmReg1[96,32], cond3, tmp, vexVVVV_XmmReg[96,32]);
 	ZmmReg1 = zext(XmmReg1);
 }
 
