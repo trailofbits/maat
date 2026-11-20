@@ -1248,14 +1248,15 @@
    UNLOCK();
 }
 
-:XCHG^xacq_xrel_prefx^alwaysLock  m32,Reg32   is vexMode=0 & xacq_xrel_prefx & alwaysLock & opsize=1 & byte=0x87; m32 & Reg32 ...        
+:XCHG^xacq_xrel_prefx^alwaysLock  m32,Reg32   is vexMode=0 & xacq_xrel_prefx & alwaysLock & opsize=1 & byte=0x87; (check_Reg32_dest & Reg32) ... & m32
 { 
   build xacq_xrel_prefx;
   build alwaysLock;
   build m32;
   local tmp = m32; 
   m32 = Reg32; 
-  Reg32 = tmp; 
+  Reg32 = tmp;
+  build check_Reg32_dest;
   UNLOCK(); 
 }
 
