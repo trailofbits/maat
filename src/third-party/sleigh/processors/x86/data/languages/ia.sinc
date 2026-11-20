@@ -10035,14 +10035,13 @@ define pcodeop clearui;
 
 :SHUFPD          XmmReg1, XmmReg2_m128, imm8     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0xC6; XmmReg1 ... & XmmReg2_m128; imm8 
 { 
-    local srcLow:8 = XmmReg2_m128[0,64];
-    local srcHigh:8 = XmmReg2_m128[64,64];
+    local src:16 = XmmReg2_m128;
     local destLow:8 = XmmReg1[0,64];
     local destHigh:8 = XmmReg1[64,64];
     local control:1 = (imm8 & 0x1)== 0:1;
     conditionalAssign(XmmReg1[0,64],control,destLow,destHigh);
     control = (imm8 & 0x2) == 0:1;
-    conditionalAssign(XmmReg1[64,64],control,srcLow,srcHigh); 
+    conditionalAssign(XmmReg1[64,64],control,src[0,64],src[64,64]);
 }
 
 :SHUFPS  XmmReg1, XmmReg2_m128, imm8  is vexMode=0 & mandover=0 & byte=0x0F; byte=0xC6; (XmmReg2_m128 & XmmReg1 ...); imm8 & Order0 & Order1 & Order2 & Order3
