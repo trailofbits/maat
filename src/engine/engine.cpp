@@ -305,7 +305,7 @@ info::Stop MaatEngine::run(int max_inst)
         max_inst--;
 
         // Execute the PCODE instructions for the current Asm instruction
-        while (ir_inst_id < asm_inst->nb_ir_inst())
+        while (ir_inst_id != asm_inst->nb_ir_inst())
         {
             // Update internal IR state
             current_ir_state = ir::IRMap::InstLocation(asm_inst->addr(), ir_inst_id);
@@ -440,29 +440,15 @@ info::Stop MaatEngine::run(int max_inst)
                 // was taken!
                 break;
             }
-            else if (branch_type == MaatEngine::branch_none)
-            {
-                // No branch, go to next instruction
-                if (ir_inst_id == asm_inst->nb_ir_inst()-1)
-                {
-                    // That was the last IR inst of this AsmInst,
-                    // update PC, exit and go to next AsmInst
-                    cpu.ctx().set(arch->pc(), asm_inst->addr() + asm_inst->raw_size());
-                    break;
-                }
-                else // Just go to the next PCODE instruction
-                    ir_inst_id += 1;
-            }
-            // else: pcode relative branching, ir_inst_id has already
-            // been updated by process_branch(), so do nothing and 
-            // just loop again
+            if (branch_type == MaatEngine::branch_none)
+                ++ir_inst_id;
         }
 
         // Record executed instruction in statistics
         MaatStats::instance().inc_executed_insts();
 
-        // Update PC for NOPs....
-        if (asm_inst->instructions().empty())
+        // Falling through the p-code also covers instructions with no operations.
+        if (ir_inst_id == asm_inst->nb_ir_inst())
         {
             cpu.ctx().set(arch->pc(), asm_inst->addr()+asm_inst->raw_size());
         }
