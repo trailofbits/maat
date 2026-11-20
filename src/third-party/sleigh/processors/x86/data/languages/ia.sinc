@@ -3062,29 +3062,27 @@ define pcodeop clzero;
 
 # See 'lockable.sinc' for memory destination, lockable variants
 :CMPXCHG Rmr8,Reg8  is vexMode=0 & byte=0xf; byte=0xb0; mod=3 & Rmr8 & Reg8           
-{ 
+{
     local dest = Rmr8;
-    subflags(AL,dest); 
-    local diff = AL-dest; 
+    subflags(AL, dest);
+    local diff = AL - dest;
     resultflags(diff);
-    if (ZF) goto <equal>;
+    local selected:1;
+    conditionalAssign(selected, ZF, Reg8, dest);
     AL = dest;
-    goto inst_next;
-<equal>
-    Rmr8 = Reg8;
- }
+    Rmr8 = selected;
+}
 :CMPXCHG Rmr16,Reg16    is vexMode=0 & opsize=0 & byte=0xf; byte=0xb1; mod=3 & Rmr16 & Reg16  
-{ 
+{
     local dest = Rmr16;
-    subflags(AX,dest); 
-    local diff = AX-dest; 
+    subflags(AX, dest);
+    local diff = AX - dest;
     resultflags(diff);
-    if (ZF) goto <equal>;
+    local selected:2;
+    conditionalAssign(selected, ZF, Reg16, dest);
     AX = dest;
-    goto inst_next;
-<equal>
-    Rmr16 = Reg16;
- }
+    Rmr16 = selected;
+}
 :CMPXCHG Rmr32,Reg32    is vexMode=0 & opsize=1 & byte=0xf; byte=0xb1; mod=3 & Rmr32 & Reg32 & check_EAX_dest & check_Rmr32_dest
 {
 	#this instruction writes to either EAX or Rmr32
@@ -3105,16 +3103,15 @@ define pcodeop clzero;
 }
 @ifdef IA64
 :CMPXCHG Rmr64,Reg64    is $(LONGMODE_ON) & vexMode=0 & opsize=2 & byte=0xf; byte=0xb1; mod=3 & Rmr64 & Reg64  
-{ 
+{
     local dest = Rmr64;
-    subflags(RAX,dest); 
-    local diff = RAX-dest; 
+    subflags(RAX, dest);
+    local diff = RAX - dest;
     resultflags(diff);
-    if (ZF) goto <equal>;
+    local selected:8;
+    conditionalAssign(selected, ZF, Reg64, dest);
     RAX = dest;
-    goto inst_next;
-<equal>
-    Rmr64 = Reg64;
+    Rmr64 = selected;
 } 
 @endif
 
