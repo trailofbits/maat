@@ -610,7 +610,7 @@ bool MaatEngine::process_branch(
             // user callbacks
             if (in1.is_symbolic(*vars))
             {
-                if (info.branch->taken.has_value())
+                if (info.branch && info.branch->taken.has_value())
                 {
                     // User callback specified which branch to take
                     taken = info.branch->taken.value();
