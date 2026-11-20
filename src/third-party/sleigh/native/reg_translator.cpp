@@ -478,6 +478,15 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "C3") return maat::ir::Reg(maat::X86::C3, 8);
     if (reg_name == "XCR0") return maat::ir::Reg(maat::X86::XCR0, 64);
 
+    if (reg_name == "ST0") return maat::ir::Reg(maat::X86::ST0, 80);
+    if (reg_name == "ST1") return maat::ir::Reg(maat::X86::ST1, 80);
+    if (reg_name == "ST2") return maat::ir::Reg(maat::X86::ST2, 80);
+    if (reg_name == "ST3") return maat::ir::Reg(maat::X86::ST3, 80);
+    if (reg_name == "ST4") return maat::ir::Reg(maat::X86::ST4, 80);
+    if (reg_name == "ST5") return maat::ir::Reg(maat::X86::ST5, 80);
+    if (reg_name == "ST6") return maat::ir::Reg(maat::X86::ST6, 80);
+    if (reg_name == "ST7") return maat::ir::Reg(maat::X86::ST7, 80);
+
     if (reg_name == "FPUControlWord") return maat::ir::Reg(maat::X86::FPUCW, 16);
     if (reg_name == "FPUStatusWord") return maat::ir::Reg(maat::X86::FPUSW, 16);
     if (reg_name == "FPUTagWord") return maat::ir::Reg(maat::X86::FPUTW, 16);
