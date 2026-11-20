@@ -18,6 +18,7 @@ void test_solver();
 void test_loader();
 void test_serialization();
 void test_archEVM();
+void test_archARM32();
 
 
 int main(int argc, char ** argv)
@@ -52,6 +53,7 @@ int main(int argc, char ** argv)
                 test_archX86();
                 test_archX64();
                 test_archEVM();
+                test_archARM32();
                 test_solver();
                 test_loader();
                 test_serialization();
@@ -80,6 +82,8 @@ int main(int argc, char ** argv)
                         test_archX86();
                     else if( !strcmp(argv[i], "X64"))
                         test_archX64();
+                    else if( !strcmp(argv[i], "ARM32"))
+                        test_archARM32();
                     else if( !strcmp(argv[i], "EVM"))
                         test_archEVM();
                     else if( !strcmp(argv[i], "event"))

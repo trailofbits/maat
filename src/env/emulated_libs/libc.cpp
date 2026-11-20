@@ -659,6 +659,21 @@ Library linux_x64_libc()
     return lib;
 }
 
+// For Linux ARM32
+Library linux_ARM32_libc()
+{
+    Library lib("libc", libc_common_functions, libc_common_data);
+    // Arch specific functions...
+    //TODO Find functions to use
+    lib.add_function(Function("__libc_start_main",
+        FunctionCallback({8,8,8,8,8,8,8}, linux_x64_libc_start_main_callback_part1)
+    ));
+    lib.add_function(Function("__libc_start_main_part2",
+        FunctionCallback({}, linux_x64_libc_start_main_callback_part2)
+    ));
+    return lib;
+}
+
 } // namespace emulated
 } // namespace env
 } // namespace maat

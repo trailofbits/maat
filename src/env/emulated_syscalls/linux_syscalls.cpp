@@ -833,6 +833,32 @@ syscall_func_map_t linux_x64_syscall_map()
     return res;
 }
 
+syscall_func_map_t linux_ARM32_syscall_map()
+{
+    syscall_func_map_t res
+    {
+        {1, Function("sys_exit", FunctionCallback({4}, sys_linux_exit))},
+        {3, Function("sys_read", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_read))},
+        {4, Function("sys_write", FunctionCallback({4, env::abi::auto_argsize, 4}, sys_linux_write))},
+        {5, Function("sys_open", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_open))},
+        {6, Function("sys_close", FunctionCallback({4}, sys_linux_close))},
+        {33, Function("sys_access", FunctionCallback({env::abi::auto_argsize, 4}, sys_linux_access))},
+        {45, Function("sys_brk", FunctionCallback({env::abi::auto_argsize}, sys_linux_brk))},
+        {85, Function("sys_readlink", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_readlink))},
+        {91, Function("sys_munmap", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_munmap))},
+        {125, Function("sys_mprotect", FunctionCallback({env::abi::auto_argsize, 4, 4}, sys_linux_mprotect))},
+        {106, Function("sys_stat", FunctionCallback({env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_stat))},
+        {108, Function("sys_fstat", FunctionCallback({4, env::abi::auto_argsize}, sys_linux_fstat))},
+        {122, Function("sys_newuname", FunctionCallback({env::abi::auto_argsize}, sys_linux_newuname))},
+        {146, Function("sys_writev", FunctionCallback({4, env::abi::auto_argsize, env::abi::auto_argsize}, sys_linux_writev))},
+        {180, Function("sys_pread64", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_pread))},
+        {192, Function("sys_mmap", FunctionCallback({env::abi::auto_argsize, 4, 4, 4, 4, 4}, sys_linux_mmap))},
+        {248, Function("sys_exit_group", FunctionCallback({4}, sys_linux_exit))},
+        {322, Function("sys_openat", FunctionCallback({4, env::abi::auto_argsize, 4, 4}, sys_linux_openat))}
+    };
+    return res;
+}
+
 } // namespace emulated
 } // namespace env
 } // namespace maat
