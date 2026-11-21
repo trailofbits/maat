@@ -414,3 +414,71 @@ def test_vzeroupper(arch, count):
     assert m.run_from(0x1000, 1) == STOP.INST_COUNT
     for i in range(count):
         assert getattr(m.cpu, f"zmm{i}").as_uint() == (1 << 127) | (i + 1)
+
+
+@pytest.mark.parametrize("arch", [ARCH.X86, ARCH.X64])
+@pytest.mark.parametrize(
+    "opcode, width, lane",
+    [
+        ("c5 fc 28 00", 32, None),       # VMOVAPS YMM0, [EAX/RAX]
+        ("66 0f 3a 20 00 07", 1, 7),     # PINSRB
+        ("66 0f 3a 20 00 08", 1, 8),
+        ("66 0f 3a 22 00 01", 4, 1),     # PINSRD
+        ("66 0f 3a 22 00 02", 4, 2),
+    ],
+)
+def test_vector_memory_source_read_once(arch, opcode, width, lane):
+    check_vector_memory_source(arch, opcode, width, lane)
+
+
+@pytest.mark.parametrize("lane", [0, 1])
+def test_pinsrq_memory_source_read_once(lane):
+    check_vector_memory_source(ARCH.X64, f"66 48 0f 3a 22 00 {lane:02x}", 8, lane)
+
+
+def check_vector_memory_source(arch, opcode, width, lane):
+    m = MaatEngine(arch)
+    m.mem.map(0x1000, 0x2fff)
+    m.mem.write(0x1000, bytes.fromhex(opcode))
+    source = bytes(range(1, width + 1))
+    m.mem.write(0x2000, source)
+    if arch == ARCH.X64:
+        m.cpu.rax = 0x2000
+    else:
+        m.cpu.eax = 0x2000
+    original = int.from_bytes(bytes(range(64)), "little")
+    m.cpu.zmm0 = Cst(512, original)
+    reads = []
+
+    def record_read(engine):
+        access = engine.info.mem_access
+        reads.append((access.addr.as_uint(), access.size))
+
+    m.hooks.add(EVENT.MEM_R, WHEN.BEFORE, callbacks=[record_read])
+    assert m.run_from(0x1000, 1) == STOP.INST_COUNT
+    assert reads == [(0x2000, width)]
+    value = int.from_bytes(source, "little")
+    if lane is None:
+        expected = value
+    else:
+        shift = 8 * width * lane
+        mask = ((1 << (8 * width)) - 1) << shift
+        expected = (original & ~mask) | (value << shift)
+    assert m.cpu.zmm0.as_uint() == expected
+
+
+@pytest.mark.parametrize("arch", [ARCH.X86, ARCH.X64])
+def test_pinsrb_operand_width(arch):
+    m = MaatEngine(arch)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes.fromhex("66 0f 3a 20 00 08"))  # [EAX/RAX]
+    m.mem.write(0x1010, bytes.fromhex("66 0f 3a 20 c4 08"))  # ESP
+    address = "RAX" if arch == ARCH.X64 else "EAX"
+    assert m.get_inst_asm(0x1000).split(", ")[1] == f"byte ptr [{address}]"
+    assert m.get_inst_asm(0x1010).split(", ")[1] == "ESP"
+    if arch == ARCH.X64:
+        m.cpu.rsp = 0x11223344
+    else:
+        m.cpu.esp = 0x11223344
+    assert m.run_from(0x1010, 1) == STOP.INST_COUNT
+    assert m.cpu.zmm0.as_uint() == 0x44 << 64
