@@ -57,7 +57,6 @@
 # MOVAPS 4-49 PAGE 1169 LINE 61043
 :VMOVAPS YmmReg1, YmmReg2_m256 is $(VEX_NONE) & $(VEX_L256) & $(VEX_PRE_NONE) & $(VEX_0F) & $(VEX_WIG); byte=0x28; (YmmReg1 & ZmmReg1) ... & YmmReg2_m256
 {
-	YmmReg1 = YmmReg2_m256;
 	ZmmReg1 = zext(YmmReg2_m256);
 }
 
