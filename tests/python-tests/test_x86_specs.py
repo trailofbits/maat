@@ -482,3 +482,12 @@ def test_pinsrb_operand_width(arch):
         m.cpu.esp = 0x11223344
     assert m.run_from(0x1010, 1) == STOP.INST_COUNT
     assert m.cpu.zmm0.as_uint() == 0x44 << 64
+
+
+def test_disassembly_after_replacing_instruction():
+    m = MaatEngine(ARCH.X86)
+    m.mem.map(0x1000, 0x1fff)
+    m.mem.write(0x1000, bytes.fromhex("66 0f 3a 22 00 02"))
+    assert m.get_inst_asm(0x1000) == "PINSRD XMM0, dword ptr [EAX], 0x2"
+    m.mem.write(0x1000, bytes.fromhex("66 0f 3a 20 00 08"))
+    assert m.get_inst_asm(0x1000) == "PINSRB XMM0, byte ptr [EAX], 0x8"
