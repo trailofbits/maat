@@ -397,16 +397,17 @@ public:
     }
 
 
+    void set_instruction_bytes(uintb address, const unsigned char* bytes, unsigned int size)
+    {
+        // Sleigh caches decoded instructions by address even if the underlying bytes change.
+        m_sleigh->reset(&m_loader, &m_context_internal);
+        m_sleigh->initialize(m_document_storage);
+        m_loader.setData(address, bytes, size);
+    }
+
     const std::string& get_asm(uintb address, const unsigned char* bytes)
     {
-        // TODO: force relifting everytime until we support clearing the
-        // asm cache on X memory overwrites
-        // if (asm_cache.contains(address))
-        //     return asm_cache.get_asm(address);
-
-        // Get asm
-        // 16 bytes is the max instruction length supported by sleigh
-        m_loader.setData(address, bytes, 16); 
+        set_instruction_bytes(address, bytes, 16);
         Address addr(m_sleigh->getDefaultCodeSpace(), address);
         m_sleigh->printAssembly(asm_cache, addr);
 
@@ -429,13 +430,7 @@ public:
         PcodeEmitCacher    m_pcode(this);
         AssemblyEmitCacher& tmp_cacher = asm_cache;
 
-        // Reset state
-        // TODO - is this useful ? will this hinder performance ?
-        // Needs to be here apparently but maybe we could tweak setData so we don't need to reset...
-        m_sleigh->reset(&m_loader, &m_context_internal);
-        m_sleigh->initialize(m_document_storage);
-        // setData doesn't affect performance for a big num_bytes :)
-        m_loader.setData(address, bytes, num_bytes);
+        set_instruction_bytes(address, bytes, num_bytes);
 
         // Translate instructions
         while ( !end_bb && (offset < num_bytes) && 
