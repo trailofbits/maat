@@ -1,0 +1,361 @@
+{
+  "arithmetic/add/left": [
+    "(0x2+word)",
+    9
+  ],
+  "arithmetic/add/right": [
+    "(0x2+word)",
+    9
+  ],
+  "arithmetic/and_/left": [
+    "(0x2&word)",
+    2
+  ],
+  "arithmetic/and_/right": [
+    "(0x2&word)",
+    2
+  ],
+  "arithmetic/floordiv/left": [
+    "(0x2/word)",
+    0
+  ],
+  "arithmetic/floordiv/right": [
+    "(word/0x2)",
+    3
+  ],
+  "arithmetic/lshift/left": [
+    "(0x2<<word)",
+    256
+  ],
+  "arithmetic/lshift/right": [
+    "(word<<0x2)",
+    28
+  ],
+  "arithmetic/mod/left": [
+    "(0x2%word)",
+    2
+  ],
+  "arithmetic/mod/right": [
+    "(word%0x2)",
+    1
+  ],
+  "arithmetic/mul/left": [
+    "(0x2*word)",
+    14
+  ],
+  "arithmetic/mul/right": [
+    "(0x2*word)",
+    14
+  ],
+  "arithmetic/or_/left": [
+    "(0x2|word)",
+    7
+  ],
+  "arithmetic/or_/right": [
+    "(0x2|word)",
+    7
+  ],
+  "arithmetic/rshift/left": [
+    "(0x2>>word)",
+    0
+  ],
+  "arithmetic/rshift/right": [
+    "(word>>0x2)",
+    1
+  ],
+  "arithmetic/sub/left": [
+    "(0x2+-word)",
+    18446744073709551611
+  ],
+  "arithmetic/sub/right": [
+    "(-0x2+word)",
+    5
+  ],
+  "arithmetic/truediv/left": [
+    "(0x2/word)",
+    0
+  ],
+  "arithmetic/truediv/right": [
+    "(word/0x2)",
+    3
+  ],
+  "arithmetic/xor/left": [
+    "(0x2^word)",
+    5
+  ],
+  "arithmetic/xor/right": [
+    "(0x2^word)",
+    5
+  ],
+  "compare/eq/0": "(word == 0)",
+  "compare/eq/7fffffffffffffff": "(word == 0x7fffffffffffffff)",
+  "compare/eq/8000000000000000": "(word == 0x8000000000000000)",
+  "compare/eq/ffffffffffffffff": "(word == 0xffffffffffffffff)",
+  "compare/ge/0": "(0 <= word)",
+  "compare/ge/7fffffffffffffff": "(0x7fffffffffffffff <= word)",
+  "compare/ge/8000000000000000": "(0x8000000000000000 <= word)",
+  "compare/ge/ffffffffffffffff": "(0xffffffffffffffff <= word)",
+  "compare/gt/0": "(0 < word)",
+  "compare/gt/7fffffffffffffff": "(0x7fffffffffffffff < word)",
+  "compare/gt/8000000000000000": "(0x8000000000000000 < word)",
+  "compare/gt/ffffffffffffffff": "(0xffffffffffffffff < word)",
+  "compare/le/0": "(word <= 0)",
+  "compare/le/7fffffffffffffff": "(word <= 0x7fffffffffffffff)",
+  "compare/le/8000000000000000": "(word <= 0x8000000000000000)",
+  "compare/le/ffffffffffffffff": "(word <= 0xffffffffffffffff)",
+  "compare/lt/0": "(word < 0)",
+  "compare/lt/7fffffffffffffff": "(word < 0x7fffffffffffffff)",
+  "compare/lt/8000000000000000": "(word < 0x8000000000000000)",
+  "compare/lt/ffffffffffffffff": "(word < 0xffffffffffffffff)",
+  "compare/ne/0": "(word != 0)",
+  "compare/ne/7fffffffffffffff": "(word != 0x7fffffffffffffff)",
+  "compare/ne/8000000000000000": "(word != 0x8000000000000000)",
+  "compare/ne/ffffffffffffffff": "(word != 0xffffffffffffffff)",
+  "concolic/evm/1": [
+    [
+      65,
+      66,
+      163,
+      255,
+      128,
+      127,
+      1,
+      0
+    ],
+    "4142a3ff807f0100"
+  ],
+  "concolic/evm/2": [
+    [
+      65477,
+      65535,
+      65534,
+      1
+    ],
+    "ffc5fffffffe0001"
+  ],
+  "concolic/evm/4": [
+    [
+      4294967293,
+      4294967294
+    ],
+    "fffffffdfffffffe"
+  ],
+  "concolic/evm/8": [
+    [
+      18446744073709551613
+    ],
+    "fffffffffffffffd"
+  ],
+  "concolic/x64/1": [
+    [
+      65,
+      66,
+      163,
+      255,
+      128,
+      127,
+      1,
+      0
+    ],
+    "4142a3ff807f0100"
+  ],
+  "concolic/x64/2": [
+    [
+      65,
+      65443,
+      65408,
+      1
+    ],
+    "4100a3ff80ff0100"
+  ],
+  "concolic/x64/4": [
+    [
+      65,
+      4294967168
+    ],
+    "4100000080ffffff"
+  ],
+  "concolic/x64/8": [
+    [
+      65
+    ],
+    "4100000000000000"
+  ],
+  "context/copy": [
+    [
+      "word"
+    ],
+    true,
+    false,
+    7
+  ],
+  "file/accessor": [
+    2,
+    [
+      1,
+      27
+    ]
+  ],
+  "file/bytes": [
+    3,
+    [
+      97,
+      0,
+      98
+    ]
+  ],
+  "file/integers": [
+    2,
+    [
+      1,
+      255
+    ]
+  ],
+  "file/mixed": [
+    4,
+    [
+      52,
+      18,
+      120,
+      86
+    ]
+  ],
+  "file/values": [
+    2,
+    [
+      123,
+      42
+    ]
+  ],
+  "memory": [
+    97,
+    98,
+    69,
+    35
+  ],
+  "path/all": [
+    true,
+    [
+      "(word < 0x5)",
+      "(word != 0)"
+    ],
+    []
+  ],
+  "path/empty": [
+    true,
+    [
+      "(word < 0x5)"
+    ],
+    []
+  ],
+  "path/matching": [
+    true,
+    [
+      "(word < 0x5)",
+      "(word != 0)"
+    ],
+    []
+  ],
+  "register": [
+    "word",
+    17
+  ],
+  "settings/symptr_max_range/4294967299": 3,
+  "settings/symptr_max_range/bad": "RuntimeError",
+  "settings/symptr_refine_timeout/4294967299": 3,
+  "settings/symptr_refine_timeout/bad": "RuntimeError",
+  "solver": [
+    1000,
+    true,
+    9,
+    false,
+    true
+  ],
+  "storage": [
+    true,
+    [
+      [
+        0,
+        133
+      ],
+      [
+        18569430475105882587588266137607568536673111973893317399460219858819262702947,
+        32745724963520510550185023852810590512790802647167079819763063242647069073697
+      ],
+      [
+        18569430475105882587588266137607568536673111973893317399460219858819262702948,
+        14984858607182095878344480412889023369246703897906425934518040283376993247521
+      ],
+      [
+        18569430475105882587588266137607568536673111973893317399460219858819262702949,
+        14984629956385477499195946103800691932732890929402124383829342193162708320256
+      ]
+    ],
+    []
+  ],
+  "transaction/cleared": null,
+  "transaction/result": [
+    0,
+    786
+  ],
+  "value/as_float": [
+    "int",
+    1
+  ],
+  "value/concat": [
+    "{byte,byte}",
+    33153,
+    -32383
+  ],
+  "value/extract": [
+    "byte[0x7:0x4]",
+    8,
+    -8
+  ],
+  "value/invalid_string_constant": [
+    "ValueError",
+    "ExprCst(): Invalid constant string and/or base: wat (base 16)"
+  ],
+  "value/ite_left": [
+    "ITE[byte<0x4](0,byte)",
+    129,
+    129
+  ],
+  "value/ite_right": [
+    "ITE[0x4<=byte](byte,0)",
+    129,
+    129
+  ],
+  "value/narrow_sext": [
+    "ValueError",
+    "Can not sign extend 8-bits value to 4bits"
+  ],
+  "value/narrow_zext": [
+    "ValueError",
+    "Can not zero extend 8-bits value to 4bits"
+  ],
+  "value/sign_extend": [
+    "ITE[0==byte[0x7:0x7]]({0,byte},{0xff,byte})",
+    65409,
+    -127
+  ],
+  "value/small_string_constant": [
+    "ValueError",
+    "ExprCst(): called wrong constructor for constant of size 64 bits or less"
+  ],
+  "value/string_constant": [
+    "0xffab",
+    65451,
+    65451
+  ],
+  "value/wide_constant": [
+    "0x10000000000000000000000001",
+    1267650600228229401496703205377,
+    1267650600228229401496703205377
+  ],
+  "value/zero_extend": [
+    "{0,byte}",
+    129,
+    129
+  ]
+}
