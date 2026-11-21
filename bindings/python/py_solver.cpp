@@ -1,136 +1,31 @@
-#ifdef MAAT_HAS_SOLVER_BACKEND
-
 #include "python_bindings.hpp"
 
-namespace maat
+#ifdef MAAT_HAS_SOLVER_BACKEND
+namespace maat::py
 {
-namespace py
+void bind_solver(nb::module_& m)
 {
-
-
-static void Solver_dealloc(PyObject* self)
-{
-    // This will destroy the underlying Solver object
-    delete as_solver_object(self).solver;
-    as_solver_object(self).solver = nullptr;
-    free_binding_object(self);
-};
-
-static PyObject* Solver_reset(PyObject* self)
-{
-    as_solver_object(self).solver->reset();
-    Py_RETURN_NONE;
-};
-
-static PyObject* Solver_add(PyObject* self, PyObject* args)
-{
-    PyObject* constr;
-    
-    if( !PyArg_ParseTuple(args, "O!", binding_types().Constraint, &constr)){
-        return NULL;
-    }
-    
-    as_solver_object(self).solver->add(*(as_constraint_object(constr).constr));
-    Py_RETURN_NONE;
-};
-
-static PyObject* Solver_check(PyObject* self)
-{
-    bool res;
-    res = as_solver_object(self).solver->check();
-
-    if( res )
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
-};
-
-static PyObject* Solver_get_model(PyObject* self)
-{
-    VarContext* res = as_solver_object(self).solver->_get_model_raw();
-    if (res == nullptr)
-        Py_RETURN_NONE;
-    return PyVarContext_FromVarContext(res, false); // not a ref
-};
-
-static PyMethodDef Solver_methods[] = {
-    {"reset", (PyCFunction)Solver_reset, METH_NOARGS, "Remove all constraints from the solver"},
-    {"add", (PyCFunction)Solver_add, METH_VARARGS, "Add a constraint to the solver"},
-    {"check", (PyCFunction)Solver_check, METH_NOARGS, "Check if a model exists for the current constraints"},
-    {"get_model", (PyCFunction)Solver_get_model, METH_NOARGS, "If a model exists, return the model as a 'VarContext' instance"},
-    {NULL, NULL, 0, NULL}
-};
-
-static PyMemberDef Solver_members[] = {
-    {NULL}
-};
-
-/* Get/Set for the attributes */
-static PyObject* Solver_get_timeout(PyObject* self, void* closure)
-{
-    return PyLong_FromUnsignedLong(as_solver_object(self).solver->timeout);
+    using solver::Solver;
+    nb::class_<Solver>(m, "Solver", nb::is_final(), "Constraint solver")
+        .def(nb::new_(&solver::_new_solver_raw), nb::rv_policy::take_ownership)
+        .def("reset", &Solver::reset, "Remove all constraints from the solver")
+        .def("add", &Solver::add, "Add a constraint to the solver")
+        .def("check", &Solver::check, "Check if a model exists for the current constraints")
+        .def(
+            "get_model",
+            [](Solver& s) -> std::optional<std::shared_ptr<VarContext>>
+            {
+                if (auto model = s.get_model())
+                    return model;
+                return std::nullopt;
+            },
+            "If a model exists, return the model as a 'VarContext' instance")
+        .def_prop_rw(
+            "timeout", [](const Solver& s) { return s.timeout; },
+            [](Solver& s, UnsignedSetting n) { s.timeout = n.value; },
+            "Maximum time to spend to solve a constraint (in milliseconds)")
+        .def_prop_ro("did_time_out", &Solver::did_time_out,
+                     "True if the last call to check() timed out");
 }
-
-static int Solver_set_timeout(PyObject* self, PyObject* val, void* closure)
-{
-
-    if( ! PyLong_Check(val)){
-        PyErr_SetString(PyExc_RuntimeError, "Excpected a number of milliseconds (int)");
-        return -1;
-    }
-
-    unsigned long timeout = PyLong_AsUnsignedLong(val);
-    as_solver_object(self).solver->timeout = timeout;
-
-    return 0;
-}
-
-static PyObject* Solver_get_did_time_out(PyObject* self, void* closure)
-{
-    return PyBool_FromLong(as_solver_object(self).solver->did_time_out());
-}
-
-static PyGetSetDef Solver_getset[] = 
-{
-    {"timeout", Solver_get_timeout, Solver_set_timeout, "Maximum time to spend to solve a constraint (in milliseconds)", NULL},
-    {"did_time_out", Solver_get_did_time_out, NULL, "True if the last call to check() timed out", NULL},
-    {NULL}
-};
-
-static PyType_Slot Solver_slots[] = {
-    {Py_tp_dealloc, reinterpret_cast<void*>(Solver_dealloc)},
-    {Py_tp_doc, const_cast<char*>("Constraint solver")},
-    {Py_tp_methods, Solver_methods},
-    {Py_tp_members, Solver_members},
-    {Py_tp_getset, Solver_getset},
-    {0, nullptr}
-};
-
-PyType_Spec BindingTypes::Solver_spec = {
-    "maat.Solver", sizeof(Solver_Object), 0, binding_type_flags, Solver_slots
-};
-
-/* Constructors */
-PyObject* PySolver_FromSolver(solver::Solver* s)
-{
-    Solver_Object* object;
-    
-    // Create object
-    object = PyObject_New(Solver_Object, binding_types().Solver);
-    if( object != nullptr )
-    {
-        object->solver = s;
-    }
-    return (PyObject*)object;
-}
-
-PyObject* maat_Solver(PyObject* module)
-{
-    solver::Solver* res = solver::_new_solver_raw();
-    return PySolver_FromSolver(res);
-}
-
-} // namespace py
-} // namespace maat
-
+} // namespace maat::py
 #endif

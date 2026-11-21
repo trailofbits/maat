@@ -1,19 +1,26 @@
 # ---- Python bindings ----
 # FindPython3 gained stable ABI module support in CMake 3.26.
 cmake_minimum_required(VERSION 3.26)
-find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter Development.SABIModule)
+if(DEFINED Python3_EXECUTABLE)
+  set(Python_EXECUTABLE "${Python3_EXECUTABLE}")
+endif()
+find_package(Python 3.12 REQUIRED COMPONENTS Interpreter Development.Module Development.SABIModule)
+set(Python3_EXECUTABLE "${Python_EXECUTABLE}")
+execute_process(COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+  OUTPUT_VARIABLE nanobind_DIR OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+find_package(nanobind 3.1 CONFIG REQUIRED)
 # FindPython3 started reporting the free-threaded build flag in CMake 4.4.
-if(NOT DEFINED Python3_FREE_THREADED AND NOT CMAKE_CROSSCOMPILING)
+if(NOT DEFINED Python_FREE_THREADED AND NOT CMAKE_CROSSCOMPILING)
   execute_process(
     COMMAND "${Python3_EXECUTABLE}" -c
       "import sysconfig; print(sysconfig.get_config_var('Py_GIL_DISABLED') or 0)"
-    OUTPUT_VARIABLE Python3_FREE_THREADED
+    OUTPUT_VARIABLE Python_FREE_THREADED
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
   )
 endif()
-if(Python3_FREE_THREADED)
-  message(FATAL_ERROR "Building the cp310-abi3 extension requires GIL-enabled CPython")
+if(Python_FREE_THREADED)
+  message(FATAL_ERROR "Building the cp312-abi3 extension requires GIL-enabled CPython")
 endif()
 
 # Get the same source files as the main library uses
@@ -22,35 +29,30 @@ endif()
 # CMake
 get_target_property(maat_sources maat::maat SOURCES)
 
-Python3_add_library(maat_python MODULE USE_SABI 3.10
-  bindings/python/py_arch.cpp
-  bindings/python/py_config.cpp
+nanobind_add_module(maat_python STABLE_ABI NOMINSIZE PROTECT_STACK
+  bindings/python/py_constants.cpp
   bindings/python/py_constraint.cpp
   bindings/python/py_cpu.cpp
   bindings/python/py_engine.cpp
-  bindings/python/py_env.cpp
   bindings/python/py_env_EVM.cpp
   bindings/python/py_event.cpp
-  bindings/python/py_filesystem.cpp
+  bindings/python/py_environment.cpp
   bindings/python/py_info.cpp
-  bindings/python/py_loader.cpp
   bindings/python/py_maat.cpp
   bindings/python/py_memory.cpp
   bindings/python/py_path.cpp
-  bindings/python/py_process.cpp
-  bindings/python/py_serialization.cpp
   bindings/python/py_settings.cpp
   bindings/python/py_solver.cpp
   bindings/python/py_stats.cpp
   bindings/python/py_value.cpp
+  bindings/python/py_varcontext.cpp
   bindings/python/util.cpp
 
   ${maat_sources}
 )
 add_library(maat::python ALIAS maat_python)
-
-# Unix CPython 3.10+ recognizes .abi3.so. A newer build interpreter may
-# also advertise platform-qualified or free-threaded suffixes.
+# On CPython 3.15 the discovered stable suffix can be abi3t even on a
+# GIL-enabled interpreter. The linked nanobind target uses the 3.12 limited API.
 if(UNIX AND NOT CYGWIN)
   set_property(TARGET maat_python PROPERTY SUFFIX ".abi3${CMAKE_SHARED_MODULE_SUFFIX}")
 endif()
@@ -61,7 +63,8 @@ set_target_properties(
   #VERSION "${PROJECT_VERSION}"
   #SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
   EXPORT_NAME python
-  OUTPUT_NAME maat
+  OUTPUT_NAME _native
+  LIBRARY_OUTPUT_DIRECTORY "$<1:${PROJECT_BINARY_DIR}/maat>"
   PREFIX ""
 )
 
@@ -94,7 +97,20 @@ if(maat_USE_LIEF)
 endif()
 
 include(GNUInstallDirs)
-set(python_spec_dir "maat/${CMAKE_INSTALL_DATADIR}/${spec_out_prefix}")
+set(python_spec_dir "${CMAKE_INSTALL_DATADIR}/${spec_out_prefix}")
+configure_file(bindings/python/maat/__init__.py maat/__init__.py COPYONLY)
+configure_file(bindings/python/maat/py.typed maat/py.typed COPYONLY)
+nanobind_add_stub(maat_python_raw_stub MODULE maat._native
+  OUTPUT "${PROJECT_BINARY_DIR}/_native.raw.pyi" PYTHON_PATH "${PROJECT_BINARY_DIR}"
+  INCLUDE_PRIVATE DEPENDS maat_python)
+add_custom_command(
+  OUTPUT "${PROJECT_BINARY_DIR}/maat/_native.pyi"
+  COMMAND "${Python_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/bindings/python/finish_stub.py"
+          "${PROJECT_BINARY_DIR}/_native.raw.pyi" "${PROJECT_BINARY_DIR}/maat/_native.pyi"
+  DEPENDS "${PROJECT_BINARY_DIR}/_native.raw.pyi" "${PROJECT_SOURCE_DIR}/bindings/python/finish_stub.py"
+  VERBATIM)
+add_custom_target(maat_python_stub ALL DEPENDS "${PROJECT_BINARY_DIR}/maat/_native.pyi")
+add_dependencies(maat_python_stub maat_python_raw_stub)
 
 if(NOT CMAKE_SKIP_INSTALL_RULES)
   if(NOT DEFINED maat_INSTALL_PYTHONMODULEDIR)
@@ -122,12 +138,15 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
     LIBRARY #
     COMPONENT maat_Python
     LIBRARY #
-    DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}"
+    DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}/maat"
   )
 
+  install(FILES bindings/python/maat/__init__.py bindings/python/maat/py.typed
+    "${PROJECT_BINARY_DIR}/maat/_native.pyi"
+    DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}/maat" COMPONENT maat_Python)
   install(
     DIRECTORY "${PROJECT_BINARY_DIR}/${spec_out_prefix}/"
-    DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}/${python_spec_dir}"
+    DESTINATION "${maat_INSTALL_PYTHONMODULEDIR}/maat/${python_spec_dir}"
     COMPONENT maat_Python
   )
 endif()

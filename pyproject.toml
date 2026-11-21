@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=1.1", "setuptools-scm>=8"]
+requires = ["scikit-build-core>=1.1", "setuptools-scm>=8", "nanobind>=3.1,<4"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -7,7 +7,7 @@ name = "pymaat"
 dynamic = ["version"]
 description = "Maat symbolic execution framework"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license-files = [
     "LICENCE",
     "licenses/*.txt",
@@ -34,9 +34,9 @@ Changelog = "https://github.com/trailofbits/maat/releases"
 [tool.scikit-build]
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
 cmake.version = ">=3.26"
-wheel.py-api = "cp310"
+wheel.py-api = "cp312"
 wheel.packages = []
-build.targets = ["maat_python"]
+build.targets = ["maat_python_stub"]
 install.components = ["maat_Python"]
 
 [tool.scikit-build.cmake.define]
@@ -47,7 +47,7 @@ maat_USE_EXTERNAL_SLEIGH = "OFF"
 local_scheme = "dirty-tag"
 
 [tool.cibuildwheel]
-build = "cp3{10,11,12,13,14,15}-{manylinux_x86_64,macosx_x86_64,macosx_arm64}"
+build = "cp3{12,13,14,15}-{manylinux_x86_64,macosx_x86_64,macosx_arm64}"
 build-frontend = "uv"
 before-all = "bash {project}/.github/ci/install-wheel-deps.sh {project}"
 test-requires = ["pytest"]

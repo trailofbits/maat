@@ -6,6 +6,9 @@ LGPL-3.0.txt and GPL-3.0.txt. The wheel build uses GMP 6.3.0 (https://gmplib.org
 Z3 5.4.1 and LIEF 1.0.0 are built into the extension. See Z3.txt,
 LIEF.txt and LIEF-dependencies.txt.
 
+The Python extension includes nanobind (BSD 3-Clause) and its robin-map
+dependency (MIT). See nanobind.txt and robin-map.txt.
+
 Sleigh and the Ghidra processor definitions use the Apache License 2.0.
 The license and Ghidra notices are in src/third-party/sleigh/licencing/ghidra/.
 The BSD notice for the pypcode-derived integration is in the adjacent LICENCE.txt.

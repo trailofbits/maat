@@ -76,8 +76,11 @@ if(maat_BUILD_PYTHON_BINDINGS AND maat_RUN_PYTHON_TESTS)
   )
 
   # Set environment variables for correct operation
+  if(NOT maat_USE_Z3)
+    set(solver_test_env ";MAAT_TEST_NO_SOLVER=1")
+  endif()
   set_tests_properties(python-tests PROPERTIES
-    ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:maat_python>;MAAT_SLEIGH_DIR=${spec_out_dir}"
+    ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:maat_python>/..;MAAT_SLEIGH_DIR=${spec_out_dir}${solver_test_env}"
   )
 endif()
 

@@ -147,6 +147,7 @@ public:
     /// Write storage word at 'addr'
     void write(const Value& addr, const Value& val, const Settings& settings);
 public:
+    const_iterator find(const Value& key) const { return _storage.find(key); }
     const_iterator begin() const;
     const_iterator end() const;
 public:

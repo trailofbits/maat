@@ -92,10 +92,33 @@ jobs:
           MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment }}
         run: uvx --python 3.13 --from 'cibuildwheel[uv]==4.3.5' cibuildwheel
 
+      - name: Load a wheel built with Python 3.15 headers on Python 3.12
+        if: matrix.platform == 'macosx_arm64'
+        env:
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment }}
+          CMAKE_PREFIX_PATH: /tmp/maat-wheel-deps
+          CMAKE_BUILD_PARALLEL_LEVEL: 4
+        run: |
+          wheels="$RUNNER_TEMP/newest-headers"
+          uv build --wheel --python 3.15 --out-dir "$wheels" \
+            -Ccmake.define.maat_USE_EXTERNAL_SLEIGH=ON -Ccmake.define.CMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
+          uv venv --python 3.12 "$RUNNER_TEMP/minimum"
+          python="$RUNNER_TEMP/minimum/bin/python"
+          uv pip install --python "$python" pytest "$wheels"/*.whl
+          "$python" -I -m pytest -q tests/python-tests
+
+      - name: Check wheel typing with ty, mypy, and Pyright
+        if: runner.os == 'Linux'
+        run: |
+          uv venv --python 3.12 "$RUNNER_TEMP/checkers"
+          python="$RUNNER_TEMP/checkers/bin/python"
+          uv pip install --python "$python" wheelhouse/*.whl pytest ty==0.0.103 mypy==2.4.1 pyright==1.1.414
+          "$python" tests/typing/check.py
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: wheels-${{ matrix.platform }}
-          path: wheelhouse/*-cp310-abi3-*.whl
+          path: wheelhouse/*-cp312-abi3-*.whl
           if-no-files-found: error
 
   publish:
