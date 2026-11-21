@@ -10477,13 +10477,14 @@ define pcodeop insertps;
 :INSERTPS XmmReg, m32, imm8     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x21; XmmReg ... & m32; imm8 { XmmReg = insertps(XmmReg, m32, imm8:8); }
 :INSERTPS XmmReg1, XmmReg2, imm8 is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x21; xmmmod=3 & XmmReg1 & XmmReg2; imm8 { XmmReg1 = insertps(XmmReg1, XmmReg2, imm8:8); }
 
-:PINSRB XmmReg, rm32, imm8       is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x20; XmmReg ... & rm32; imm8 
+:PINSRB XmmReg, Reg32_m8, imm8   is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x20; XmmReg ... & Reg32_m8; imm8
 { 
+    local src:8 = zext(Reg32_m8:1);
     local destIndex:1 = (imm8 & 0xf) * 8:1;
     local useLow:1 = destIndex < 64:1;
-    local newLow:8 = zext(rm32:1) << destIndex;
+    local newLow:8 = src << destIndex;
     newLow = (XmmReg[0,64] & ~(0xff:8 << destIndex)) |  newLow;
-    local newHigh:8 = zext(rm32:1) << (destIndex-64:1);
+    local newHigh:8 = src << (destIndex-64:1);
     newHigh = (XmmReg[64,64] & ~(0xff:8 << (destIndex - 64:1))) | newHigh;
     conditionalAssign(XmmReg[0,64],useLow,newLow,XmmReg[0,64]);
     conditionalAssign(XmmReg[64,64],!useLow,newHigh,XmmReg[64,64]);
@@ -10491,11 +10492,12 @@ define pcodeop insertps;
 
 :PINSRD XmmReg, rm32, imm8     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x22; XmmReg ... & rm32; imm8 
 { 
+    local src:8 = zext(rm32);
     local destIndex:1 = (imm8 & 0x3) * 32:1;
     local useLow:1 = destIndex < 64:1;
-    local newLow:8 = zext(rm32) << destIndex;
+    local newLow:8 = src << destIndex;
     newLow = (XmmReg[0,64] & ~(0xffffffff:8 << destIndex)) |  newLow;
-    local newHigh:8 = zext(rm32) << (destIndex-64:1);
+    local newHigh:8 = src << (destIndex-64:1);
     newHigh = (XmmReg[64,64] & ~(0xffffffff:8 << (destIndex - 64:1))) | newHigh;
     conditionalAssign(XmmReg[0,64],useLow,newLow,XmmReg[0,64]);
     conditionalAssign(XmmReg[64,64],!useLow,newHigh,XmmReg[64,64]);
@@ -10504,9 +10506,10 @@ define pcodeop insertps;
 @ifdef IA64
 :PINSRQ XmmReg, rm64, imm8     is $(LONGMODE_ON) & vexMode=0 & bit64=1 & $(PRE_66) & $(REX_W) & byte=0x0F; byte=0x3A; byte=0x22; XmmReg ... & rm64; imm8 
 { 
+    local src:8 = rm64;
     local useHigh:1 = imm8 & 0x1;
-    conditionalAssign(XmmReg[0,64],!useHigh,rm64,XmmReg[0,64]);
-    conditionalAssign(XmmReg[64,64],useHigh,rm64,XmmReg[64,64]);
+    conditionalAssign(XmmReg[0,64],!useHigh,src,XmmReg[0,64]);
+    conditionalAssign(XmmReg[64,64],useHigh,src,XmmReg[64,64]);
 }
 @endif
 
