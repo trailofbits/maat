@@ -571,7 +571,20 @@ public:
             if (first < bytes && static_cast<size_t>(v.size) <= bytes - first)
                 return ir::Reg(parent.reg(), (first + v.size) * 8 - 1, first * 8);
         }
-        return reg_name_to_maat_reg(arch, m_sleigh->getRegisterName(v.space, v.offset, v.size));
+        const auto name = m_sleigh->getRegisterName(v.space, v.offset, v.size);
+        const auto parent = reg_name_to_maat_reg(arch, name);
+        const size_t bits = static_cast<size_t>(v.size) * 8;
+        if ((arch == Arch::Type::X86 || arch == Arch::Type::X64) && parent.size() > bits)
+        {
+            // Sleigh may name the enclosing register, e.g. SP for the low byte of ESP.
+            const auto& named = m_sleigh->getRegister(name);
+            if (static_cast<size_t>(named.size) * 8 == parent.size())
+            {
+                const size_t low = parent.lb + (v.offset - named.offset) * 8;
+                return ir::Reg(parent.reg(), low + bits - 1, low);
+            }
+        }
+        return parent;
     }
 
     void build_callother_mapping_EVM()
