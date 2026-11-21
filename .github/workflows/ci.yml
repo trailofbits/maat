@@ -57,7 +57,7 @@ jobs:
           SHARED: ${{ matrix.type == 'shared' }}
         run: |
           python3 -m venv "$RUNNER_TEMP/venv"
-          "$RUNNER_TEMP/venv/bin/python" -m pip install pytest
+          "$RUNNER_TEMP/venv/bin/python" -m pip install pytest 'nanobind>=3.1,<4'
           cmake --preset "$PRESET" -DBUILD_SHARED_LIBS="$SHARED" \
             -DPython3_EXECUTABLE="$RUNNER_TEMP/venv/bin/python" \
             -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
@@ -77,6 +77,15 @@ jobs:
           ./build/consumer/maat_find_package_test
           "$prefix/bin/python" -I -c 'from maat import ARCH, MaatEngine; MaatEngine(ARCH.X64)'
 
+      - name: Check the runtime and generated stub without Z3
+        if: matrix.os == 'ubuntu' && matrix.type == 'shared'
+        run: |
+          cmake -S . -B build -Dmaat_USE_Z3=OFF
+          cmake --build build --target maat_python_stub
+          export PYTHONPATH=build MAAT_SLEIGH_DIR="$PWD/build/processors" MAAT_TEST_NO_SOLVER=1
+          "$RUNNER_TEMP/venv/bin/python" -m pytest -q tests/python-tests/test_package.py \
+            tests/python-tests/test_typed_scripts.py
+
   sanitize:
     runs-on: ubuntu-latest
     steps:
@@ -92,8 +101,11 @@ jobs:
           CC: clang
           CXX: clang++
         run: |
-          cmake --preset ci-sanitize
-          cmake --build build/sanitize
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/python" -m pip install 'nanobind>=3.1,<4'
+          cmake --preset ci-sanitize -DPython3_EXECUTABLE="$RUNNER_TEMP/venv/bin/python"
+          # Stub generation imports the extension and needs an ASan-instrumented interpreter.
+          cmake --build build/sanitize --target unit-tests adv-tests maat_python
 
       - name: Test with AddressSanitizer and UndefinedBehaviorSanitizer
         env:
