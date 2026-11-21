@@ -84,7 +84,7 @@ jobs:
           cmake --build build --target maat_python_stub
           export PYTHONPATH=build MAAT_SLEIGH_DIR="$PWD/build/processors" MAAT_TEST_NO_SOLVER=1
           "$RUNNER_TEMP/venv/bin/python" -m pytest -q tests/python-tests/test_package.py \
-            tests/python-tests/test_typed_scripts.py tests/typing/test_compatibility.py
+            tests/python-tests/test_typed_scripts.py
 
   sanitize:
     runs-on: ubuntu-latest

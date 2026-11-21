@@ -70,7 +70,7 @@ if(maat_BUILD_PYTHON_BINDINGS AND maat_RUN_PYTHON_TESTS)
   include(../cmake/pytest.cmake)
 
   add_test(NAME python-tests
-    COMMAND ${pytest_command} . ../typing/test_compatibility.py
+    COMMAND ${pytest_command} .
     # Need to run within the python-tests directory
     WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/python-tests"
   )

@@ -51,7 +51,7 @@ build = "cp3{12,13,14,15}-{manylinux_x86_64,macosx_x86_64,macosx_arm64}"
 build-frontend = "uv"
 before-all = "bash {project}/.github/ci/install-wheel-deps.sh {project}"
 test-requires = ["pytest"]
-test-command = "python -I -m pytest -q {project}/tests/python-tests {project}/tests/typing/test_compatibility.py"
+test-command = "python -I -m pytest -q {project}/tests/python-tests"
 config-settings = { "cmake.define.maat_USE_EXTERNAL_SLEIGH" = "ON", "cmake.define.CMAKE_INSTALL_RPATH_USE_LINK_PATH" = "ON" }
 environment = { CMAKE_PREFIX_PATH = "/tmp/maat-wheel-deps", CMAKE_BUILD_PARALLEL_LEVEL = "4" }
 

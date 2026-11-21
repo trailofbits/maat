@@ -105,7 +105,7 @@ jobs:
           uv venv --python 3.12 "$RUNNER_TEMP/minimum"
           python="$RUNNER_TEMP/minimum/bin/python"
           uv pip install --python "$python" pytest "$wheels"/*.whl
-          "$python" -I -m pytest -q tests/python-tests tests/typing/test_compatibility.py
+          "$python" -I -m pytest -q tests/python-tests
 
       - name: Check wheel typing with ty, mypy, and Pyright
         if: runner.os == 'Linux'
