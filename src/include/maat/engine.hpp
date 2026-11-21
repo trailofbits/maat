@@ -58,8 +58,8 @@ private:
     CPUMode _current_cpu_mode;
 private:
     // Convenience variable to avoid passing it to all subfunctions
-    bool _halt_after_inst;
-    info::Stop _halt_after_inst_reason;
+    bool _halt_after_inst = false;
+    info::Stop _halt_after_inst_reason = info::Stop::NONE;
     // Indicates the last addr before which the engine halted because of an EXEC event
     // handler. It is used to avoid halting forever on the same instr once we resume 
     // execution
