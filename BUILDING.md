@@ -35,6 +35,25 @@ cmake --build build --config Release
 
 If dependencies are installed under a custom prefix, pass `-DCMAKE_PREFIX_PATH=<prefix>` when configuring, or use a [package-specific hint][1]. On macOS or Linux, if the runtime loader cannot find a shared dependency such as LIEF after installation, configure Maat with `-DCMAKE_INSTALL_RPATH=<prefix>/lib` and reinstall.
 
+### Build with vcpkg
+
+The `vcpkg` preset builds Maat natively with its binary loader, solver, and Python bindings.
+It uses a pinned vcpkg registry for GMP, zlib, Z3, Python, and nanobind. Two local
+ports build LIEF 1.0 and Sleigh 12.2, including the compiler used to generate
+Maat's processor files. A regular clone of Maat is sufficient.
+
+Install a C++23-capable compiler for LIEF, CMake 3.26 or later, and Ninja.
+On Ubuntu and macOS, GMP also needs `autoconf`, `autoconf-archive`, `automake`,
+and `libtool`. Set `VCPKG_ROOT` to
+your [vcpkg checkout](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started)
+and run these commands from the Maat checkout. The first configure builds the dependencies.
+
+```sh
+cmake --preset vcpkg
+cmake --build build/vcpkg
+cmake --install build/vcpkg --prefix ./build/install
+```
+
 ## Install
 
 This project doesn't require any special command-line flags to install to keep

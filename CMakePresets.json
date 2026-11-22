@@ -2,6 +2,17 @@
   "version": 2,
   "configurePresets": [
     {
+      "name": "vcpkg",
+      "displayName": "Release with vcpkg dependencies",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/vcpkg",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_MANIFEST_DIR": "${sourceDir}/vcpkg"
+      }
+    },
+    {
       "name": "cmake-pedantic",
       "hidden": true,
       "warnings": {
