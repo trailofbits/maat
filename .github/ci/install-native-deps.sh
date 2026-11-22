@@ -36,11 +36,15 @@ install_archive lief-project/LIEF "$lief_version" "LIEF-$lief_version-$(uname -s
 if [[ -n ${sleigh_sha:-} ]]; then
   install_archive lifting-bits/sleigh v12.2 "$RUNNER_OS-sleigh-12.2-1.$(uname -m).tar.gz" "$sleigh_sha"
 else
-  # Sleigh publishes its macOS binary for arm64. Build the Intel library locally.
-  cmake -S "$GITHUB_WORKSPACE/src/third-party/sleigh/sleigh-cmake" -B sleigh-build \
-    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$prefix" \
-    -Dsleigh_BUILD_SLEIGHSPECS=OFF -Dsleigh_BUILD_SUPPORT=OFF
-  cmake --build sleigh-build --target install
+  sleigh_prefix="$RUNNER_TEMP/native-sleigh"
+  if [[ ${SLEIGH_CACHE_HIT:-} != true ]]; then
+    # Sleigh 12.2 publishes only an arm64 macOS binary.
+    cmake -S "$GITHUB_WORKSPACE/src/third-party/sleigh/sleigh-cmake" -B sleigh-build \
+      -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$sleigh_prefix" \
+      -Dsleigh_BUILD_SLEIGHSPECS=OFF -Dsleigh_BUILD_SUPPORT=OFF
+    cmake --build sleigh-build --target install --parallel 4
+  fi
+  prefix="$prefix:$sleigh_prefix"
 fi
 
 if [[ $RUNNER_OS == Linux ]]; then
