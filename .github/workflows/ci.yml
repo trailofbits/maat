@@ -45,10 +45,32 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install gmp z3
 
-      - &native_deps
-        name: Install native dependencies
+      - name: Identify Intel Sleigh build inputs
+        if: runner.os == 'macOS' && runner.arch == 'X64'
+        id: sleigh-inputs
+        shell: bash
+        run: |
+          {
+            xcodebuild -version
+            xcrun --sdk macosx --show-sdk-build-version
+            xcrun clang --version
+            git rev-parse HEAD:src/third-party/sleigh/sleigh-cmake
+          } > "$RUNNER_TEMP/sleigh-build-inputs"
+          digest=$(shasum -a 256 "$RUNNER_TEMP/sleigh-build-inputs" | cut -d' ' -f1)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Cache installed Intel Sleigh
+        if: runner.os == 'macOS' && runner.arch == 'X64'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: sleigh-cache
+        with:
+          path: ${{ runner.temp }}/native-sleigh
+          key: native-sleigh-${{ matrix.runner }}-${{ runner.arch }}-${{ steps.sleigh-inputs.outputs.digest }}-${{ hashFiles('.github/ci/install-native-deps.sh') }}
+
+      - name: Install native dependencies
         env:
           GH_TOKEN: ${{ github.token }}
+          SLEIGH_CACHE_HIT: ${{ steps.sleigh-cache.outputs.cache-hit }}
         run: bash .github/ci/install-native-deps.sh
 
       - name: Configure
@@ -94,7 +116,10 @@ jobs:
       - name: Install Ubuntu packages
         run: sudo apt-get install -y libgmp-dev zlib1g-dev python3-dev
 
-      - *native_deps
+      - name: Install native dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/ci/install-native-deps.sh
 
       - name: Configure and build
         env:
