@@ -54,7 +54,7 @@ prefix, add it to `CMAKE_PREFIX_PATH`. With Maat cloned at `../maat`, run these
 commands from your Python project.
 
 ```sh
-uv venv --python 3.12
+uv venv --python 3.12  # Only if the project has no .venv yet
 uv pip install ../maat
 .venv/bin/python -c 'import maat; maat.MaatEngine(maat.ARCH.X64)'
 ```
