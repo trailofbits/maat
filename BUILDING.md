@@ -47,11 +47,12 @@ On Ubuntu and macOS, GMP also needs `autoconf`, `autoconf-archive`, `automake`,
 and `libtool`. Set `VCPKG_ROOT` to
 your [vcpkg checkout](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started)
 and run these commands from the Maat checkout. The first configure builds the dependencies.
+Set the install prefix at configure time so the installed C++ library can find its processor files.
 
 ```sh
-cmake --preset vcpkg
+cmake --preset vcpkg -DCMAKE_INSTALL_PREFIX="$PWD/build/install"
 cmake --build build/vcpkg
-cmake --install build/vcpkg --prefix ./build/install
+cmake --install build/vcpkg
 ```
 
 ## Install
