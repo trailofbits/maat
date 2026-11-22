@@ -571,6 +571,13 @@ void Number::set_concat(const Number& n1, const Number& n2)
     }
 }
 
+int Number::get_bit(unsigned int idx) const
+{
+    if (idx >= size)
+        return 0;
+    return is_mpz() ? mpz_tstbit(mpz_.get_mpz_t(), idx) : (get_ucst() >> idx) & 1;
+}
+
 void Number::set_popcount(int dest_size, const Number& n)
 {
     size = dest_size;

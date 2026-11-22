@@ -88,6 +88,7 @@ public:
     void set_concat(const Value& n1, const Value& n2);
     // Write n2 over n1 starting from lowest byte 'lb'
     void set_overwrite(const Value& n1, const Value& n2, int lb);
+    void set_lzcount(int dest_size, const Value& n);
     void set_popcount(int dest_size, const Value& n);
     void set_zext(int ext_size, const Value& n);
     void set_sext(int ext_size, const Value& n);

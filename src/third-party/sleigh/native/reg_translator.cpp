@@ -199,6 +199,7 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "MM6") return maat::ir::Reg(maat::X86::MM6, 64);
     if (reg_name == "MM7") return maat::ir::Reg(maat::X86::MM7, 64);
 
+    if (reg_name == "ZMM0") return maat::ir::Reg(maat::X86::ZMM0, 512);
     if (reg_name == "YMM0") return maat::ir::Reg(maat::X86::ZMM0, 256);
     if (reg_name == "XMM0") return maat::ir::Reg(maat::X86::ZMM0, 128);
     if (reg_name == "XMM0_Qa") return maat::ir::Reg(maat::X86::ZMM0, 63, 0);
@@ -232,6 +233,7 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "XMM0_Bo") return maat::ir::Reg(maat::X86::ZMM0, 119, 112);
     if (reg_name == "XMM0_Bp") return maat::ir::Reg(maat::X86::ZMM0, 127, 120);
 
+    if (reg_name == "ZMM1") return maat::ir::Reg(maat::X86::ZMM1, 512);
     if (reg_name == "YMM1") return maat::ir::Reg(maat::X86::ZMM1, 256);
     if (reg_name == "XMM1") return maat::ir::Reg(maat::X86::ZMM1, 128);
     if (reg_name == "XMM1_Qa") return maat::ir::Reg(maat::X86::ZMM1, 63, 0);
@@ -266,6 +268,7 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "XMM1_Wh") return maat::ir::Reg(maat::X86::ZMM1, 127, 112);
 
 
+    if (reg_name == "ZMM2") return maat::ir::Reg(maat::X86::ZMM2, 512);
     if (reg_name == "YMM2") return maat::ir::Reg(maat::X86::ZMM2, 256);
     if (reg_name == "XMM2") return maat::ir::Reg(maat::X86::ZMM2, 128);
     if (reg_name == "XMM2_Qa") return maat::ir::Reg(maat::X86::ZMM2, 63, 0);
@@ -299,6 +302,7 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "XMM2_Wg") return maat::ir::Reg(maat::X86::ZMM2, 111, 96);
     if (reg_name == "XMM2_Wh") return maat::ir::Reg(maat::X86::ZMM2, 127, 112);
     
+    if (reg_name == "ZMM3") return maat::ir::Reg(maat::X86::ZMM3, 512);
     if (reg_name == "YMM3") return maat::ir::Reg(maat::X86::ZMM3, 256);
     if (reg_name == "XMM3") return maat::ir::Reg(maat::X86::ZMM3, 128);
     if (reg_name == "XMM3_Qa") return maat::ir::Reg(maat::X86::ZMM3, 63, 0);
@@ -332,6 +336,7 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "XMM3_Wg") return maat::ir::Reg(maat::X86::ZMM3, 111, 96);
     if (reg_name == "XMM3_Wh") return maat::ir::Reg(maat::X86::ZMM3, 127, 112);
     
+    if (reg_name == "ZMM4") return maat::ir::Reg(maat::X86::ZMM4, 512);
     if (reg_name == "YMM4") return maat::ir::Reg(maat::X86::ZMM4, 256);
     if (reg_name == "XMM4") return maat::ir::Reg(maat::X86::ZMM4, 128);
     if (reg_name == "XMM4_Qa") return maat::ir::Reg(maat::X86::ZMM4, 63, 0);
@@ -365,6 +370,7 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "XMM4_Wg") return maat::ir::Reg(maat::X86::ZMM4, 111, 96);
     if (reg_name == "XMM4_Wh") return maat::ir::Reg(maat::X86::ZMM4, 127, 112);
     
+    if (reg_name == "ZMM5") return maat::ir::Reg(maat::X86::ZMM5, 512);
     if (reg_name == "YMM5") return maat::ir::Reg(maat::X86::ZMM5, 256);
     if (reg_name == "XMM5") return maat::ir::Reg(maat::X86::ZMM5, 128);
     if (reg_name == "XMM5_Qa") return maat::ir::Reg(maat::X86::ZMM5, 63, 0);
@@ -398,6 +404,7 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "XMM5_Wg") return maat::ir::Reg(maat::X86::ZMM5, 111, 96);
     if (reg_name == "XMM5_Wh") return maat::ir::Reg(maat::X86::ZMM5, 127, 112);
     
+    if (reg_name == "ZMM6") return maat::ir::Reg(maat::X86::ZMM6, 512);
     if (reg_name == "YMM6") return maat::ir::Reg(maat::X86::ZMM6, 256);
     if (reg_name == "XMM6") return maat::ir::Reg(maat::X86::ZMM6, 128);
     if (reg_name == "XMM6_Qa") return maat::ir::Reg(maat::X86::ZMM6, 63, 0);
@@ -431,6 +438,7 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "XMM6_Wg") return maat::ir::Reg(maat::X86::ZMM6, 111, 96);
     if (reg_name == "XMM6_Wh") return maat::ir::Reg(maat::X86::ZMM6, 127, 112);
     
+    if (reg_name == "ZMM7") return maat::ir::Reg(maat::X86::ZMM7, 512);
     if (reg_name == "YMM7") return maat::ir::Reg(maat::X86::ZMM7, 256);
     if (reg_name == "XMM7") return maat::ir::Reg(maat::X86::ZMM7, 128);
     if (reg_name == "XMM7_Qa") return maat::ir::Reg(maat::X86::ZMM7, 63, 0);
@@ -469,6 +477,15 @@ maat::ir::Param sleigh_reg_translate_X86(const std::string& reg_name)
     if (reg_name == "C2") return maat::ir::Reg(maat::X86::C2, 8);
     if (reg_name == "C3") return maat::ir::Reg(maat::X86::C3, 8);
     if (reg_name == "XCR0") return maat::ir::Reg(maat::X86::XCR0, 64);
+
+    if (reg_name == "ST0") return maat::ir::Reg(maat::X86::ST0, 80);
+    if (reg_name == "ST1") return maat::ir::Reg(maat::X86::ST1, 80);
+    if (reg_name == "ST2") return maat::ir::Reg(maat::X86::ST2, 80);
+    if (reg_name == "ST3") return maat::ir::Reg(maat::X86::ST3, 80);
+    if (reg_name == "ST4") return maat::ir::Reg(maat::X86::ST4, 80);
+    if (reg_name == "ST5") return maat::ir::Reg(maat::X86::ST5, 80);
+    if (reg_name == "ST6") return maat::ir::Reg(maat::X86::ST6, 80);
+    if (reg_name == "ST7") return maat::ir::Reg(maat::X86::ST7, 80);
 
     if (reg_name == "FPUControlWord") return maat::ir::Reg(maat::X86::FPUCW, 16);
     if (reg_name == "FPUStatusWord") return maat::ir::Reg(maat::X86::FPUSW, 16);
