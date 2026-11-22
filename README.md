@@ -41,10 +41,25 @@ Key features:
 
 # Installation
 
-To install Maat's python module:
-````
+To install Maat's Python module from PyPI, run
+
+```sh
 python3 -m pip install pymaat
-````
+```
+
+To try a local checkout in another Python project, you need a C++17 compiler
+and the development files for GMP, zlib, Z3, LIEF 1.0, and Sleigh 12.2
+(including the `sleigh` compiler). If you installed any of them under a custom
+prefix, add it to `CMAKE_PREFIX_PATH`. With Maat cloned at `../maat`, run these
+commands from your Python project.
+
+```sh
+uv venv --python 3.12
+uv pip install ../maat
+.venv/bin/python -c 'import maat; maat.MaatEngine(maat.ARCH.X64)'
+```
+
+After editing Maat, run `uv pip install --reinstall ../maat` to rebuild it.
 
 To install Maat's native SDK and use the C++ API, check out [BUILDING.md](./BUILDING.md)
 
