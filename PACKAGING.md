@@ -4,17 +4,16 @@ Maat ships as `pymaat` on PyPI and imports as `maat`. The [wheel workflow](.gith
 
 ## Build locally
 
-Install GMP, Z3, and LIEF as described in [BUILDING.md](BUILDING.md), then run these commands from the repository root with uv installed.
+Install the native dependencies listed in [BUILDING.md](BUILDING.md), including the Sleigh library and compiler. Set `CMAKE_PREFIX_PATH` for dependencies installed outside standard locations. From the repository root, build the wheel and test it in a fresh environment.
 
 ```sh
-git submodule update --init
 uv build --wheel --python 3.12
-uv venv --python 3.13 /tmp/pymaat-test
-uv pip install --python /tmp/pymaat-test/bin/python dist/*.whl
-/tmp/pymaat-test/bin/python -I -c 'from maat import ARCH, MaatEngine; MaatEngine(ARCH.X64)'
+uv venv --python 3.13 ../pymaat-test
+uv pip install --python ../pymaat-test/bin/python dist/*.whl
+../pymaat-test/bin/python -I -c 'import maat; maat.MaatEngine(maat.ARCH.X64)'
 ```
 
-The local build uses the pinned Sleigh submodule. If Sleigh is already installed, pass `-Ccmake.define.maat_USE_EXTERNAL_SLEIGH=ON` to `uv build`. Set `CMAKE_PREFIX_PATH` for dependencies installed outside standard locations. The Python package version comes from Git tags.
+To build with the bundled Sleigh, run `git submodule update --init` and pass `-Ccmake.define.maat_USE_EXTERNAL_SLEIGH=OFF` to `uv build`. The Python package version comes from Git tags.
 
 ## CI and releases
 
