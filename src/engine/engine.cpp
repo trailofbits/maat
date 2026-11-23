@@ -1177,7 +1177,6 @@ void MaatEngine::restore_last_snapshot(bool remove)
     info = snapshot.info;
     process = snapshot.process;
     mem->page_manager.set_regions(std::move(snapshot.page_permissions));
-    mem->mappings.set_maps(std::move(snapshot.mem_mappings));
     path->restore_snapshot(snapshot.path);
     env->restore_snapshot(snapshot.env, remove);
     // Restore memory segments
@@ -1186,6 +1185,7 @@ void MaatEngine::restore_last_snapshot(bool remove)
         mem->delete_segment(start);
     }
     snapshot.created_segments.clear();
+    mem->mappings.set_maps(std::move(snapshot.mem_mappings));
     // Restore memory state in reverse order !
     for (
         auto it = snapshot.saved_mem.rbegin(); 

@@ -2,8 +2,12 @@
 #include "maat/exception.hpp"
 #include "maat/stats.hpp"
 #include "maat/varcontext.hpp"
+#include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <iterator>
+#include <optional>
+#include <utility>
 #include <sstream>
 #include <cstring>
 
@@ -145,6 +149,9 @@ void MemPageManager::set_flags(addr_t start, addr_t end, mem_flag_t flags)
 
 void MemPageManager::merge_regions()
 {
+    if (_regions.size() < 2)
+        return;
+
     addr_t prev_start = 0;
     mem_flag_t prev_flags = _regions.front().flags;
     std::list<PageSet>::iterator it = _regions.begin();
@@ -617,18 +624,10 @@ void MemConcreteBuffer::extend_before(addr_t nb_bytes)
 // Return the first offset where the byte is different than 'val'
 offset_t MemConcreteBuffer::is_identical_until(offset_t start, offset_t end, uint8_t val)
 {
-    offset_t tmp = start;
-
-    if (start == end)
-        return start;
-
-    while( *(uint8_t*)((uint8_t*)_mem+(tmp)) == val)
-    {
-        tmp++;
-        if (tmp >= end)
-            break;
-    };
-    return tmp;
+    end = std::min<offset_t>(end, _size);
+    while (start < end && _mem[start] == val)
+        ++start;
+    return start;
 }
 
 uint64_t MemConcreteBuffer::read(offset_t off, int nb_bytes)
@@ -1109,68 +1108,60 @@ addr_t MemSegment::size()
     return end - start + 1;
 }
 
+static void add_read_candidate(Value& result, const Expr& addr, addr_t candidate,
+                               ITECond condition, const Value& value)
+{
+    if (result.is_none())
+        result = value.as_expr();
+    else if (result.expr()->type != ExprType::CST ||
+             (value.is_abstract() && (value.expr()->type != ExprType::CST || value.expr()->is_tainted())) ||
+             !value.as_number().equal_to(result.expr()->as_number()))
+        result = ITE(exprcst(addr->size, candidate), condition, addr, value.as_expr(), result.expr());
+}
+
+// Intersect a strided pointer range with the starts of complete reads in [start, end].
+static bool clip_read_range(ValueSet& range, addr_t start, addr_t end, unsigned int nb_bytes)
+{
+    if (nb_bytes == 0 || end - start < nb_bytes - 1)
+        return false;
+    const addr_t lower = std::max(start, range.min);
+    const addr_t upper = std::min(end - (nb_bytes - 1), range.max);
+    if (upper < lower)
+        return false;
+
+    const addr_t stride = std::max<addr_t>(1, range.stride);
+    const addr_t last = upper - (upper - range.min) % stride;
+    if (last < lower)
+        return false;
+    range.min = lower + (last - lower) % stride;
+    range.max = last;
+    return true;
+}
+
 void MemSegment::symbolic_ptr_read(Value& result, const Expr& addr, ValueSet& addr_value_set, unsigned int nb_bytes, const Expr& base)
 {
-    Expr res = base;
-    Expr byte;
-    addr_t a2;
-    addr_t a = addr_value_set.min;
-
-    // Check if value_set doesn't intersect this segment
-    if ((addr_value_set.min + nb_bytes -1 > end)
-        || (addr_value_set.max < start))
-    {
-        result = res;
+    result = base ? Value(base) : Value();
+    ValueSet range = addr_value_set;
+    if (!clip_read_range(range, start, end, nb_bytes))
         return;
-    }
-    
-    if( a < start )
-        a = start;
-    
-    // If base is null, put first possible read in it and increment address
-    if( base == nullptr )
+    const addr_t stride = std::max<addr_t>(1, range.stride);
+    const addr_t last = range.max;
+    addr_t a = range.min;
+    for (;; a += stride)
     {
-        res = read(a, nb_bytes).as_expr();
-        a++;
-    }
-
-    // Get all other possible values
-    for( ; a <= addr_value_set.max and a-1+nb_bytes <= end; a += addr_value_set.stride)
-    {
-        /* Optimisation to detect huge areas containing only a single byte (typically zeros) */
-        if( _bitmap.is_concrete(a-start))
+        Value value = read(a, nb_bytes);
+        // Coalesce candidates that read only identical concrete bytes.
+        const addr_t run_length = result.is_none() || a == last ? 0 : identical_byte_count(
+            a, _concrete.read(a - start, 1), last - a + nb_bytes);
+        add_read_candidate(result, addr, a, run_length >= nb_bytes ? ITECond::LE : ITECond::EQ, value);
+        if (run_length >= nb_bytes)
         {
-            a2 = is_identical_until(a, _concrete.read(a-start, 1)) -1; // a2 == last address containing the byte "byte"
-            if (a2 >= a-1+nb_bytes)
-            {
-                // Identical memory region bigger than single read so
-                // use interval instead
-                // Same value for addr >= a
-                Expr v = read(a, nb_bytes).as_expr();
-                if( !(v->eq(res)) )
-                {
-                    // Combine with ITE only if new possible value is different than the 
-                    // current one. This check is used to avoid having ITE(0x1 <= addr, 0x0, 0x0) as
-                    // base expression for the symbolic read
-                    res = ITE(exprcst(addr->size, a), ITECond::LE, addr, v, res);
-                }
-                a = a2+1-nb_bytes;
-            }
-            else
-            {
-                /* Add possible concrete value to ITE switch :) */
-                res = ITE(addr, ITECond::EQ, exprcst(addr->size, a), read(a, nb_bytes).as_expr(), res);
-            }
+            const addr_t skip = run_length - nb_bytes;
+            a += skip - skip % stride;
         }
-        else
-        {
-            /* Add possible concrete value to ITE switch :) */
-            res = ITE(addr, ITECond::EQ, exprcst(addr->size, a), read(a, nb_bytes).as_expr(), res);
-        }
+        if (a == last)
+            break;
     }
-
-    result = res;
-    return;
 }
 
 Value MemSegment::read(addr_t addr, unsigned int nb_bytes)
@@ -1500,12 +1491,19 @@ addr_t MemSegment::is_concrete_until(addr_t addr1, addr_t max)
     return start + _bitmap.is_concrete_until(addr1-start, adjusted_max);
 }
 
+addr_t MemSegment::identical_byte_count(addr_t addr, uint8_t byte, addr_t max_count)
+{
+    const offset_t off = addr - start;
+    const offset_t count = std::min(max_count, size() - off);
+    // The bitmap may round its answer up to the end of a bitmap byte.
+    const offset_t limit = std::min(off + count, _bitmap.is_concrete_until(off, count));
+    return _concrete.is_identical_until(off, limit, byte) - off;
+}
+
 // Return first address where the byte is different than "byte"
 addr_t MemSegment::is_identical_until(addr_t addr, cst_t byte)
 {
-    addr_t max_addr = is_concrete_until(addr, end-addr+1);
-    addr_t offset = _concrete.is_identical_until(addr-start, max_addr-start, (uint8_t)byte);
-    return offset + start;
+    return addr + identical_byte_count(addr, byte, end - addr + 1);
 }
 
 
@@ -1558,6 +1556,14 @@ MemEngine::~MemEngine()
 
 void MemEngine::new_segment(addr_t start, addr_t end, mem_flag_t flags, const std::string& name, bool is_special)
 {
+    create_segment(start, end, name, is_special);
+    page_manager.set_flags(start, end, flags);
+    if (!is_special)
+        mappings.map(MemMap(start, end, flags, name));
+}
+
+void MemEngine::create_segment(addr_t start, addr_t end, const std::string& name, bool is_special)
+{
     std::list<std::shared_ptr<MemSegment>>::iterator it;
 
     if(has_segment_containing(start, end))
@@ -1579,8 +1585,6 @@ void MemEngine::new_segment(addr_t start, addr_t end, mem_flag_t flags, const st
             break;
     }
     _segments.insert(it, seg);
-    page_manager.set_flags(start, end, flags);
-
 
     if (_snapshots->active())
     {
@@ -1591,7 +1595,7 @@ void MemEngine::new_segment(addr_t start, addr_t end, mem_flag_t flags, const st
 void MemEngine::map(addr_t start, addr_t end, mem_flag_t mflags, const std::string& map_name)
 {
     addr_t prev_end = 0;
-    std::vector<std::tuple<addr_t, addr_t, mem_flag_t>> to_create;
+    std::vector<std::pair<addr_t, addr_t>> to_create;
 
     if (start > end)
         throw mem_exception("MemEngine::map(): 'start' must be lower than 'end'");
@@ -1609,7 +1613,7 @@ void MemEngine::map(addr_t start, addr_t end, mem_flag_t mflags, const std::stri
         or (segments().back()->end < start)
     )
     {
-        to_create.push_back(std::make_tuple(start, end, mflags));
+        to_create.emplace_back(start, end);
     }
     else
     {
@@ -1621,18 +1625,18 @@ void MemEngine::map(addr_t start, addr_t end, mem_flag_t mflags, const std::stri
                 // Check if space between segments are contained in the requested mapping
                 if (start <= prev_end+1 && end >= seg->start-1)
                     // Space contained in mapping, fill it completely
-                    to_create.push_back(std::make_tuple(prev_end+1, seg->start-1, mflags));
+                    to_create.emplace_back(prev_end+1, seg->start-1);
                 else if (start >= prev_end+1 && end <= seg->start-1)
                 {
                     // Space contains mapping
-                    to_create.push_back(std::make_tuple(start, end, mflags));
+                    to_create.emplace_back(start, end);
                 }
                 else if( start <= prev_end+1 && end >= prev_end+1)
                     // Overlap low part of space between segments
-                    to_create.push_back(std::make_tuple(prev_end+1, end, mflags));
+                    to_create.emplace_back(prev_end+1, end);
                 else if( start <= seg->start-1 && end >= seg->start-1)
                     // Overlap high part of space between segments
-                    to_create.push_back(std::make_tuple(start, seg->start-1, mflags));
+                    to_create.emplace_back(start, seg->start-1);
                 //else
                     // No overlap at all, do nothing
 
@@ -1643,13 +1647,11 @@ void MemEngine::map(addr_t start, addr_t end, mem_flag_t mflags, const std::stri
         }
         // When it overlaps the last segment
         if (end > prev_end)
-            to_create.push_back(std::make_tuple(prev_end+1, end, mflags));
+            to_create.emplace_back(prev_end+1, end);
     }
 
-    for (auto& t : to_create)
-    {
-        new_segment(std::get<0>(t), std::get<1>(t), std::get<2>(t), map_name);
-    }
+    for (const auto& [first, last] : to_create)
+        create_segment(first, last, map_name, false);
 
     // Change memory mapping flags
     page_manager.set_flags(start, end, mflags);
@@ -1689,8 +1691,7 @@ void MemEngine::unmap(addr_t start, addr_t end)
 
     // Adjust map on the page size
     addr_t page_size = page_manager.page_size();
-    if (end % page_size != 0)
-        end += page_size - (end % page_size);
+    end += (page_size - 1) - end % page_size;
     if (start % page_size != 0)
         start -= (start % page_size);
 
@@ -1766,6 +1767,8 @@ void MemEngine::delete_segment(addr_t start)
     }
     else
     {
+        if (!(*it)->is_engine_special_segment())
+            mappings.unmap((*it)->start, (*it)->end);
         _segments.erase(it);
     }
 }
@@ -1806,7 +1809,7 @@ Value MemEngine::read(const Value& addr, unsigned int nb_bytes, bool ignore_flag
     if( ! addr.is_concrete(*_varctx))
     {
         Settings tmp_settings;
-        symbolic_ptr_read(res, addr.expr(), addr.expr()->value_set(), nb_bytes, tmp_settings);
+        read_symbolic_regions(res, addr.expr(), addr.expr()->value_set(), nb_bytes, tmp_settings, ignore_flags);
     }
     else
     {
@@ -1973,32 +1976,93 @@ Value MemEngine::read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, bo
 
 ValueSet MemEngine::limit_symptr_range(Expr addr, const ValueSet& range, const Settings& settings)
 {
-    addr_t tmp_addr_min, tmp_addr_max;
-    ValueSet res(range.size);
+    const addr_t limit = settings.symptr_max_range;
+    if (range.min >= range.max || range.stride == 0 || range.max - range.min <= limit)
+        return range;
 
-    // Adjust the value set min
-    tmp_addr_min = addr->as_number(*_varctx).get_ucst() - settings.symptr_max_range/2;
-    tmp_addr_min -= tmp_addr_min % range.stride; // Adjust lower bound on stride
-    if (tmp_addr_min < range.min)
-    {
-        tmp_addr_min = range.min; // We have to stay in the original range...
-    }
-    // Then max
-    tmp_addr_max = settings.symptr_max_range - (settings.symptr_max_range % addr->value_set().stride); // Adjuste range on stride
-    tmp_addr_max += tmp_addr_min;
-    if (tmp_addr_max > range.max)
-    {
-        // We need to slide the limited range 'down' so that the upper bound
-        // stays in the original range
-        tmp_addr_min = tmp_addr_max - settings.symptr_max_range;
-        tmp_addr_min -= tmp_addr_min % range.stride; // Adjust lower bound on stride
-    }
-    res.set(tmp_addr_min, tmp_addr_max, range.stride);
-    return res;
+    // Work in stride steps from range.min so clipping either end of the
+    // window preserves alignment, even at the ends of the address space.
+    const addr_t last = (range.max - range.min) / range.stride;
+    const addr_t steps = limit / range.stride;
+    const addr_t model = std::clamp(addr->as_number(*_varctx).get_ucst(), range.min, range.max);
+    const addr_t center = (model - range.min) / range.stride;
+    const addr_t first = std::min(center - std::min(center, steps / 2), last - steps);
+    return ValueSet(range.size, range.min + first * range.stride,
+                    range.min + (first + steps) * range.stride, range.stride);
 }
 
 
+using SegmentIterator = std::list<std::shared_ptr<MemSegment>>::const_iterator;
+
+// Assemble a boundary candidate from the same underlying segment data as an
+// in-segment candidate. The caller has checked permissions for the entire read.
+static Value read_across_segments(
+    SegmentIterator it, SegmentIterator end, addr_t addr, unsigned int remaining, Endian endian)
+{
+    Value value;
+    while (true)
+    {
+        const auto& segment = *it;
+        const unsigned int count = std::min<addr_t>(remaining, segment->end - addr + 1);
+        Value part = segment->read(addr, count);
+        if (value.is_none())
+            value = part;
+        else
+            concat_endian(value, value, part, endian);
+
+        remaining -= count;
+        if (remaining == 0)
+            return value;
+        addr += count;
+        ++it;
+        if (it == end || (*it)->start != addr || (*it)->is_engine_special_segment())
+            return Value();
+    }
+}
+
+static Value read_symbolic_range(SegmentIterator it, SegmentIterator end, const Expr& addr,
+                                 ValueSet& range, unsigned int nb_bytes, Endian endian)
+{
+    Value res;
+    const addr_t stride = std::max<addr_t>(1, range.stride);
+    for (; it != end; ++it)
+    {
+        const auto& segment = *it;
+        if (segment->start > range.max)
+            break;
+        if (segment->is_engine_special_segment())
+            continue;
+
+        segment->symbolic_ptr_read(
+            res, addr, range, nb_bytes, res.is_none() ? nullptr : res.as_expr());
+
+        // Only the final nb_bytes - 1 starts can spill into the next segment.
+        const auto next = std::next(it);
+        if (nb_bytes < 2 || next == end ||
+            (*next)->start != segment->end + 1 || (*next)->is_engine_special_segment())
+            continue;
+        const addr_t upper = std::min(segment->end, range.max);
+        addr_t a = upper - (upper - range.min) % stride;
+        while (a >= segment->start && segment->end - a < nb_bytes - 1)
+        {
+            Value value = read_across_segments(it, end, a, nb_bytes, endian);
+            if (!value.is_none())
+                add_read_candidate(res, addr, a, ITECond::EQ, value);
+            if (a - range.min < stride)
+                break;
+            a -= stride;
+        }
+    }
+    return res;
+}
+
 void MemEngine::symbolic_ptr_read(Value& res, Expr addr, const ValueSet& range, unsigned int nb_bytes, const Settings& settings)
+{
+    read_symbolic_regions(res, addr, range, nb_bytes, settings, false);
+}
+
+void MemEngine::read_symbolic_regions(Value& res, const Expr& addr, const ValueSet& range,
+                                      unsigned int nb_bytes, const Settings& settings, bool ignore_mem_permissions)
 {
     ValueSet addr_value_set(range.size);
     res.set_none();
@@ -2006,7 +2070,7 @@ void MemEngine::symbolic_ptr_read(Value& res, Expr addr, const ValueSet& range, 
     // Check if we have to limit the pointer range
     if(
         settings.symptr_limit_range and
-        addr_value_set.range() > settings.symptr_max_range and 
+        (range.max - range.min) > settings.symptr_max_range and
         addr->is_concolic(*_varctx)
     )
     {
@@ -2017,28 +2081,72 @@ void MemEngine::symbolic_ptr_read(Value& res, Expr addr, const ValueSet& range, 
         addr_value_set = range;
     }
 
-    // Get the base value if read over concrete writes
-    // We consider each possible memory segment
-    for( auto& segment: _segments)
-    {
-        if( segment->is_engine_special_segment())
-            continue; // We don't read in special segments
-        else if (segment->start >  addr_value_set.max)
-            break;
-        else if (segment->end < addr_value_set.min)
-            continue;
-        else{
-            segment->symbolic_ptr_read(res, addr, addr_value_set, nb_bytes, nullptr);
+    const auto& regions = page_manager.regions();
+    const auto& maps = mappings.get_maps();
+    auto region = regions.cbegin();
+    auto map = ignore_mem_permissions ? maps.cbegin() : maps.cend();
+    const mem_flag_t eligible_flags = ignore_mem_permissions ? mem_flag_rwx : mem_flag_r;
+
+    // A mapping can have no permission bits. Older serialized engines can
+    // also have segments represented only by their page permissions.
+    auto next_extent = [&]() -> std::optional<std::pair<addr_t, addr_t>> {
+        while (region != regions.cend() && !(region->flags & eligible_flags))
+            ++region;
+        if (map != maps.cend() && (region == regions.cend() || map->start < region->start))
+        {
+            const auto& extent = *map++;
+            return std::make_pair(extent.start, extent.end);
         }
-    }
+        if (region == regions.cend())
+            return std::nullopt;
+        const auto& extent = *region++;
+        return std::make_pair(extent.start, extent.end);
+    };
 
-    if( res.is_none() )
-        throw runtime_exception("Got NULL as base value for symbolic pointer read!");
-
-    if( symbolic_mem_engine.contains_symbolic_write(addr_value_set.min, addr_value_set.max+nb_bytes-1) )
+    auto segment = _segments.cbegin();
+    auto extent = next_extent();
+    while (extent && extent->first <= addr_value_set.max)
     {
-        res = symbolic_mem_engine.symbolic_ptr_read(addr, addr_value_set, nb_bytes, res.as_expr());
+        auto [start, end] = *extent;
+        extent = next_extent();
+        while (extent && (extent->first <= end || extent->first - end == 1))
+        {
+            end = std::max(end, extent->second);
+            extent = next_extent();
+        }
+
+        ValueSet readable = addr_value_set;
+        if (!clip_read_range(readable, start, end, nb_bytes))
+            continue;
+        while (segment != _segments.cend() && (*segment)->end < readable.min)
+            ++segment;
+
+        const bool has_writes = symbolic_mem_engine.contains_symbolic_write(
+            readable.min, readable.max + (nb_bytes - 1));
+        Expr read_addr = addr;
+        if (has_writes)
+        {
+            // Resolve prior symbolic writes only at addresses allowed by this interval.
+            if (readable.min == readable.max)
+                read_addr = exprcst(addr->size, readable.min);
+            else if (readable.min != addr_value_set.min || readable.max != addr_value_set.max)
+            {
+                Expr low = exprcst(addr->size, readable.min);
+                Expr span = exprcst(addr->size, readable.max - readable.min);
+                // Unsigned (addr - low) <= span tests both bounds.
+                read_addr = ITE(addr - low, ITECond::LE, span, addr, low);
+            }
+        }
+        Value value = read_symbolic_range(segment, _segments.cend(), read_addr, readable, nb_bytes, _endianness);
+        if (value.is_none())
+            continue;
+        if (has_writes)
+            value = symbolic_mem_engine.symbolic_ptr_read(read_addr, readable, nb_bytes, value.as_expr());
+        add_read_candidate(res, addr, readable.min, ITECond::LE, value);
     }
+
+    if (res.is_none())
+        throw mem_exception("No valid address for symbolic pointer read");
 
     // Record symbolic read in statistics
     MaatStats::instance().add_symptr_read(addr_value_set.range());

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -363,6 +364,63 @@ namespace test{
             return nb;
         }
         
+        unsigned int limit_strided_pointer_range()
+        {
+            auto ctx = std::make_shared<VarContext>(0);
+            MemEngine mem(ctx, 64);
+            Expr addr = exprvar(64, "addr");
+            Settings settings;
+            unsigned int nb = 0;
+            for (addr_t base : {addr_t(1), UINT64_MAX - 30})
+            {
+                ValueSet range(64, base, base + 30, 2);
+                for (unsigned int limit : {0, 1, 7, 8, 64})
+                {
+                    settings.symptr_max_range = limit;
+                    for (unsigned int i = 0; i < 16; ++i)
+                    {
+                        addr_t model = base + 2 * i;
+                        ctx->set("addr", model);
+                        ValueSet window = mem.limit_symptr_range(addr, range, settings);
+                        nb += _assert(range.contains(window.min) && range.contains(window.max) &&
+                            window.stride == range.stride && window.contains(model),
+                            "Limited range lost the model or changed its stride");
+                        nb += _assert(window.max - window.min == std::min(limit, 30u) / 2 * 2,
+                            "Limited range has the wrong span");
+                    }
+                }
+            }
+            ValueSet singleton(64, 5, 5, 0);
+            auto window = mem.limit_symptr_range(addr, singleton, settings);
+            nb += _assert(window.min == 5 && window.max == 5 && window.stride == 0,
+                "Limiting a singleton changed its range");
+            return nb;
+        }
+
+        unsigned int limit_wide_pointer_range()
+        {
+            auto ctx = std::make_shared<VarContext>();
+            MemEngine mem(ctx, 64);
+            mem.map(0x1000, 0x1fff);
+            mem.write(0x1040, 0x5a, 1);
+            Expr addr = exprvar(256, "addr");
+            ctx->set("addr", Number(256, 0x1040));
+            ValueSet range(256, 0x1000, 0x10ff, 1);
+            Settings settings;
+            settings.symptr_limit_range = true;
+            settings.symptr_max_range = 8;
+
+            Value value;
+            mem.symbolic_ptr_read(value, addr, range, 1, settings);
+            unsigned int nb = _assert(value.as_uint(*ctx) == 0x5a,
+                "Limited read through a 256-bit pointer missed the modeled address");
+            mem.symbolic_ptr_write(addr, range, exprcst(8, 0xa5), settings);
+            mem.symbolic_ptr_read(value, addr, range, 1, settings);
+            nb += _assert(value.as_uint(*ctx) == 0xa5,
+                "Limited write through a 256-bit pointer missed the modeled address");
+            return nb;
+        }
+
         unsigned int basic_symbolic_read()
         {
             unsigned int nb = 0;
@@ -429,6 +487,174 @@ namespace test{
             return nb;
         }
 
+        unsigned int strided_table_read()
+        {
+            auto varctx = std::make_shared<VarContext>(0);
+            MemEngine mem(varctx, 64);
+            mem.map(0x1000, 0x1fff);
+            // Three distinct halfwords, then an odd-length run of equal bytes.
+            uint8_t table[] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0x77, 0x77,
+                               0x77, 0x10, 0x22, 0x33, 0x44, 0x55, 0x66, 0x99};
+            mem.write_buffer(0x1000, table, sizeof(table));
+            unsigned int nb = 0;
+            // The second range enters the segment at 0x1001.
+            for (addr_t base : {0x1000, 0x0fff})
+            {
+                Expr addr = base + (exprvar(64, "index") & 7) * 2;
+                for (unsigned int width : {2, 1, 4})
+                {
+                    Value selected;
+                    mem.symbolic_ptr_read(selected, addr, addr->value_set(), width, Settings());
+                    for (int index = 0; index < 8; ++index)
+                    {
+                        addr_t candidate = base + 2 * index;
+                        if (candidate < 0x1000)
+                            continue;
+                        varctx->set("index", index);
+                        auto expected = mem.read(candidate, width).as_uint();
+                        nb += _assert(selected.as_uint(*varctx) == expected,
+                            "Strided read of " + std::to_string(width) +
+                            " bytes disagrees at index " + std::to_string(index));
+                    }
+                }
+            }
+
+            MemSegment segment(0x1000, 0x1001);
+            Value selected;
+            Expr addr = exprvar(64, "addr");
+            ValueSet range(64, 0x0fff, 0x1001, 2);
+            segment.symbolic_ptr_read(selected, addr, range, 2, nullptr);
+            nb += _assert(selected.is_none(), "No complete halfword on this stride");
+            range.set_cst(0x1000);
+            segment.symbolic_ptr_read(selected, addr, range, 2, nullptr);
+            nb += _assert(selected.as_uint() == 0, "Missed the sole candidate on stride zero");
+            nb += _assert(segment.is_identical_until(0x1000, 0) == 0x1002,
+                "Identical-byte scan exceeded the short segment");
+            return nb;
+        }
+
+        unsigned int symbolic_read_permission_override()
+        {
+            auto ctx = std::make_shared<VarContext>(0);
+            MemEngine mem(ctx, 64);
+            mem.map(0x1000, 0x1fff, mem_flag_w);
+            mem.write(0x1000, exprcst(8, 0x34));
+            mem.write(0x1001, exprcst(8, 0x56));
+            const Value addr = 0x1000 + (exprvar(64, "index") & 1);
+
+            auto read_is_denied = [&](const Value& pointer, bool ignore_mem_permissions) {
+                try
+                {
+                    mem.read(pointer, 1, ignore_mem_permissions);
+                    return false;
+                }
+                catch (const mem_exception&)
+                {
+                    return true;
+                }
+            };
+            unsigned int nb = _assert(read_is_denied(addr, false), "Symbolic read ignored write-only permissions");
+            Value value = mem.read(addr, 1, true);
+            ctx->set("index", 0);
+            nb += _assert(value.as_uint(*ctx) == 0x34, "Permission override lost the first byte");
+            ctx->set("index", 1);
+            nb += _assert(value.as_uint(*ctx) == 0x56, "Permission override lost the second byte");
+
+            mem.write(0x1fff, exprcst(8, 0x78));
+            mem.new_segment(0x2000, 0x2fff, mem_flag_w);
+            mem.write(0x2000, exprcst(8, 0x9a));
+            mem.map(0x1000, 0x1fff, mem_flag_none);
+            nb += _assert(mem.read(addr, 1, true).as_uint(*ctx) == 0x56,
+                "Permission override skipped a mapped page with no access bits");
+            const Value boundary = addr + 0xffe;
+            nb += _assert(mem.read(boundary, 2, true).as_uint(*ctx) == 0x9a78,
+                "Permission override missed a read spanning a mapping and an adjacent segment");
+            mem.unmap(0x1000, 0x1fff);
+            nb += _assert(read_is_denied(addr, true), "Permission override read an unmapped page");
+            mem.new_segment(0x3000, 0x4fff, mem_flag_none);
+            mem.write(0x3000, 0x12, 1, true);
+            mem.write(0x3001, 0x34, 1, true);
+            mem.write(0x4000, 0x56, 1, true);
+            mem.write(0x4001, 0x78, 1, true);
+            const Value direct = 0x3000 + (exprvar(64, "index") & 1);
+            nb += _assert(read_is_denied(direct, false), "Direct no-access segment allowed a symbolic read");
+            value = mem.read(direct, 1, true);
+            for (unsigned int index : {0, 1})
+            {
+                ctx->set("index", index);
+                nb += _assert(value.as_uint(*ctx) == (index == 0 ? 0x12 : 0x34),
+                    "Permission override skipped a byte in a direct no-access segment");
+            }
+            mem.unmap(0x3000, 0x3fff);
+            nb += _assert(read_is_denied(direct, true), "Permission override read an unmapped direct segment");
+            const Value remaining = direct + 0x1000;
+            value = mem.read(remaining, 1, true);
+            for (unsigned int index : {0, 1})
+            {
+                ctx->set("index", index);
+                nb += _assert(value.as_uint(*ctx) == (index == 0 ? 0x56 : 0x78),
+                    "Unmapping the first page hid a byte in the second page");
+            }
+            return nb;
+        }
+
+        unsigned int symbolic_read_after_first_no_access_segment()
+        {
+            auto ctx = std::make_shared<VarContext>();
+            MemEngine mem(ctx, 64);
+            mem.new_segment(0x3000, 0x3fff, mem_flag_none);
+            mem.write(0x3000, 0x31, 1, true);
+            mem.write(0x3001, 0x32, 1, true);
+            mem.unmap(0x3000, 0x3fff);
+            mem.map(0x3000, 0x3fff, mem_flag_r);
+
+            const Value addr = 0x3000 + (exprvar(64, "index") & 1);
+            Value value = mem.read(addr, 1);
+            unsigned int nb = 0;
+            for (unsigned int index : {0, 1})
+            {
+                ctx->set("index", index);
+                nb += _assert(value.as_uint(*ctx) == 0x31 + index,
+                    "Symbolic read missed a byte after the first no-access segment became readable");
+            }
+            return nb;
+        }
+
+        unsigned int read_across_short_segments(Endian endian)
+        {
+            auto ctx = std::make_shared<VarContext>(0);
+            MemEngine mem(ctx, 64, nullptr, endian);
+            mem.new_segment(0x1000, 0x1001);
+            mem.new_segment(0x1002, 0x1002);
+            mem.new_segment(0x1003, 0x1005);
+            for (addr_t a = 0x1000; a <= 0x1005; ++a)
+                mem.write(a, exprcst(8, a - 0x1000));
+            mem.write(0x1002, exprvar(8, "byte"));
+
+            const Value addr = 0x1000 + (exprvar(64, "index") & 1) * 2;
+            Value selected = mem.read(addr, 4);
+            // The two four-byte windows contain [00 01 xx 03] and [xx 03 04 05].
+            struct {
+                int index, byte;
+                uint32_t little, big;
+            } const cases[] = {
+                {0, 0x12, 0x03120100, 0x00011203},
+                {0, 0xab, 0x03ab0100, 0x0001ab03},
+                {1, 0x12, 0x05040312, 0x12030405},
+                {1, 0xab, 0x050403ab, 0xab030405},
+            };
+            unsigned int nb = 0;
+            for (const auto& item : cases)
+            {
+                ctx->set("index", item.index);
+                ctx->set("byte", item.byte);
+                auto expected = endian == Endian::LITTLE ? item.little : item.big;
+                nb += _assert(selected.as_uint(*ctx) == expected,
+                    "Incorrect strided read across short segments at index " + std::to_string(item.index));
+            }
+            return nb;
+        }
+
         unsigned int refine_value_set()
         {
             unsigned int nb = 0;
@@ -476,8 +702,15 @@ void test_symbolic_memory(){
     total += basic_symbolic_ptr_big_endian();
     total += basic_symbolic_write();
     total += basic_symbolic_write_big_endian();
+    total += limit_strided_pointer_range();
+    total += limit_wide_pointer_range();
     total += basic_symbolic_read();
     total += basic_symbolic_read_big_endian();
+    total += strided_table_read();
+    total += symbolic_read_permission_override();
+    total += symbolic_read_after_first_no_access_segment();
+    total += read_across_short_segments(maat::Endian::LITTLE);
+    total += read_across_short_segments(maat::Endian::BIG);
 #ifdef MAAT_HAS_SOLVER_BACKEND
     total += refine_value_set();
 #endif

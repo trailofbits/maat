@@ -134,8 +134,7 @@ public:
     void write(offset_t off, const Number& val, int nb_bytes);
     void write_buffer(offset_t off, uint8_t* buf, int buf_len);
 
-    /** \brief Returns the closest offset from 'start' and before 'end' (included) which 
-     * holds a value different from 'val' */
+    /// Return the first differing offset in [start, end), or the end of the scan.
     offset_t is_identical_until(offset_t start, offset_t end, uint8_t val);
 
     /// Returns a raw pointer to the concrete memory buffer at offset 'off'
@@ -211,6 +210,7 @@ private:
     MemAbstractBuffer _abstract;
     bool _is_engine_special_segment;
     Endian _endianness;
+    addr_t identical_byte_count(addr_t addr, uint8_t byte, addr_t max_count);
 
 public:
     addr_t start; ///< Beginning of the memory segment 
@@ -453,6 +453,9 @@ private:
     std::list<std::shared_ptr<MemSegment>> _segments;
     std::shared_ptr<VarContext> _varctx;
     std::shared_ptr<SnapshotManager<Snapshot>> _snapshots;
+    void create_segment(addr_t start, addr_t end, const std::string& name, bool is_special);
+    void read_symbolic_regions(Value& res, const Expr& addr, const ValueSet& range,
+                               unsigned int nb_bytes, const Settings& settings, bool ignore_mem_permissions);
 public:
     SymbolicMemEngine symbolic_mem_engine;
     MemPageManager page_manager;
