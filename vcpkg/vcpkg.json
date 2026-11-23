@@ -1,0 +1,10 @@
+{
+  "builtin-baseline": "93ad765c7b66ab9ce97469ec23a90b15c3a14ee5",
+  "dependencies": [
+    "gmp",
+    "lief",
+    "nanobind",
+    "sleigh",
+    "z3"
+  ]
+}

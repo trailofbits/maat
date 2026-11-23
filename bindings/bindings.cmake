@@ -6,8 +6,10 @@ if(DEFINED Python3_EXECUTABLE)
 endif()
 find_package(Python 3.12 REQUIRED COMPONENTS Interpreter Development.Module Development.SABIModule)
 set(Python3_EXECUTABLE "${Python_EXECUTABLE}")
-execute_process(COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
-  OUTPUT_VARIABLE nanobind_DIR OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+if(NOT nanobind_DIR)
+  execute_process(COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+    OUTPUT_VARIABLE nanobind_DIR OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+endif()
 find_package(nanobind 3.1 CONFIG REQUIRED)
 # FindPython3 started reporting the free-threaded build flag in CMake 4.4.
 if(NOT DEFINED Python_FREE_THREADED AND NOT CMAKE_CROSSCOMPILING)
