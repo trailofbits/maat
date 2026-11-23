@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -363,6 +364,63 @@ namespace test{
             return nb;
         }
         
+        unsigned int limit_strided_pointer_range()
+        {
+            auto ctx = std::make_shared<VarContext>(0);
+            MemEngine mem(ctx, 64);
+            Expr addr = exprvar(64, "addr");
+            Settings settings;
+            unsigned int nb = 0;
+            for (addr_t base : {addr_t(1), UINT64_MAX - 30})
+            {
+                ValueSet range(64, base, base + 30, 2);
+                for (unsigned int limit : {0, 1, 7, 8, 64})
+                {
+                    settings.symptr_max_range = limit;
+                    for (unsigned int i = 0; i < 16; ++i)
+                    {
+                        addr_t model = base + 2 * i;
+                        ctx->set("addr", model);
+                        ValueSet window = mem.limit_symptr_range(addr, range, settings);
+                        nb += _assert(range.contains(window.min) && range.contains(window.max) &&
+                            window.stride == range.stride && window.contains(model),
+                            "Limited range lost the model or changed its stride");
+                        nb += _assert(window.max - window.min == std::min(limit, 30u) / 2 * 2,
+                            "Limited range has the wrong span");
+                    }
+                }
+            }
+            ValueSet singleton(64, 5, 5, 0);
+            auto window = mem.limit_symptr_range(addr, singleton, settings);
+            nb += _assert(window.min == 5 && window.max == 5 && window.stride == 0,
+                "Limiting a singleton changed its range");
+            return nb;
+        }
+
+        unsigned int limit_wide_pointer_range()
+        {
+            auto ctx = std::make_shared<VarContext>();
+            MemEngine mem(ctx, 64);
+            mem.map(0x1000, 0x1fff);
+            mem.write(0x1040, 0x5a, 1);
+            Expr addr = exprvar(256, "addr");
+            ctx->set("addr", Number(256, 0x1040));
+            ValueSet range(256, 0x1000, 0x10ff, 1);
+            Settings settings;
+            settings.symptr_limit_range = true;
+            settings.symptr_max_range = 8;
+
+            Value value;
+            mem.symbolic_ptr_read(value, addr, range, 1, settings);
+            unsigned int nb = _assert(value.as_uint(*ctx) == 0x5a,
+                "Limited read through a 256-bit pointer missed the modeled address");
+            mem.symbolic_ptr_write(addr, range, exprcst(8, 0xa5), settings);
+            mem.symbolic_ptr_read(value, addr, range, 1, settings);
+            nb += _assert(value.as_uint(*ctx) == 0xa5,
+                "Limited write through a 256-bit pointer missed the modeled address");
+            return nb;
+        }
+
         unsigned int basic_symbolic_read()
         {
             unsigned int nb = 0;
@@ -476,6 +534,8 @@ void test_symbolic_memory(){
     total += basic_symbolic_ptr_big_endian();
     total += basic_symbolic_write();
     total += basic_symbolic_write_big_endian();
+    total += limit_strided_pointer_range();
+    total += limit_wide_pointer_range();
     total += basic_symbolic_read();
     total += basic_symbolic_read_big_endian();
 #ifdef MAAT_HAS_SOLVER_BACKEND

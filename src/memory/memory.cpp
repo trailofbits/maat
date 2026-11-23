@@ -2,6 +2,7 @@
 #include "maat/exception.hpp"
 #include "maat/stats.hpp"
 #include "maat/varcontext.hpp"
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <sstream>
@@ -1973,28 +1974,19 @@ Value MemEngine::read(addr_t addr, unsigned int nb_bytes, mem_alert_t* alert, bo
 
 ValueSet MemEngine::limit_symptr_range(Expr addr, const ValueSet& range, const Settings& settings)
 {
-    addr_t tmp_addr_min, tmp_addr_max;
-    ValueSet res(range.size);
+    const addr_t limit = settings.symptr_max_range;
+    if (range.min >= range.max || range.stride == 0 || range.max - range.min <= limit)
+        return range;
 
-    // Adjust the value set min
-    tmp_addr_min = addr->as_number(*_varctx).get_ucst() - settings.symptr_max_range/2;
-    tmp_addr_min -= tmp_addr_min % range.stride; // Adjust lower bound on stride
-    if (tmp_addr_min < range.min)
-    {
-        tmp_addr_min = range.min; // We have to stay in the original range...
-    }
-    // Then max
-    tmp_addr_max = settings.symptr_max_range - (settings.symptr_max_range % addr->value_set().stride); // Adjuste range on stride
-    tmp_addr_max += tmp_addr_min;
-    if (tmp_addr_max > range.max)
-    {
-        // We need to slide the limited range 'down' so that the upper bound
-        // stays in the original range
-        tmp_addr_min = tmp_addr_max - settings.symptr_max_range;
-        tmp_addr_min -= tmp_addr_min % range.stride; // Adjust lower bound on stride
-    }
-    res.set(tmp_addr_min, tmp_addr_max, range.stride);
-    return res;
+    // Work in stride steps from range.min so clipping either end of the
+    // window preserves alignment, even at the ends of the address space.
+    const addr_t last = (range.max - range.min) / range.stride;
+    const addr_t steps = limit / range.stride;
+    const addr_t model = std::clamp(addr->as_number(*_varctx).get_ucst(), range.min, range.max);
+    const addr_t center = (model - range.min) / range.stride;
+    const addr_t first = std::min(center - std::min(center, steps / 2), last - steps);
+    return ValueSet(range.size, range.min + first * range.stride,
+                    range.min + (first + steps) * range.stride, range.stride);
 }
 
 
@@ -2006,7 +1998,7 @@ void MemEngine::symbolic_ptr_read(Value& res, Expr addr, const ValueSet& range, 
     // Check if we have to limit the pointer range
     if(
         settings.symptr_limit_range and
-        addr_value_set.range() > settings.symptr_max_range and 
+        (range.max - range.min) > settings.symptr_max_range and
         addr->is_concolic(*_varctx)
     )
     {
