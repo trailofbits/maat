@@ -533,6 +533,125 @@ namespace test{
             return nb;
         }
 
+        unsigned int symbolic_read_permission_override()
+        {
+            auto ctx = std::make_shared<VarContext>(0);
+            MemEngine mem(ctx, 64);
+            mem.map(0x1000, 0x1fff, mem_flag_w);
+            mem.write(0x1000, exprcst(8, 0x34));
+            mem.write(0x1001, exprcst(8, 0x56));
+            const Value addr = 0x1000 + (exprvar(64, "index") & 1);
+
+            auto read_is_denied = [&](const Value& pointer, bool ignore_mem_permissions) {
+                try
+                {
+                    mem.read(pointer, 1, ignore_mem_permissions);
+                    return false;
+                }
+                catch (const mem_exception&)
+                {
+                    return true;
+                }
+            };
+            unsigned int nb = _assert(read_is_denied(addr, false), "Symbolic read ignored write-only permissions");
+            Value value = mem.read(addr, 1, true);
+            ctx->set("index", 0);
+            nb += _assert(value.as_uint(*ctx) == 0x34, "Permission override lost the first byte");
+            ctx->set("index", 1);
+            nb += _assert(value.as_uint(*ctx) == 0x56, "Permission override lost the second byte");
+
+            mem.write(0x1fff, exprcst(8, 0x78));
+            mem.new_segment(0x2000, 0x2fff, mem_flag_w);
+            mem.write(0x2000, exprcst(8, 0x9a));
+            mem.map(0x1000, 0x1fff, mem_flag_none);
+            nb += _assert(mem.read(addr, 1, true).as_uint(*ctx) == 0x56,
+                "Permission override skipped a mapped page with no access bits");
+            const Value boundary = addr + 0xffe;
+            nb += _assert(mem.read(boundary, 2, true).as_uint(*ctx) == 0x9a78,
+                "Permission override missed a read spanning a mapping and an adjacent segment");
+            mem.unmap(0x1000, 0x1fff);
+            nb += _assert(read_is_denied(addr, true), "Permission override read an unmapped page");
+            mem.new_segment(0x3000, 0x4fff, mem_flag_none);
+            mem.write(0x3000, 0x12, 1, true);
+            mem.write(0x3001, 0x34, 1, true);
+            mem.write(0x4000, 0x56, 1, true);
+            mem.write(0x4001, 0x78, 1, true);
+            const Value direct = 0x3000 + (exprvar(64, "index") & 1);
+            nb += _assert(read_is_denied(direct, false), "Direct no-access segment allowed a symbolic read");
+            value = mem.read(direct, 1, true);
+            for (unsigned int index : {0, 1})
+            {
+                ctx->set("index", index);
+                nb += _assert(value.as_uint(*ctx) == (index == 0 ? 0x12 : 0x34),
+                    "Permission override skipped a byte in a direct no-access segment");
+            }
+            mem.unmap(0x3000, 0x3fff);
+            nb += _assert(read_is_denied(direct, true), "Permission override read an unmapped direct segment");
+            const Value remaining = direct + 0x1000;
+            value = mem.read(remaining, 1, true);
+            for (unsigned int index : {0, 1})
+            {
+                ctx->set("index", index);
+                nb += _assert(value.as_uint(*ctx) == (index == 0 ? 0x56 : 0x78),
+                    "Unmapping the first page hid a byte in the second page");
+            }
+            return nb;
+        }
+
+        unsigned int symbolic_read_after_first_no_access_segment()
+        {
+            auto ctx = std::make_shared<VarContext>();
+            MemEngine mem(ctx, 64);
+            mem.new_segment(0x3000, 0x3fff, mem_flag_none);
+            mem.write(0x3000, 0x31, 1, true);
+            mem.write(0x3001, 0x32, 1, true);
+            mem.unmap(0x3000, 0x3fff);
+            mem.map(0x3000, 0x3fff, mem_flag_r);
+
+            const Value addr = 0x3000 + (exprvar(64, "index") & 1);
+            Value value = mem.read(addr, 1);
+            unsigned int nb = 0;
+            for (unsigned int index : {0, 1})
+            {
+                ctx->set("index", index);
+                nb += _assert(value.as_uint(*ctx) == 0x31 + index,
+                    "Symbolic read missed a byte after the first no-access segment became readable");
+            }
+            return nb;
+        }
+
+        unsigned int read_across_short_segments()
+        {
+            unsigned int nb = 0;
+            for (Endian endian : {Endian::LITTLE, Endian::BIG})
+            {
+                auto ctx = std::make_shared<VarContext>(0);
+                MemEngine mem(ctx, 64, nullptr, endian);
+                mem.new_segment(0x1000, 0x1001);
+                mem.new_segment(0x1002, 0x1002);
+                mem.new_segment(0x1003, 0x1005);
+                for (addr_t a = 0x1000; a <= 0x1005; ++a)
+                    mem.write(a, exprcst(8, a - 0x1000));
+                mem.write(0x1002, exprvar(8, "byte"));
+
+                Expr addr = 0x1000 + (exprvar(64, "index") & 1) * 2;
+                Value selected;
+                mem.symbolic_ptr_read(selected, addr, addr->value_set(), 4, Settings());
+                for (int index : {0, 1})
+                {
+                    ctx->set("index", index);
+                    for (int byte : {0x12, 0xab})
+                    {
+                        ctx->set("byte", byte);
+                        auto expected = mem.read(0x1000 + 2 * index, 4);
+                        nb += _assert(selected.as_uint(*ctx) == expected.as_uint(*ctx),
+                            "Strided symbolic read across short segments disagrees with concrete address");
+                    }
+                }
+            }
+            return nb;
+        }
+
         unsigned int refine_value_set()
         {
             unsigned int nb = 0;
@@ -585,6 +704,9 @@ void test_symbolic_memory(){
     total += basic_symbolic_read();
     total += basic_symbolic_read_big_endian();
     total += strided_table_read();
+    total += symbolic_read_permission_override();
+    total += symbolic_read_after_first_no_access_segment();
+    total += read_across_short_segments();
 #ifdef MAAT_HAS_SOLVER_BACKEND
     total += refine_value_set();
 #endif

@@ -453,6 +453,9 @@ private:
     std::list<std::shared_ptr<MemSegment>> _segments;
     std::shared_ptr<VarContext> _varctx;
     std::shared_ptr<SnapshotManager<Snapshot>> _snapshots;
+    void create_segment(addr_t start, addr_t end, const std::string& name, bool is_special);
+    void read_symbolic_regions(Value& res, const Expr& addr, const ValueSet& range,
+                               unsigned int nb_bytes, const Settings& settings, bool ignore_mem_permissions);
 public:
     SymbolicMemEngine symbolic_mem_engine;
     MemPageManager page_manager;
