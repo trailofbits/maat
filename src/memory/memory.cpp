@@ -618,18 +618,10 @@ void MemConcreteBuffer::extend_before(addr_t nb_bytes)
 // Return the first offset where the byte is different than 'val'
 offset_t MemConcreteBuffer::is_identical_until(offset_t start, offset_t end, uint8_t val)
 {
-    offset_t tmp = start;
-
-    if (start == end)
-        return start;
-
-    while( *(uint8_t*)((uint8_t*)_mem+(tmp)) == val)
-    {
-        tmp++;
-        if (tmp >= end)
-            break;
-    };
-    return tmp;
+    end = std::min<offset_t>(end, _size);
+    while (start < end && _mem[start] == val)
+        ++start;
+    return start;
 }
 
 uint64_t MemConcreteBuffer::read(offset_t off, int nb_bytes)
@@ -1112,66 +1104,46 @@ addr_t MemSegment::size()
 
 void MemSegment::symbolic_ptr_read(Value& result, const Expr& addr, ValueSet& addr_value_set, unsigned int nb_bytes, const Expr& base)
 {
-    Expr res = base;
-    Expr byte;
-    addr_t a2;
-    addr_t a = addr_value_set.min;
-
-    // Check if value_set doesn't intersect this segment
-    if ((addr_value_set.min + nb_bytes -1 > end)
-        || (addr_value_set.max < start))
-    {
-        result = res;
+    result = base ? Value(base) : Value();
+    const addr_t min = addr_value_set.min;
+    if (nb_bytes == 0 || nb_bytes > size())
         return;
-    }
-    
-    if( a < start )
-        a = start;
-    
-    // If base is null, put first possible read in it and increment address
-    if( base == nullptr )
-    {
-        res = read(a, nb_bytes).as_expr();
-        a++;
-    }
 
-    // Get all other possible values
-    for( ; a <= addr_value_set.max and a-1+nb_bytes <= end; a += addr_value_set.stride)
+    // Clip to complete reads in this segment, keeping addresses at min + k * stride.
+    // A singleton value set can have stride zero.
+    const addr_t stride = std::max<addr_t>(1, addr_value_set.stride);
+    const addr_t upper = std::min(addr_value_set.max, end - (nb_bytes - 1));
+    if (upper < min)
+        return;
+    const addr_t last = upper - (upper - min) % stride;
+    if (last < start)
+        return;
+    addr_t a = min < start ? start + (last - start) % stride : min;
+    for (;; a += stride)
     {
-        /* Optimisation to detect huge areas containing only a single byte (typically zeros) */
-        if( _bitmap.is_concrete(a-start))
-        {
-            a2 = is_identical_until(a, _concrete.read(a-start, 1)) -1; // a2 == last address containing the byte "byte"
-            if (a2 >= a-1+nb_bytes)
-            {
-                // Identical memory region bigger than single read so
-                // use interval instead
-                // Same value for addr >= a
-                Expr v = read(a, nb_bytes).as_expr();
-                if( !(v->eq(res)) )
-                {
-                    // Combine with ITE only if new possible value is different than the 
-                    // current one. This check is used to avoid having ITE(0x1 <= addr, 0x0, 0x0) as
-                    // base expression for the symbolic read
-                    res = ITE(exprcst(addr->size, a), ITECond::LE, addr, v, res);
-                }
-                a = a2+1-nb_bytes;
-            }
-            else
-            {
-                /* Add possible concrete value to ITE switch :) */
-                res = ITE(addr, ITECond::EQ, exprcst(addr->size, a), read(a, nb_bytes).as_expr(), res);
-            }
-        }
+        Value value = read(a, nb_bytes);
+        if (result.is_none())
+            result = value.as_expr();
         else
         {
-            /* Add possible concrete value to ITE switch :) */
-            res = ITE(addr, ITECond::EQ, exprcst(addr->size, a), read(a, nb_bytes).as_expr(), res);
+            // Coalesce candidates that read only identical concrete bytes.
+            const addr_t run_length = a == last ? 0 : identical_byte_count(
+                a, _concrete.read(a - start, 1), last - a + nb_bytes);
+            if (value.is_abstract() || result.expr()->type != ExprType::CST ||
+                !value.number().equal_to(result.expr()->as_number()))
+            {
+                const auto condition = run_length >= nb_bytes ? ITECond::LE : ITECond::EQ;
+                result = ITE(exprcst(addr->size, a), condition, addr, value.as_expr(), result.expr());
+            }
+            if (run_length >= nb_bytes)
+            {
+                const addr_t skip = run_length - nb_bytes;
+                a += skip - skip % stride;
+            }
         }
+        if (a == last)
+            break;
     }
-
-    result = res;
-    return;
 }
 
 Value MemSegment::read(addr_t addr, unsigned int nb_bytes)
@@ -1501,12 +1473,19 @@ addr_t MemSegment::is_concrete_until(addr_t addr1, addr_t max)
     return start + _bitmap.is_concrete_until(addr1-start, adjusted_max);
 }
 
+addr_t MemSegment::identical_byte_count(addr_t addr, uint8_t byte, addr_t max_count)
+{
+    const offset_t off = addr - start;
+    const offset_t count = std::min(max_count, size() - off);
+    // The bitmap may round its answer up to the end of a bitmap byte.
+    const offset_t limit = std::min(off + count, _bitmap.is_concrete_until(off, count));
+    return _concrete.is_identical_until(off, limit, byte) - off;
+}
+
 // Return first address where the byte is different than "byte"
 addr_t MemSegment::is_identical_until(addr_t addr, cst_t byte)
 {
-    addr_t max_addr = is_concrete_until(addr, end-addr+1);
-    addr_t offset = _concrete.is_identical_until(addr-start, max_addr-start, (uint8_t)byte);
-    return offset + start;
+    return addr + identical_byte_count(addr, byte, end - addr + 1);
 }
 
 

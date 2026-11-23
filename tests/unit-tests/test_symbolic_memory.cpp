@@ -487,6 +487,52 @@ namespace test{
             return nb;
         }
 
+        unsigned int strided_table_read()
+        {
+            auto varctx = std::make_shared<VarContext>(0);
+            MemEngine mem(varctx, 64);
+            mem.map(0x1000, 0x1fff);
+            // Three distinct halfwords, then an odd-length run of equal bytes.
+            uint8_t table[] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0x77, 0x77,
+                               0x77, 0x10, 0x22, 0x33, 0x44, 0x55, 0x66, 0x99};
+            mem.write_buffer(0x1000, table, sizeof(table));
+            unsigned int nb = 0;
+            // The second range enters the segment at 0x1001.
+            for (addr_t base : {0x1000, 0x0fff})
+            {
+                Expr addr = base + (exprvar(64, "index") & 7) * 2;
+                for (unsigned int width : {2, 1, 4})
+                {
+                    Value selected;
+                    mem.symbolic_ptr_read(selected, addr, addr->value_set(), width, Settings());
+                    for (int index = 0; index < 8; ++index)
+                    {
+                        addr_t candidate = base + 2 * index;
+                        if (candidate < 0x1000)
+                            continue;
+                        varctx->set("index", index);
+                        auto expected = mem.read(candidate, width).as_uint();
+                        nb += _assert(selected.as_uint(*varctx) == expected,
+                            "Strided read of " + std::to_string(width) +
+                            " bytes disagrees at index " + std::to_string(index));
+                    }
+                }
+            }
+
+            MemSegment segment(0x1000, 0x1001);
+            Value selected;
+            Expr addr = exprvar(64, "addr");
+            ValueSet range(64, 0x0fff, 0x1001, 2);
+            segment.symbolic_ptr_read(selected, addr, range, 2, nullptr);
+            nb += _assert(selected.is_none(), "No complete halfword on this stride");
+            range.set_cst(0x1000);
+            segment.symbolic_ptr_read(selected, addr, range, 2, nullptr);
+            nb += _assert(selected.as_uint() == 0, "Missed the sole candidate on stride zero");
+            nb += _assert(segment.is_identical_until(0x1000, 0) == 0x1002,
+                "Identical-byte scan exceeded the short segment");
+            return nb;
+        }
+
         unsigned int refine_value_set()
         {
             unsigned int nb = 0;
@@ -538,6 +584,7 @@ void test_symbolic_memory(){
     total += limit_wide_pointer_range();
     total += basic_symbolic_read();
     total += basic_symbolic_read_big_endian();
+    total += strided_table_read();
 #ifdef MAAT_HAS_SOLVER_BACKEND
     total += refine_value_set();
 #endif
