@@ -620,34 +620,37 @@ namespace test{
             return nb;
         }
 
-        unsigned int read_across_short_segments()
+        unsigned int read_across_short_segments(Endian endian)
         {
-            unsigned int nb = 0;
-            for (Endian endian : {Endian::LITTLE, Endian::BIG})
-            {
-                auto ctx = std::make_shared<VarContext>(0);
-                MemEngine mem(ctx, 64, nullptr, endian);
-                mem.new_segment(0x1000, 0x1001);
-                mem.new_segment(0x1002, 0x1002);
-                mem.new_segment(0x1003, 0x1005);
-                for (addr_t a = 0x1000; a <= 0x1005; ++a)
-                    mem.write(a, exprcst(8, a - 0x1000));
-                mem.write(0x1002, exprvar(8, "byte"));
+            auto ctx = std::make_shared<VarContext>(0);
+            MemEngine mem(ctx, 64, nullptr, endian);
+            mem.new_segment(0x1000, 0x1001);
+            mem.new_segment(0x1002, 0x1002);
+            mem.new_segment(0x1003, 0x1005);
+            for (addr_t a = 0x1000; a <= 0x1005; ++a)
+                mem.write(a, exprcst(8, a - 0x1000));
+            mem.write(0x1002, exprvar(8, "byte"));
 
-                Expr addr = 0x1000 + (exprvar(64, "index") & 1) * 2;
-                Value selected;
-                mem.symbolic_ptr_read(selected, addr, addr->value_set(), 4, Settings());
-                for (int index : {0, 1})
-                {
-                    ctx->set("index", index);
-                    for (int byte : {0x12, 0xab})
-                    {
-                        ctx->set("byte", byte);
-                        auto expected = mem.read(0x1000 + 2 * index, 4);
-                        nb += _assert(selected.as_uint(*ctx) == expected.as_uint(*ctx),
-                            "Strided symbolic read across short segments disagrees with concrete address");
-                    }
-                }
+            const Value addr = 0x1000 + (exprvar(64, "index") & 1) * 2;
+            Value selected = mem.read(addr, 4);
+            // The two four-byte windows contain [00 01 xx 03] and [xx 03 04 05].
+            struct {
+                int index, byte;
+                uint32_t little, big;
+            } const cases[] = {
+                {0, 0x12, 0x03120100, 0x00011203},
+                {0, 0xab, 0x03ab0100, 0x0001ab03},
+                {1, 0x12, 0x05040312, 0x12030405},
+                {1, 0xab, 0x050403ab, 0xab030405},
+            };
+            unsigned int nb = 0;
+            for (const auto& item : cases)
+            {
+                ctx->set("index", item.index);
+                ctx->set("byte", item.byte);
+                auto expected = endian == Endian::LITTLE ? item.little : item.big;
+                nb += _assert(selected.as_uint(*ctx) == expected,
+                    "Incorrect strided read across short segments at index " + std::to_string(item.index));
             }
             return nb;
         }
@@ -706,7 +709,8 @@ void test_symbolic_memory(){
     total += strided_table_read();
     total += symbolic_read_permission_override();
     total += symbolic_read_after_first_no_access_segment();
-    total += read_across_short_segments();
+    total += read_across_short_segments(maat::Endian::LITTLE);
+    total += read_across_short_segments(maat::Endian::BIG);
 #ifdef MAAT_HAS_SOLVER_BACKEND
     total += refine_value_set();
 #endif
